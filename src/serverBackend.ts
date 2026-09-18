@@ -6,17 +6,37 @@ const app = express();
 
 app.use(express.json({ limit: "10mb" }));
 
-// Directory for persistent cloud database with automatic fallback to /tmp on Vercel/serverless environments
+// Serverless / Read-only filesystem auto-detection and setup
 let DATA_DIR = path.join(process.cwd(), "data");
 let DB_FILE = path.join(DATA_DIR, "database.json");
+let isServerless = false;
 
-try {
-  if (!fs.existsSync(DATA_DIR)) {
-    fs.mkdirSync(DATA_DIR, { recursive: true });
-  }
-} catch (e) {
+if (process.env.VERCEL === "1" || process.env.NODE_ENV === "production") {
+  isServerless = true;
+}
+
+if (isServerless) {
   DATA_DIR = "/tmp";
-  DB_FILE = path.join(DATA_DIR, "database.json");
+  const sourceDb = path.join(process.cwd(), "data", "database.json");
+  const destDb = path.join("/tmp", "database.json");
+  
+  try {
+    if (!fs.existsSync(destDb) && fs.existsSync(sourceDb)) {
+      fs.copyFileSync(sourceDb, destDb);
+    }
+  } catch (e) {
+    console.warn("Failed to copy seed database to /tmp:", e);
+  }
+  DB_FILE = destDb;
+} else {
+  try {
+    if (!fs.existsSync(DATA_DIR)) {
+      fs.mkdirSync(DATA_DIR, { recursive: true });
+    }
+  } catch (e) {
+    DATA_DIR = "/tmp";
+    DB_FILE = path.join(DATA_DIR, "database.json");
+  }
 }
 
 // Initial default configuration items with metadata
@@ -343,12 +363,7 @@ type SSEClient = { id: string; res: Response };
 let sseClients: SSEClient[] = [];
 
 function broadcastUpdate(eventType: string, payload: any) {
-  const message = `event: ${eventType}\ndata: ${JSON.stringify(payload)}\n\n`;
-  sseClients.forEach((client) => {
-    try {
-      client.res.write(message);
-    } catch (e) {}
-  });
+  // SSE disabled for serverless stability. Clients poll every few seconds.
 }
 
 // ---------------- API ROUTES ----------------
@@ -375,23 +390,9 @@ routeBoth("get", "/api/health", (req: Request, res: Response) => {
   });
 });
 
-// 2. SSE Events
+// 2. SSE Events (Disabled and converted to polling for serverless stability)
 routeBoth("get", "/api/events", (req: Request, res: Response) => {
-  res.writeHead(200, {
-    "Content-Type": "text/event-stream",
-    "Cache-Control": "no-cache, no-transform",
-    Connection: "keep-alive",
-  });
-
-  const clientId = `client_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
-  const newClient: SSEClient = { id: clientId, res };
-  sseClients.push(newClient);
-
-  res.write(`event: handshake\ndata: ${JSON.stringify({ clientId, lastUpdated: db.lastUpdated })}\n\n`);
-
-  req.on("close", () => {
-    sseClients = sseClients.filter((c) => c.id !== clientId);
-  });
+  res.json({ sse: false, message: "SSE is disabled in serverless mode. Please use polling." });
 });
 
 // 3. Auth

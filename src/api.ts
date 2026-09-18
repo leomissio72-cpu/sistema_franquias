@@ -293,67 +293,26 @@ export async function loginAPI(username: string, password: string) {
 export const loginApi = loginAPI;
 
 export function subscribeToEvents(onUpdate: (state: CloudState) => void): () => void {
-  let eventSource: EventSource | null = null;
   let pollInterval: any = null;
 
-  try {
-    eventSource = new EventSource("/api/events");
+  // Immediate fetch upon mounting to get the latest state instantly
+  fetchServerState()
+    .then(onUpdate)
+    .catch((err) => console.warn("Initial sync failed:", err));
 
-    eventSource.onmessage = (event) => {
-      try {
-        const parsed = JSON.parse(event.data);
-        if (parsed.type === "state_update" && parsed.data) {
-          onUpdate({
-            ...parsed.data,
-            cloudConfigs: parsed.data.configs || [],
-            paymentMethods: Array.isArray(parsed.data.paymentMethods)
-              ? parsed.data.paymentMethods
-              : parsed.data.paymentMethods?.["dono"] || [],
-            businessRules: parsed.data.businessRules?.["dono"] || parsed.data.businessRules || {
-              maxDiscount: 15,
-              minTicket: 20,
-              advance: false,
-            },
-            systemSettings: parsed.data.systemSettings || {
-              appName: "Sofia CFO — Gestão Financeira para Franquias",
-              companyName: "Sofia Franqueadora & Participações S.A.",
-              cnpjMatriz: "12.345.678/0001-90",
-            },
-          });
-        }
-      } catch (err) {
-        console.error("Error parsing SSE event:", err);
-      }
-    };
+  // Regular lightweight polling every 8 seconds (real-time experience with zero persistent socket overhead)
+  pollInterval = setInterval(async () => {
+    try {
+      const fresh = await fetchServerState();
+      onUpdate(fresh);
+    } catch (e) {
+      console.warn("Periodic sync poll failed:", e);
+    }
+  }, 8000);
 
-    eventSource.onerror = () => {
-      // In serverless environments (Vercel) SSE connections close periodically.
-      // Setup a light polling fallback every 30s so the user never gets blocked or spam-connected
-      if (!pollInterval) {
-        pollInterval = setInterval(async () => {
-          try {
-            const fresh = await fetchServerState();
-            onUpdate(fresh);
-          } catch (e) {}
-        }, 30000);
-      }
-    };
-
-    return () => {
-      if (eventSource) eventSource.close();
-      if (pollInterval) clearInterval(pollInterval);
-    };
-  } catch (e) {
-    console.warn("EventSource not available, using periodic sync:", e);
-    pollInterval = setInterval(async () => {
-      try {
-        const fresh = await fetchServerState();
-        onUpdate(fresh);
-      } catch (err) {}
-    }, 30000);
-
-    return () => {
-      if (pollInterval) clearInterval(pollInterval);
-    };
-  }
+  return () => {
+    if (pollInterval) {
+      clearInterval(pollInterval);
+    }
+  };
 }
