@@ -834,6 +834,32 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
               </tbody>
             </table>
           </div>
+
+          {/* Card de Proteção de Código e Bloqueio de F12 */}
+          <div className="mt-5 p-4 rounded-xl border border-[#e5eaf1] bg-[#f8faff] flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <span className="h-2.5 w-2.5 rounded-full bg-emerald-500" />
+                <h4 className="text-xs font-bold text-[#152238]">
+                  Proteção de Código-Fonte e Bloqueio de Inspeção (F12) Ativo
+                </h4>
+                <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-extrabold">
+                  Protegido
+                </span>
+              </div>
+              <p className="text-[11px] text-[#69778c]">
+                Atalhos de inspeção (F12, Ctrl+Shift+I, Ctrl+U), menu de contexto e compartilhamento indevido de código estão bloqueados preventivamente em produção para resguardar as fórmulas financeiras e a propriedade intelectual da rede.
+              </p>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white border border-[#cbd5e1] text-[11px] font-bold text-[#152238]">
+                ✓ DevTools Interceptado
+              </span>
+              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white border border-[#cbd5e1] text-[11px] font-bold text-emerald-700">
+                ✓ Anti-Tamper Ativo
+              </span>
+            </div>
+          </div>
         </div>
       )}
 

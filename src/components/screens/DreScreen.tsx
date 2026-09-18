@@ -1,13 +1,11 @@
 import React, { useEffect, useRef, useState } from "react";
-import { FranchiseUnit, Business, ScreenType, DreParams } from "../../types";
+import { FranchiseUnit, Business, ScreenType, DreParams, UserSession } from "../../types";
 import {
   formatBrl,
   formatBrl2,
   formatPct,
   formatPct2,
   calculateDre,
-  generateDailyRevenue,
-  generateMonthlyRevenue
 } from "../../utils/calculations";
 import { dreExpenseDefs, defaultDreParams } from "../../data/initialData";
 import {
@@ -25,9 +23,25 @@ import {
   CheckCircle2,
   ArrowRight,
   Store,
-  DollarSign
+  DollarSign,
+  Building2,
+  Filter,
+  BarChart2,
+  LineChart,
+  Tag,
+  Eye,
+  Check,
+  X,
+  Sliders
 } from "lucide-react";
 import Chart from "chart.js/auto";
+import {
+  DateMultiFilter,
+  DateFilterSelection,
+  AVAILABLE_DAYS,
+  AVAILABLE_MONTHS,
+  AVAILABLE_YEARS,
+} from "../DateMultiFilter";
 
 interface DreScreenProps {
   franchises: FranchiseUnit[];
@@ -38,6 +52,9 @@ interface DreScreenProps {
   onNavigate: (screen: ScreenType) => void;
   onSelectTenant: (tenantId: string) => void;
   onSaveParams?: (tenantId: string, params: DreParams) => Promise<void>;
+  userSession?: UserSession | null;
+  currentBusinessId?: string;
+  onSelectBusiness?: (bizId: string) => void;
 }
 
 export const DreScreen: React.FC<DreScreenProps> = ({
@@ -49,10 +66,32 @@ export const DreScreen: React.FC<DreScreenProps> = ({
   onNavigate,
   onSelectTenant,
   onSaveParams,
+  userSession,
+  currentBusinessId = "all",
+  onSelectBusiness,
 }) => {
   // Main sub-tab: demonstrativo vs parametros
   const [activeSubTab, setActiveSubTab] = useState<"demonstrativo" | "parametros">("demonstrativo");
-  const [range, setRange] = useState<"mes" | "trimestre" | "ano">("mes");
+
+  // -------------------------------------------------------------
+  // Granular Date Selection (Ano, Mês e Dia)
+  // -------------------------------------------------------------
+  const [dateSelection, setDateSelection] = useState<DateFilterSelection>({
+    years: [2026],
+    months: [9], // Setembro
+    days: AVAILABLE_DAYS,
+  });
+
+  // Business & Franchise Filters
+  const [selectedBusiness, setSelectedBusiness] = useState<string>(currentBusinessId || "all");
+  const [selectedFranchise, setSelectedFranchise] = useState<string>(
+    currentTenantId && currentTenantId.startsWith("f") ? currentTenantId : "all"
+  );
+
+  // Power BI Interactive Features
+  const [highlightedMonth, setHighlightedMonth] = useState<string | null>(null);
+  const [showDataLabels, setShowDataLabels] = useState<boolean>(true);
+  const [chartViewMode, setChartViewMode] = useState<"bar" | "line">("bar");
 
   // Chart references
   const dailyCanvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -60,19 +99,73 @@ export const DreScreen: React.FC<DreScreenProps> = ({
   const dailyChartInstance = useRef<Chart | null>(null);
   const monthlyChartInstance = useRef<Chart | null>(null);
 
-  const mult = range === "mes" ? 1 : range === "trimestre" ? 3 : 12;
-  const isRede = currentTenantId === "dono" || currentTenantId === "equipe" || currentTenantId.startsWith("biz");
+  const isOwner = userSession?.profile === "dono" || userSession?.profile === "equipe";
+  const isAdmin = userSession?.profile === "admin";
+  const isFranchisee = userSession?.profile === "franqueado" || userSession?.profile === "operador";
 
-  const visibleUnits = franchises.filter((f) => {
-    if (currentTenantId === "dono" || currentTenantId === "equipe") return true;
-    if (currentTenantId.startsWith("biz")) return f.businessId === currentTenantId;
-    return f.id === currentTenantId;
+  // Sync selectedFranchise whenever currentTenantId changes
+  useEffect(() => {
+    if (currentTenantId && currentTenantId.startsWith("f")) {
+      setSelectedFranchise(currentTenantId);
+    }
+  }, [currentTenantId]);
+
+  // Sync selectedBusiness whenever currentBusinessId changes
+  useEffect(() => {
+    if (currentBusinessId) {
+      setSelectedBusiness(currentBusinessId);
+    }
+  }, [currentBusinessId]);
+
+  // Available franchises based on brand selection and user permissions
+  const availableFranchises = franchises.filter((f) => {
+    if (isFranchisee) {
+      if (userSession?.tenant && userSession.tenant !== "dono" && userSession.tenant !== "equipe") {
+        return f.id === userSession.tenant;
+      }
+    }
+    if (selectedBusiness !== "all") {
+      return f.businessId === selectedBusiness;
+    }
+    return true;
   });
 
-  const baseFat = visibleUnits.reduce((s, f) => s + f.faturamento, 0) * mult;
-  const currentParams: DreParams = dreParams[currentTenantId] || dreParams["dono"] || defaultDreParams;
-  const currentUnit = franchises.find((f) => f.id === currentTenantId);
-  const unitRoyalty = currentUnit ? royalties[currentUnit.businessId] : undefined;
+  // Filtered units
+  const visibleUnits = franchises.filter((f) => {
+    if (isFranchisee) {
+      if (userSession?.tenant && userSession.tenant !== "dono" && userSession.tenant !== "equipe") {
+        return f.id === userSession.tenant;
+      }
+    }
+    if (selectedBusiness !== "all" && f.businessId !== selectedBusiness) return false;
+    if (selectedFranchise !== "all" && f.id !== selectedFranchise) return false;
+    return true;
+  });
+
+  // Multipliers based on dateSelection
+  const numYears = dateSelection.years.length;
+  const numMonths = dateSelection.months.length;
+  const numDays = dateSelection.days.length;
+  const daysRatio = numDays / 31;
+  const periodMultiplier = Math.max(0.032, numYears * numMonths * daysRatio);
+
+  // Revenue calculations
+  const baseMonthlyUnits = visibleUnits.reduce((s, f) => s + (f.faturamento || 0), 0);
+  const baseFat = baseMonthlyUnits * periodMultiplier;
+
+  // DRE Parameters resolution
+  const targetTenantKey =
+    selectedFranchise !== "all"
+      ? selectedFranchise
+      : selectedBusiness !== "all"
+      ? selectedBusiness
+      : currentTenantId;
+
+  const currentParams: DreParams =
+    dreParams[targetTenantKey] || dreParams["dono"] || defaultDreParams;
+
+  const targetUnit = franchises.find((f) => f.id === selectedFranchise);
+  const unitRoyalty = targetUnit ? royalties[targetUnit.businessId] : undefined;
 
   const dre = calculateDre(baseFat, currentParams, unitRoyalty);
 
@@ -90,9 +183,8 @@ export const DreScreen: React.FC<DreScreenProps> = ({
   const [isSaved, setIsSaved] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
-  // Synchronize paramsForm when currentTenantId or dreParams updates
   useEffect(() => {
-    const updated = dreParams[currentTenantId] || dreParams["dono"] || defaultDreParams;
+    const updated = dreParams[targetTenantKey] || dreParams["dono"] || defaultDreParams;
     setParamsForm({
       impostos: updated.impostos,
       cmv: updated.cmv,
@@ -100,7 +192,7 @@ export const DreScreen: React.FC<DreScreenProps> = ({
       discount: updated.discount,
       despesas: { ...updated.despesas },
     });
-  }, [currentTenantId, dreParams]);
+  }, [targetTenantKey, dreParams]);
 
   const handleGeneralChange = (field: keyof DreParams, valueStr: string) => {
     const val = parseFloat(valueStr || "0") / 100;
@@ -127,7 +219,7 @@ export const DreScreen: React.FC<DreScreenProps> = ({
     if (!onSaveParams) return;
     setIsSaving(true);
     try {
-      await onSaveParams(currentTenantId, paramsForm);
+      await onSaveParams(targetTenantKey, paramsForm);
       setIsSaved(true);
       setTimeout(() => setIsSaved(false), 3000);
     } catch (e) {
@@ -144,44 +236,170 @@ export const DreScreen: React.FC<DreScreenProps> = ({
 
   const previewDre = calculateDre(baseFat, paramsForm, unitRoyalty);
 
+  // Helper text for current period
+  const getPeriodSummary = () => {
+    const yrText =
+      dateSelection.years.length === AVAILABLE_YEARS.length
+        ? "Todos os Anos"
+        : `Ano ${dateSelection.years.join(", ")}`;
+    const moText =
+      dateSelection.months.length === AVAILABLE_MONTHS.length
+        ? "Todos os 12 Meses"
+        : dateSelection.months.length === 1
+        ? AVAILABLE_MONTHS.find((m) => m.value === dateSelection.months[0])?.label || "1 mês"
+        : `${dateSelection.months.length} meses`;
+    const dayText =
+      dateSelection.days.length === AVAILABLE_DAYS.length
+        ? "Todos os 31 Dias"
+        : `${dateSelection.days.length} dia(s)`;
+    return `${yrText} · ${moText} · ${dayText}`;
+  };
+
   // -----------------------------------------------------------------
-  // Charts useEffect
+  // Power BI Custom Data Labels Plugin
+  // -----------------------------------------------------------------
+  const pbiDataLabelsPlugin = {
+    id: "pbiDataLabels",
+    afterDatasetsDraw(chart: any, args: any, options: any) {
+      if (options?.enabled === false) return;
+      const { ctx } = chart;
+      ctx.save();
+
+      chart.data.datasets.forEach((dataset: any, datasetIndex: number) => {
+        const meta = chart.getDatasetMeta(datasetIndex);
+        if (!meta || meta.hidden) return;
+
+        meta.data.forEach((element: any, index: number) => {
+          const val = dataset.data[index];
+          if (val === null || val === undefined || isNaN(val)) return;
+
+          const pos = element.tooltipPosition ? element.tooltipPosition() : null;
+          if (!pos) return;
+
+          // Compact currency format: R$ 142k, R$ 1.2M
+          let text = "";
+          const absVal = Math.abs(val);
+          const sign = val < 0 ? "-" : "";
+          if (absVal >= 1000000) {
+            text = `${sign}R$ ${(absVal / 1000000).toFixed(1).replace(".", ",")}M`;
+          } else if (absVal >= 1000) {
+            text = `${sign}R$ ${(absVal / 1000).toFixed(0)}k`;
+          } else {
+            text = `${sign}R$ ${absVal.toFixed(0)}`;
+          }
+
+          ctx.font = "bold 9px -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
+          const textWidth = ctx.measureText(text).width;
+          const pillW = textWidth + 8;
+          const pillH = 14;
+          const pillX = pos.x - pillW / 2;
+          const pillY = Math.max(4, pos.y - pillH - 4);
+
+          // Power BI Pill Background
+          ctx.fillStyle =
+            datasetIndex === 0
+              ? "rgba(60, 99, 218, 0.95)"
+              : "rgba(17, 132, 100, 0.95)";
+          ctx.beginPath();
+          if (typeof ctx.roundRect === "function") {
+            ctx.roundRect(pillX, pillY, pillW, pillH, 3);
+          } else {
+            ctx.rect(pillX, pillY, pillW, pillH);
+          }
+          ctx.fill();
+
+          // Border outline
+          ctx.strokeStyle = "rgba(255, 255, 255, 0.35)";
+          ctx.lineWidth = 0.8;
+          ctx.stroke();
+
+          // Label text
+          ctx.fillStyle = "#ffffff";
+          ctx.textAlign = "center";
+          ctx.textBaseline = "middle";
+          ctx.fillText(text, pos.x, pillY + pillH / 2);
+        });
+      });
+
+      ctx.restore();
+    },
+  };
+
+  // -----------------------------------------------------------------
+  // Charts useEffect: Recalculates whenever ANY filter changes
   // -----------------------------------------------------------------
   useEffect(() => {
     if (activeSubTab !== "demonstrativo") return;
 
-    // 1. Daily chart
+    // Seasonal retail weights for months
+    const seasonWeights: Record<number, number> = {
+      1: 0.88,
+      2: 0.92,
+      3: 0.98,
+      4: 1.0,
+      5: 1.08,
+      6: 1.02,
+      7: 0.96,
+      8: 1.04,
+      9: 1.01,
+      10: 1.05,
+      11: 1.18,
+      12: 1.38,
+    };
+
+    // ---------------------------------------------------------------
+    // 1. DAILY CHART (Evolução Diária do Faturamento & Lucro)
+    // ---------------------------------------------------------------
     if (dailyCanvasRef.current) {
       if (dailyChartInstance.current) dailyChartInstance.current.destroy();
 
-      const dailyData = generateDailyRevenue(baseFat / mult, 30, isRede ? 101 : 202);
-      const labels = dailyData.map((d) => d.label);
-      const values = dailyData.map((d) => d.value);
-      const lucros = dailyData.map((d) => Math.round(d.value * (dre.margemLiquida || 0.18)));
+      // Plot the selected days from dateSelection.days
+      const sortedDays = [...dateSelection.days].sort((a, b) => a - b);
+      const dailyLabels = sortedDays.map((d) => `Dia ${String(d).padStart(2, "0")}`);
+
+      // Daily revenue per day factoring in the number of selected months & years
+      const avgDayBase = baseMonthlyUnits / 30;
+      const dailyValues = sortedDays.map((d) => {
+        // Weekday fluctuation pattern (Fridays/Saturdays higher)
+        const dayMod = d % 7;
+        const weekendFactor = dayMod === 5 || dayMod === 6 ? 1.25 : dayMod === 0 ? 0.85 : 1.02;
+        const seedVal = ((d * 9301 + 49297) % 233280) / 233280;
+        const noise = 0.92 + seedVal * 0.16;
+        return Math.round(avgDayBase * weekendFactor * noise * numMonths * numYears);
+      });
+
+      const dailyLucros = dailyValues.map((val) =>
+        Math.round(val * (dre.margemLiquida || 0.18))
+      );
 
       dailyChartInstance.current = new Chart(dailyCanvasRef.current, {
         type: "line",
         data: {
-          labels,
+          labels: dailyLabels,
           datasets: [
             {
               label: "Faturamento Diário (R$)",
-              data: values,
+              data: dailyValues,
               borderColor: "#3c63da",
               backgroundColor: "rgba(60, 99, 218, 0.12)",
               fill: true,
               tension: 0.35,
-              pointRadius: 2,
+              pointRadius: sortedDays.length > 20 ? 3 : 4,
+              pointHoverRadius: 6,
+              pointBackgroundColor: "#3c63da",
               borderWidth: 2,
             },
             {
-              label: "Lucro Estimado (R$)",
-              data: lucros,
+              label: "Lucro Líquido Estimado (R$)",
+              data: dailyLucros,
               borderColor: "#118464",
-              backgroundColor: "transparent",
+              backgroundColor: "rgba(17, 132, 100, 0.08)",
+              fill: true,
               tension: 0.35,
-              pointRadius: 2,
-              borderWidth: 1.5,
+              pointRadius: sortedDays.length > 20 ? 3 : 4,
+              pointHoverRadius: 6,
+              pointBackgroundColor: "#118464",
+              borderWidth: 2,
               borderDash: [4, 4],
             },
           ],
@@ -189,11 +407,42 @@ export const DreScreen: React.FC<DreScreenProps> = ({
         options: {
           responsive: true,
           maintainAspectRatio: false,
+          interaction: {
+            mode: "index",
+            intersect: false,
+          },
           plugins: {
-            legend: { position: "top", labels: { font: { size: 10, weight: "bold" } } },
+            legend: {
+              position: "top",
+              labels: { font: { size: 10, weight: "bold" }, usePointStyle: true, boxWidth: 6 },
+            },
+            tooltip: {
+              backgroundColor: "#152238",
+              titleFont: { size: 11, weight: "bold" },
+              bodyFont: { size: 11 },
+              padding: 10,
+              cornerRadius: 8,
+              callbacks: {
+                label: (ctx) => ` ${ctx.dataset.label}: ${formatBrl(ctx.raw as number)}`,
+                afterBody: (items) => {
+                  if (!items || items.length === 0) return [];
+                  const fat = (items[0]?.raw as number) || 1;
+                  const luc = (items[1]?.raw as number) || 0;
+                  const pct = ((luc / fat) * 100).toFixed(1);
+                  return [` Margem Líquida do Dia: ${pct}%`];
+                },
+              },
+            },
+            // @ts-ignore
+            pbiDataLabels: {
+              enabled: showDataLabels && sortedDays.length <= 15,
+            },
           },
           scales: {
-            x: { grid: { display: false }, ticks: { font: { size: 9 }, maxTicksLimit: 12 } },
+            x: {
+              grid: { display: false },
+              ticks: { font: { size: 9 }, maxTicksLimit: 16 },
+            },
             y: {
               grid: { color: "#f0f4f9" },
               ticks: {
@@ -203,47 +452,130 @@ export const DreScreen: React.FC<DreScreenProps> = ({
             },
           },
         },
+        plugins: [pbiDataLabelsPlugin],
       });
     }
 
-    // 2. Monthly chart
+    // ---------------------------------------------------------------
+    // 2. MONTHLY CHART (Sazonalidade & Performance Mensal)
+    // ---------------------------------------------------------------
     if (monthlyCanvasRef.current) {
       if (monthlyChartInstance.current) monthlyChartInstance.current.destroy();
 
-      const monthlyData = generateMonthlyRevenue(baseFat / mult, isRede ? 303 : 404);
-      const labels = monthlyData.map((m) => m.label);
-      const fatValues = monthlyData.map((m) => m.value);
-      const lucroValues = monthlyData.map((m) => Math.round(m.value * (dre.margemLiquida || 0.18)));
+      // Sorted selected months
+      const sortedMonths = [...dateSelection.months].sort((a, b) => a - b);
+      const monthlyLabels = sortedMonths.map((m) => {
+        const item = AVAILABLE_MONTHS.find((mo) => mo.value === m);
+        const name = item ? item.label.split(" ")[0] : `Mês ${m}`;
+        return name.toUpperCase();
+      });
+
+      // Values adjusted to selected days ratio & years
+      const fatValues = sortedMonths.map((m) => {
+        const weight = seasonWeights[m] || 1.0;
+        return Math.round(baseMonthlyUnits * weight * daysRatio * numYears);
+      });
+
+      const lucroValues = fatValues.map((fat) =>
+        Math.round(fat * (dre.margemLiquida || 0.18))
+      );
+
+      // Power BI Cross-Highlight colors
+      const getBarColor = (baseColor: string, dimColor: string, isFat: boolean) => {
+        return monthlyLabels.map((label) => {
+          if (!highlightedMonth) return baseColor;
+          return label === highlightedMonth ? baseColor : dimColor;
+        });
+      };
+
+      const fatColors = getBarColor("#3c63da", "rgba(60, 99, 218, 0.28)", true);
+      const lucroColors = getBarColor("#118464", "rgba(17, 132, 100, 0.28)", false);
 
       monthlyChartInstance.current = new Chart(monthlyCanvasRef.current, {
-        type: "bar",
+        type: chartViewMode,
         data: {
-          labels,
+          labels: monthlyLabels,
           datasets: [
             {
-              label: "Faturamento (R$)",
+              label: "Faturamento Bruto (R$)",
               data: fatValues,
-              backgroundColor: "#3c63da",
+              backgroundColor: chartViewMode === "bar" ? fatColors : "rgba(60, 99, 218, 0.15)",
+              borderColor: "#3c63da",
+              borderWidth: chartViewMode === "line" ? 2.5 : 1,
+              fill: chartViewMode === "line",
+              tension: 0.35,
               borderRadius: 6,
-              barPercentage: 0.6,
+              barPercentage: 0.65,
+              categoryPercentage: 0.8,
             },
             {
               label: "Lucro Líquido (R$)",
               data: lucroValues,
-              backgroundColor: "#118464",
+              backgroundColor: chartViewMode === "bar" ? lucroColors : "rgba(17, 132, 100, 0.15)",
+              borderColor: "#118464",
+              borderWidth: chartViewMode === "line" ? 2.5 : 1,
+              fill: chartViewMode === "line",
+              tension: 0.35,
               borderRadius: 6,
-              barPercentage: 0.6,
+              barPercentage: 0.65,
+              categoryPercentage: 0.8,
             },
           ],
         },
         options: {
           responsive: true,
           maintainAspectRatio: false,
+          interaction: {
+            mode: "index",
+            intersect: false,
+          },
+          onClick: (event, elements) => {
+            if (elements && elements.length > 0) {
+              const idx = elements[0].index;
+              const clickedMonth = monthlyLabels[idx];
+              setHighlightedMonth((prev) => (prev === clickedMonth ? null : clickedMonth));
+            } else {
+              setHighlightedMonth(null);
+            }
+          },
           plugins: {
-            legend: { position: "top", labels: { font: { size: 10, weight: "bold" } } },
+            legend: {
+              position: "top",
+              labels: { font: { size: 10, weight: "bold" }, usePointStyle: true, boxWidth: 6 },
+            },
+            tooltip: {
+              backgroundColor: "#152238",
+              titleFont: { size: 12, weight: "bold" },
+              bodyFont: { size: 11 },
+              padding: 12,
+              cornerRadius: 8,
+              callbacks: {
+                title: (items) => `📅 Mês: ${items[0]?.label || ""}`,
+                label: (ctx) => ` ${ctx.dataset.label}: ${formatBrl(ctx.raw as number)}`,
+                afterBody: (items) => {
+                  if (!items || items.length === 0) return [];
+                  const fat = (items[0]?.raw as number) || 1;
+                  const luc = (items[1]?.raw as number) || 0;
+                  const cmv = Math.round(fat * (currentParams.cmv || 0.3));
+                  const pct = ((luc / fat) * 100).toFixed(1);
+                  return [
+                    ` Estimativa CMV: ${formatBrl(cmv)}`,
+                    ` Margem Líquida: ${pct}%`,
+                    ` 💡 Dica Power BI: Clique na barra para filtrar`,
+                  ];
+                },
+              },
+            },
+            // @ts-ignore
+            pbiDataLabels: {
+              enabled: showDataLabels,
+            },
           },
           scales: {
-            x: { grid: { display: false }, ticks: { font: { size: 9 } } },
+            x: {
+              grid: { display: false },
+              ticks: { font: { size: 10, weight: "bold" } },
+            },
             y: {
               grid: { color: "#f0f4f9" },
               ticks: {
@@ -253,6 +585,7 @@ export const DreScreen: React.FC<DreScreenProps> = ({
             },
           },
         },
+        plugins: [pbiDataLabelsPlugin],
       });
     }
 
@@ -260,7 +593,21 @@ export const DreScreen: React.FC<DreScreenProps> = ({
       if (dailyChartInstance.current) dailyChartInstance.current.destroy();
       if (monthlyChartInstance.current) monthlyChartInstance.current.destroy();
     };
-  }, [baseFat, dre.margemLiquida, activeSubTab, mult, isRede]);
+  }, [
+    activeSubTab,
+    baseMonthlyUnits,
+    dre.margemLiquida,
+    dre.margemBruta,
+    dateSelection,
+    visibleUnits.length,
+    showDataLabels,
+    chartViewMode,
+    highlightedMonth,
+    currentParams,
+    daysRatio,
+    numMonths,
+    numYears,
+  ]);
 
   const handleExportCsv = () => {
     let csv = "Item;Valor Nominal (R$);Percentual (%)\n";
@@ -280,18 +627,18 @@ export const DreScreen: React.FC<DreScreenProps> = ({
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `DRE_${currentTenantId}_${new Date().toISOString().slice(0, 10)}.csv`;
+    a.download = `DRE_${targetTenantKey}_${new Date().toISOString().slice(0, 10)}.csv`;
     a.click();
     URL.revokeObjectURL(url);
   };
 
   const getScopeTitle = () => {
-    if (currentUnit?.name) return `${currentUnit.name} (${currentUnit.code})`;
-    if (currentTenantId.startsWith("biz")) {
-      const b = businesses.find((biz) => biz.id === currentTenantId);
-      return b ? `Matriz ${b.brand || b.name || b.id}` : currentTenantId;
+    if (targetUnit?.name) return `${targetUnit.name} (${targetUnit.code})`;
+    if (selectedBusiness !== "all") {
+      const b = businesses.find((biz) => biz.id === selectedBusiness);
+      return b ? `Rede ${b.name}` : selectedBusiness;
     }
-    return "Rede Consolidada (Todas as Unidades)";
+    return "Toda a Rede Consolidada";
   };
 
   return (
@@ -307,7 +654,7 @@ export const DreScreen: React.FC<DreScreenProps> = ({
             DRE e Resultados — {getScopeTitle()}
           </h2>
           <p className="text-xs text-[#69778c] mt-0.5">
-            Apuração contábil em nuvem, controle de margens e parametrização unificada de custos.
+            Apuração contábil em nuvem, controle de margens e gráficos interativos tipo Power BI.
           </p>
         </div>
 
@@ -340,59 +687,162 @@ export const DreScreen: React.FC<DreScreenProps> = ({
       </div>
 
       {/* ------------------------------------------------------------- */}
-      {/* 1. ABA: DEMONSTRATIVO & RESULTADOS */}
+      {/* 1. ABA: DEMONSTRATIVO & RESULTADOS                            */}
       {/* ------------------------------------------------------------- */}
       {activeSubTab === "demonstrativo" && (
         <div className="space-y-6">
-          {/* Controls: Range Selector + Export Actions */}
-          <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[#e5eaf1] bg-white p-3 shadow-xs">
-            <div className="flex items-center gap-1">
-              <span className="text-[11px] font-bold text-[#69778c] mr-2 hidden sm:inline">
-                Período de Apuração:
-              </span>
-              <button
-                onClick={() => setRange("mes")}
-                className={`rounded-lg px-3 py-1.5 text-xs font-bold transition-all cursor-pointer ${
-                  range === "mes" ? "bg-[#3c63da] text-white" : "text-[#69778c] hover:bg-[#f4f7fb]"
-                }`}
-              >
-                Mês Corrente
-              </button>
-              <button
-                onClick={() => setRange("trimestre")}
-                className={`rounded-lg px-3 py-1.5 text-xs font-bold transition-all cursor-pointer ${
-                  range === "trimestre" ? "bg-[#3c63da] text-white" : "text-[#69778c] hover:bg-[#f4f7fb]"
-                }`}
-              >
-                Trimestre (3M)
-              </button>
-              <button
-                onClick={() => setRange("ano")}
-                className={`rounded-lg px-3 py-1.5 text-xs font-bold transition-all cursor-pointer ${
-                  range === "ano" ? "bg-[#3c63da] text-white" : "text-[#69778c] hover:bg-[#f4f7fb]"
-                }`}
-              >
-                Ano (12M)
-              </button>
+          {/* Card Unificado de Filtros com Seletores Granulares (Ano, Mês, Dia, Marca, Unidade) */}
+          <div className="rounded-2xl border border-[#e5eaf1] bg-white p-4 sm:p-5 shadow-xs space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[#f1f5f9]">
+              <div className="flex items-center gap-2">
+                <Filter className="h-4 w-4 text-[#3c63da]" />
+                <span className="text-xs font-bold text-[#152238] uppercase tracking-wider">
+                  Filtros de Período & Escopo
+                </span>
+                <span className="text-[11px] font-bold text-[#3c63da] bg-[#3c63da]/10 px-2 py-0.5 rounded-full">
+                  {visibleUnits.length} unidade(s)
+                </span>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={handleExportCsv}
+                  className="flex items-center gap-1.5 rounded-xl border border-[#cbd5e1] bg-white px-3 py-1.5 text-xs font-bold text-[#152238] hover:bg-[#f8faff] hover:border-[#3c63da] transition-all cursor-pointer"
+                >
+                  <FileSpreadsheet className="h-3.5 w-3.5 text-emerald-600" />
+                  <span>Exportar CSV</span>
+                </button>
+                <button
+                  onClick={() => window.print()}
+                  className="flex items-center gap-1.5 rounded-xl border border-[#cbd5e1] bg-white px-3 py-1.5 text-xs font-bold text-[#152238] hover:bg-[#f8faff] hover:border-[#3c63da] transition-all cursor-pointer"
+                >
+                  <Printer className="h-3.5 w-3.5 text-[#69778c]" />
+                  <span className="hidden sm:inline">Imprimir</span>
+                </button>
+              </div>
             </div>
 
-            <div className="flex items-center gap-2">
+            {/* Seletor Temporal Separado: Ano, Mês e Dia */}
+            <DateMultiFilter selection={dateSelection} onChange={setDateSelection} />
+
+            {/* Filtros Operacionais: Marca e Unidade */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-3 border-t border-[#f1f5f9]">
+              {/* Filtro Marca / Rede */}
+              <div>
+                <label
+                  htmlFor="dre-filter-business"
+                  className="flex items-center gap-1.5 text-[11px] font-bold text-[#152238] mb-1.5"
+                >
+                  <Building2 className="h-3.5 w-3.5 text-[#3c63da]" />
+                  <span>Rede / Marca</span>
+                </label>
+                <select
+                  id="dre-filter-business"
+                  disabled={isFranchisee}
+                  value={selectedBusiness}
+                  onChange={(e) => {
+                    const bId = e.target.value;
+                    setSelectedBusiness(bId);
+                    setSelectedFranchise("all");
+                    if (onSelectBusiness) onSelectBusiness(bId);
+                  }}
+                  className="w-full rounded-xl border border-[#cbd5e1] bg-white px-3.5 py-2.5 text-xs sm:text-sm font-semibold text-[#152238] shadow-2xs hover:border-[#94a3b8] focus:border-[#3c63da] focus:ring-2 focus:ring-[#3c63da]/15 focus:outline-none transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+                >
+                  <option value="all">Todas as Redes e Marcas</option>
+                  {businesses.map((b) => (
+                    <option key={b.id} value={b.id}>
+                      {b.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Filtro Unidade / Franqueado */}
+              <div>
+                <label
+                  htmlFor="dre-filter-franchise"
+                  className="flex items-center gap-1.5 text-[11px] font-bold text-[#152238] mb-1.5"
+                >
+                  <Store className="h-3.5 w-3.5 text-[#3c63da]" />
+                  <span>Unidade / Franqueado</span>
+                </label>
+                <select
+                  id="dre-filter-franchise"
+                  disabled={isFranchisee}
+                  value={selectedFranchise}
+                  onChange={(e) => {
+                    const fId = e.target.value;
+                    setSelectedFranchise(fId);
+                    if (onSelectTenant) onSelectTenant(fId === "all" ? "dono" : fId);
+                  }}
+                  className="w-full rounded-xl border border-[#cbd5e1] bg-white px-3.5 py-2.5 text-xs sm:text-sm font-semibold text-[#152238] shadow-2xs hover:border-[#94a3b8] focus:border-[#3c63da] focus:ring-2 focus:ring-[#3c63da]/15 focus:outline-none transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+                >
+                  <option value="all">Todas as Unidades ({availableFranchises.length})</option>
+                  {availableFranchises.map((f) => (
+                    <option key={f.id} value={f.id}>
+                      {f.name} ({f.code} - {f.city})
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            {/* Resumo do Período Ativo & Multiplicador */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-2.5 rounded-xl bg-[#f8faff] border border-[#e5eaf1] text-xs">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="font-bold text-[#152238]">Período Ativo:</span>
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-white border border-[#cbd5e1] text-[#3c63da] font-extrabold text-[11px]">
+                  <Calendar className="h-3 w-3" />
+                  {getPeriodSummary()}
+                </span>
+                <span className="text-[11px] text-[#69778c]">
+                  Multiplicador proporcional: <strong>{periodMultiplier.toFixed(2)}x</strong>
+                </span>
+              </div>
+
               <button
-                onClick={handleExportCsv}
-                className="flex items-center gap-1.5 rounded-lg border border-[#e5eaf1] bg-white px-3 py-1.5 text-xs font-bold text-[#152238] hover:bg-[#f4f7fb] cursor-pointer"
+                type="button"
+                onClick={() => {
+                  setDateSelection({
+                    years: [2026],
+                    months: [9],
+                    days: AVAILABLE_DAYS,
+                  });
+                  setSelectedBusiness("all");
+                  setSelectedFranchise("all");
+                  setHighlightedMonth(null);
+                }}
+                className="text-[11px] font-bold text-[#69778c] hover:text-[#3c63da] transition-colors cursor-pointer self-end sm:self-auto"
               >
-                <FileSpreadsheet className="h-3.5 w-3.5 text-emerald-600" />
-                <span>Exportar CSV</span>
-              </button>
-              <button
-                onClick={() => window.print()}
-                className="flex items-center gap-1.5 rounded-lg border border-[#e5eaf1] bg-white px-3 py-1.5 text-xs font-bold text-[#152238] hover:bg-[#f4f7fb] cursor-pointer"
-              >
-                <Printer className="h-3.5 w-3.5 text-[#69778c]" />
-                <span className="hidden sm:inline">Imprimir</span>
+                Redefinir Filtros Padrão
               </button>
             </div>
           </div>
+
+          {/* Banner de Destaque Interativo Power BI (quando usuário clica em um mês) */}
+          {highlightedMonth && (
+            <div className="flex items-center justify-between gap-3 p-3.5 rounded-xl bg-gradient-to-r from-[#3c63da]/10 via-[#3c63da]/5 to-transparent border border-[#3c63da]/30 text-xs">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="h-2 w-2 rounded-full bg-[#3c63da]" />
+                <span className="font-bold text-[#152238]">
+                  Filtro Interativo Power BI Ativo:
+                </span>
+                <span className="px-2 py-0.5 rounded-md bg-[#3c63da] text-white font-extrabold text-xs">
+                  Mês {highlightedMonth}
+                </span>
+                <span className="text-[#69778c] text-[11px]">
+                  (Barras destacadas no gráfico abaixo. Clique novamente na barra ou no botão ao lado para limpar)
+                </span>
+              </div>
+              <button
+                onClick={() => setHighlightedMonth(null)}
+                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white border border-[#cbd5e1] text-xs font-bold text-[#152238] hover:bg-rose-50 hover:text-rose-600 hover:border-rose-200 transition-all cursor-pointer"
+              >
+                <X className="h-3.5 w-3.5" />
+                <span>Limpar Filtro de Mês</span>
+              </button>
+            </div>
+          )}
 
           {/* KPI Cards */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
@@ -449,64 +899,69 @@ export const DreScreen: React.FC<DreScreenProps> = ({
           <div className="rounded-2xl border border-[#e5eaf1] bg-white shadow-xs overflow-hidden">
             <div className="p-4 sm:p-5 border-b border-[#e5eaf1] flex items-center justify-between">
               <div>
-                <h3 className="text-sm font-bold text-[#152238]">
-                  Demonstrativo Detalhado de Resultados
+                <h3 className="text-sm font-bold text-[#152238] flex items-center gap-2">
+                  <span>Demonstrativo do Resultado do Exercício (DRE)</span>
+                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#f4f7fb] text-[#69778c] font-bold">
+                    Oficial
+                  </span>
                 </h3>
-                <p className="text-[11px] text-[#69778c]">
-                  Contas apuradas conforme os parâmetros vigentes da franquia.
+                <p className="text-xs text-[#69778c] mt-0.5">
+                  Valores apurados conforme os filtros de ano, mês, dia e unidades selecionadas.
                 </p>
               </div>
-              <button
-                onClick={() => setActiveSubTab("parametros")}
-                className="text-xs font-bold text-[#3c63da] hover:underline flex items-center gap-1 cursor-pointer"
-              >
-                <span>Ajustar Parâmetros</span>
-                <ArrowRight className="h-3.5 w-3.5" />
-              </button>
+
+              <div className="text-right">
+                <span className="text-[11px] text-[#69778c] block">Resultado Líquido</span>
+                <span className="text-base font-extrabold text-emerald-700">
+                  {formatPct(dre.margemLiquida)}
+                </span>
+              </div>
             </div>
 
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs border-collapse">
                 <thead>
                   <tr className="bg-[#f8faff] border-b border-[#e5eaf1] text-[#69778c]">
-                    <th className="py-3 px-4 font-bold uppercase text-[10px]">Conta Contábil</th>
-                    <th className="py-3 px-4 font-bold uppercase text-[10px] text-right">Valor (R$)</th>
-                    <th className="py-3 px-4 font-bold uppercase text-[10px] text-right">% Receita Líq.</th>
+                    <th className="py-2.5 px-4 font-bold uppercase text-[10px]">Conta Contábil / Descrição</th>
+                    <th className="py-2.5 px-4 text-right font-bold uppercase text-[10px]">Valor Nominal (R$)</th>
+                    <th className="py-2.5 px-4 text-right font-bold uppercase text-[10px]">% Sobre Receita</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[#e5eaf1]">
-                  <tr className="bg-white font-bold text-[#152238]">
-                    <td className="py-3 px-4">(=) Receita Bruta / Faturamento</td>
-                    <td className="py-3 px-4 text-right font-mono">{formatBrl2(dre.fatBruta)}</td>
-                    <td className="py-3 px-4 text-right font-mono">100,00%</td>
+                  <tr className="font-bold text-[#152238] bg-[#f8faff]/50">
+                    <td className="py-2.5 px-4">(=) RECEITA BRUTA OPERACIONAL</td>
+                    <td className="py-2.5 px-4 text-right font-mono text-emerald-800">
+                      {formatBrl2(dre.fatBruta)}
+                    </td>
+                    <td className="py-2.5 px-4 text-right font-mono">100,00%</td>
                   </tr>
-                  <tr className="text-[#b44b4b]">
-                    <td className="py-2.5 px-4 pl-8">(-) Descontos Concedidos & Devoluções</td>
+                  <tr className="text-[#69778c]">
+                    <td className="py-2.5 px-4 pl-8">(-) Descontos & Cancelamentos</td>
                     <td className="py-2.5 px-4 text-right font-mono">-{formatBrl2(dre.desconto)}</td>
                     <td className="py-2.5 px-4 text-right font-mono">
                       {formatPct2(dre.desconto / (dre.fatBruta || 1))}
                     </td>
                   </tr>
-                  <tr className="text-[#b44b4b]">
+                  <tr className="text-[#69778c]">
                     <td className="py-2.5 px-4 pl-8">(-) Impostos sobre Vendas</td>
                     <td className="py-2.5 px-4 text-right font-mono">-{formatBrl2(dre.impostos)}</td>
                     <td className="py-2.5 px-4 text-right font-mono">
                       {formatPct2(dre.impostos / (dre.receitaAjustada || 1))}
                     </td>
                   </tr>
-                  <tr className="bg-[#f8faff] font-bold text-[#152238]">
-                    <td className="py-3 px-4">(=) Receita Operacional Líquida</td>
-                    <td className="py-3 px-4 text-right font-mono text-[#3c63da]">{formatBrl2(dre.receitaLiquida)}</td>
-                    <td className="py-3 px-4 text-right font-mono">100,00%</td>
+                  <tr className="font-bold text-[#152238] bg-[#f4f7fb]/60">
+                    <td className="py-2.5 px-4">(=) RECEITA LÍQUIDA OPERACIONAL</td>
+                    <td className="py-2.5 px-4 text-right font-mono">{formatBrl2(dre.receitaLiquida)}</td>
+                    <td className="py-2.5 px-4 text-right font-mono">100,00%</td>
                   </tr>
-                  <tr className="text-[#b44b4b]">
-                    <td className="py-2.5 px-4 pl-8">(-) Custo de Mercadorias Vendidas (CMV)</td>
+                  <tr className="text-[#69778c]">
+                    <td className="py-2.5 px-4 pl-8">(-) Custo das Mercadorias Vendidas (CMV)</td>
                     <td className="py-2.5 px-4 text-right font-mono">-{formatBrl2(dre.cmv)}</td>
                     <td className="py-2.5 px-4 text-right font-mono">
                       {formatPct2(dre.cmv / (dre.receitaLiquida || 1))}
                     </td>
                   </tr>
-                  <tr className="text-[#b44b4b]">
+                  <tr className="text-[#69778c]">
                     <td className="py-2.5 px-4 pl-8">(-) Taxas de Cartão & Plataforma</td>
                     <td className="py-2.5 px-4 text-right font-mono">-{formatBrl2(dre.taxasNegocio)}</td>
                     <td className="py-2.5 px-4 text-right font-mono">
@@ -554,29 +1009,114 @@ export const DreScreen: React.FC<DreScreenProps> = ({
             </div>
           </div>
 
-          {/* Interactive Charts: Daily and Monthly Evolution */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-            <div className="rounded-2xl border border-[#e5eaf1] bg-white p-5 shadow-xs flex flex-col">
-              <h3 className="text-sm font-bold text-[#152238] mb-1">
-                Evolução do Faturamento & Lucro Diário
-              </h3>
-              <p className="text-[11px] text-[#69778c] mb-4">
-                Últimos 30 dias de operação com curva de lucratividade.
-              </p>
-              <div className="h-64 w-full flex-1 relative">
-                <canvas ref={dailyCanvasRef} />
+          {/* ------------------------------------------------------------- */}
+          {/* GRÁFICOS INTERATIVOS ESTILO POWER BI (Com Rótulos de Dados)   */}
+          {/* ------------------------------------------------------------- */}
+          <div className="space-y-4">
+            {/* Barra de Ferramentas Power BI */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 rounded-2xl bg-white border border-[#e5eaf1] shadow-xs">
+              <div className="flex items-center gap-2">
+                <div className="h-7 w-7 rounded-lg bg-[#3c63da]/10 text-[#3c63da] flex items-center justify-center font-black text-xs">
+                  PBI
+                </div>
+                <div>
+                  <h4 className="text-xs font-bold text-[#152238] flex items-center gap-1.5">
+                    <span>Gráficos Interativos Dinâmicos</span>
+                    <span className="text-[10px] bg-emerald-100 text-emerald-800 font-extrabold px-1.5 py-0.2 rounded">
+                      Rótulos de Dados
+                    </span>
+                  </h4>
+                  <p className="text-[11px] text-[#69778c]">
+                    Altere os filtros acima para atualizar os gráficos instantaneamente. Clique nas barras para filtrar.
+                  </p>
+                </div>
+              </div>
+
+              {/* Botões de Controle Interativos */}
+              <div className="flex items-center gap-2 flex-wrap self-end sm:self-auto">
+                {/* Toggle Rótulos de Dados */}
+                <button
+                  type="button"
+                  onClick={() => setShowDataLabels((prev) => !prev)}
+                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all border cursor-pointer ${
+                    showDataLabels
+                      ? "bg-[#3c63da] text-white border-[#3c63da] shadow-xs"
+                      : "bg-white text-[#69778c] border-[#cbd5e1] hover:bg-[#f8faff]"
+                  }`}
+                  title="Ligar ou desligar rótulos de dados sobre as barras e pontos"
+                >
+                  <Tag className="h-3.5 w-3.5" />
+                  <span>Rótulos: {showDataLabels ? "Ligados" : "Desligados"}</span>
+                </button>
+
+                {/* Toggle Formato do Gráfico Mensal (Barras ou Linha) */}
+                <div className="flex items-center rounded-xl border border-[#cbd5e1] bg-white p-0.5">
+                  <button
+                    type="button"
+                    onClick={() => setChartViewMode("bar")}
+                    className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                      chartViewMode === "bar"
+                        ? "bg-[#152238] text-white shadow-2xs"
+                        : "text-[#69778c] hover:text-[#152238]"
+                    }`}
+                    title="Visualização em Colunas Agrupadas"
+                  >
+                    <BarChart2 className="h-3.5 w-3.5" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setChartViewMode("line")}
+                    className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                      chartViewMode === "line"
+                        ? "bg-[#152238] text-white shadow-2xs"
+                        : "text-[#69778c] hover:text-[#152238]"
+                    }`}
+                    title="Visualização em Linhas de Tendência"
+                  >
+                    <LineChart className="h-3.5 w-3.5" />
+                  </button>
+                </div>
               </div>
             </div>
 
-            <div className="rounded-2xl border border-[#e5eaf1] bg-white p-5 shadow-xs flex flex-col">
-              <h3 className="text-sm font-bold text-[#152238] mb-1">
-                Sazonalidade Mensal (Faturamento x Lucro)
-              </h3>
-              <p className="text-[11px] text-[#69778c] mb-4">
-                Demonstrativo comparativo dos últimos 12 meses.
-              </p>
-              <div className="h-64 w-full flex-1 relative">
-                <canvas ref={monthlyCanvasRef} />
+            {/* Grid dos 2 Gráficos */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+              {/* Gráfico 1: Evolução Diária */}
+              <div className="rounded-2xl border border-[#e5eaf1] bg-white p-5 shadow-xs flex flex-col">
+                <div className="flex items-center justify-between gap-2 mb-1">
+                  <h3 className="text-sm font-bold text-[#152238] flex items-center gap-1.5">
+                    <LineChart className="h-4 w-4 text-[#3c63da]" />
+                    <span>Evolução Diária do Faturamento & Lucro</span>
+                  </h3>
+                  <span className="text-[10px] font-extrabold text-[#3c63da] bg-[#3c63da]/10 px-2 py-0.5 rounded-full">
+                    {dateSelection.days.length} dia(s)
+                  </span>
+                </div>
+                <p className="text-[11px] text-[#69778c] mb-4">
+                  Curva diária conforme os dias selecionados no filtro.
+                </p>
+                <div className="h-72 w-full flex-1 relative">
+                  <canvas ref={dailyCanvasRef} />
+                </div>
+              </div>
+
+              {/* Gráfico 2: Sazonalidade Mensal com Interatividade Power BI */}
+              <div className="rounded-2xl border border-[#e5eaf1] bg-white p-5 shadow-xs flex flex-col">
+                <div className="flex items-center justify-between gap-2 mb-1">
+                  <h3 className="text-sm font-bold text-[#152238] flex items-center gap-1.5">
+                    <BarChart2 className="h-4 w-4 text-emerald-600" />
+                    <span>Sazonalidade Mensal (Faturamento x Lucro)</span>
+                  </h3>
+                  <span className="text-[10px] font-extrabold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
+                    {dateSelection.months.length} mês(es)
+                  </span>
+                </div>
+                <p className="text-[11px] text-[#69778c] mb-4">
+                  Comparativo mensal. Clique em qualquer barra para destacar no estilo Power BI.
+                </p>
+                <div className="h-72 w-full flex-1 relative">
+                  <canvas ref={monthlyCanvasRef} />
+                </div>
               </div>
             </div>
           </div>
@@ -584,7 +1124,7 @@ export const DreScreen: React.FC<DreScreenProps> = ({
       )}
 
       {/* ------------------------------------------------------------- */}
-      {/* 2. ABA: PARÂMETROS DO DRE UNIFICADOS */}
+      {/* 2. ABA: PARÂMETROS DO DRE UNIFICADOS                          */}
       {/* ------------------------------------------------------------- */}
       {activeSubTab === "parametros" && (
         <div className="space-y-6">

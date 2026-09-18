@@ -1,19 +1,32 @@
 import express, { Request, Response } from "express";
 import path from "path";
 import fs from "fs";
-import { createServer as createViteServer } from "vite";
 
 const app = express();
 const PORT = 3000;
 
 app.use(express.json({ limit: "10mb" }));
 
-// Directory for persistent cloud database
-const DATA_DIR = path.join(process.cwd(), "data");
-const DB_FILE = path.join(DATA_DIR, "database.json");
+// Normalize URL for Vercel rewrites (if /api is stripped or passed directly)
+app.use((req, res, next) => {
+  if (req.url && !req.url.startsWith("/api") && !req.url.startsWith("/assets") && !req.url.includes(".")) {
+    req.url = "/api" + req.url;
+  }
+  next();
+});
 
-if (!fs.existsSync(DATA_DIR)) {
-  fs.mkdirSync(DATA_DIR, { recursive: true });
+// Directory for persistent cloud database with automatic fallback to /tmp on Vercel/serverless environments
+let DATA_DIR = path.join(process.cwd(), "data");
+let DB_FILE = path.join(DATA_DIR, "database.json");
+
+try {
+  if (!fs.existsSync(DATA_DIR)) {
+    fs.mkdirSync(DATA_DIR, { recursive: true });
+  }
+} catch (e) {
+  // Read-only filesystem in Vercel/Lambda: use /tmp
+  DATA_DIR = "/tmp";
+  DB_FILE = path.join(DATA_DIR, "database.json");
 }
 
 // Initial default configuration items with metadata
@@ -348,7 +361,13 @@ function saveDatabase(data: DatabaseState) {
     data.lastUpdated = new Date().toISOString();
     fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2), "utf-8");
   } catch (err) {
-    console.error("Failed to save database:", err);
+    try {
+      // In serverless environments, fallback to /tmp
+      DB_FILE = path.join("/tmp", "database.json");
+      fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2), "utf-8");
+    } catch (e) {
+      console.warn("[Sofia CFO] Using in-memory state fallback on serverless platform.");
+    }
   }
 }
 
@@ -657,6 +676,7 @@ app.delete("/api/entries/:id", (req: Request, res: Response) => {
 // ----------------------------------------------------
 async function startServer() {
   if (process.env.NODE_ENV !== "production") {
+    const { createServer: createViteServer } = await import("vite");
     const vite = await createViteServer({
       server: { middlewareMode: true },
       appType: "spa",
@@ -675,4 +695,9 @@ async function startServer() {
   });
 }
 
-startServer();
+// Only launch standalone HTTP server if NOT inside a serverless runner like Vercel
+if (!process.env.VERCEL && !process.env.NOW_REGION) {
+  startServer();
+}
+
+export default app;

@@ -261,6 +261,7 @@ export interface ConciliationItem {
 }
 
 export interface CloudState {
+  version?: number;
   businesses: Business[];
   franchises: FranchiseUnit[];
   employees: Employee[];
@@ -268,6 +269,7 @@ export interface CloudState {
   manualEntries: ManualEntry[];
   configs: ConfigItem[];
   cloudConfigs?: ConfigItem[];
+  auditLogs?: AuditLog[];
   dreParams: Record<string, DreParams>;
   paymentMethods: PaymentMethod[] | Record<string, PaymentMethod[]>;
   businessRules: BusinessRule | Record<string, BusinessRule>;

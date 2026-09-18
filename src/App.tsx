@@ -466,6 +466,9 @@ export const App: React.FC = () => {
               onNavigate={setCurrentScreen}
               onSelectTenant={handleSelectTenant}
               onSaveParams={handleSaveDreParams}
+              userSession={userSession}
+              currentBusinessId={currentBusinessId}
+              onSelectBusiness={setCurrentBusinessId}
             />
           )}
 

@@ -13,44 +13,104 @@ import {
   SystemSettings,
   CloudState
 } from "./types";
-import { defaultPaymentMethods, defaultBusinessRules } from "./data/initialData";
+import {
+  defaultPaymentMethods,
+  defaultBusinessRules,
+  initialBusinesses,
+  initialFranchises,
+  initialEmployees,
+  initialUsers,
+  initialManualEntries,
+  initialConfigs,
+} from "./data/initialData";
 
 export async function fetchHealth() {
-  const res = await fetch("/api/health");
-  if (!res.ok) throw new Error("Health check failed");
-  return res.json();
+  try {
+    const res = await fetch("/api/health");
+    if (!res.ok) throw new Error("Health check failed");
+    return res.json();
+  } catch (e) {
+    return { status: "offline", mode: "local" };
+  }
 }
 
-export async function fetchServerState(): Promise<CloudState> {
-  const res = await fetch("/api/state");
-  if (!res.ok) throw new Error("Failed to load server state");
-  const data = await res.json();
-
-  const rawMethods = Array.isArray(data.paymentMethods)
-    ? data.paymentMethods
-    : data.paymentMethods?.["dono"];
-  const safePaymentMethods =
-    Array.isArray(rawMethods) && rawMethods.length > 0
-      ? rawMethods
-      : defaultPaymentMethods;
-
-  const rawRules = data.businessRules?.["dono"] || data.businessRules;
-  const safeRules =
-    rawRules && typeof rawRules.maxDiscount === "number"
-      ? rawRules
-      : defaultBusinessRules;
+function getLocalFallbackState(): CloudState {
+  try {
+    const cached = localStorage.getItem("sofiacfo_cloud_state");
+    if (cached) {
+      const parsed = JSON.parse(cached);
+      if (parsed && parsed.businesses && parsed.businesses.length > 0) {
+        return parsed;
+      }
+    }
+  } catch (e) {}
 
   return {
-    ...data,
-    cloudConfigs: data.configs || [],
-    paymentMethods: safePaymentMethods,
-    businessRules: safeRules,
-    systemSettings: data.systemSettings || {
+    version: 1,
+    lastUpdated: new Date().toISOString(),
+    cloudConfigs: initialConfigs,
+    configs: initialConfigs,
+    auditLogs: [],
+    businesses: initialBusinesses,
+    franchises: initialFranchises,
+    employees: initialEmployees,
+    users: initialUsers,
+    manualEntries: initialManualEntries,
+    dreParams: {},
+    paymentMethods: defaultPaymentMethods,
+    businessRules: defaultBusinessRules,
+    royalties: { biz1: 0.06, biz2: 0.05, biz3: 0.07 },
+    permissions: {},
+    vtConfigs: {},
+    systemSettings: {
       appName: "Sofia CFO — Gestão Financeira para Franquias",
       companyName: "Sofia Franqueadora & Participações S.A.",
       cnpjMatriz: "12.345.678/0001-90",
     },
   };
+}
+
+export async function fetchServerState(): Promise<CloudState> {
+  try {
+    const res = await fetch("/api/state");
+    if (!res.ok) throw new Error("Failed to load server state");
+    const data = await res.json();
+
+    const rawMethods = Array.isArray(data.paymentMethods)
+      ? data.paymentMethods
+      : data.paymentMethods?.["dono"];
+    const safePaymentMethods =
+      Array.isArray(rawMethods) && rawMethods.length > 0
+        ? rawMethods
+        : defaultPaymentMethods;
+
+    const rawRules = data.businessRules?.["dono"] || data.businessRules;
+    const safeRules =
+      rawRules && typeof rawRules.maxDiscount === "number"
+        ? rawRules
+        : defaultBusinessRules;
+
+    const state: CloudState = {
+      ...data,
+      cloudConfigs: data.configs || [],
+      paymentMethods: safePaymentMethods,
+      businessRules: safeRules,
+      systemSettings: data.systemSettings || {
+        appName: "Sofia CFO — Gestão Financeira para Franquias",
+        companyName: "Sofia Franqueadora & Participações S.A.",
+        cnpjMatriz: "12.345.678/0001-90",
+      },
+    };
+
+    try {
+      localStorage.setItem("sofiacfo_cloud_state", JSON.stringify(state));
+    } catch (e) {}
+
+    return state;
+  } catch (err) {
+    console.warn("Could not reach /api/state, using local/cached state:", err);
+    return getLocalFallbackState();
+  }
 }
 
 export async function fetchConfigs(): Promise<{ configs: ConfigItem[]; lastUpdated: string }> {
@@ -98,9 +158,13 @@ export async function updateBulkConfig(updates: Array<{ key: string; value: any 
 }
 
 export async function fetchAuditLogs(): Promise<{ auditLogs: AuditLog[] }> {
-  const res = await fetch("/api/config/audit");
-  if (!res.ok) throw new Error("Failed to fetch audit logs");
-  return res.json();
+  try {
+    const res = await fetch("/api/config/audit");
+    if (!res.ok) throw new Error("Failed to fetch audit logs");
+    return res.json();
+  } catch (e) {
+    return { auditLogs: [] };
+  }
 }
 
 export async function syncStateSection(section: string, data: any, user?: string): Promise<CloudState> {
