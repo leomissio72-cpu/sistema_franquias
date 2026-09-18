@@ -1,16 +1,16 @@
 {
   "version": 1,
-  "lastUpdated": "2026-09-18T15:06:56.556Z",
+  "lastUpdated": "2026-09-18T21:54:53.663Z",
   "configs": [
     {
       "key": "app_name",
       "name": "Nome da Plataforma",
-      "value": "Sofia CFO — SaaS Financeiro para Franquias",
+      "value": " SaaS Financeiro para Franquias",
       "type": "string",
       "category": "Geral",
       "description": "Nome exibido no cabeçalho e relatórios",
-      "lastModified": "2026-09-18T14:47:19.011Z",
-      "modifiedBy": "Sistema"
+      "lastModified": "2026-09-18T17:58:26.589Z",
+      "modifiedBy": "Luís Matos (Dono da Rede)"
     },
     {
       "key": "tax_default",
@@ -114,6 +114,15 @@
     }
   ],
   "auditLogs": [
+    {
+      "id": "audit_1789754306589",
+      "timestamp": "2026-09-18T17:58:26.589Z",
+      "action": "UPDATE_CONFIG",
+      "key": "app_name",
+      "oldValue": "Sofia CFO — SaaS Financeiro para Franquias",
+      "newValue": " SaaS Financeiro para Franquias",
+      "user": "Luís Matos (Dono da Rede)"
+    },
     {
       "id": "log_init",
       "timestamp": "2026-09-18T14:47:19.012Z",
@@ -375,7 +384,7 @@
       "perfil": "dono",
       "unidade": "dono",
       "status": "ativo",
-      "last": "15:06",
+      "last": "21:54",
       "employeeId": "e1"
     },
     {
@@ -399,7 +408,7 @@
       "perfil": "admin",
       "unidade": "biz1",
       "status": "ativo",
-      "last": "Hoje 08:15",
+      "last": "18:40",
       "employeeId": ""
     },
     {
@@ -435,7 +444,7 @@
       "perfil": "franqueado",
       "unidade": "f001",
       "status": "ativo",
-      "last": "Hoje 08:40",
+      "last": "21:54",
       "employeeId": "e2"
     },
     {
@@ -505,14 +514,86 @@
   ],
   "dreParams": {},
   "paymentMethods": [
-    { "id": "dinheiro", "name": "Dinheiro", "icon": "💵", "fee": 0.000, "prazoDias": 0, "cutoffHour": 23, "parcelas": false, "bandeira": null },
-    { "id": "pix", "name": "PIX", "icon": "⚡", "fee": 0.005, "prazoDias": 0, "cutoffHour": 23, "parcelas": false, "bandeira": null },
-    { "id": "debito", "name": "Cartão de Débito", "icon": "💳", "fee": 0.012, "prazoDias": 1, "cutoffHour": 18, "parcelas": false, "bandeira": "Visa/Master" },
-    { "id": "credito", "name": "Cartão de Crédito", "icon": "💳", "fee": 0.030, "prazoDias": 30, "cutoffHour": 18, "parcelas": true, "bandeira": "Visa/Master" },
-    { "id": "credito2", "name": "Crédito 2-6x", "icon": "🪙", "fee": 0.038, "prazoDias": 30, "cutoffHour": 18, "parcelas": true, "bandeira": "Visa/Master" },
-    { "id": "credito12", "name": "Crédito 7-12x", "icon": "🪙", "fee": 0.045, "prazoDias": 30, "cutoffHour": 18, "parcelas": true, "bandeira": "Visa/Master" },
-    { "id": "boleto", "name": "Boleto Bancário", "icon": "📄", "fee": 0.015, "prazoDias": 2, "cutoffHour": 14, "parcelas": false, "bandeira": null },
-    { "id": "voucher", "name": "Vale / Voucher", "icon": "🎟️", "fee": 0.035, "prazoDias": 15, "cutoffHour": 18, "parcelas": false, "bandeira": "Alelo/VR" }
+    {
+      "id": "dinheiro",
+      "name": "Dinheiro",
+      "icon": "💵",
+      "fee": 0,
+      "prazoDias": 0,
+      "cutoffHour": 23,
+      "parcelas": false,
+      "bandeira": null
+    },
+    {
+      "id": "pix",
+      "name": "PIX",
+      "icon": "⚡",
+      "fee": 0.005,
+      "prazoDias": 0,
+      "cutoffHour": 23,
+      "parcelas": false,
+      "bandeira": null
+    },
+    {
+      "id": "debito",
+      "name": "Cartão de Débito",
+      "icon": "💳",
+      "fee": 0.012,
+      "prazoDias": 1,
+      "cutoffHour": 18,
+      "parcelas": false,
+      "bandeira": "Visa/Master"
+    },
+    {
+      "id": "credito",
+      "name": "Cartão de Crédito",
+      "icon": "💳",
+      "fee": 0.03,
+      "prazoDias": 30,
+      "cutoffHour": 18,
+      "parcelas": true,
+      "bandeira": "Visa/Master"
+    },
+    {
+      "id": "credito2",
+      "name": "Crédito 2-6x",
+      "icon": "🪙",
+      "fee": 0.038,
+      "prazoDias": 30,
+      "cutoffHour": 18,
+      "parcelas": true,
+      "bandeira": "Visa/Master"
+    },
+    {
+      "id": "credito12",
+      "name": "Crédito 7-12x",
+      "icon": "🪙",
+      "fee": 0.045,
+      "prazoDias": 30,
+      "cutoffHour": 18,
+      "parcelas": true,
+      "bandeira": "Visa/Master"
+    },
+    {
+      "id": "boleto",
+      "name": "Boleto Bancário",
+      "icon": "📄",
+      "fee": 0.015,
+      "prazoDias": 2,
+      "cutoffHour": 14,
+      "parcelas": false,
+      "bandeira": null
+    },
+    {
+      "id": "voucher",
+      "name": "Vale / Voucher",
+      "icon": "🎟️",
+      "fee": 0.035,
+      "prazoDias": 15,
+      "cutoffHour": 18,
+      "parcelas": false,
+      "bandeira": "Alelo/VR"
+    }
   ],
   "businessRules": {
     "maxDiscount": 10,

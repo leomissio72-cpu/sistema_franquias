@@ -122,6 +122,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
   });
   const [statusFilter, setStatusFilter] = useState<"all" | "green" | "amber">("all");
   const [activeChartFilter, setActiveChartFilter] = useState<ActiveChartType>("all");
+  const [showDataLabels, setShowDataLabels] = useState<boolean>(true);
 
   // Chart Canvas Refs
   const monthlyCanvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -280,6 +281,94 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
   useEffect(() => {
     if (activeTab !== "analytics") return;
 
+    // Power BI Custom Data Labels Plugin for Dashboard Screen
+    const dashboardDataLabelsPlugin = {
+      id: "dashboardDataLabels",
+      afterDatasetsDraw(chart: any, args: any, options: any) {
+        if (options?.enabled === false) return;
+        const { ctx } = chart;
+        ctx.save();
+
+        chart.data.datasets.forEach((dataset: any, datasetIndex: number) => {
+          const meta = chart.getDatasetMeta(datasetIndex);
+          if (!meta || meta.hidden) return;
+
+          meta.data.forEach((element: any, index: number) => {
+            const val = dataset.data[index];
+            if (val === null || val === undefined || isNaN(val) || val === 0) return;
+
+            const pos = element.tooltipPosition ? element.tooltipPosition() : null;
+            if (!pos) return;
+
+            // Compact currency formatting
+            let text = "";
+            const absVal = Math.abs(val);
+            const sign = val < 0 ? "-" : "";
+            if (absVal >= 1000000) {
+              text = `${sign}R$ ${(absVal / 1000000).toFixed(1).replace(".", ",")}M`;
+            } else if (absVal >= 1000) {
+              text = `${sign}R$ ${(absVal / 1000).toFixed(0)}k`;
+            } else {
+              text = `${sign}R$ ${absVal.toFixed(0)}`;
+            }
+
+            ctx.font = "bold 9px sans-serif";
+            const textWidth = ctx.measureText(text).width;
+            const pillW = textWidth + 8;
+            const pillH = 14;
+            const pillX = pos.x - pillW / 2;
+
+            const isLine = chart.config.type === "line";
+            const isStacked = chart.config.options?.scales?.x?.stacked;
+
+            let pillY;
+            if (isLine) {
+              // Offset slightly depending on datasetIndex to avoid line overlap
+              const offset = datasetIndex === 0 ? -16 : datasetIndex === 1 ? 4 : -8;
+              pillY = pos.y + offset;
+            } else if (isStacked) {
+              // Stacked bar: position inside the segment center
+              pillY = pos.y - pillH / 2;
+            } else {
+              // Regular bar chart: position slightly above the top of the bar
+              pillY = pos.y - pillH - 4;
+            }
+
+            // Prevent drawing outside the canvas top boundary
+            if (pillY < 2) pillY = 2;
+
+            // Background & Border colors
+            let labelBgColor = "rgba(255, 255, 255, 0.95)";
+            let textColor = "#152238";
+            let borderColor = dataset.borderColor || dataset.backgroundColor || "#3c63da";
+            if (typeof borderColor === "object" && Array.isArray(borderColor)) {
+              borderColor = borderColor[index] || "#3c63da";
+            }
+
+            ctx.fillStyle = labelBgColor;
+            ctx.beginPath();
+            if (typeof ctx.roundRect === "function") {
+              ctx.roundRect(pillX, pillY, pillW, pillH, 4);
+            } else {
+              ctx.rect(pillX, pillY, pillW, pillH);
+            }
+            ctx.fill();
+
+            ctx.strokeStyle = borderColor;
+            ctx.lineWidth = 1;
+            ctx.stroke();
+
+            ctx.fillStyle = textColor;
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+            ctx.fillText(text, pos.x, pillY + pillH / 2 + 0.5);
+          });
+        });
+
+        ctx.restore();
+      }
+    };
+
     // 1. Gráfico de Faturamento por Mês (Linha com Faturamento, Lucro e Royalties)
     if (monthlyCanvasRef.current) {
       if (monthlyChartInstance.current) {
@@ -369,6 +458,10 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                 label: (ctx) => `${ctx.dataset.label}: ${formatBrl(Number(ctx.raw))}`,
               },
             },
+            // @ts-ignore
+            dashboardDataLabels: {
+              enabled: showDataLabels,
+            },
           },
           scales: {
             y: {
@@ -378,6 +471,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
             x: { grid: { display: false } },
           },
         },
+        plugins: [dashboardDataLabelsPlugin],
       });
     }
 
@@ -417,6 +511,10 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                 label: (ctx) => `Faturamento: ${formatBrl(Number(ctx.raw))}`,
               },
             },
+            // @ts-ignore
+            dashboardDataLabels: {
+              enabled: showDataLabels,
+            },
           },
           scales: {
             y: {
@@ -429,6 +527,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
             },
           },
         },
+        plugins: [dashboardDataLabelsPlugin],
       });
     }
 
@@ -493,6 +592,10 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                 label: (ctx) => `${ctx.dataset.label}: ${formatBrl(Number(ctx.raw))}`,
               },
             },
+            // @ts-ignore
+            dashboardDataLabels: {
+              enabled: showDataLabels,
+            },
           },
           scales: {
             x: {
@@ -507,6 +610,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
             },
           },
         },
+        plugins: [dashboardDataLabelsPlugin],
       });
     }
 
@@ -550,6 +654,10 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                 label: (ctx) => `${ctx.dataset.label}: ${formatBrl(Number(ctx.raw))}`,
               },
             },
+            // @ts-ignore
+            dashboardDataLabels: {
+              enabled: showDataLabels,
+            },
           },
           scales: {
             y: {
@@ -559,6 +667,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
             x: { grid: { display: false }, ticks: { font: { size: 10 } } },
           },
         },
+        plugins: [dashboardDataLabelsPlugin],
       });
     }
 
@@ -568,7 +677,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
       stackedChartInstance.current?.destroy();
       royaltiesChartInstance.current?.destroy();
     };
-  }, [totalFat, totalLucro, totalRoyalties, dateSelection, filteredUnits, activeTab]);
+  }, [totalFat, totalLucro, totalRoyalties, dateSelection, filteredUnits, activeTab, showDataLabels]);
 
   // Export functions for Reports tab
   const exportConsolidatedExcel = () => {
@@ -1575,29 +1684,45 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
           )}
 
           {/* ----------------------------------------------------------- */}
-          {/* SELETOR DE FOCO DE GRÁFICOS                                 */}
+          {/* SELETOR DE FOCO DE GRÁFICOS & CONTROLE DE RÓTULOS           */}
           {/* ----------------------------------------------------------- */}
-          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs">
-            <span className="text-[11px] font-bold text-[#69778c] mr-2">Visualizar:</span>
-            {[
-              { id: "all", label: "Todos os Gráficos" },
-              { id: "unidades", label: "Faturamento por Unidade" },
-              { id: "mensal", label: "Faturamento por Mês" },
-              { id: "empilhado", label: "Colunas Empilhadas" },
-              { id: "royalties", label: "Valor dos Royalties" },
-            ].map((btn) => (
-              <button
-                key={btn.id}
-                onClick={() => setActiveChartFilter(btn.id as ActiveChartType)}
-                className={`rounded-xl px-3 py-1.5 font-bold transition-all whitespace-nowrap cursor-pointer ${
-                  activeChartFilter === btn.id
-                    ? "bg-[#152238] text-white shadow-xs"
-                    : "bg-white border border-[#e5eaf1] text-[#69778c] hover:text-[#152238] hover:bg-[#f8faff]"
-                }`}
-              >
-                {btn.label}
-              </button>
-            ))}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 bg-[#f8faff] rounded-2xl border border-[#e5eaf1]">
+            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 text-xs">
+              <span className="text-[11px] font-bold text-[#69778c] mr-2">Visualizar:</span>
+              {[
+                { id: "all", label: "Todos os Gráficos" },
+                { id: "unidades", label: "Faturamento por Unidade" },
+                { id: "mensal", label: "Faturamento por Mês" },
+                { id: "empilhado", label: "Colunas Empilhadas" },
+                { id: "royalties", label: "Valor dos Royalties" },
+              ].map((btn) => (
+                <button
+                  key={btn.id}
+                  onClick={() => setActiveChartFilter(btn.id as ActiveChartType)}
+                  className={`rounded-xl px-3 py-1.5 font-bold transition-all whitespace-nowrap cursor-pointer ${
+                    activeChartFilter === btn.id
+                      ? "bg-[#152238] text-white shadow-xs"
+                      : "bg-white border border-[#e5eaf1] text-[#69778c] hover:text-[#152238] hover:bg-[#f8faff]"
+                  }`}
+                >
+                  {btn.label}
+                </button>
+              ))}
+            </div>
+
+            {/* Toggle Rótulos de Dados do Painel */}
+            <button
+              type="button"
+              onClick={() => setShowDataLabels((prev) => !prev)}
+              className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all border cursor-pointer whitespace-nowrap ${
+                showDataLabels
+                  ? "bg-[#3c63da] text-white border-[#3c63da] shadow-xs"
+                  : "bg-white text-[#69778c] border-[#cbd5e1] hover:bg-[#f8faff]"
+              }`}
+              title="Ligar ou desligar rótulos de dados nos gráficos"
+            >
+              <span>Rótulos: {showDataLabels ? "Ligados" : "Desligados"}</span>
+            </button>
           </div>
 
           {/* ----------------------------------------------------------- */}
