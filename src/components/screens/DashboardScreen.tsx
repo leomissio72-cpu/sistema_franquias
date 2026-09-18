@@ -40,7 +40,8 @@ import {
   Check,
   ChevronRight,
   Eye,
-  Sliders
+  Sliders,
+  Maximize2
 } from "lucide-react";
 import Chart from "chart.js/auto";
 import {
@@ -64,7 +65,7 @@ interface DashboardScreenProps {
 }
 
 type PeriodType = "mes_atual" | "mes_anterior" | "trimestre" | "semestre" | "ano";
-type ActiveChartType = "all" | "unidades" | "mensal" | "empilhado" | "royalties";
+type ActiveChartType = "all" | "unidades" | "mensal" | "empilhado" | "royalties" | "estados";
 
 export const DashboardScreen: React.FC<DashboardScreenProps> = ({
   franchises,
@@ -93,11 +94,20 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
   // Units accessible by this session
   const allowedUnits = franchises.filter((f) => isUnitOwnedByUser(f.id));
 
+  // Extract state/UF helper from address field or unit.state
+  const getUnitState = (unit: FranchiseUnit): string => {
+    if (unit.state) return unit.state;
+    const match = unit.address.match(/\/([A-Z]{2})$/);
+    return match ? match[1] : "SP";
+  };
+
+  const availableStates = Array.from(new Set(allowedUnits.map(getUnitState))).sort();
+
   // Navigation sub-tabs inside Analítico
   const [activeTab, setActiveTab] = useState<"analytics" | "reports">(initialTab);
 
   // View mode: consolidated network or individual unit KPIs
-  const [viewMode, setViewMode] = useState<"consolidated" | "unit">(() => {
+  const [viewMode, setViewMode] = useState<"consolidated" | "unit" | string>(() => {
     if (isFranchisee || (currentTenantId && currentTenantId.startsWith("f"))) {
       return "unit";
     }
@@ -121,20 +131,28 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
     return "all";
   });
   const [statusFilter, setStatusFilter] = useState<"all" | "green" | "amber">("all");
+  const [selectedState, setSelectedState] = useState<string>("all");
   const [activeChartFilter, setActiveChartFilter] = useState<ActiveChartType>("all");
   const [showDataLabels, setShowDataLabels] = useState<boolean>(true);
+
+  // Expanded Chart State
+  const [expandedChart, setExpandedChart] = useState<ActiveChartType | null>(null);
+  const expandedCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  const expandedChartInstance = useRef<Chart | null>(null);
 
   // Chart Canvas Refs
   const monthlyCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const unitsCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const stackedCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const royaltiesCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  const stateCanvasRef = useRef<HTMLCanvasElement | null>(null);
 
   // Chart Instances
   const monthlyChartInstance = useRef<Chart | null>(null);
   const unitsChartInstance = useRef<Chart | null>(null);
   const stackedChartInstance = useRef<Chart | null>(null);
   const royaltiesChartInstance = useRef<Chart | null>(null);
+  const stateChartInstance = useRef<Chart | null>(null);
 
   // Dynamic multipliers and days for period calculation
   const numYears = dateSelection.years.length;
@@ -186,8 +204,30 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
     if (selectedBusiness !== "all" && f.businessId !== selectedBusiness) return false;
     if (selectedFranchise !== "all" && f.id !== selectedFranchise) return false;
     if (statusFilter !== "all" && f.status !== statusFilter) return false;
+    if (selectedState !== "all" && getUnitState(f) !== selectedState) return false;
     return true;
   });
+
+  // Calculate revenue per state
+  const stateRevenueData = React.useMemo(() => {
+    const map: Record<string, number> = {};
+    const baseUnits = allowedUnits.filter((f) => {
+      if (selectedBusiness !== "all" && f.businessId !== selectedBusiness) return false;
+      if (selectedFranchise !== "all" && f.id !== selectedFranchise) return false;
+      if (statusFilter !== "all" && f.status !== statusFilter) return false;
+      return true;
+    });
+
+    baseUnits.forEach((f) => {
+      const state = getUnitState(f);
+      const fat = f.faturamento * periodMultiplier;
+      map[state] = (map[state] || 0) + fat;
+    });
+
+    return Object.entries(map)
+      .map(([state, value]) => ({ state, value }))
+      .sort((a, b) => b.value - a.value);
+  }, [allowedUnits, selectedBusiness, selectedFranchise, statusFilter, periodMultiplier]);
 
   // Calculate Aggregates
   let totalFat = 0;
@@ -671,13 +711,503 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
       });
     }
 
+    // 5. Gráfico de Faturamento por Estado (Bar Chart de Estados)
+    if (stateCanvasRef.current) {
+      if (stateChartInstance.current) {
+        stateChartInstance.current.destroy();
+      }
+
+      const labels = stateRevenueData.map((d) => d.state);
+      const dataValues = stateRevenueData.map((d) => d.value);
+      const backgroundColors = stateRevenueData.map((d) => {
+        if (selectedState === "all" || d.state === selectedState) {
+          return "#6a4ecb";
+        }
+        return "#cbd5e1";
+      });
+
+      stateChartInstance.current = new Chart(stateCanvasRef.current, {
+        type: "bar",
+        data: {
+          labels,
+          datasets: [
+            {
+              label: "Faturamento (R$)",
+              data: dataValues,
+              backgroundColor: backgroundColors,
+              borderRadius: 8,
+              borderSkipped: false,
+              barThickness: 24,
+            },
+          ],
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: (ctx) => `Faturamento: ${formatBrl(Number(ctx.raw))}`,
+              },
+            },
+            // @ts-ignore
+            dashboardDataLabels: {
+              enabled: showDataLabels,
+            },
+          },
+          scales: {
+            y: {
+              grid: { color: "#f1f5f9" },
+              ticks: { callback: (v) => "R$ " + (Number(v) / 1000).toFixed(0) + "k" },
+            },
+            x: {
+              grid: { display: false },
+              ticks: { font: { size: 11, weight: 600 } },
+            },
+          },
+        },
+        plugins: [dashboardDataLabelsPlugin],
+      });
+    }
+
     return () => {
       monthlyChartInstance.current?.destroy();
       unitsChartInstance.current?.destroy();
       stackedChartInstance.current?.destroy();
       royaltiesChartInstance.current?.destroy();
+      stateChartInstance.current?.destroy();
     };
-  }, [totalFat, totalLucro, totalRoyalties, dateSelection, filteredUnits, activeTab, showDataLabels]);
+  }, [totalFat, totalLucro, totalRoyalties, dateSelection, filteredUnits, activeTab, showDataLabels, selectedState, stateRevenueData]);
+
+  // Expanded/Maximized Chart Dialog Lifecycle Hook
+  useEffect(() => {
+    if (!expandedChart || !expandedCanvasRef.current) {
+      if (expandedChartInstance.current) {
+        expandedChartInstance.current.destroy();
+        expandedChartInstance.current = null;
+      }
+      return;
+    }
+
+    if (expandedChartInstance.current) {
+      expandedChartInstance.current.destroy();
+    }
+
+    const ctx = expandedCanvasRef.current;
+
+    // Power BI Custom Data Labels Plugin for Expanded View
+    const dashboardDataLabelsPlugin = {
+      id: "dashboardDataLabels",
+      afterDatasetsDraw(chart: any, args: any, options: any) {
+        if (options?.enabled === false) return;
+        const { ctx } = chart;
+        ctx.save();
+        chart.data.datasets.forEach((dataset: any, datasetIndex: number) => {
+          const meta = chart.getDatasetMeta(datasetIndex);
+          if (!meta || meta.hidden) return;
+          meta.data.forEach((element: any, index: number) => {
+            const val = dataset.data[index];
+            if (val === null || val === undefined || isNaN(val) || val === 0) return;
+            const pos = element.tooltipPosition ? element.tooltipPosition() : null;
+            if (!pos) return;
+
+            let text = "";
+            const absVal = Math.abs(val);
+            const sign = val < 0 ? "-" : "";
+            if (absVal >= 1000000) {
+              text = `${sign}R$ ${(absVal / 1000000).toFixed(1).replace(".", ",")}M`;
+            } else if (absVal >= 1000) {
+              text = `${sign}R$ ${(absVal / 1000).toFixed(0)}k`;
+            } else {
+              text = `${sign}R$ ${absVal.toFixed(0)}`;
+            }
+
+            ctx.font = "bold 9px sans-serif";
+            const textWidth = ctx.measureText(text).width;
+            const pillW = textWidth + 8;
+            const pillH = 14;
+            const pillX = pos.x - pillW / 2;
+
+            const isLine = chart.config.type === "line";
+            const isStacked = chart.config.options?.scales?.x?.stacked;
+
+            let pillY;
+            if (isLine) {
+              const offset = datasetIndex === 0 ? -16 : datasetIndex === 1 ? 4 : -8;
+              pillY = pos.y + offset;
+            } else if (isStacked) {
+              pillY = pos.y - pillH / 2;
+            } else {
+              pillY = pos.y - pillH - 4;
+            }
+            if (pillY < 2) pillY = 2;
+
+            let labelBgColor = "rgba(255, 255, 255, 0.95)";
+            let textColor = "#152238";
+            let borderColor = dataset.borderColor || dataset.backgroundColor || "#3c63da";
+            if (typeof borderColor === "object" && Array.isArray(borderColor)) {
+              borderColor = borderColor[index] || "#3c63da";
+            }
+
+            ctx.fillStyle = labelBgColor;
+            ctx.beginPath();
+            if (typeof ctx.roundRect === "function") {
+              ctx.roundRect(pillX, pillY, pillW, pillH, 4);
+            } else {
+              ctx.rect(pillX, pillY, pillW, pillH);
+            }
+            ctx.fill();
+
+            ctx.strokeStyle = borderColor;
+            ctx.lineWidth = 1;
+            ctx.stroke();
+
+            ctx.fillStyle = textColor;
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+            ctx.fillText(text, pos.x, pillY + pillH / 2 + 0.5);
+          });
+        });
+        ctx.restore();
+      }
+    };
+
+    let config: any = null;
+
+    if (expandedChart === "mensal") {
+      const monthsLabels: string[] = [];
+      const dataFatMes: number[] = [];
+      const dataLucroMes: number[] = [];
+      const dataRoyMes: number[] = [];
+      const baseMonthly = (totalFat / (periodMultiplier || 1)) * (dateSelection.days.length / 31);
+
+      if (dateSelection.months.length > 1) {
+        const sortedMonths = [...dateSelection.months].sort((a, b) => a - b);
+        const yr = dateSelection.years[0] || 2026;
+        sortedMonths.forEach((mVal) => {
+          const mObj = AVAILABLE_MONTHS.find((m) => m.value === mVal);
+          monthsLabels.push(`${mObj?.short || mVal}/${yr.toString().slice(-2)}`.toUpperCase());
+          const factor = 1 + ((mVal % 3) - 1) * 0.04;
+          const valFat = Math.round(baseMonthly * factor);
+          const valLucro = Math.round(valFat * (margem || 0.18));
+          const valRoy = Math.round(valFat * (avgRoyaltiesRate / 100));
+          dataFatMes.push(valFat);
+          dataLucroMes.push(valLucro);
+          dataRoyMes.push(valRoy);
+        });
+      } else {
+        const targetMonth = dateSelection.months[0] || 9;
+        const yr = dateSelection.years[0] || 2026;
+        for (let i = 5; i >= 0; i--) {
+          const mIndex = ((targetMonth - 1 - i + 12) % 12) + 1;
+          const mObj = AVAILABLE_MONTHS.find((m) => m.value === mIndex);
+          monthsLabels.push(`${mObj?.short || mIndex}/${yr.toString().slice(-2)}`.toUpperCase());
+          const factor = 1 + (5 - i) * 0.02 + ((i % 3) - 1) * 0.03;
+          const valFat = Math.round(baseMonthly * factor);
+          const valLucro = Math.round(valFat * (margem || 0.18));
+          const valRoy = Math.round(valFat * (avgRoyaltiesRate / 100));
+          dataFatMes.push(valFat);
+          dataLucroMes.push(valLucro);
+          dataRoyMes.push(valRoy);
+        }
+      }
+
+      config = {
+        type: "line",
+        data: {
+          labels: monthsLabels,
+          datasets: [
+            {
+              label: "Faturamento Mensal (R$)",
+              data: dataFatMes,
+              borderColor: "#3c63da",
+              backgroundColor: "rgba(60, 99, 218, 0.08)",
+              fill: true,
+              tension: 0.35,
+              pointRadius: 5,
+              borderWidth: 3,
+            },
+            {
+              label: "Lucro Líquido (R$)",
+              data: dataLucroMes,
+              borderColor: "#118464",
+              backgroundColor: "transparent",
+              tension: 0.35,
+              pointRadius: 5,
+              borderWidth: 2.5,
+              borderDash: [5, 4],
+            },
+            {
+              label: "Valor dos Royalties (R$)",
+              data: dataRoyMes,
+              borderColor: "#d97706",
+              backgroundColor: "transparent",
+              tension: 0.35,
+              pointRadius: 4,
+              borderWidth: 2,
+            },
+          ],
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { position: "bottom", labels: { boxWidth: 14, font: { size: 12, weight: 600 } } },
+            tooltip: {
+              callbacks: {
+                label: (ctx: any) => `${ctx.dataset.label}: ${formatBrl(Number(ctx.raw))}`,
+              },
+            },
+            // @ts-ignore
+            dashboardDataLabels: {
+              enabled: showDataLabels,
+            },
+          },
+          scales: {
+            y: {
+              grid: { color: "#f1f5f9" },
+              ticks: { callback: (v: any) => "R$ " + (Number(v) / 1000).toFixed(0) + "k" },
+            },
+            x: { grid: { display: false } },
+          },
+        },
+        plugins: [dashboardDataLabelsPlugin],
+      };
+    } else if (expandedChart === "unidades") {
+      const sortedByFat = [...unitCalculations].sort((a, b) => b.fat - a.fat);
+      const labels = sortedByFat.map((u) => u.f.name.replace("Café ", "").replace("Beleza ", "").replace("EduKids ", ""));
+      const dataFats = sortedByFat.map((u) => u.fat);
+      const backgroundColors = sortedByFat.map((u) => (u.f.status === "green" ? "#3c63da" : "#f59e0b"));
+
+      config = {
+        type: "bar",
+        data: {
+          labels,
+          datasets: [
+            {
+              label: "Faturamento (R$)",
+              data: dataFats,
+              backgroundColor: backgroundColors,
+              borderRadius: 8,
+              borderSkipped: false,
+              barThickness: 32,
+            },
+          ],
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: (ctx: any) => `Faturamento: ${formatBrl(Number(ctx.raw))}`,
+              },
+            },
+            // @ts-ignore
+            dashboardDataLabels: {
+              enabled: showDataLabels,
+            },
+          },
+          scales: {
+            y: {
+              grid: { color: "#f1f5f9" },
+              ticks: { callback: (v: any) => "R$ " + (Number(v) / 1000).toFixed(0) + "k" },
+            },
+            x: { grid: { display: false }, ticks: { font: { size: 11, weight: 600 } } },
+          },
+        },
+        plugins: [dashboardDataLabelsPlugin],
+      };
+    } else if (expandedChart === "empilhado") {
+      const sortedByFat = [...unitCalculations].sort((a, b) => b.fat - a.fat);
+      const labels = sortedByFat.map((u) => u.f.name.replace("Café ", "").replace("Beleza ", "").replace("EduKids ", ""));
+
+      config = {
+        type: "bar",
+        data: {
+          labels,
+          datasets: [
+            {
+              label: "Lucro Líquido",
+              data: sortedByFat.map((u) => u.d.lucroLiquido),
+              backgroundColor: "#118464",
+              borderRadius: 6,
+              barThickness: 28,
+            },
+            {
+              label: "Royalties & FPP",
+              data: sortedByFat.map((u) => u.totalDevidoMatriz),
+              backgroundColor: "#eab308",
+              borderRadius: 6,
+              barThickness: 28,
+            },
+            {
+              label: "Despesas",
+              data: sortedByFat.map((u) => u.d.totalDesp),
+              backgroundColor: "#3c63da",
+              borderRadius: 6,
+              barThickness: 28,
+            },
+            {
+              label: "CMV (Insumos)",
+              data: sortedByFat.map((u) => u.d.cmv),
+              backgroundColor: "#f43f5e",
+              borderRadius: 6,
+              barThickness: 28,
+            },
+            {
+              label: "Impostos",
+              data: sortedByFat.map((u) => u.d.impostos),
+              backgroundColor: "#94a3b8",
+              borderRadius: 6,
+              barThickness: 28,
+            },
+          ],
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { position: "bottom", labels: { boxWidth: 12, font: { size: 11, weight: 600 } } },
+            tooltip: {
+              callbacks: {
+                label: (ctx: any) => `${ctx.dataset.label}: ${formatBrl(Number(ctx.raw))}`,
+              },
+            },
+            // @ts-ignore
+            dashboardDataLabels: {
+              enabled: showDataLabels,
+            },
+          },
+          scales: {
+            x: { stacked: true, grid: { display: false }, ticks: { font: { size: 11, weight: 600 } } },
+            y: {
+              stacked: true,
+              grid: { color: "#f1f5f9" },
+              ticks: { callback: (v: any) => "R$ " + (Number(v) / 1000).toFixed(0) + "k" },
+            },
+          },
+        },
+        plugins: [dashboardDataLabelsPlugin],
+      };
+    } else if (expandedChart === "royalties") {
+      const sortedByRoy = [...unitCalculations].sort((a, b) => b.royValue - a.royValue);
+      const labels = sortedByRoy.map((u) => u.f.name.replace("Café ", "").replace("Beleza ", "").replace("EduKids ", ""));
+
+      config = {
+        type: "bar",
+        data: {
+          labels,
+          datasets: [
+            {
+              label: "Royalties Pagos (6%)",
+              data: sortedByRoy.map((u) => u.royValue),
+              backgroundColor: "#f59e0b",
+              borderRadius: 6,
+              barThickness: 24,
+            },
+            {
+              label: "Fundo Propaganda (2%)",
+              data: sortedByRoy.map((u) => u.fppValue),
+              backgroundColor: "#8b5cf6",
+              borderRadius: 6,
+              barThickness: 24,
+            },
+          ],
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { position: "bottom", labels: { boxWidth: 12, font: { size: 11 } } },
+            tooltip: {
+              callbacks: {
+                label: (ctx: any) => `${ctx.dataset.label}: ${formatBrl(Number(ctx.raw))}`,
+              },
+            },
+            // @ts-ignore
+            dashboardDataLabels: {
+              enabled: showDataLabels,
+            },
+          },
+          scales: {
+            y: {
+              grid: { color: "#f1f5f9" },
+              ticks: { callback: (v: any) => "R$ " + (Number(v) / 1000).toFixed(0) + "k" },
+            },
+            x: { grid: { display: false }, ticks: { font: { size: 11, weight: 600 } } },
+          },
+        },
+        plugins: [dashboardDataLabelsPlugin],
+      };
+    } else if (expandedChart === "estados") {
+      const labels = stateRevenueData.map((d) => d.state);
+      const dataValues = stateRevenueData.map((d) => d.value);
+      const backgroundColors = stateRevenueData.map((d) => {
+        if (selectedState === "all" || d.state === selectedState) {
+          return "#6a4ecb";
+        }
+        return "#cbd5e1";
+      });
+
+      config = {
+        type: "bar",
+        data: {
+          labels,
+          datasets: [
+            {
+              label: "Faturamento (R$)",
+              data: dataValues,
+              backgroundColor: backgroundColors,
+              borderRadius: 8,
+              borderSkipped: false,
+              barThickness: 32,
+            },
+          ],
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: (ctx: any) => `Faturamento: ${formatBrl(Number(ctx.raw))}`,
+              },
+            },
+            // @ts-ignore
+            dashboardDataLabels: {
+              enabled: showDataLabels,
+            },
+          },
+          scales: {
+            y: {
+              grid: { color: "#f1f5f9" },
+              ticks: { callback: (v: any) => "R$ " + (Number(v) / 1000).toFixed(0) + "k" },
+            },
+            x: {
+              grid: { display: false },
+              ticks: { font: { size: 12, weight: 600 } },
+            },
+          },
+        },
+        plugins: [dashboardDataLabelsPlugin],
+      };
+    }
+
+    if (config) {
+      expandedChartInstance.current = new Chart(ctx, config);
+    }
+
+    return () => {
+      if (expandedChartInstance.current) {
+        expandedChartInstance.current.destroy();
+        expandedChartInstance.current = null;
+      }
+    };
+  }, [expandedChart, dateSelection, totalFat, totalLucro, totalRoyalties, showDataLabels, selectedState, stateRevenueData]);
 
   // Export functions for Reports tab
   const exportConsolidatedExcel = () => {
@@ -872,7 +1402,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
         </div>
 
         {/* 2. FILTROS DA REDE / OPERACIONAIS */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-3 border-t border-[#f1f5f9]">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 pt-3 border-t border-[#f1f5f9]">
           {/* Filtro 1: Rede / Marca */}
           <div>
             <label
@@ -949,6 +1479,30 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
               <option value="all">Todos os Status</option>
               <option value="green">🟢 Operação Saudável</option>
               <option value="amber">🟡 Em Atenção</option>
+            </select>
+          </div>
+
+          {/* Filtro 4: Estado (UF) */}
+          <div>
+            <label
+              htmlFor="filter-analytics-state"
+              className="flex items-center gap-1.5 text-[11px] font-bold text-[#152238] mb-1.5"
+            >
+              <Sliders className="h-3.5 w-3.5 text-[#3c63da]" />
+              <span>Estado (UF)</span>
+            </label>
+            <select
+              id="filter-analytics-state"
+              value={selectedState}
+              onChange={(e) => setSelectedState(e.target.value)}
+              className="w-full rounded-xl border border-[#cbd5e1] bg-white px-3.5 py-2.5 text-xs sm:text-sm font-semibold text-[#152238] shadow-2xs hover:border-[#94a3b8] focus:border-[#3c63da] focus:ring-2 focus:ring-[#3c63da]/15 focus:outline-none cursor-pointer transition-all"
+            >
+              <option value="all">Todos os Estados ({availableStates.length})</option>
+              {availableStates.map((st) => (
+                <option key={st} value={st}>
+                  {st === "SP" ? "São Paulo (SP)" : st === "PR" ? "Paraná (PR)" : st === "RJ" ? "Rio de Janeiro (RJ)" : st === "SC" ? "Santa Catarina (SC)" : st === "MG" ? "Minas Gerais (MG)" : st === "RS" ? "Rio Grande do Sul (RS)" : st}
+                </option>
+              ))}
             </select>
           </div>
         </div>
@@ -1695,6 +2249,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                 { id: "mensal", label: "Faturamento por Mês" },
                 { id: "empilhado", label: "Colunas Empilhadas" },
                 { id: "royalties", label: "Valor dos Royalties" },
+                { id: "estados", label: "Faturamento por Estado" },
               ].map((btn) => (
                 <button
                   key={btn.id}
@@ -1743,9 +2298,20 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                         Comparativo de receita bruta das lojas franqueadas
                       </p>
                     </div>
-                    <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-[#edf2ff] text-[#3c63da]">
-                      {filteredUnits.length} Lojas
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setExpandedChart("unidades")}
+                        className="p-1.5 rounded-lg border border-[#e5eaf1] bg-white text-[#69778c] hover:text-[#3c63da] hover:bg-[#edf2ff] cursor-pointer transition-all flex items-center gap-1 text-[10px] font-extrabold"
+                        title="Ampliar gráfico"
+                      >
+                        <Maximize2 className="h-3.5 w-3.5" />
+                        <span>Ampliar</span>
+                      </button>
+                      <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-[#edf2ff] text-[#3c63da]">
+                        {filteredUnits.length} Lojas
+                      </span>
+                    </div>
                   </div>
                   <div className="h-72 w-full">
                     <canvas ref={unitsCanvasRef} />
@@ -1766,9 +2332,20 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                         Tendência mês a mês: Faturamento, Lucro Líquido e Royalties
                       </p>
                     </div>
-                    <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700">
-                      Série Histórica
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setExpandedChart("mensal")}
+                        className="p-1.5 rounded-lg border border-[#e5eaf1] bg-white text-[#69778c] hover:text-[#3c63da] hover:bg-[#edf2ff] cursor-pointer transition-all flex items-center gap-1 text-[10px] font-extrabold"
+                        title="Ampliar gráfico"
+                      >
+                        <Maximize2 className="h-3.5 w-3.5" />
+                        <span>Ampliar</span>
+                      </button>
+                      <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700">
+                        Série Histórica
+                      </span>
+                    </div>
                   </div>
                   <div className="h-72 w-full">
                     <canvas ref={monthlyCanvasRef} />
@@ -1798,12 +2375,23 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                     Decomposição exata de cada unidade em: Lucro Líquido, Royalties, Despesas Operacionais, CMV e Impostos.
                   </p>
                 </div>
-                <div className="flex items-center gap-3 text-[10px] font-bold text-[#69778c]">
-                  <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-[#118464]" /> Lucro</span>
-                  <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-[#eab308]" /> Royalties</span>
-                  <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-[#3c63da]" /> Despesas</span>
-                  <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-[#f43f5e]" /> CMV</span>
-                  <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-[#94a3b8]" /> Impostos</span>
+                <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setExpandedChart("empilhado")}
+                    className="p-1.5 rounded-lg border border-[#e5eaf1] bg-white text-[#69778c] hover:text-[#3c63da] hover:bg-[#edf2ff] cursor-pointer transition-all flex items-center gap-1 text-[10px] font-extrabold shadow-2xs"
+                    title="Ampliar gráfico"
+                  >
+                    <Maximize2 className="h-3.5 w-3.5" />
+                    <span>Ampliar</span>
+                  </button>
+                  <div className="flex items-center gap-3 text-[10px] font-bold text-[#69778c]">
+                    <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-[#118464]" /> Lucro</span>
+                    <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-[#eab308]" /> Royalties</span>
+                    <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-[#3c63da]" /> Despesas</span>
+                    <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-[#f43f5e]" /> CMV</span>
+                    <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-[#94a3b8]" /> Impostos</span>
+                  </div>
                 </div>
               </div>
               <div className="h-80 w-full">
@@ -1829,9 +2417,20 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                       Royalties contratuais vs Fundo de Propaganda
                     </p>
                   </div>
-                  <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200">
-                    {formatBrl(totalRoyalties)}
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setExpandedChart("royalties")}
+                      className="p-1.5 rounded-lg border border-[#e5eaf1] bg-white text-[#69778c] hover:text-[#3c63da] hover:bg-[#edf2ff] cursor-pointer transition-all flex items-center gap-1 text-[10px] font-extrabold"
+                      title="Ampliar gráfico"
+                    >
+                      <Maximize2 className="h-3.5 w-3.5" />
+                      <span>Ampliar</span>
+                    </button>
+                    <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-amber-50 text-amber-800 border border-amber-200">
+                      {formatBrl(totalRoyalties)}
+                    </span>
+                  </div>
                 </div>
                 <div className="h-72 w-full">
                   <canvas ref={royaltiesCanvasRef} />
@@ -1902,6 +2501,42 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                     {formatBrl(totalRoyalties + totalFpp)}
                   </span>
                 </div>
+              </div>
+            </div>
+          )}
+
+          {/* ----------------------------------------------------------- */}
+          {/* GRÁFICO 5: FATURAMENTO POR ESTADO                           */}
+          {/* ----------------------------------------------------------- */}
+          {(activeChartFilter === "all" || activeChartFilter === "estados") && (
+            <div className="rounded-2xl border border-[#e5eaf1] bg-white p-5 shadow-xs">
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <h3 className="text-sm font-extrabold text-[#152238] flex items-center gap-2">
+                    <Sliders className="h-4 w-4 text-[#6a4ecb]" />
+                    Faturamento Consolidado por Estado (R$)
+                  </h3>
+                  <p className="text-[11px] text-[#69778c] mt-0.5">
+                    Visão geográfica do faturamento da rede de franquias
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setExpandedChart("estados")}
+                    className="p-1.5 rounded-lg border border-[#e5eaf1] bg-white text-[#69778c] hover:text-[#3c63da] hover:bg-[#edf2ff] cursor-pointer transition-all flex items-center gap-1 text-[10px] font-extrabold shadow-2xs"
+                    title="Ampliar gráfico"
+                  >
+                    <Maximize2 className="h-3.5 w-3.5" />
+                    <span>Ampliar</span>
+                  </button>
+                  <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-purple-50 text-purple-700">
+                    Geográfico
+                  </span>
+                </div>
+              </div>
+              <div className="h-72 w-full">
+                <canvas ref={stateCanvasRef} />
               </div>
             </div>
           )}
@@ -2123,6 +2758,46 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                   ))}
                 </tbody>
               </table>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ------------------------------------------------------------- */}
+      {/* MODAL DE GRÁFICO AMPLIADO / MAXIMIZADO                       */}
+      {/* ------------------------------------------------------------- */}
+      {expandedChart && (
+        <div 
+          className="fixed inset-0 bg-[#152238]/60 backdrop-blur-xs z-50 flex items-center justify-center p-4 sm:p-6"
+          onClick={() => setExpandedChart(null)}
+        >
+          <div 
+            className="bg-white rounded-2xl border border-[#cbd5e1] shadow-2xl w-full max-w-5xl h-[80vh] flex flex-col p-6 animate-in zoom-in-95 duration-200"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between pb-4 border-b border-[#f1f5f9] mb-4">
+              <div>
+                <span className="text-[10px] font-extrabold uppercase tracking-widest text-[#3c63da]">
+                  Visualização em Alta Resolução
+                </span>
+                <h2 className="text-lg font-black text-[#152238]">
+                  {expandedChart === "mensal" && "Evolução Temporal Mensal"}
+                  {expandedChart === "unidades" && "Faturamento por Unidade"}
+                  {expandedChart === "empilhado" && "Colunas Empilhadas - Estrutura de Custos"}
+                  {expandedChart === "royalties" && "Royalties e Fundo de Propaganda por Unidade"}
+                  {expandedChart === "estados" && "Faturamento Consolidado por Estado"}
+                </h2>
+              </div>
+              <button
+                type="button"
+                onClick={() => setExpandedChart(null)}
+                className="px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold text-xs transition-all cursor-pointer"
+              >
+                Fechar [X]
+              </button>
+            </div>
+            <div className="flex-1 w-full relative min-h-0">
+              <canvas ref={expandedCanvasRef} />
             </div>
           </div>
         </div>
