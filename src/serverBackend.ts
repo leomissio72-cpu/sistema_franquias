@@ -282,9 +282,8 @@ function loadDatabase(): DatabaseState {
   // 2. Fallbacks: Try multiple possible locations to find the seed database.json
   const seedPaths = [
     path.join(process.cwd(), "data", "database.json"),
-    path.join(__dirname, "data", "database.json"),
-    path.join(__dirname, "..", "data", "database.json"),
-    path.join(__dirname, "../data", "database.json")
+    path.join(process.cwd(), "src", "data", "database.json"),
+    path.join(process.cwd(), "..", "data", "database.json")
   ];
 
   for (const seedPath of seedPaths) {
