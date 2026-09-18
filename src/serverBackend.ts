@@ -6,14 +6,6 @@ const app = express();
 
 app.use(express.json({ limit: "10mb" }));
 
-// Normalize URL for Vercel rewrites and direct calls
-app.use((req, res, next) => {
-  if (req.url && !req.url.startsWith("/api") && !req.url.startsWith("/assets") && !req.url.includes(".")) {
-    req.url = "/api" + (req.url.startsWith("/") ? req.url : "/" + req.url);
-  }
-  next();
-});
-
 // Directory for persistent cloud database with automatic fallback to /tmp on Vercel/serverless environments
 let DATA_DIR = path.join(process.cwd(), "data");
 let DB_FILE = path.join(DATA_DIR, "database.json");
@@ -645,9 +637,12 @@ routeBoth("delete", "/api/entries/:id", (req: Request, res: Response) => {
   res.json({ success: true, id });
 });
 
-// Resilient 404 handler: never hang in serverless
-app.use((req, res) => {
-  res.status(404).json({ error: `Not found: ${req.method} ${req.url}` });
+// Resilient 404 handler for unmatched API routes
+app.use((req, res, next) => {
+  if (req.path.startsWith("/api")) {
+    return res.status(404).json({ error: `API route not found: ${req.method} ${req.originalUrl || req.url}` });
+  }
+  next();
 });
 
 export { app, db, saveDatabase, loadDatabase };
