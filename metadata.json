@@ -1,0 +1,6 @@
+{
+  "name": "Gestão de Franquias",
+  "description": "Plataforma multi-tenant em nuvem para gestão financeira, DRE, conciliação e gestão de franquias.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
