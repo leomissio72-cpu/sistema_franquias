@@ -37,11 +37,32 @@ async function fetchWithTimeout(url: string, options: RequestInit = {}, timeoutM
   }
 }
 
+async function safeResponseJSON(res: Response, defaultErrorMsg: string): Promise<any> {
+  const text = await res.text();
+  if (!res.ok) {
+    try {
+      const parsed = JSON.parse(text);
+      throw new Error(parsed.error || defaultErrorMsg);
+    } catch (e: any) {
+      if (e.message && e.message !== defaultErrorMsg && !e.message.includes("Unexpected token") && !e.message.includes("is not valid JSON")) {
+        throw e;
+      }
+      const cleanText = text.replace(/<[^>]*>/g, "").trim();
+      throw new Error(cleanText.slice(0, 150) || defaultErrorMsg);
+    }
+  }
+
+  try {
+    return JSON.parse(text);
+  } catch (err) {
+    throw new Error("Resposta do servidor inválida. " + defaultErrorMsg);
+  }
+}
+
 export async function fetchHealth() {
   try {
     const res = await fetchWithTimeout("/api/health", {}, 2000);
-    if (!res.ok) throw new Error("Health check failed");
-    return res.json();
+    return await safeResponseJSON(res, "Health check failed");
   } catch (e) {
     return { status: "offline", mode: "local" };
   }
@@ -86,8 +107,7 @@ function getLocalFallbackState(): CloudState {
 export async function fetchServerState(): Promise<CloudState> {
   try {
     const res = await fetchWithTimeout("/api/state", {}, 3500);
-    if (!res.ok) throw new Error("Failed to load server state");
-    const data = await res.json();
+    const data = await safeResponseJSON(res, "Failed to load server state");
 
     const rawMethods = Array.isArray(data.paymentMethods)
       ? data.paymentMethods
@@ -128,8 +148,7 @@ export async function fetchServerState(): Promise<CloudState> {
 
 export async function fetchConfigs(): Promise<{ configs: ConfigItem[]; lastUpdated: string }> {
   const res = await fetch("/api/config");
-  if (!res.ok) throw new Error("Failed to fetch configs");
-  return res.json();
+  return safeResponseJSON(res, "Failed to fetch configs");
 }
 
 export async function updateSingleConfig(key: string, value: any, modifiedBy?: string, userId?: string) {
@@ -138,11 +157,7 @@ export async function updateSingleConfig(key: string, value: any, modifiedBy?: s
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ value, modifiedBy, userId }),
   });
-  if (!res.ok) {
-    const data = await res.json();
-    throw new Error(data.error || "Failed to update configuration");
-  }
-  return res.json();
+  return safeResponseJSON(res, "Failed to update configuration");
 }
 
 export async function saveCloudConfig(
@@ -163,18 +178,13 @@ export async function updateBulkConfig(updates: Array<{ key: string; value: any 
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ updates, modifiedBy, userId }),
   });
-  if (!res.ok) {
-    const data = await res.json();
-    throw new Error(data.error || "Failed to bulk update configurations");
-  }
-  return res.json();
+  return safeResponseJSON(res, "Failed to bulk update configurations");
 }
 
 export async function fetchAuditLogs(): Promise<{ auditLogs: AuditLog[] }> {
   try {
     const res = await fetchWithTimeout("/api/config/audit", {}, 2500);
-    if (!res.ok) throw new Error("Failed to fetch audit logs");
-    return res.json();
+    return await safeResponseJSON(res, "Failed to fetch audit logs");
   } catch (e) {
     return { auditLogs: [] };
   }
@@ -237,11 +247,7 @@ export async function createManualEntryAPI(entry: Partial<ManualEntry>) {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(entry),
   });
-  if (!res.ok) {
-    const data = await res.json();
-    throw new Error(data.error || "Failed to create entry");
-  }
-  return res.json();
+  return safeResponseJSON(res, "Failed to create entry");
 }
 
 export async function createManualEntriesBulkAPI(entries: Array<Partial<ManualEntry>>) {
@@ -250,11 +256,7 @@ export async function createManualEntriesBulkAPI(entries: Array<Partial<ManualEn
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ entries }),
   });
-  if (!res.ok) {
-    const data = await res.json();
-    throw new Error(data.error || "Failed to create bulk entries");
-  }
-  return res.json();
+  return safeResponseJSON(res, "Failed to create bulk entries");
 }
 
 export async function createManualEntry(entry: Partial<ManualEntry>, userName?: string, userId?: string): Promise<CloudState> {
@@ -271,8 +273,7 @@ export async function deleteManualEntryAPI(id: string) {
   const res = await fetch(`/api/entries/${encodeURIComponent(id)}`, {
     method: "DELETE",
   });
-  if (!res.ok) throw new Error("Failed to delete entry");
-  return res.json();
+  return safeResponseJSON(res, "Failed to delete entry");
 }
 
 export async function deleteManualEntry(id: string, userName?: string, userId?: string): Promise<CloudState> {
@@ -286,11 +287,7 @@ export async function loginAPI(username: string, password: string) {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ username, password }),
   });
-  if (!res.ok) {
-    const data = await res.json();
-    throw new Error(data.error || "Credenciais inválidas");
-  }
-  return res.json();
+  return safeResponseJSON(res, "Credenciais inválidas");
 }
 
 export const loginApi = loginAPI;
