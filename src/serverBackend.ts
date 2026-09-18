@@ -7,37 +7,9 @@ const app = express();
 app.use(express.json({ limit: "10mb" }));
 
 // Serverless / Read-only filesystem auto-detection and setup
-let DATA_DIR = path.join(process.cwd(), "data");
-let DB_FILE = path.join(DATA_DIR, "database.json");
-let isServerless = false;
+const isServerless = process.env.VERCEL === "1" || process.env.NODE_ENV === "production";
+const DB_FILE = isServerless ? path.join("/tmp", "database.json") : path.join(process.cwd(), "data", "database.json");
 
-if (process.env.VERCEL === "1" || process.env.NODE_ENV === "production") {
-  isServerless = true;
-}
-
-if (isServerless) {
-  DATA_DIR = "/tmp";
-  const sourceDb = path.join(process.cwd(), "data", "database.json");
-  const destDb = path.join("/tmp", "database.json");
-  
-  try {
-    if (!fs.existsSync(destDb) && fs.existsSync(sourceDb)) {
-      fs.copyFileSync(sourceDb, destDb);
-    }
-  } catch (e) {
-    console.warn("Failed to copy seed database to /tmp:", e);
-  }
-  DB_FILE = destDb;
-} else {
-  try {
-    if (!fs.existsSync(DATA_DIR)) {
-      fs.mkdirSync(DATA_DIR, { recursive: true });
-    }
-  } catch (e) {
-    DATA_DIR = "/tmp";
-    DB_FILE = path.join(DATA_DIR, "database.json");
-  }
-}
 
 // Initial default configuration items with metadata
 const defaultConfigs = [
@@ -294,6 +266,7 @@ interface DatabaseState {
 }
 
 function loadDatabase(): DatabaseState {
+  // 1. Try to load from current DB_FILE location (e.g. /tmp/database.json or data/database.json)
   try {
     if (fs.existsSync(DB_FILE)) {
       const content = fs.readFileSync(DB_FILE, "utf-8");
@@ -303,7 +276,35 @@ function loadDatabase(): DatabaseState {
       }
     }
   } catch (err) {
-    // fallback
+    // try fallbacks next
+  }
+
+  // 2. Fallbacks: Try multiple possible locations to find the seed database.json
+  const seedPaths = [
+    path.join(process.cwd(), "data", "database.json"),
+    path.join(__dirname, "data", "database.json"),
+    path.join(__dirname, "..", "data", "database.json"),
+    path.join(__dirname, "../data", "database.json")
+  ];
+
+  for (const seedPath of seedPaths) {
+    try {
+      if (fs.existsSync(seedPath)) {
+        const content = fs.readFileSync(seedPath, "utf-8");
+        const parsed = JSON.parse(content);
+        if (parsed && Array.isArray(parsed.configs)) {
+          // If we loaded from a seed path, and we are in serverless mode, write it to DB_FILE (/tmp/database.json)
+          if (isServerless) {
+            try {
+              fs.writeFileSync(DB_FILE, JSON.stringify(parsed, null, 2), "utf-8");
+            } catch (e) {}
+          }
+          return parsed;
+        }
+      }
+    } catch (e) {
+      // try next path
+    }
   }
 
   const initialDB: DatabaseState = {
@@ -339,7 +340,11 @@ function loadDatabase(): DatabaseState {
     vtConfigs: {}
   };
 
-  saveDatabase(initialDB);
+  try {
+    fs.writeFileSync(DB_FILE, JSON.stringify(initialDB, null, 2), "utf-8");
+  } catch (err) {
+    // ignore write error on fallback
+  }
   return initialDB;
 }
 
@@ -348,12 +353,7 @@ function saveDatabase(data: DatabaseState) {
     data.lastUpdated = new Date().toISOString();
     fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2), "utf-8");
   } catch (err) {
-    try {
-      DB_FILE = path.join("/tmp", "database.json");
-      fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2), "utf-8");
-    } catch (e) {
-      // In-memory fallback
-    }
+    // Safe write failure fallback (in-memory persistent state holds value anyway)
   }
 }
 
