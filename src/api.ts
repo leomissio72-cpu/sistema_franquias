@@ -24,9 +24,22 @@ import {
   initialConfigs,
 } from "./data/initialData";
 
+async function fetchWithTimeout(url: string, options: RequestInit = {}, timeoutMs = 3500): Promise<Response> {
+  const controller = new AbortController();
+  const id = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const res = await fetch(url, { ...options, signal: controller.signal });
+    clearTimeout(id);
+    return res;
+  } catch (err) {
+    clearTimeout(id);
+    throw err;
+  }
+}
+
 export async function fetchHealth() {
   try {
-    const res = await fetch("/api/health");
+    const res = await fetchWithTimeout("/api/health", {}, 2000);
     if (!res.ok) throw new Error("Health check failed");
     return res.json();
   } catch (e) {
@@ -72,7 +85,7 @@ function getLocalFallbackState(): CloudState {
 
 export async function fetchServerState(): Promise<CloudState> {
   try {
-    const res = await fetch("/api/state");
+    const res = await fetchWithTimeout("/api/state", {}, 3500);
     if (!res.ok) throw new Error("Failed to load server state");
     const data = await res.json();
 
@@ -159,7 +172,7 @@ export async function updateBulkConfig(updates: Array<{ key: string; value: any 
 
 export async function fetchAuditLogs(): Promise<{ auditLogs: AuditLog[] }> {
   try {
-    const res = await fetch("/api/config/audit");
+    const res = await fetchWithTimeout("/api/config/audit", {}, 2500);
     if (!res.ok) throw new Error("Failed to fetch audit logs");
     return res.json();
   } catch (e) {
@@ -283,8 +296,11 @@ export async function loginAPI(username: string, password: string) {
 export const loginApi = loginAPI;
 
 export function subscribeToEvents(onUpdate: (state: CloudState) => void): () => void {
+  let eventSource: EventSource | null = null;
+  let pollInterval: any = null;
+
   try {
-    const eventSource = new EventSource("/api/events");
+    eventSource = new EventSource("/api/events");
 
     eventSource.onmessage = (event) => {
       try {
@@ -313,15 +329,34 @@ export function subscribeToEvents(onUpdate: (state: CloudState) => void): () => 
       }
     };
 
-    eventSource.onerror = (err) => {
-      console.warn("SSE connection error, will reconnect automatically:", err);
+    eventSource.onerror = () => {
+      // In serverless environments (Vercel) SSE connections close periodically.
+      // Setup a light polling fallback every 30s so the user never gets blocked or spam-connected
+      if (!pollInterval) {
+        pollInterval = setInterval(async () => {
+          try {
+            const fresh = await fetchServerState();
+            onUpdate(fresh);
+          } catch (e) {}
+        }, 30000);
+      }
     };
 
     return () => {
-      eventSource.close();
+      if (eventSource) eventSource.close();
+      if (pollInterval) clearInterval(pollInterval);
     };
   } catch (e) {
-    console.error("Failed to initialize EventSource:", e);
-    return () => {};
+    console.warn("EventSource not available, using periodic sync:", e);
+    pollInterval = setInterval(async () => {
+      try {
+        const fresh = await fetchServerState();
+        onUpdate(fresh);
+      } catch (err) {}
+    }, 30000);
+
+    return () => {
+      if (pollInterval) clearInterval(pollInterval);
+    };
   }
 }

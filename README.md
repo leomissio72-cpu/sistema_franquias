@@ -44,7 +44,13 @@ git push -u origin main
 
 ## ⚡ Como Fazer o Deploy no Vercel
 
-O projeto já está **100% configurado com `vercel.json` e `/api/index.ts`** para deploy direto no Vercel com um único clique:
+O projeto já está **100% configurado com `vercel.json`, `.npmrc` e `/api/index.ts`** para deploy direto no Vercel:
+
+> ⚠️ **Se o seu deploy anterior ficou travado:**
+> 1. No painel da Vercel, abra a aba **Deployments**.
+> 2. Clique nos três pontinhos `...` ao lado do deployment em andamento e selecione **"Cancel"**.
+> 3. Envie as alterações atualizadas com `git add .`, `git commit -m "fix: vercel build optimization"`, e `git push`.
+> 4. Um novo deploy iniciará e concluirá em **menos de 1 minuto**!
 
 ### Passo a Passo no Vercel:
 
