@@ -1,4 +1,4 @@
-import app from "../src/serverBackend.ts";
+import app from "../src/serverBackend";
 
 export default function handler(req: any, res: any) {
   if (req.url && !req.url.startsWith("/api")) {
