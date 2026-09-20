@@ -193,12 +193,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     : "gap-2.5 px-3 py-2 text-xs font-semibold"
                 } ${
                   isActive
-                    ? "bg-[#273b60] text-white shadow-xs font-bold"
+                    ? "bg-[#2563eb] text-white shadow-sm font-bold"
                     : item.id === "import_base"
-                    ? "bg-[#163f79] text-[#dbeafe] font-bold border border-[#3c63da]/50 hover:bg-[#1e4f94]"
+                    ? "bg-[#eff6ff] text-[#1d4ed8] font-bold border border-[#bfdbfe] hover:bg-[#dbeafe]"
                     : isSpecialConfig
-                    ? "text-amber-300 hover:bg-[#1f3354] hover:text-amber-200"
-                    : "text-[#b8c5d9] hover:bg-[#1b2d4b] hover:text-white"
+                    ? "text-amber-700 hover:bg-amber-50 hover:text-amber-800"
+                    : "text-[#475569] hover:bg-[#f1f5f9] hover:text-[#0f172a]"
                 }`}
               >
                 <span
@@ -206,10 +206,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     isActive
                       ? "text-white"
                       : item.id === "import_base"
-                      ? "text-[#7db4ff]"
+                      ? "text-[#2563eb]"
                       : isSpecialConfig
                       ? "text-amber-400"
-                      : "text-[#8fa8d5] group-hover:text-white"
+                      : "text-[#64748b] group-hover:text-[#2563eb]"
                   }`}
                 >
                   {item.icon}
@@ -229,20 +229,20 @@ export const Sidebar: React.FC<SidebarProps> = ({
   };
 
   const sidebarContent = (
-    <div className="flex h-full flex-col bg-gradient-to-b from-[#10192c] to-[#172641] text-[#cbd7e8] p-3 overflow-y-auto overflow-x-hidden">
+    <div className="flex h-full flex-col bg-[#f8fafc] text-[#334155] p-4 overflow-y-auto overflow-x-hidden border-r border-[#e2e8f0]">
       {/* Brand Header */}
-      <div className="flex items-center justify-between pb-3 border-b border-[#263c5d]">
+      <div className="flex items-center justify-between pb-4 border-b border-[#e2e8f0]">
         {!isCollapsed ? (
           <div>
-            <h1 className="text-sm font-extrabold tracking-tight text-white flex items-center gap-1.5">
+            <h1 className="text-sm font-extrabold tracking-tight text-[#0f172a] flex items-center gap-1.5">
               <span>Gestão de Franquias</span>
             </h1>
-            <p className="text-[9px] text-[#8ea1be] mt-0.5 truncate">
+            <p className="text-[10px] text-[#64748b] mt-0.5 truncate">
               Gestão Financeira & Nuvem
             </p>
           </div>
         ) : (
-          <div className="mx-auto flex h-9 w-9 items-center justify-center rounded-xl bg-[#3c63da] font-extrabold text-white text-xs shadow-md">
+          <div className="mx-auto flex h-9 w-9 items-center justify-center rounded-xl bg-[#2563eb] font-extrabold text-white text-xs shadow-md">
             GF
           </div>
         )}
@@ -250,7 +250,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         {/* Toggle Collapse Button Desktop */}
         <button
           onClick={onToggleCollapse}
-          className="hidden lg:flex h-7 w-7 items-center justify-center rounded-lg bg-[#1b2d4b] text-[#cbd7e8] hover:bg-[#273b60] hover:text-white transition-colors cursor-pointer"
+          className="hidden lg:flex h-8 w-8 items-center justify-center rounded-lg bg-white border border-[#e2e8f0] text-[#64748b] hover:bg-[#eff6ff] hover:text-[#2563eb] transition-colors cursor-pointer"
           title={isCollapsed ? "Expandir menu lateral" : "Recolher menu lateral"}
           aria-label={isCollapsed ? "Expandir menu" : "Recolher menu"}
         >
@@ -260,7 +260,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         {isOpenMobile && (
           <button
             onClick={onCloseMobile}
-            className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#1b2d4b] text-[#cbd7e8] hover:bg-[#273b60] lg:hidden cursor-pointer"
+            className="flex h-8 w-8 items-center justify-center rounded-lg bg-white border border-[#e2e8f0] text-[#64748b] hover:bg-[#eff6ff] lg:hidden cursor-pointer"
             aria-label="Fechar Menu"
           >
             <X className="h-4 w-4" />
@@ -270,19 +270,19 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
       {/* Franchise & Tenant Highlight Box - Visão Aprimorada */}
       {!isCollapsed ? (
-        <div className="my-3 rounded-xl bg-gradient-to-b from-[#111e33] to-[#0c1626] border border-[#263c5d] p-3 shadow-md">
+        <div className="my-4 rounded-2xl bg-white border border-[#e2e8f0] p-3 shadow-sm">
           {/* Card de Painel Ativo */}
-          <div className="p-2.5 rounded-lg bg-[#0a1322] border border-[#3c63da]/35 shadow-inner">
+          <div className="p-2.5 rounded-xl bg-[#f8fafc] border border-[#dbeafe]">
             <div className="flex items-center justify-between gap-1 mb-1">
-              <span className="text-[9px] font-extrabold uppercase tracking-wider text-[#7ba4ff] flex items-center gap-1.5">
-                <span className="inline-block h-2 w-2 rounded-full bg-emerald-400" />
+              <span className="text-[9px] font-extrabold uppercase tracking-wider text-[#2563eb] flex items-center gap-1.5">
+                <span className="inline-block h-2 w-2 rounded-full bg-emerald-500" />
                 Painel Ativo
               </span>
               <span className="text-[9px] font-bold text-emerald-400 bg-emerald-950/60 border border-emerald-500/30 px-1.5 py-0.2 rounded">
                 Nuvem OK
               </span>
             </div>
-            <div className="text-white text-xs font-extrabold truncate">
+            <div className="text-[#0f172a] text-xs font-extrabold truncate">
               {getGestaoTitle()}
             </div>
             {activeFranchise && (
@@ -308,7 +308,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 disabled={isAdmin}
                 value={currentBusinessId}
                 onChange={(e) => onSelectBusiness(e.target.value)}
-                className="w-full rounded-lg bg-[#070e1a] border border-[#263c5d] px-2.5 py-1.5 text-xs font-semibold text-white focus:outline-none focus:border-[#3c63da] disabled:opacity-75 truncate"
+                className="w-full rounded-lg bg-white border border-[#cbd5e1] px-2.5 py-1.5 text-xs font-semibold text-[#0f172a] focus:outline-none focus:border-[#2563eb] disabled:opacity-75 truncate"
               >
                 {isOwner && (
                   <option value="all">🌐 Todos os Negócios (Consolidado)</option>
@@ -336,7 +336,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             </div>
 
             {isFranchisee && availableFranchises.length <= 1 ? (
-              <div className="flex items-center justify-between rounded-lg bg-[#070e1a] border border-[#263c5d] px-2.5 py-1.5 text-xs font-semibold text-white">
+              <div className="flex items-center justify-between rounded-lg bg-white border border-[#cbd5e1] px-2.5 py-1.5 text-xs font-semibold text-[#0f172a]">
                 <div className="flex items-center gap-1.5 truncate">
                   <span className="text-[#3c63da]">📍</span>
                   <span className="truncate">{activeFranchise?.name || "Minha Unidade"}</span>
@@ -350,7 +350,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 id="select-tenant-context"
                 value={currentTenantId}
                 onChange={(e) => onSelectTenant(e.target.value)}
-                className="w-full rounded-lg bg-[#070e1a] border border-[#263c5d] px-2.5 py-1.5 text-xs font-semibold text-white focus:outline-none focus:border-[#3c63da] cursor-pointer truncate"
+                className="w-full rounded-lg bg-white border border-[#cbd5e1] px-2.5 py-1.5 text-xs font-semibold text-[#0f172a] focus:outline-none focus:border-[#2563eb] cursor-pointer truncate"
               >
                 {isOwner && currentBusinessId === "all" && (
                   <option value="dono">👑 Visão do Dono (Todas as Redes)</option>
