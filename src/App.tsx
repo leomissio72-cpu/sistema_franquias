@@ -401,6 +401,7 @@ export const App: React.FC = () => {
           onOpenMobileMenu={() => setIsMobileMenuOpen(true)}
           onLogout={handleLogout}
           onForceSync={loadState}
+          onOpenImport={() => setCurrentScreen("import_base")}
           isSidebarCollapsed={isSidebarCollapsed}
           onToggleSidebarCollapse={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
         />

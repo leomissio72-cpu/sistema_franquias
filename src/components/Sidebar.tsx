@@ -136,12 +136,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
   // Taxas e Recebimentos visível para unidades (modo consulta) e donos (edição)
   const financialNav: NavItem[] = isFranchisee
     ? [
-        { id: "import_base", label: "Importar base", icon: <UploadCloud className="h-4 w-4" /> },
+        { id: "import_base", label: "Upload de bases", icon: <UploadCloud className="h-4 w-4" /> },
         { id: "pagamentos_despesas", label: "Lançamentos", icon: <CreditCard className="h-4 w-4 text-emerald-400" /> },
         { id: "fees", label: "Taxas e Recebimentos", icon: <Percent className="h-4 w-4 text-sky-400" /> },
       ]
     : [
-        { id: "import_base", label: "Importar base", icon: <UploadCloud className="h-4 w-4" /> },
+        { id: "import_base", label: "Upload de bases", icon: <UploadCloud className="h-4 w-4" /> },
         { id: "dre", label: "DRE e Resultados", icon: <TrendingUp className="h-4 w-4" /> },
         { id: "pagamentos_despesas", label: "Pagamentos/Despesas", icon: <CreditCard className="h-4 w-4 text-emerald-400" /> },
         { id: "fees", label: "Taxas e Recebimentos", icon: <Percent className="h-4 w-4" /> },

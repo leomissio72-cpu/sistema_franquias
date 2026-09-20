@@ -1,6 +1,6 @@
 import React from "react";
 import { UserSession, ScreenType } from "../types";
-import { Menu, Cloud, LogOut, ShieldCheck, Store, Building2, PanelLeftClose, PanelLeftOpen } from "lucide-react";
+import { Menu, Cloud, LogOut, ShieldCheck, Store, Building2, PanelLeftClose, PanelLeftOpen, UploadCloud } from "lucide-react";
 
 interface HeaderProps {
   userSession: UserSession | null;
@@ -13,6 +13,7 @@ interface HeaderProps {
   onForceSync: () => void;
   isSidebarCollapsed?: boolean;
   onToggleSidebarCollapse?: () => void;
+  onOpenImport?: () => void;
 }
 
 const screenTitles: Record<ScreenType, string> = {
@@ -25,7 +26,7 @@ const screenTitles: Record<ScreenType, string> = {
   dreparams: "Parâmetros do DRE",
   lancamentos: "Lançamentos Manuais",
   conciliation: "Conciliação Bancária",
-  import_base: "Importar base de dados",
+  import_base: "Upload de bases",
   vt: "Vale Transporte",
   rp: "Rotinas / RP",
   pagamentos_despesas: "Pagamentos / Despesas",
@@ -49,6 +50,7 @@ export const Header: React.FC<HeaderProps> = ({
   onForceSync,
   isSidebarCollapsed = false,
   onToggleSidebarCollapse,
+  onOpenImport,
 }) => {
   const getAvatarInitials = () => {
     if (!userSession?.name) return "SF";
@@ -123,6 +125,17 @@ export const Header: React.FC<HeaderProps> = ({
       </div>
 
       <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
+        {onOpenImport && (
+          <button
+            id="btn-header-import-base"
+            onClick={onOpenImport}
+            className="flex items-center gap-1.5 rounded-xl border border-[#9ab9f5] bg-[#edf4ff] px-2.5 py-2 text-[11px] font-extrabold text-[#2456b8] hover:bg-[#dceaff] transition-colors cursor-pointer shadow-2xs"
+            title="Abrir upload de bases Excel ou PDF"
+          >
+            <UploadCloud className="h-4 w-4" />
+            <span className="hidden sm:inline">Upload de bases</span>
+          </button>
+        )}
         {/* Cloud Sync Status - Calm static indicator, no blinking/pinging */}
         <button
           id="btn-cloud-sync-status"
