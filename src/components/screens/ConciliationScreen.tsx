@@ -1,6 +1,8 @@
 import React, { useState } from "react";
-import { ConciliationItem, ScreenType } from "../../types";
+import { ConciliationItem, ManualEntry, ScreenType } from "../../types";
 import { sampleConciliation } from "../../data/initialData";
+import * as XLSX from "xlsx";
+import * as pdfjsLib from "pdfjs-dist/legacy/build/pdf.mjs";
 import {
   ArrowLeftRight,
   UploadCloud,
@@ -16,11 +18,61 @@ import {
 interface ConciliationScreenProps {
   currentTenantId: string;
   onNavigate: (screen: ScreenType) => void;
+  onImportEntries: (entries: Array<Partial<ManualEntry>>) => Promise<void>;
+}
+
+const parseAmount = (value: unknown) => {
+  const text = String(value ?? "").replace(/R\$|\s/g, "").trim();
+  if (!text) return 0;
+  const normalized = text.includes(",") ? text.replace(/\./g, "").replace(",", ".") : text.replace(/,/g, "");
+  const amount = Number(normalized.replace(/[^\d.-]/g, ""));
+  return Number.isFinite(amount) ? amount : 0;
+};
+
+const parseDate = (value: unknown) => {
+  const text = String(value ?? "").trim();
+  const match = text.match(/^(\d{1,2})[\/-](\d{1,2})[\/-](\d{2,4})$/);
+  if (match) return `${match[3].length === 2 ? `20${match[3]}` : match[3]}-${match[2].padStart(2, "0")}-${match[1].padStart(2, "0")}`;
+  const date = new Date(text);
+  return Number.isNaN(date.getTime()) ? new Date().toISOString().slice(0, 10) : date.toISOString().slice(0, 10);
+};
+
+const keyText = (value: unknown) => String(value ?? "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]/g, "");
+
+function rowToItem(row: Record<string, unknown>, index: number): ConciliationItem {
+  const entries = Object.entries(row);
+  const find = (keys: string[]) => entries.find(([key]) => keys.some(candidate => keyText(key).includes(candidate)))?.[1] ?? "";
+  const rawAmount = find(["valor", "amount", "total", "entrada", "saida", "credito", "debito"]);
+  const amount = parseAmount(rawAmount);
+  const description = String(find(["descricao", "historico", "desc", "memo", "nome", "lancamento"]) || Object.values(row).filter(Boolean).join(" • ")).slice(0, 180);
+  const date = parseDate(find(["data", "date", "competencia"]));
+  const numericValue = /saida|debito|despesa|pagamento/i.test(`${Object.keys(row).join(" ")} ${description}`) ? -Math.abs(amount) : amount;
+  return { date, desc: description || `Linha importada ${index + 1}`, value: numericValue.toLocaleString("pt-BR", { style: "currency", currency: "BRL" }), numericValue, categoria: "Importado", match: "Aguardando classificação", status: "review", label: "Importado", tone: "amber", toDre: numericValue < 0 };
+}
+
+async function readImportFile(file: File): Promise<ConciliationItem[]> {
+  if (file.size > 15 * 1024 * 1024) throw new Error("O arquivo excede o limite de 15 MB.");
+  if (file.name.toLowerCase().endsWith(".pdf")) {
+    const pdf = await pdfjsLib.getDocument({ data: new Uint8Array(await file.arrayBuffer()) }).promise;
+    const rows: ConciliationItem[] = [];
+    for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber += 1) {
+      const page = await pdf.getPage(pageNumber);
+      const content = await page.getTextContent();
+      const text = content.items.map((item: any) => item.str).join(" ");
+      text.split(/\s{2,}|\n/).filter(Boolean).forEach((line, index) => rows.push(rowToItem({ Data: "", Descrição: line, Valor: (line.match(/-?\d+(?:[.,]\d{2})/g) || [""]).pop() }, index)));
+    }
+    return rows;
+  }
+  const workbook = XLSX.read(await file.arrayBuffer(), { type: "array", cellDates: true });
+  const rawRows: Record<string, unknown>[] = [];
+  workbook.SheetNames.forEach(sheet => rawRows.push(...XLSX.utils.sheet_to_json<Record<string, unknown>>(workbook.Sheets[sheet], { defval: "", raw: true })));
+  return rawRows.slice(0, 5000).map(rowToItem);
 }
 
 export const ConciliationScreen: React.FC<ConciliationScreenProps> = ({
   currentTenantId,
   onNavigate,
+  onImportEntries,
 }) => {
   const [items, setItems] = useState<ConciliationItem[]>(sampleConciliation);
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
@@ -28,6 +80,9 @@ export const ConciliationScreen: React.FC<ConciliationScreenProps> = ({
   const [uploadedFileName, setUploadedFileName] = useState<string | null>("Extrato_Setembro_2026.ofx");
   const [isDragOver, setIsDragOver] = useState(false);
   const [toastMsg, setToastMsg] = useState<string | null>(null);
+  const [isReadingFile, setIsReadingFile] = useState(false);
+  const [isImporting, setIsImporting] = useState(false);
+  const [importError, setImportError] = useState<string | null>(null);
 
   const filteredItems = items.filter((item) => {
     if (filter === "all") return true;
@@ -54,10 +109,36 @@ export const ConciliationScreen: React.FC<ConciliationScreenProps> = ({
     setTimeout(() => setToastMsg(null), 3500);
   };
 
-  const handleFileUpload = (file: File) => {
-    setUploadedFileName(file.name);
-    setToastMsg(`Arquivo "${file.name}" carregado. Prévia gerada com correspondências automáticas.`);
-    setTimeout(() => setToastMsg(null), 3500);
+  const handleFileUpload = async (file: File) => {
+    setIsReadingFile(true);
+    setImportError(null);
+    try {
+      const imported = await readImportFile(file);
+      if (!imported.length) throw new Error("Não encontrei linhas de dados no arquivo.");
+      setItems(imported);
+      setUploadedFileName(file.name);
+      setToastMsg(`${imported.length} linha(s) lida(s). Revise e confirme a importação.`);
+      setTimeout(() => setToastMsg(null), 3500);
+    } catch (error: any) {
+      setImportError(error?.message || "Não foi possível ler o arquivo.");
+    } finally {
+      setIsReadingFile(false);
+    }
+  };
+
+  const handleImportEntries = async () => {
+    const entries: Array<Partial<ManualEntry>> = items.filter(item => item.label === "Importado").map(item => ({ tenant: currentTenantId, type: item.numericValue >= 0 ? "entrada" as const : "despesa" as const, date: item.date, value: Math.abs(item.numericValue), desc: item.desc, catId: "importado", catName: item.categoria, pay: "Importação", note: `Importado de ${uploadedFileName || "arquivo"}`, created: new Date().toISOString() }));
+    if (!entries.length) return;
+    setIsImporting(true);
+    try {
+      await onImportEntries(entries);
+      setToastMsg(`${entries.length} lançamento(s) importado(s) para a unidade selecionada.`);
+      setItems([]);
+    } catch (error: any) {
+      setImportError(error?.message || "Não foi possível salvar os lançamentos.");
+    } finally {
+      setIsImporting(false);
+    }
   };
 
   const matchCount = items.filter((i) => i.status === "match").length;
@@ -156,15 +237,15 @@ export const ConciliationScreen: React.FC<ConciliationScreenProps> = ({
           Arraste seu arquivo de extrato ou selecione no dispositivo
         </h3>
         <p className="text-xs text-[#69778c] mt-1 max-w-md mx-auto">
-          Formatos compatíveis: <b>OFX</b> (bancos), <b>CSV</b>, <b>TXT</b>, <b>PDF</b> ou <b>JPG/PNG</b>.
+            Formatos compatíveis: <b>Excel</b> (.xlsx/.xls), <b>CSV</b>, <b>PDF</b>, OFX e TXT. A leitura ocorre no navegador e a gravação só acontece após sua confirmação.
         </p>
 
         <div className="mt-4 flex items-center justify-center gap-3">
           <label className="rounded-lg bg-[#3c63da] px-4 py-2 text-xs font-bold text-white hover:bg-[#2f52c0] shadow-xs cursor-pointer transition-all">
-            Selecionar Arquivo
+            {isReadingFile ? "Lendo arquivo..." : "Selecionar base"}
             <input
               type="file"
-              accept=".ofx,.csv,.txt,.pdf,.png,.jpg,.jpeg"
+              accept=".xlsx,.xls,.csv,.ofx,.txt,.pdf"
               className="hidden"
               onChange={(e) => {
                 if (e.target.files?.[0]) handleFileUpload(e.target.files[0]);
@@ -177,6 +258,13 @@ export const ConciliationScreen: React.FC<ConciliationScreenProps> = ({
             </span>
           )}
         </div>
+        {importError && <div className="mt-3 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs font-semibold text-red-800">{importError}</div>}
+        {items.some(item => item.label === "Importado") && (
+          <div className="mt-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-xl border border-blue-200 bg-blue-50 p-3">
+            <p className="text-xs font-semibold text-blue-900">A prévia foi lida. Confira as linhas abaixo antes de enviar para os lançamentos da unidade.</p>
+            <button type="button" onClick={() => void handleImportEntries()} disabled={isImporting} className="rounded-lg bg-[#3c63da] px-4 py-2 text-xs font-bold text-white hover:bg-[#2f52c0] disabled:opacity-60">{isImporting ? "Salvando..." : "Confirmar importação"}</button>
+          </div>
+        )}
       </div>
 
       {/* Review Table */}

@@ -26,6 +26,7 @@ import {
   PanelLeftOpen,
   Store,
   CreditCard
+  ,UploadCloud
 } from "lucide-react";
 
 interface SidebarProps {
@@ -77,7 +78,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const canAccessScreen = (screen: ScreenType): boolean => {
     // Unidades franqueadas têm acesso estritamente a Início, Analítico, Lançamentos e Taxas (consulta)
     if (isFranchisee) {
-      return ["home", "dashboard", "fees", "pagamentos_despesas", "lancamentos"].includes(screen);
+      return ["home", "dashboard", "fees", "pagamentos_despesas", "lancamentos", "import_base"].includes(screen);
     }
     if (screen === "home") return true;
     if (userProfile === "dono" || userProfile === "equipe") return true;
@@ -135,10 +136,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
   // Taxas e Recebimentos visível para unidades (modo consulta) e donos (edição)
   const financialNav: NavItem[] = isFranchisee
     ? [
+        { id: "import_base", label: "Importar base", icon: <UploadCloud className="h-4 w-4" /> },
         { id: "pagamentos_despesas", label: "Lançamentos", icon: <CreditCard className="h-4 w-4 text-emerald-400" /> },
         { id: "fees", label: "Taxas e Recebimentos", icon: <Percent className="h-4 w-4 text-sky-400" /> },
       ]
     : [
+        { id: "import_base", label: "Importar base", icon: <UploadCloud className="h-4 w-4" /> },
         { id: "dre", label: "DRE e Resultados", icon: <TrendingUp className="h-4 w-4" /> },
         { id: "pagamentos_despesas", label: "Pagamentos/Despesas", icon: <CreditCard className="h-4 w-4 text-emerald-400" /> },
         { id: "fees", label: "Taxas e Recebimentos", icon: <Percent className="h-4 w-4" /> },
@@ -191,6 +194,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 } ${
                   isActive
                     ? "bg-[#273b60] text-white shadow-xs font-bold"
+                    : item.id === "import_base"
+                    ? "bg-[#163f79] text-[#dbeafe] font-bold border border-[#3c63da]/50 hover:bg-[#1e4f94]"
                     : isSpecialConfig
                     ? "text-amber-300 hover:bg-[#1f3354] hover:text-amber-200"
                     : "text-[#b8c5d9] hover:bg-[#1b2d4b] hover:text-white"
@@ -200,6 +205,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   className={`flex-shrink-0 ${
                     isActive
                       ? "text-white"
+                      : item.id === "import_base"
+                      ? "text-[#7db4ff]"
                       : isSpecialConfig
                       ? "text-amber-400"
                       : "text-[#8fa8d5] group-hover:text-white"

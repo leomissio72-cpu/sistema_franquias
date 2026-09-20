@@ -25,6 +25,7 @@ const screenTitles: Record<ScreenType, string> = {
   dreparams: "Parâmetros do DRE",
   lancamentos: "Lançamentos Manuais",
   conciliation: "Conciliação Bancária",
+  import_base: "Importar base de dados",
   vt: "Vale Transporte",
   rp: "Rotinas / RP",
   pagamentos_despesas: "Pagamentos / Despesas",

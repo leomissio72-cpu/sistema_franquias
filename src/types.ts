@@ -8,6 +8,7 @@ export type ScreenType =
   | "dreparams"
   | "lancamentos"
   | "conciliation"
+  | "import_base"
   | "vt"
   | "rp"
   | "pagamentos_despesas"

@@ -27,6 +27,7 @@ import {
   saveRoyalties,
   saveFranchises,
   createManualEntry,
+  createManualEntriesBulk,
   deleteManualEntry,
   saveSystemSettings,
   resetDatabase,
@@ -281,7 +282,7 @@ export const App: React.FC = () => {
   // Unidades franqueadas têm acesso SOMENTE a lançamentos e relatórios (+ início)
   useEffect(() => {
     if (isFranchisee) {
-      const allowedScreens: ScreenType[] = ["home", "dashboard", "fees", "pagamentos_despesas", "lancamentos"];
+      const allowedScreens: ScreenType[] = ["home", "dashboard", "fees", "pagamentos_despesas", "lancamentos", "import_base"];
       if (!allowedScreens.includes(currentScreen)) {
         setCurrentScreen("home");
       }
@@ -519,12 +520,16 @@ export const App: React.FC = () => {
             />
           )}
 
-          {["pagamentos_despesas", "lancamentos", "conciliation", "vt", "rp"].includes(currentScreen) && (
+          {["pagamentos_despesas", "lancamentos", "conciliation", "import_base", "vt", "rp"].includes(currentScreen) && (
             <PagamentosDespesasScreen
               currentTenantId={currentTenantId}
               franchises={franchises}
               manualEntries={manualEntries}
               onCreateEntry={handleCreateManualEntry}
+              onCreateEntriesBulk={async (entries) => {
+                const updatedState = await createManualEntriesBulk(entries);
+                setServerState(updatedState);
+              }}
               onDeleteEntry={handleDeleteManualEntry}
               vtConfigs={vtConfigs}
               onSaveVtConfig={handleSaveVtConfig}
@@ -532,7 +537,7 @@ export const App: React.FC = () => {
               initialTab={
                 currentScreen === "lancamentos"
                   ? "lancamentos"
-                  : currentScreen === "conciliation"
+                  : currentScreen === "conciliation" || currentScreen === "import_base"
                   ? "conciliation"
                   : currentScreen === "vt"
                   ? "vt"
