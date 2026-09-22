@@ -13,7 +13,8 @@ import {
   SystemSettings,
   ConfigItem,
   AuditLog,
-  CloudState
+  CloudState,
+  UserAccount
 } from "./types";
 import {
   fetchServerState,
@@ -31,6 +32,7 @@ import {
   deleteManualEntry,
   saveSystemSettings,
   resetDatabase,
+  syncStateSection,
 } from "./api";
 import { Header } from "./components/Header";
 import { Sidebar } from "./components/Sidebar";
@@ -217,6 +219,11 @@ export const App: React.FC = () => {
 
   const handleSaveSettings = async (settings: SystemSettings) => {
     const updatedState = await saveSystemSettings(settings, userSession?.name || "Admin");
+    setServerState(updatedState);
+  };
+
+  const handleSaveUsers = async (users: UserAccount[]) => {
+    const updatedState = await syncStateSection("users", users, userSession?.name || "Administrador");
     setServerState(updatedState);
   };
 
@@ -419,12 +426,14 @@ export const App: React.FC = () => {
               royalties={royalties}
               permissions={permissions}
               settings={systemSettings}
+              users={serverState.users}
               initialTab={currentScreen === "settings" ? "preferencias" : "configs"}
               onUpdateConfig={handleUpdateConfig}
               onBulkUpdate={handleBulkUpdateConfig}
               onSaveRoyalties={handleSaveRoyalties}
               onSaveFranchises={handleSaveFranchises}
               onSaveSettings={handleSaveSettings}
+              onSaveUsers={handleSaveUsers}
               onResetDatabase={handleResetDatabase}
               onRefresh={loadState}
               isSaving={isSavingConfig}

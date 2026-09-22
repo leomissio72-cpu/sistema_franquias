@@ -552,10 +552,17 @@ routeBoth("get", "/api/state", (req: Request, res: Response) => {
 });
 
 routeBoth("post", "/api/state/sync", (req: Request, res: Response) => {
-  const { section, data, user } = req.body || {};
+  const { section, data: incomingData, user } = req.body || {};
+  let data = incomingData;
   const userName = user || "Sistema";
 
   if (section && data !== undefined) {
+    if (section === "users" && Array.isArray(data)) {
+      data = data.map((incoming: any) => {
+        const current = db.users.find((existing: any) => existing.id === incoming.id);
+        return { ...incoming, pass: incoming.pass || current?.pass || "" };
+      });
+    }
     (db as any)[section] = data;
     db.auditLogs.unshift({
       id: `audit_${Date.now()}`,

@@ -163,6 +163,7 @@ export interface UserAccount {
   nome: string;
   email: string;
   login: string;
+  pass?: string;
   perfil: "dono" | "equipe" | "admin" | "franqueado" | "operador" | string;
   unidade: string;
   status: "ativo" | "inativo";

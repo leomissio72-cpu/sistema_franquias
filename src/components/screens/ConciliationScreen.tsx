@@ -3,6 +3,8 @@ import { ConciliationItem, ManualEntry, ScreenType } from "../../types";
 import { sampleConciliation } from "../../data/initialData";
 import * as XLSX from "xlsx";
 import * as pdfjsLib from "pdfjs-dist/legacy/build/pdf.mjs";
+// O worker precisa ser apontado para um arquivo servido pelo próprio bundle Vite.
+pdfjsLib.GlobalWorkerOptions.workerSrc = new URL("pdfjs-dist/legacy/build/pdf.worker.mjs", import.meta.url).toString();
 import {
   ArrowLeftRight,
   UploadCloud,
@@ -31,6 +33,8 @@ const parseAmount = (value: unknown) => {
 
 const parseDate = (value: unknown) => {
   const text = String(value ?? "").trim();
+  const compact = text.match(/^(\d{4})(\d{2})(\d{2})/);
+  if (compact) return `${compact[1]}-${compact[2]}-${compact[3]}`;
   const match = text.match(/^(\d{1,2})[\/-](\d{1,2})[\/-](\d{2,4})$/);
   if (match) return `${match[3].length === 2 ? `20${match[3]}` : match[3]}-${match[2].padStart(2, "0")}-${match[1].padStart(2, "0")}`;
   const date = new Date(text);
@@ -52,6 +56,20 @@ function rowToItem(row: Record<string, unknown>, index: number): ConciliationIte
 
 async function readImportFile(file: File): Promise<ConciliationItem[]> {
   if (file.size > 15 * 1024 * 1024) throw new Error("O arquivo excede o limite de 15 MB.");
+  if (/\.(ofx|qif|txt)$/i.test(file.name)) {
+    const text = await file.text();
+    const transactions = Array.from(text.matchAll(/<STMTTRN>([\s\S]*?)(?:<\/STMTTRN>|<\/STMTTRN>)/gi));
+    if (!transactions.length) {
+      const lines = text.split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
+      return lines.slice(0, 5000).map((line, index) => rowToItem({ Descrição: line, Valor: (line.match(/-?\d+(?:[.,]\d{2})/g) || [""]).pop() }, index));
+    }
+    return transactions.map((match, index) => {
+      const block = match[1];
+      const getTag = (tag: string) => block.match(new RegExp(`<${tag}>([^<\\r\\n]+)`, "i"))?.[1]?.trim() || "";
+      const amount = parseAmount(getTag("TRNAMT"));
+      return rowToItem({ Data: getTag("DTPOSTED").slice(0, 8), Descrição: getTag("NAME") || getTag("MEMO") || `Transação OFX ${index + 1}`, Valor: amount }, index);
+    });
+  }
   if (file.name.toLowerCase().endsWith(".pdf")) {
     const pdf = await pdfjsLib.getDocument({ data: new Uint8Array(await file.arrayBuffer()) }).promise;
     const rows: ConciliationItem[] = [];

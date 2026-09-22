@@ -5,8 +5,10 @@ import {
   UserSession,
   Business,
   FranchiseUnit,
-  SystemSettings
+  SystemSettings,
+  UserAccount
 } from "../../types";
+import AccessManagementPanel from "../AccessManagementPanel";
 import { formatBrl, formatPct } from "../../utils/calculations";
 import {
   CloudCog,
@@ -46,12 +48,14 @@ interface ConfiguracaoScreenProps {
   royalties?: Record<string, number>;
   permissions?: Record<string, Record<string, boolean>>;
   settings?: SystemSettings;
+  users?: UserAccount[];
   initialTab?: ConfigTab;
   onUpdateConfig: (key: string, value: any) => Promise<void>;
   onBulkUpdate: (updates: Array<{ key: string; value: any }>) => Promise<void>;
   onSaveRoyalties?: (royalties: Record<string, number>) => Promise<void>;
   onSaveFranchises?: (franchises: FranchiseUnit[]) => Promise<void>;
   onSaveSettings?: (settings: SystemSettings) => Promise<void>;
+  onSaveUsers?: (users: UserAccount[]) => Promise<void>;
   onResetDatabase?: () => Promise<void>;
   onRefresh: () => void;
   isSaving: boolean;
@@ -75,6 +79,8 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
   onSaveFranchises,
   onSaveSettings,
   onResetDatabase,
+  users = [],
+  onSaveUsers,
   onRefresh,
   isSaving,
 }) => {
@@ -719,7 +725,9 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
       {/* 2. ABA: PERMISSÕES & ACESSOS POR PERFIL                       */}
       {/* ------------------------------------------------------------- */}
       {activeTab === "permissoes" && (
-        <div className="rounded-2xl border border-[#e5eaf1] bg-white p-5 sm:p-6 shadow-xs space-y-4">
+        <div className="space-y-5">
+          {onSaveUsers && <AccessManagementPanel users={users} businesses={businesses} franchises={franchises} onSaveUsers={onSaveUsers} />}
+          <div className="rounded-2xl border border-[#e5eaf1] bg-white p-5 sm:p-6 shadow-xs space-y-4">
           <div className="flex items-center justify-between pb-3 border-b border-[#e5eaf1]">
             <div>
               <h3 className="text-sm font-bold text-[#152238]">Matriz de Controle de Acesso (RBAC)</h3>
@@ -807,6 +815,7 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
                 ✓ Anti-Tamper Ativo
               </span>
             </div>
+          </div>
           </div>
         </div>
       )}
