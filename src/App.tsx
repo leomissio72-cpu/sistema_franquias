@@ -94,24 +94,9 @@ export const App: React.FC = () => {
   // User & Tenant State
   const [currentBusinessId, setCurrentBusinessId] = useState<string>("all");
   const [currentTenantId, setCurrentTenantId] = useState<string>("dono");
-  const [userSession, setUserSession] = useState<UserSession | null>(() => {
-    try {
-      const cached = localStorage.getItem("sofiacfo_user_session");
-      if (cached) {
-        return JSON.parse(cached);
-      }
-    } catch (e) {}
-    return null;
-  });
-
-  const [isLoginOpen, setIsLoginOpen] = useState(() => {
-    try {
-      const cached = localStorage.getItem("sofiacfo_user_session");
-      return !cached;
-    } catch (e) {
-      return true;
-    }
-  });
+  // Sessão deliberadamente não persistida: cada abertura exige login novamente.
+  const [userSession, setUserSession] = useState<UserSession | null>(null);
+  const [isLoginOpen, setIsLoginOpen] = useState(true);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [lastSyncTime, setLastSyncTime] = useState<string>("");
@@ -290,9 +275,6 @@ export const App: React.FC = () => {
   }, [isFranchisee, currentScreen]);
 
   const handleLoginSuccess = (session: UserSession) => {
-    try {
-      localStorage.setItem("sofiacfo_user_session", JSON.stringify(session));
-    } catch (e) {}
     setUserSession(session);
     setIsLoginOpen(false);
     if (session.profile === "franqueado" || session.profile === "operador") {
