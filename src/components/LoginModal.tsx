@@ -165,10 +165,11 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onSuccess, onClo
 
         {/* Quick Demo Accounts */}
         <div className="mt-6 pt-5 border-t border-[#e5eaf1]">
-          <div className="flex items-center gap-1.5 text-[11px] font-bold text-[#152238] mb-2.5">
+          <div className="flex items-center gap-1.5 text-[11px] font-bold text-[#152238] mb-1">
             <Sparkles className="h-3.5 w-3.5 text-amber-500" />
-            <span>Contas de demonstração para teste rápido:</span>
+            <span>Acessos por franquia</span>
           </div>
+          <p className="text-[10px] text-[#69778c] mb-2.5">Cada franqueado entra com seu próprio usuário e visualiza somente a unidade autorizada.</p>
           <div className="grid grid-cols-2 gap-2 text-xs">
             <button
               type="button"
@@ -194,6 +195,32 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onSuccess, onClo
               </div>
               <span className="text-[10px] text-emerald-900 font-semibold">Franq. Vila Mariana</span>
               <span className="text-[9px] text-[#69778c] font-mono">marcos.f002 / 1234</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => handleQuickLogin("juliana.f004", "1234")}
+              className="flex flex-col items-start rounded-lg border-2 border-violet-300 bg-violet-50/70 p-2 hover:border-violet-500 hover:bg-violet-100 transition-all text-left cursor-pointer shadow-xs"
+            >
+              <div className="flex items-center gap-1">
+                <Store className="h-3 w-3 text-violet-700" />
+                <b className="text-violet-800 text-[11px]">Gestão: EduKids</b>
+              </div>
+              <span className="text-[10px] text-violet-900 font-semibold">Franquia EduKids</span>
+              <span className="text-[9px] text-[#69778c] font-mono">juliana.f004 / 1234</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => handleQuickLogin("ana.f007", "1234")}
+              className="flex flex-col items-start rounded-lg border-2 border-rose-300 bg-rose-50/70 p-2 hover:border-rose-500 hover:bg-rose-100 transition-all text-left cursor-pointer shadow-xs"
+            >
+              <div className="flex items-center gap-1">
+                <Store className="h-3 w-3 text-rose-700" />
+                <b className="text-rose-800 text-[11px]">Gestão: Unidade F007</b>
+              </div>
+              <span className="text-[10px] text-rose-900 font-semibold">Franqueada Ana</span>
+              <span className="text-[9px] text-[#69778c] font-mono">ana.f007 / 1234</span>
             </button>
 
             <button
