@@ -18,7 +18,8 @@ export type ScreenType =
   | "employees"
   | "users"
   | "configuracao"
-  | "settings";
+  | "settings"
+  | "produtos";
 
 export interface ConfigItem {
   key: string;
@@ -239,6 +240,30 @@ export interface SystemSettings {
   contactEmail?: string;
 }
 
+export interface HomologatedProduct {
+  id: string;
+  name: string;
+  category: string;
+  supplierId: string;
+  supplierName: string;
+  sku?: string;
+  brand?: string;
+  unit?: string;
+  status: "ativo" | "inativo" | "pendente" | string;
+  notes?: string;
+}
+
+export interface RegisteredSupplier {
+  id: string;
+  name: string;
+  tradeName?: string;
+  document?: string;
+  contact?: string;
+  city?: string;
+  categories?: string[];
+  status: "ativo" | "inativo" | "pendente" | string;
+}
+
 export interface RoutineRP {
   id: string;
   name: string;
@@ -278,5 +303,7 @@ export interface CloudState {
   permissions: Record<string, any>;
   vtConfigs: Record<string, VTConfig>;
   systemSettings: SystemSettings;
+  products?: HomologatedProduct[];
+  suppliers?: RegisteredSupplier[];
   lastUpdated: string;
 }

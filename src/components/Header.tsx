@@ -37,6 +37,7 @@ const screenTitles: Record<ScreenType, string> = {
   users: "Acessos e Logins",
   configuracao: "Configurações",
   settings: "Preferências do Usuário",
+  produtos: "Produtos Homologados",
 };
 
 export const Header: React.FC<HeaderProps> = ({

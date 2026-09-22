@@ -53,6 +53,7 @@ import { TenantsScreen } from "./components/screens/TenantsScreen";
 import { EmployeesScreen } from "./components/screens/EmployeesScreen";
 import { UsersScreen } from "./components/screens/UsersScreen";
 import { SettingsScreen } from "./components/screens/SettingsScreen";
+import { ProdutosHomologadosScreen } from "./components/screens/ProdutosHomologadosScreen";
 import { PagamentosDespesasScreen, PagamentoSubTab } from "./components/screens/PagamentosDespesasScreen";
 import { Cloud, Loader2 } from "lucide-react";
 
@@ -84,6 +85,7 @@ export const App: React.FC = () => {
         "employees",
         "users",
         "settings",
+        "produtos",
       ].includes(hash)
     ) {
       return hash as ScreenType;
@@ -267,7 +269,7 @@ export const App: React.FC = () => {
   // Unidades franqueadas têm acesso SOMENTE a lançamentos e relatórios (+ início)
   useEffect(() => {
     if (isFranchisee) {
-      const allowedScreens: ScreenType[] = ["home", "dashboard", "fees", "pagamentos_despesas", "lancamentos", "import_base"];
+      const allowedScreens: ScreenType[] = ["home", "dashboard", "fees", "pagamentos_despesas", "lancamentos", "import_base", "produtos"];
       if (!allowedScreens.includes(currentScreen)) {
         setCurrentScreen("home");
       }
@@ -332,6 +334,8 @@ export const App: React.FC = () => {
     systemSettings,
     configs,
     permissions,
+    products = [],
+    suppliers = [],
   } = serverState;
 
   const getTenantDisplayName = () => {
@@ -499,6 +503,14 @@ export const App: React.FC = () => {
               businessRules={businessRules as BusinessRule}
               onSavePaymentRules={handleSavePaymentRules}
               onNavigate={setCurrentScreen}
+              userSession={userSession}
+            />
+          )}
+
+          {currentScreen === "produtos" && (
+            <ProdutosHomologadosScreen
+              products={products}
+              suppliers={suppliers}
               userSession={userSession}
             />
           )}

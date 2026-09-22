@@ -25,8 +25,9 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   Store,
-  CreditCard
-  ,UploadCloud
+  CreditCard,
+  UploadCloud,
+  PackageCheck
 } from "lucide-react";
 
 interface SidebarProps {
@@ -78,7 +79,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const canAccessScreen = (screen: ScreenType): boolean => {
     // Unidades franqueadas têm acesso estritamente a Início, Analítico, Lançamentos e Taxas (consulta)
     if (isFranchisee) {
-      return ["home", "dashboard", "fees", "pagamentos_despesas", "lancamentos", "import_base"].includes(screen);
+      return ["home", "dashboard", "fees", "pagamentos_despesas", "lancamentos", "import_base", "produtos"].includes(screen);
     }
     if (screen === "home") return true;
     if (userProfile === "dono" || userProfile === "equipe") return true;
@@ -153,6 +154,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
         { id: "employees", label: "Funcionários", icon: <Users className="h-4 w-4" /> },
         { id: "users", label: "Acessos e Logins", icon: <KeyRound className="h-4 w-4" /> },
       ];
+
+  const catalogNav: NavItem[] = [
+    { id: "produtos", label: "Produtos Homologados", icon: <PackageCheck className="h-4 w-4" /> },
+  ];
 
   const handleNavClick = (screen: ScreenType) => {
     onSelectScreen(screen);
@@ -395,6 +400,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       {/* Nav Groups */}
       <div className="flex-1 space-y-1 mt-1">
         {renderNavGroup("Principal", principalNav)}
+        {renderNavGroup("Catálogo da Rede", catalogNav)}
         {renderNavGroup("Financeiro & Despesas", financialNav)}
         {renderNavGroup("Gestão & Sistema", managementNav)}
       </div>
