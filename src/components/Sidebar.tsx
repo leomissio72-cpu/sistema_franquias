@@ -135,13 +135,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
   // 2. Financeiro & Pagamentos / Lançamentos
   // Taxas e Recebimentos visível para unidades (modo consulta) e donos (edição)
   const financialNav: NavItem[] = isFranchisee
-    ? [
-        { id: "import_base", label: "Upload de bases", icon: <UploadCloud className="h-4 w-4" /> },
+      ? [
         { id: "pagamentos_despesas", label: "Lançamentos", icon: <CreditCard className="h-4 w-4 text-emerald-400" /> },
         { id: "fees", label: "Taxas e Recebimentos", icon: <Percent className="h-4 w-4 text-sky-400" /> },
       ]
     : [
-        { id: "import_base", label: "Upload de bases", icon: <UploadCloud className="h-4 w-4" /> },
         { id: "dre", label: "DRE e Resultados", icon: <TrendingUp className="h-4 w-4" /> },
         { id: "pagamentos_despesas", label: "Pagamentos/Despesas", icon: <CreditCard className="h-4 w-4 text-emerald-400" /> },
         { id: "fees", label: "Taxas e Recebimentos", icon: <Percent className="h-4 w-4" /> },
@@ -151,7 +149,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const managementNav: NavItem[] = isFranchisee
     ? []
     : [
-        { id: "configuracao", label: "Configurações & Preferências", icon: <CloudCog className="h-4 w-4 text-amber-400" /> },
+        { id: "configuracao", label: "Configurações", icon: <Settings className="h-4 w-4" /> },
         { id: "employees", label: "Funcionários", icon: <Users className="h-4 w-4" /> },
         { id: "users", label: "Acessos e Logins", icon: <KeyRound className="h-4 w-4" /> },
       ];
@@ -194,10 +192,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 } ${
                   isActive
                     ? "bg-[#2563eb] text-white shadow-sm font-bold"
-                    : item.id === "import_base"
-                    ? "bg-[#eff6ff] text-[#1d4ed8] font-bold border border-[#bfdbfe] hover:bg-[#dbeafe]"
                     : isSpecialConfig
-                    ? "text-amber-700 hover:bg-amber-50 hover:text-amber-800"
+                    ? "text-[#475569] hover:bg-[#f1f5f9] hover:text-[#0f172a]"
                     : "text-[#475569] hover:bg-[#f1f5f9] hover:text-[#0f172a]"
                 }`}
               >
@@ -205,21 +201,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   className={`flex-shrink-0 ${
                     isActive
                       ? "text-white"
-                      : item.id === "import_base"
-                      ? "text-[#2563eb]"
                       : isSpecialConfig
-                      ? "text-amber-400"
+                      ? "text-[#64748b] group-hover:text-[#2563eb]"
                       : "text-[#64748b] group-hover:text-[#2563eb]"
                   }`}
                 >
                   {item.icon}
                 </span>
                 {!isCollapsed && <span className="truncate flex-1">{item.label}</span>}
-                {!isCollapsed && isSpecialConfig && (
-                  <span className="text-[9px] font-extrabold uppercase bg-amber-500/20 text-amber-300 px-1.5 py-0.5 rounded-full border border-amber-500/30">
-                    Nuvem
-                  </span>
-                )}
               </button>
             );
           })}
@@ -278,8 +267,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 <span className="inline-block h-2 w-2 rounded-full bg-emerald-500" />
                 Painel Ativo
               </span>
-              <span className="text-[9px] font-bold text-emerald-400 bg-emerald-950/60 border border-emerald-500/30 px-1.5 py-0.2 rounded">
-                Nuvem OK
+              <span className="text-[9px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded-full">
+                Online
               </span>
             </div>
             <div className="text-[#0f172a] text-xs font-extrabold truncate">
@@ -287,10 +276,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
             </div>
             {activeFranchise && (
               <div className="flex items-center gap-1.5 mt-1">
-                <span className="text-[9px] font-mono font-bold bg-[#1b2f4f] text-[#a0c0f8] px-1.5 py-0.5 rounded border border-[#304d7c]">
+                <span className="text-[9px] font-mono font-bold bg-[#eff6ff] text-[#2563eb] px-1.5 py-0.5 rounded border border-[#bfdbfe]">
                   {activeFranchise.code}
                 </span>
-                <span className="text-[10px] text-[#93a6c2] truncate">
+                <span className="text-[10px] text-[#64748b] truncate">
                   📍 {activeFranchise.city}{activeFranchise.state ? `/${activeFranchise.state}` : ""}
                 </span>
               </div>
@@ -341,7 +330,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   <span className="text-[#3c63da]">📍</span>
                   <span className="truncate">{activeFranchise?.name || "Minha Unidade"}</span>
                 </div>
-                <span className="text-[9px] font-mono font-bold bg-[#1b2f4f] text-[#7ba4ff] px-1.5 py-0.5 rounded border border-[#304d7c]">
+                  <span className="text-[9px] font-mono font-bold bg-[#eff6ff] text-[#2563eb] px-1.5 py-0.5 rounded border border-[#bfdbfe]">
                   {activeFranchise?.code || "UNIDADE"}
                 </span>
               </div>
@@ -381,6 +370,26 @@ export const Sidebar: React.FC<SidebarProps> = ({
             <Store className="h-4 w-4" />
           </button>
         </div>
+      )}
+
+      {/* Acesso principal de importação: fica separado dos demais itens para não desaparecer no menu */}
+      {canAccessScreen("import_base") && (
+        <button
+          id="sidebar-upload-base"
+          onClick={() => handleNavClick("import_base")}
+          title={isCollapsed ? "Importar base" : undefined}
+          className={`mb-4 flex w-full items-center rounded-xl border border-[#bfdbfe] bg-[#eff6ff] text-left text-[#1d4ed8] transition-colors hover:bg-[#dbeafe] ${isCollapsed ? "justify-center p-2.5" : "gap-3 px-3 py-3"}`}
+        >
+          <span className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-[#2563eb] text-white shadow-sm">
+            <UploadCloud className="h-4 w-4" />
+          </span>
+          {!isCollapsed && (
+            <span className="min-w-0">
+              <span className="block text-xs font-extrabold">Importar base</span>
+              <span className="mt-0.5 block truncate text-[10px] font-medium text-[#4f6fae]">Excel, PDF, CSV ou OFX</span>
+            </span>
+          )}
+        </button>
       )}
 
       {/* Nav Groups */}
@@ -428,7 +437,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             className="fixed inset-0 bg-black/60 backdrop-blur-xs transition-opacity"
             onClick={onCloseMobile}
           />
-          <div className="relative flex w-full max-w-xs flex-1 flex-col bg-[#10192c]">
+          <div className="relative flex w-full max-w-xs flex-1 flex-col bg-[#f8fafc]">
             {sidebarContent}
           </div>
         </div>

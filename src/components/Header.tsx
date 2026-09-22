@@ -35,7 +35,7 @@ const screenTitles: Record<ScreenType, string> = {
   tenants: "Cadastro de Franqueados",
   employees: "Cadastro de Funcionários",
   users: "Acessos e Logins",
-  configuracao: "Painel de Configurações da Nuvem",
+  configuracao: "Configurações",
   settings: "Preferências do Usuário",
 };
 

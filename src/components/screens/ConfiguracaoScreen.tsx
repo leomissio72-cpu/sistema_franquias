@@ -311,11 +311,11 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
         <div>
           <div className="text-[10px] font-extrabold uppercase tracking-widest text-amber-600 flex items-center gap-1">
             <Database className="h-3 w-3" />
-            <span>Painel Centralizado /configuracao</span>
+            <span>Administração do sistema</span>
           </div>
           <h2 className="text-xl sm:text-2xl font-extrabold tracking-tight text-[#152238] flex items-center gap-2 mt-0.5">
             <CloudCog className="h-6 w-6 text-amber-500" />
-            Configurações da Nuvem, Permissões & Franqueados
+            Configurações, acessos e unidades
           </h2>
           <p className="text-xs text-[#69778c] mt-0.5">
             Qualquer alteração salva aqui é persistida na nuvem e propagada para todos os aparelhos (Desktop, iPhone, Android).
@@ -346,7 +346,7 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
         </div>
       )}
 
-      {/* Navigation Sub-Tabs inside /configuracao */}
+      {/* Navigation Sub-Tabs: somente recursos de gestão usados no dia a dia */}
       <div className="flex flex-wrap items-center gap-1.5 rounded-xl bg-white border border-[#e5eaf1] p-1.5 shadow-xs">
         <button
           onClick={() => setActiveTab("preferencias")}
@@ -369,7 +369,7 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
           }`}
         >
           <CloudCog className="h-3.5 w-3.5" />
-          <span>Parâmetros da Nuvem</span>
+          <span>Regras do Sistema</span>
         </button>
 
         <button
@@ -420,17 +420,6 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
           <span>Auditoria & Logs</span>
         </button>
 
-        <button
-          onClick={() => setActiveTab("deploy")}
-          className={`flex items-center gap-1.5 rounded-lg px-3.5 py-2 text-xs font-bold transition-all cursor-pointer ${
-            activeTab === "deploy"
-              ? "bg-[#3c63da] text-white shadow-xs"
-              : "text-[#69778c] hover:bg-[#f4f7fb] hover:text-[#152238]"
-          }`}
-        >
-          <Globe className="h-3.5 w-3.5 text-amber-400" />
-          <span>Deploy GitHub & Vercel</span>
-        </button>
       </div>
 
       {/* ------------------------------------------------------------- */}
@@ -571,7 +560,7 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
               <div className="space-y-3.5 text-xs">
                 <div className="flex items-center justify-between p-3 rounded-xl bg-[#f8faff] border border-[#e5eaf1]">
                   <div>
-                    <div className="font-bold text-[#152238]">Sincronização em Tempo Real (SSE)</div>
+                      <div className="font-bold text-[#152238]">Atualização automática entre aparelhos</div>
                     <div className="text-[11px] text-[#69778c]">
                       Dispara eventos para outros navegadores e celulares sem recarregar a página.
                     </div>
@@ -591,7 +580,7 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
 
                 <div>
                   <label className="block text-[10px] font-extrabold uppercase text-[#69778c] mb-1">
-                    Intervalo de Polling Fallback (segundos)
+                    Frequência de atualização (segundos)
                   </label>
                   <input
                     type="number"
@@ -611,50 +600,9 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
                   </span>
                 </div>
 
-                <div className="p-3 rounded-xl bg-[#edf2ff] border border-[#3c63da]/20 text-[11px] text-[#2f52c0] space-y-1">
-                  <div className="font-bold flex items-center gap-1.5">
-                    <Server className="h-3.5 w-3.5" />
-                    <span>Servidor Nuvem Oficial: Porta 3000</span>
-                  </div>
-                  <p className="text-[10px] text-[#42598a]">
-                    Todas as configurações e lançamentos manuais são salvos na instância persistente em nuvem e propagados para a rede.
-                  </p>
-                </div>
               </div>
             </div>
 
-            {/* Card 3: Zona de Manutenção & Banco de Dados */}
-            <div className="rounded-2xl border border-[#e5eaf1] bg-white p-5 shadow-xs space-y-4 lg:col-span-2">
-              <div className="flex items-center justify-between border-b border-[#e5eaf1] pb-3">
-                <h4 className="text-sm font-bold text-[#152238] flex items-center gap-2">
-                  <Database className="h-4 w-4 text-amber-500" />
-                  <span>Manutenção da Base de Dados da Nuvem</span>
-                </h4>
-                <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded bg-amber-50 text-amber-700 border border-amber-200">
-                  Acesso Restrito
-                </span>
-              </div>
-
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-xl bg-rose-50/60 border border-rose-200">
-                <div className="space-y-1">
-                  <div className="text-xs font-bold text-rose-900 flex items-center gap-1.5">
-                    <AlertTriangle className="h-4 w-4 text-rose-600" />
-                    <span>Restaurar Banco de Dados para Padrões de Fábrica</span>
-                  </div>
-                  <p className="text-[11px] text-rose-700 leading-relaxed">
-                    Reinicia todas as lojas, parâmetros e lançamentos para a base inicial calibrada da franqueadora. Utilize apenas em caso de necessidade de reset operacional.
-                  </p>
-                </div>
-
-                <button
-                  onClick={handleResetDb}
-                  className="flex items-center gap-1.5 rounded-xl bg-rose-600 px-4 py-2.5 text-xs font-bold text-white hover:bg-rose-700 shadow-xs cursor-pointer flex-shrink-0 self-start sm:self-auto"
-                >
-                  <RotateCcw className="h-3.5 w-3.5" />
-                  <span>Restaurar Fábrica</span>
-                </button>
-              </div>
-            </div>
           </div>
         </div>
       )}
