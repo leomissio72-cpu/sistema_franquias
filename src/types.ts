@@ -195,6 +195,7 @@ export interface UserSession {
   tenant: string;
   profile: "dono" | "equipe" | "admin" | "franqueado" | "operador";
   token?: string;
+  expiresAt?: number;
 }
 
 export interface VTEmployeeItem {

@@ -34,6 +34,7 @@ import {
   saveSystemSettings,
   resetDatabase,
   syncStateSection,
+  logoutAPI,
 } from "./api";
 import { Header } from "./components/Header";
 import { Sidebar } from "./components/Sidebar";
@@ -121,8 +122,15 @@ export const App: React.FC = () => {
 
   useEffect(() => {
     document.documentElement.classList.toggle("theme-dark", isDarkMode);
-    localStorage.setItem("franquias-theme", isDarkMode ? "dark" : "light");
+    localStorage.setItem("franquias-theme", isDarkMode ? "dark" : "light" );
   }, [isDarkMode]);
+
+  useEffect(() => {
+    if (!userSession) return;
+    const expiresAt = userSession.expiresAt || Date.now() + 8 * 60 * 60 * 1000;
+    const timer = window.setTimeout(() => { void logoutAPI().catch(() => undefined); setUserSession(null); setIsLoginOpen(true); }, Math.max(0, expiresAt - Date.now()));
+    return () => window.clearTimeout(timer);
+  }, [userSession]);
 
   // Load state and audit logs from cloud backend
   const loadState = useCallback(async () => {
@@ -308,7 +316,7 @@ export const App: React.FC = () => {
   // Unidades franqueadas têm acesso SOMENTE a lançamentos e relatórios (+ início)
   useEffect(() => {
     if (isFranchisee) {
-      const allowedScreens: ScreenType[] = ["home", "dashboard", "fees", "pagamentos_despesas", "lancamentos", "import_base", "produtos"];
+      const allowedScreens: ScreenType[] = ["home", "dashboard", "fees", "pagamentos_despesas", "lancamentos", "import_base", "produtos", "employees", "users"];
       if (!allowedScreens.includes(currentScreen)) {
         setCurrentScreen("home");
       }
@@ -316,7 +324,7 @@ export const App: React.FC = () => {
   }, [isFranchisee, currentScreen]);
 
   const handleLoginSuccess = (session: UserSession) => {
-    setUserSession(session);
+    setUserSession({ ...session, expiresAt: session.expiresAt || Date.now() + 8 * 60 * 60 * 1000 });
     setIsLoginOpen(false);
     if (session.profile === "franqueado" || session.profile === "operador") {
       setCurrentTenantId(session.tenant);
@@ -327,6 +335,7 @@ export const App: React.FC = () => {
   };
 
   const handleLogout = () => {
+    void logoutAPI().catch(() => undefined);
     try {
       localStorage.removeItem("sofiacfo_user_session");
     } catch (e) {}

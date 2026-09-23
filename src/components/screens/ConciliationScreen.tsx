@@ -81,7 +81,16 @@ async function readImportFile(file: File): Promise<ConciliationItem[]> {
     }
     return rows;
   }
-  const workbook = XLSX.read(await file.arrayBuffer(), { type: "array", cellDates: true });
+  const workbook = XLSX.read(await file.arrayBuffer(), {
+    type: "array",
+    cellDates: true,
+    sheetRows: 5001,
+    cellFormula: false,
+    cellHTML: false,
+    cellNF: false,
+    bookFiles: false,
+    WTF: false,
+  });
   const rawRows: Record<string, unknown>[] = [];
   workbook.SheetNames.forEach(sheet => rawRows.push(...XLSX.utils.sheet_to_json<Record<string, unknown>>(workbook.Sheets[sheet], { defval: "", raw: true })));
   return rawRows.slice(0, 5000).map(rowToItem);

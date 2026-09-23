@@ -1,10 +1,51 @@
 import express, { Request, Response } from "express";
 import path from "path";
 import fs from "fs";
+import crypto from "crypto";
 
 const app = express();
 
 app.use(express.json({ limit: "10mb" }));
+
+const SESSION_TTL_MS = 8 * 60 * 60 * 1000;
+const loginAttempts = new Map<string, { count: number; resetAt: number }>();
+const sessions = new Map<string, { userId: string; expiresAt: number }>();
+
+app.disable("x-powered-by");
+app.use((req, res, next) => {
+  if ((process.env.NODE_ENV === "production" || process.env.VERCEL === "1") && req.header("x-forwarded-proto") === "http") {
+    return res.redirect(308, `https://${req.header("host")}${req.originalUrl}`);
+  }
+  res.setHeader("Strict-Transport-Security", "max-age=31536000; includeSubDomains; preload");
+  res.setHeader("Content-Security-Policy", "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: blob: https:; font-src 'self' data: https://fonts.gstatic.com; connect-src 'self' https:; frame-src 'self' https://app.powerbi.com; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'self'");
+  res.setHeader("Permissions-Policy", "camera=(), microphone=(), geolocation=(), payment=()");
+  res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
+  res.setHeader("Cache-Control", req.path.startsWith("/api/") ? "no-store" : "public, max-age=0, must-revalidate");
+  next();
+});
+
+function hashPassword(password: string, salt = crypto.randomBytes(16).toString("hex")) {
+  return `scrypt$${salt}$${crypto.scryptSync(password, salt, 64).toString("hex")}`;
+}
+function verifyPassword(password: string, stored: string) {
+  if (!stored?.startsWith("scrypt$")) return stored === password;
+  const [, salt, expected] = stored.split("$");
+  const actual = crypto.scryptSync(password, salt, 64).toString("hex");
+  return crypto.timingSafeEqual(Buffer.from(actual, "hex"), Buffer.from(expected, "hex"));
+}
+function parseCookies(req: Request) {
+  return Object.fromEntries((req.header("cookie") || "").split(";").filter(Boolean).map((part) => { const [key, ...value] = part.trim().split("="); return [key, decodeURIComponent(value.join("="))]; }));
+}
+function requireSession(req: Request, res: Response, next: any) {
+  const token = parseCookies(req).sofia_session;
+  const session = token ? sessions.get(token) : undefined;
+  if (!session || session.expiresAt <= Date.now()) {
+    if (token) sessions.delete(token);
+    return res.status(401).json({ error: "Sessão expirada. Faça login novamente." });
+  }
+  (req as any).auth = { ...session, user: db.users.find((user: any) => user.id === session.userId) };
+  next();
+}
 
 // Serverless / Read-only filesystem auto-detection and setup
 const isServerless = process.env.VERCEL === "1" || process.env.NODE_ENV === "production";
@@ -357,6 +398,10 @@ function saveDatabase(data: DatabaseState) {
 }
 
 let db = loadDatabase();
+for (const account of db.users) {
+  if (account.pass && !account.pass.startsWith("scrypt$")) account.pass = hashPassword(account.pass);
+}
+saveDatabase(db);
 
 type SSEClient = { id: string; res: Response };
 let sseClients: SSEClient[] = [];
@@ -397,15 +442,24 @@ routeBoth("get", "/api/events", (req: Request, res: Response) => {
 // 3. Auth
 routeBoth("post", "/api/auth/login", (req: Request, res: Response) => {
   const { username, password } = req.body || {};
+  const clientKey = String(req.ip || req.header("x-forwarded-for") || "unknown").slice(0, 80);
+  const attempt = loginAttempts.get(clientKey);
+  if (attempt && attempt.resetAt > Date.now() && attempt.count >= 8) {
+    return res.status(429).json({ error: "Muitas tentativas. Aguarde alguns minutos e tente novamente." });
+  }
   const user = db.users.find(
     (u) =>
       u.login.toLowerCase() === String(username || "").trim().toLowerCase() &&
-      u.pass === String(password || "")
+      verifyPassword(String(password || ""), u.pass || "")
   );
 
   if (!user) {
+    const current = loginAttempts.get(clientKey);
+    loginAttempts.set(clientKey, { count: (current?.resetAt || 0) > Date.now() ? (current?.count || 0) + 1 : 1, resetAt: Date.now() + 15 * 60 * 1000 });
     return res.status(401).json({ error: "Credenciais inválidas. Verifique seu login e senha." });
   }
+
+  loginAttempts.delete(clientKey);
 
   if (user.status !== "ativo") {
     return res.status(403).json({ error: "Acesso inativo. Contate o administrador do sistema." });
@@ -415,10 +469,22 @@ routeBoth("post", "/api/auth/login", (req: Request, res: Response) => {
   saveDatabase(db);
 
   const { pass, ...safeUser } = user;
+  const token = crypto.randomBytes(32).toString("base64url");
+  const expiresAt = Date.now() + SESSION_TTL_MS;
+  sessions.set(token, { userId: user.id, expiresAt });
+  res.setHeader("Set-Cookie", `sofia_session=${encodeURIComponent(token)}; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=${SESSION_TTL_MS / 1000}`);
   res.json({
     user: safeUser,
-    token: `token_${user.id}_${Date.now()}`,
+    token,
+    expiresAt,
   });
+});
+
+routeBoth("post", "/api/auth/logout", (req: Request, res: Response) => {
+  const token = parseCookies(req).sofia_session;
+  if (token) sessions.delete(token);
+  res.setHeader("Set-Cookie", "sofia_session=; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=0");
+  res.json({ success: true });
 });
 
 // 4. Configs
@@ -431,7 +497,7 @@ routeBoth("get", "/api/config", (req: Request, res: Response) => {
 });
 
 function requireAdminRole(req: Request, res: Response, next: any) {
-  const profile = (req.headers["x-user-profile"] as string) || req.body?.userProfile;
+  const profile = (req as any).auth?.user?.perfil || (req.headers["x-user-profile"] as string) || req.body?.userProfile;
   if (profile === "franqueado" || profile === "operador") {
     return res.status(403).json({
       error: "Acesso negado. Unidades franqueadas possuem acesso restrito a Lançamentos e Relatórios e não podem alterar configurações.",
@@ -440,7 +506,7 @@ function requireAdminRole(req: Request, res: Response, next: any) {
   next();
 }
 
-routeBoth("put", "/api/config/:key", requireAdminRole, (req: Request, res: Response) => {
+routeBoth("put", "/api/config/:key", requireSession, requireAdminRole, (req: Request, res: Response) => {
   const { key } = req.params;
   const { value, modifiedBy } = req.body;
 
@@ -488,7 +554,7 @@ routeBoth("put", "/api/config/:key", requireAdminRole, (req: Request, res: Respo
   });
 });
 
-routeBoth("post", "/api/config/bulk", requireAdminRole, (req: Request, res: Response) => {
+routeBoth("post", "/api/config/bulk", requireSession, requireAdminRole, (req: Request, res: Response) => {
   const { updates, modifiedBy } = req.body || {};
   if (!Array.isArray(updates)) {
     return res.status(400).json({ error: "Lista de atualizações inválida." });
@@ -551,28 +617,32 @@ routeBoth("get", "/api/state", (req: Request, res: Response) => {
   });
 });
 
-routeBoth("post", "/api/state/sync", (req: Request, res: Response) => {
+routeBoth("post", "/api/state/sync", requireSession, (req: Request, res: Response) => {
   const { section, data: incomingData, user, userProfile, userTenant } = req.body || {};
+  const authenticatedUser = (req as any).auth?.user;
+  const effectiveProfile = authenticatedUser?.perfil || userProfile;
+  const effectiveTenant = authenticatedUser?.unidade || userTenant;
   let data = incomingData;
   const userName = user || "Sistema";
 
   if (section && data !== undefined) {
     if (section === "users" && Array.isArray(data)) {
-      if (userProfile === "operador") {
+      if (effectiveProfile === "operador") {
         return res.status(403).json({ error: "Operadores não podem criar ou alterar acessos." });
       }
-      if (userProfile === "franqueado") {
-        const ownUsers = data.filter((incoming: any) => incoming.unidade === userTenant);
+      if (effectiveProfile === "franqueado") {
+        const ownUsers = data.filter((incoming: any) => incoming.unidade === effectiveTenant);
         const invalidUser = ownUsers.find((incoming: any) => !["operador", "franqueado"].includes(incoming.perfil));
-        if (invalidUser || !userTenant) {
+        if (invalidUser || !effectiveTenant) {
           return res.status(403).json({ error: "O franqueado só pode criar acessos de operador ou responsável dentro da própria loja." });
         }
-        const protectedUsers = db.users.filter((existing: any) => existing.unidade !== userTenant);
+        const protectedUsers = db.users.filter((existing: any) => existing.unidade !== effectiveTenant);
         data = [...protectedUsers, ...ownUsers];
       }
       data = data.map((incoming: any) => {
         const current = db.users.find((existing: any) => existing.id === incoming.id);
-        return { ...incoming, pass: incoming.pass || current?.pass || "" };
+        const incomingPassword = incoming.pass || current?.pass || "";
+        return { ...incoming, pass: incomingPassword && !incomingPassword.startsWith("scrypt$") ? hashPassword(incomingPassword) : incomingPassword };
       });
     }
     (db as any)[section] = data;
@@ -601,7 +671,7 @@ routeBoth("post", "/api/state/sync", (req: Request, res: Response) => {
 });
 
 // 6. Manual Entries
-routeBoth("post", "/api/entries", (req: Request, res: Response) => {
+routeBoth("post", "/api/entries", requireSession, (req: Request, res: Response) => {
   const newEntry = req.body;
   if (!newEntry.desc || !newEntry.value || !newEntry.date) {
     return res.status(400).json({ error: "Dados incompletos do lançamento." });
@@ -620,7 +690,7 @@ routeBoth("post", "/api/entries", (req: Request, res: Response) => {
   res.json({ success: true, entry });
 });
 
-routeBoth("post", "/api/entries/bulk", (req: Request, res: Response) => {
+routeBoth("post", "/api/entries/bulk", requireSession, (req: Request, res: Response) => {
   const { entries } = req.body || {};
   if (!Array.isArray(entries) || entries.length === 0) {
     return res.status(400).json({ error: "Lista de lançamentos vazia ou inválida." });
@@ -647,7 +717,7 @@ routeBoth("post", "/api/entries/bulk", (req: Request, res: Response) => {
   res.json({ success: true, count: createdEntries.length, entries: createdEntries });
 });
 
-routeBoth("delete", "/api/entries/:id", (req: Request, res: Response) => {
+routeBoth("delete", "/api/entries/:id", requireSession, (req: Request, res: Response) => {
   const { id } = req.params;
   db.manualEntries = db.manualEntries.filter((e) => e.id !== id);
   saveDatabase(db);

@@ -290,6 +290,11 @@ export async function loginAPI(username: string, password: string) {
   return safeResponseJSON(res, "Credenciais inválidas");
 }
 
+export async function logoutAPI() {
+  const res = await fetch("/api/auth/logout", { method: "POST" });
+  return safeResponseJSON(res, "Não foi possível encerrar a sessão");
+}
+
 export const loginApi = loginAPI;
 
 export function subscribeToEvents(onUpdate: (state: CloudState) => void): () => void {
