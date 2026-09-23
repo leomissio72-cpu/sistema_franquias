@@ -199,11 +199,11 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
     setFranchiseList(franchises);
   }, [franchises]);
 
-  const categories = ["Todas", "Geral", "Financeiro", "Regras de Negócio", "Sincronização", "Segurança", "Operação"];
+  const categories = ["Todas", "Geral", "Regras de Negócio", "Segurança", "Operação"];
 
   const filteredConfigs = configs.filter((c) => {
     if (selectedCategory === "Todas") return true;
-    return c.category === selectedCategory;
+    return selectedCategory === "Geral" ? c.category === "Geral" || c.category === "Financeiro" : c.category === selectedCategory;
   });
 
   const handleInputChange = (key: string, val: string) => {
@@ -550,8 +550,8 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
               </div>
             </div>
 
-            {/* Card 2: Sincronização & Tempo Real */}
-            <div className="rounded-2xl border border-[#e5eaf1] bg-white p-5 shadow-xs space-y-4">
+            {/* Card 2: Sincronização & Tempo Real — mantido ativo internamente, sem exposição na interface */}
+            <div className="hidden rounded-2xl border border-[#e5eaf1] bg-white p-5 shadow-xs space-y-4">
               <div className="flex items-center justify-between border-b border-[#e5eaf1] pb-3">
                 <h4 className="text-sm font-bold text-[#152238] flex items-center gap-2">
                   <Cloud className="h-4 w-4 text-[#3c63da]" />
@@ -660,7 +660,7 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
                   <div className="flex items-start justify-between">
                     <div>
                       <span className="text-[9px] font-extrabold uppercase bg-[#edf2ff] text-[#3c63da] px-2 py-0.5 rounded-full">
-                        {c.category}
+                        {c.category === "Financeiro" ? "Geral" : c.category}
                       </span>
                       <h4 className="text-sm font-bold text-[#152238] mt-1.5">{c.name}</h4>
                       <code className="text-[10px] text-[#69778c] font-mono">{c.key}</code>
@@ -791,8 +791,8 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
             </table>
           </div>
 
-          {/* Card de Proteção de Código e Bloqueio de F12 */}
-          <div className="mt-5 p-4 rounded-xl border border-[#e5eaf1] bg-[#f8faff] flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          {/* Card de proteção técnica — mantido apenas no backend, sem mensagem na interface */}
+          <div className="hidden mt-5 p-4 rounded-xl border border-[#e5eaf1] bg-[#f8faff] flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="space-y-1">
               <div className="flex items-center gap-2">
                 <span className="h-2.5 w-2.5 rounded-full bg-emerald-500" />

@@ -645,6 +645,9 @@ routeBoth("post", "/api/state/sync", requireSession, (req: Request, res: Respons
         return { ...incoming, pass: incomingPassword && !incomingPassword.startsWith("scrypt$") ? hashPassword(incomingPassword) : incomingPassword };
       });
     }
+    if (section === "systemSettings" && data && typeof data === "object") {
+      data = { ...data, autoSync: true, syncInterval: Number(data.syncInterval) > 0 ? Number(data.syncInterval) : 30 };
+    }
     (db as any)[section] = data;
     db.auditLogs.unshift({
       id: `audit_${Date.now()}`,

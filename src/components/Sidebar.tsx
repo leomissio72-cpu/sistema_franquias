@@ -156,9 +156,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
         { id: "users", label: "Acessos e Logins", icon: <KeyRound className="h-4 w-4" /> },
       ];
 
-  const catalogNav: NavItem[] = [
-    { id: "produtos", label: "Produtos Homologados", icon: <PackageCheck className="h-4 w-4" /> },
-  ];
+  // Catálogo mantido no estado para compatibilidade, mas retirado da navegação principal.
+  const catalogNav: NavItem[] = [];
 
   const handleNavClick = (screen: ScreenType) => {
     onSelectScreen(screen);
@@ -375,8 +374,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       {/* Nav Groups */}
       <div className="flex-1 space-y-1 mt-1">
         {renderNavGroup("Principal", principalNav)}
-        {renderNavGroup("Catálogo da Rede", catalogNav)}
-        {renderNavGroup("Financeiro & Despesas", financialNav)}
+        {renderNavGroup("Financeiro", financialNav)}
         {renderNavGroup("Gestão & Sistema", managementNav)}
       </div>
 

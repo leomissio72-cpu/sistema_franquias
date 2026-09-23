@@ -233,7 +233,7 @@ export const App: React.FC = () => {
   };
 
   const handleSaveSettings = async (settings: SystemSettings) => {
-    const updatedState = await saveSystemSettings(settings, userSession?.name || "Admin");
+    const updatedState = await saveSystemSettings({ ...settings, autoSync: true, syncInterval: settings.syncInterval || 30 }, userSession?.name || "Admin");
     setServerState(updatedState);
   };
 

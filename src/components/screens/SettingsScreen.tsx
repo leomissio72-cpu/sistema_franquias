@@ -114,7 +114,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
           </div>
         </div>
 
-        <div className="rounded-2xl border border-[#e5eaf1] bg-white p-5 sm:p-6 shadow-xs space-y-4">
+        <div className="hidden rounded-2xl border border-[#e5eaf1] bg-white p-5 sm:p-6 shadow-xs space-y-4">
           <h3 className="text-sm font-bold text-[#152238] border-b border-[#e5eaf1] pb-3">
             Sincronização em Nuvem & Manutenção
           </h3>
