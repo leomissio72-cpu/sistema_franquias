@@ -370,16 +370,12 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                 <Building2 className="h-3 w-3" />
                 {currentTenantId === "dono" ? "Rede Consolidada" : currentUnit?.name || currentTenantId}
               </span>
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-800 text-[11px] font-bold border border-emerald-200">
-                <span className="h-2 w-2 rounded-full bg-emerald-600" />
-                Nuvem Conectada
-              </span>
             </div>
             <h1 className="text-xl sm:text-2xl font-black text-[#152238] tracking-tight">
               Gestão de Franquias
             </h1>
             <p className="text-xs text-[#69778c] mt-0.5">
-              Visualizando dados e indicadores sincronizados para todos os aparelhos.
+              Acompanhamento da operação da rede em um só lugar.
             </p>
           </div>
 
