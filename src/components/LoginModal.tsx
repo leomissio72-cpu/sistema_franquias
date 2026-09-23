@@ -72,8 +72,8 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onSuccess, onClo
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gradient-to-br from-[#10192c]/90 via-[#172641]/95 to-[#243d6b]/90 backdrop-blur-md overflow-y-auto">
-      <div className="relative w-full max-w-md rounded-2xl bg-white p-6 sm:p-8 shadow-2xl border border-[#e5eaf1] animate-in fade-in zoom-in-95 duration-200 my-auto">
+    <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-[#f3f6fb] p-4 sm:p-6">
+      <div className="relative my-auto w-full max-w-md rounded-3xl border border-[#dfe6f0] bg-white p-6 shadow-[0_20px_60px_rgba(43,65,96,0.14)] animate-in fade-in zoom-in-95 duration-200 sm:p-8">
         {onClose && (
           <button
             onClick={onClose}
@@ -85,13 +85,13 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onSuccess, onClo
         )}
 
         <div className="text-center mb-6">
-          <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-[#edf2ff] text-[#3c63da] shadow-inner">
+          <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl border border-[#d7e2fb] bg-[#f0f5ff] text-[#315bc5]">
             <Lock className="h-7 w-7" />
           </div>
           <h2 className="text-2xl font-extrabold tracking-tight text-[#152238]">
             Sofia CFO
           </h2>
-          <div className="inline-block mt-1 px-2.5 py-0.5 rounded-full bg-[#edf2ff] text-[#3c63da] text-[11px] font-extrabold tracking-wide uppercase">
+          <div className="mt-1 inline-block rounded-full border border-[#d7e2fb] bg-[#f0f5ff] px-2.5 py-0.5 text-[11px] font-extrabold uppercase tracking-wide text-[#315bc5]">
             Gestão de Franquias
           </div>
           <p className="text-xs text-[#69778c] mt-2 leading-relaxed">
