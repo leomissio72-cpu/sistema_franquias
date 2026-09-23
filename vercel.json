@@ -47,5 +47,5 @@
       ]
     }
   ],
-  "installCommand": "npm ci --no-audit --no-fund"
+  "installCommand": "npm install --legacy-peer-deps --no-audit --no-fund"
 }
