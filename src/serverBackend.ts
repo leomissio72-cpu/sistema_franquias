@@ -552,12 +552,24 @@ routeBoth("get", "/api/state", (req: Request, res: Response) => {
 });
 
 routeBoth("post", "/api/state/sync", (req: Request, res: Response) => {
-  const { section, data: incomingData, user } = req.body || {};
+  const { section, data: incomingData, user, userProfile, userTenant } = req.body || {};
   let data = incomingData;
   const userName = user || "Sistema";
 
   if (section && data !== undefined) {
     if (section === "users" && Array.isArray(data)) {
+      if (userProfile === "operador") {
+        return res.status(403).json({ error: "Operadores não podem criar ou alterar acessos." });
+      }
+      if (userProfile === "franqueado") {
+        const ownUsers = data.filter((incoming: any) => incoming.unidade === userTenant);
+        const invalidUser = ownUsers.find((incoming: any) => !["operador", "franqueado"].includes(incoming.perfil));
+        if (invalidUser || !userTenant) {
+          return res.status(403).json({ error: "O franqueado só pode criar acessos de operador ou responsável dentro da própria loja." });
+        }
+        const protectedUsers = db.users.filter((existing: any) => existing.unidade !== userTenant);
+        data = [...protectedUsers, ...ownUsers];
+      }
       data = data.map((incoming: any) => {
         const current = db.users.find((existing: any) => existing.id === incoming.id);
         return { ...incoming, pass: incoming.pass || current?.pass || "" };

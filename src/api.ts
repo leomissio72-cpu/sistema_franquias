@@ -190,11 +190,11 @@ export async function fetchAuditLogs(): Promise<{ auditLogs: AuditLog[] }> {
   }
 }
 
-export async function syncStateSection(section: string, data: any, user?: string): Promise<CloudState> {
+export async function syncStateSection(section: string, data: any, user?: string, actor?: { profile?: string; tenant?: string; login?: string }): Promise<CloudState> {
   const res = await fetch("/api/state/sync", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ section, data, user }),
+    body: JSON.stringify({ section, data, user, userProfile: actor?.profile, userTenant: actor?.tenant, userLogin: actor?.login }),
   });
   if (!res.ok) throw new Error("Failed to sync state section");
   return fetchServerState();

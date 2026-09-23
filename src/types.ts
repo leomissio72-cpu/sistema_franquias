@@ -162,6 +162,8 @@ export interface Employee {
   bank?: string;
   pixKey?: string;
   notes?: string;
+  accessProfile?: "operador" | "franqueado" | "admin" | "equipe" | "dono";
+  accessPassword?: string;
 }
 
 export interface UserAccount {

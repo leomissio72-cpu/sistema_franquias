@@ -77,7 +77,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const canAccessScreen = (screen: ScreenType): boolean => {
     // Unidades franqueadas têm acesso estritamente a Início, Analítico, Lançamentos e Taxas (consulta)
     if (isFranchisee) {
-      return ["home", "dashboard", "fees", "pagamentos_despesas", "lancamentos", "import_base", "produtos"].includes(screen);
+      return ["home", "dashboard", "fees", "pagamentos_despesas", "lancamentos", "import_base", "produtos", "employees", "users"].includes(screen);
     }
     if (screen === "home") return true;
     if (userProfile === "dono" || userProfile === "equipe") return true;
@@ -146,7 +146,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   // 3. Gestão & Sistema (Relatórios de gestão removidos conforme solicitado)
   const managementNav: NavItem[] = isFranchisee
-    ? []
+    ? [
+        { id: "employees", label: "Funcionários", icon: <Users className="h-4 w-4" /> },
+        { id: "users", label: "Acessos e Logins", icon: <KeyRound className="h-4 w-4" /> },
+      ]
     : [
         { id: "configuracao", label: "Configurações", icon: <Settings className="h-4 w-4" /> },
         { id: "employees", label: "Funcionários", icon: <Users className="h-4 w-4" /> },

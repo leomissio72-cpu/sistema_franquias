@@ -230,13 +230,33 @@ export const App: React.FC = () => {
   };
 
   const handleSaveUsers = async (users: UserAccount[]) => {
-    const updatedState = await syncStateSection("users", users, userSession?.name || "Administrador");
+    const updatedState = await syncStateSection("users", users, userSession?.name || "Administrador", userSession || undefined);
     setServerState(updatedState);
   };
 
   const handleSaveEmployees = async (employees: Employee[]) => {
-    const updatedState = await syncStateSection("employees", employees, userSession?.name || "Administrador");
-    setServerState(updatedState);
+    const currentUsers = serverState?.users || [];
+    const generatedUsers = employees
+      .filter((employee) => employee.login?.trim())
+      .map((employee) => {
+        const existing = currentUsers.find((user) => user.employeeId === employee.id || user.login.toLowerCase() === employee.login!.trim().toLowerCase());
+        return {
+          id: existing?.id || `user-${employee.id}`,
+          nome: employee.nome,
+          email: employee.email,
+          login: employee.login!.trim(),
+          pass: employee.accessPassword || existing?.pass || "1234",
+          perfil: employee.accessProfile || existing?.perfil || "operador",
+          unidade: employee.unidade,
+          status: employee.active === false ? "inativo" : "ativo",
+          employeeId: employee.id,
+        } as UserAccount;
+      });
+    const generatedIds = new Set(generatedUsers.map((user) => user.id));
+    const preservedUsers = currentUsers.filter((user) => !user.employeeId || !employees.some((employee) => employee.id === user.employeeId));
+    const updatedState = await syncStateSection("employees", employees, userSession?.name || "Administrador", userSession || undefined);
+    const stateWithUsers = await syncStateSection("users", [...preservedUsers.filter((user) => !generatedIds.has(user.id)), ...generatedUsers], userSession?.name || "Administrador", userSession || undefined);
+    setServerState({ ...updatedState, ...stateWithUsers });
   };
 
   const handleResetDatabase = async () => {
@@ -610,7 +630,14 @@ export const App: React.FC = () => {
           )}
 
           {currentScreen === "users" && (
-            <UsersScreen onNavigate={setCurrentScreen} />
+            <UsersScreen
+              users={serverState.users || []}
+              employees={serverState.employees || []}
+              franchises={franchises}
+              userSession={userSession}
+              onSaveUsers={(users) => handleSaveUsers(users)}
+              onNavigate={setCurrentScreen}
+            />
           )}
         </main>
       </div>
