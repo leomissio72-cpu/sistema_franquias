@@ -73,7 +73,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onSuccess, onClo
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-[#f3f6fb] p-4 sm:p-6">
-      <div className="relative my-auto w-full max-w-md rounded-3xl border border-[#dfe6f0] bg-white p-6 shadow-[0_20px_60px_rgba(43,65,96,0.14)] animate-in fade-in zoom-in-95 duration-200 sm:p-8">
+      <div className="relative my-auto w-full max-w-md p-2 animate-in fade-in duration-200 sm:p-4">
         {onClose && (
           <button
             onClick={onClose}
