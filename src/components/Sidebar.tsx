@@ -260,24 +260,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
         )}
       </div>
 
-      {/* Contexto atual da unidade, sem indicadores técnicos */}
+      {/* Seletores de rede e unidade, sem o antigo cartão Contexto Atual */}
       {!isCollapsed ? (
-        <div className="my-4 rounded-2xl border border-[#e2e8f0] bg-white p-3 shadow-sm">
-          <div className="mb-2 flex items-center gap-2">
-            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#eef3ff] text-[#315bc5]">
-              <Store className="h-4 w-4" />
-            </div>
-            <div className="min-w-0">
-              <span className="block text-[9px] font-extrabold uppercase tracking-wider text-[#7a879b]">Contexto atual</span>
-              <span className="block truncate text-xs font-extrabold text-[#152238]">{getGestaoTitle().replace(/^Gestão:\s*/, "")}</span>
-            </div>
-          </div>
-          {activeFranchise && (
-            <div className="flex items-center gap-1.5 border-t border-[#eef1f6] pt-2 text-[10px] text-[#64748b]">
-              <span className="font-semibold text-[#315bc5]">{activeFranchise.code}</span>
-              <span className="truncate">{activeFranchise.city}{activeFranchise.state ? `/${activeFranchise.state}` : ""}</span>
-            </div>
-          )}
+        <div className="my-4 border-b border-[#e2e8f0] pb-4">
 
           {/* Seletor de Rede/Negócio para Administrador/Dono */}
           {!isFranchisee && (

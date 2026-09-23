@@ -1,6 +1,6 @@
 import React from "react";
 import { UserSession, ScreenType } from "../types";
-import { Menu, LogOut, PanelLeftClose, PanelLeftOpen } from "lucide-react";
+import { Menu, LogOut, PanelLeftClose, PanelLeftOpen, Moon, Sun } from "lucide-react";
 
 interface HeaderProps {
   userSession: UserSession | null;
@@ -14,6 +14,8 @@ interface HeaderProps {
   isSidebarCollapsed?: boolean;
   onToggleSidebarCollapse?: () => void;
   onOpenImport?: () => void;
+  isDarkMode?: boolean;
+  onToggleTheme?: () => void;
 }
 
 const screenTitles: Record<ScreenType, string> = {
@@ -50,6 +52,8 @@ export const Header: React.FC<HeaderProps> = ({
   isSidebarCollapsed = false,
   onToggleSidebarCollapse,
   onOpenImport,
+  isDarkMode = false,
+  onToggleTheme,
 }) => {
   const getAvatarInitials = () => {
     if (!userSession?.name) return "SF";
@@ -117,6 +121,17 @@ export const Header: React.FC<HeaderProps> = ({
       </div>
 
       <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
+        {onToggleTheme && (
+          <button
+            id="btn-theme-toggle"
+            onClick={onToggleTheme}
+            className="flex h-9 w-9 items-center justify-center rounded-lg border border-[#e5eaf1] bg-white text-[#526078] hover:bg-[#f4f7fb] hover:text-[#315bc5] transition-colors cursor-pointer"
+            title={isDarkMode ? "Ativar modo claro" : "Ativar modo escuro"}
+            aria-label={isDarkMode ? "Ativar modo claro" : "Ativar modo escuro"}
+          >
+            {isDarkMode ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+          </button>
+        )}
         {/* Perfil do usuário: identificação humana, sem indicadores técnicos */}
         <div id="user-profile-summary" className="hidden items-center gap-2 rounded-xl border border-[#e5eaf1] bg-[#f8fafc] px-2.5 py-1.5 sm:flex">
           <div

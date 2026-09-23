@@ -1,1 +1,49 @@
 @import "tailwindcss";
+
+html.theme-dark,
+html.theme-dark body {
+  background: #0f172a;
+}
+
+html.theme-dark .app-shell {
+  background: #0f172a !important;
+  color: #e2e8f0 !important;
+}
+
+html.theme-dark #main-topbar {
+  background: #111c31 !important;
+  border-color: #263650 !important;
+}
+
+html.theme-dark #main-topbar h1,
+html.theme-dark #main-topbar p,
+html.theme-dark #main-topbar button,
+html.theme-dark #main-topbar svg {
+  color: #e2e8f0 !important;
+}
+
+html.theme-dark aside > div,
+html.theme-dark .bg-white {
+  background-color: #111c31 !important;
+  border-color: #263650 !important;
+}
+
+html.theme-dark input,
+html.theme-dark select,
+html.theme-dark textarea {
+  background-color: #17243b !important;
+  border-color: #334765 !important;
+  color: #e2e8f0 !important;
+}
+
+html.theme-dark .text-\[\#152238\],
+html.theme-dark .text-\[\#0f172a\],
+html.theme-dark .text-\[\#334155\],
+html.theme-dark .text-\[\#475569\] {
+  color: #e2e8f0 !important;
+}
+
+html.theme-dark .border-\[\#e5eaf1\],
+html.theme-dark .border-\[\#e2e8f0\] {
+  border-color: #263650 !important;
+}

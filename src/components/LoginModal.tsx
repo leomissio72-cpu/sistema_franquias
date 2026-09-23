@@ -73,7 +73,16 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onSuccess, onClo
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-[#f3f6fb] p-4 sm:p-6">
-      <div className="relative my-auto w-full max-w-md p-2 animate-in fade-in duration-200 sm:p-4">
+      <div className="relative my-auto w-full max-w-4xl overflow-hidden rounded-3xl border border-[#dfe6f0] bg-white shadow-[0_24px_70px_rgba(43,65,96,0.16)] animate-in fade-in zoom-in-95 duration-200 lg:grid lg:grid-cols-[0.95fr_1.05fr]">
+        <div className="relative hidden min-h-[640px] overflow-hidden bg-[#eaf2ff] p-8 lg:block">
+          <img src="/login-visual.svg" alt="Visão de gestão financeira e operacional" className="absolute inset-0 h-full w-full object-cover" />
+          <div className="relative z-10 max-w-xs text-[#17315f]">
+            <p className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-[#315bc5]">Gestão de Franquias</p>
+            <h3 className="mt-4 text-3xl font-extrabold leading-tight">Clareza para decidir melhor.</h3>
+            <p className="mt-4 text-sm font-medium leading-6 text-[#526b93]">Uma visão organizada da operação, dos resultados e das unidades da sua rede.</p>
+          </div>
+        </div>
+        <div className="relative p-6 sm:p-8">
         {onClose && (
           <button
             onClick={onClose}
@@ -247,6 +256,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onSuccess, onClo
             Acesso seguro com isolamento por perfil e sincronização instantânea em nuvem.
           </p>
         </div>
+      </div>
       </div>
     </div>
   );

@@ -104,6 +104,7 @@ export const App: React.FC = () => {
   const [isLoginOpen, setIsLoginOpen] = useState(true);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [isDarkMode, setIsDarkMode] = useState(() => localStorage.getItem("franquias-theme") === "dark");
   const [lastSyncTime, setLastSyncTime] = useState<string>("");
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isSavingConfig, setIsSavingConfig] = useState<boolean>(false);
@@ -117,6 +118,11 @@ export const App: React.FC = () => {
   useEffect(() => {
     window.location.hash = currentScreen;
   }, [currentScreen]);
+
+  useEffect(() => {
+    document.documentElement.classList.toggle("theme-dark", isDarkMode);
+    localStorage.setItem("franquias-theme", isDarkMode ? "dark" : "light");
+  }, [isDarkMode]);
 
   // Load state and audit logs from cloud backend
   const loadState = useCallback(async () => {
@@ -362,7 +368,7 @@ export const App: React.FC = () => {
   };
 
   return (
-    <div className="flex min-h-screen bg-[#f4f7fb] text-[#152238] font-sans antialiased selection:bg-[#3c63da] selection:text-white">
+    <div className={`app-shell flex min-h-screen bg-[#f4f7fb] text-[#152238] font-sans antialiased selection:bg-[#3c63da] selection:text-white ${isDarkMode ? "theme-dark" : ""}`}>
       {/* Sidebar Desktop & Mobile Drawer */}
       <Sidebar
         currentScreen={currentScreen}
@@ -403,6 +409,8 @@ export const App: React.FC = () => {
           onOpenImport={() => setCurrentScreen("import_base")}
           isSidebarCollapsed={isSidebarCollapsed}
           onToggleSidebarCollapse={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+          isDarkMode={isDarkMode}
+          onToggleTheme={() => setIsDarkMode((current) => !current)}
         />
 
         {/* Dynamic Screen View */}
