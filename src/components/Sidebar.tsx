@@ -232,7 +232,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <span>Gestão de Franquias</span>
             </h1>
             <p className="text-[10px] text-[#64748b] mt-0.5 truncate">
-              Gestão Financeira & Nuvem
+              Operação da rede
             </p>
           </div>
         ) : (
@@ -262,34 +262,24 @@ export const Sidebar: React.FC<SidebarProps> = ({
         )}
       </div>
 
-      {/* Franchise & Tenant Highlight Box - Visão Aprimorada */}
+      {/* Contexto atual da unidade, sem indicadores técnicos */}
       {!isCollapsed ? (
-        <div className="my-4 rounded-2xl bg-white border border-[#e2e8f0] p-3 shadow-sm">
-          {/* Card de Painel Ativo */}
-          <div className="p-2.5 rounded-xl bg-[#f8fafc] border border-[#dbeafe]">
-            <div className="flex items-center justify-between gap-1 mb-1">
-              <span className="text-[9px] font-extrabold uppercase tracking-wider text-[#2563eb] flex items-center gap-1.5">
-                <span className="inline-block h-2 w-2 rounded-full bg-emerald-500" />
-                Painel Ativo
-              </span>
-              <span className="text-[9px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded-full">
-                Online
-              </span>
+        <div className="my-4 rounded-2xl border border-[#e2e8f0] bg-white p-3 shadow-sm">
+          <div className="mb-2 flex items-center gap-2">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#eef3ff] text-[#315bc5]">
+              <Store className="h-4 w-4" />
             </div>
-            <div className="text-[#0f172a] text-xs font-extrabold truncate">
-              {getGestaoTitle()}
+            <div className="min-w-0">
+              <span className="block text-[9px] font-extrabold uppercase tracking-wider text-[#7a879b]">Unidade em uso</span>
+              <span className="block truncate text-xs font-extrabold text-[#152238]">{getGestaoTitle().replace(/^Gestão:\s*/, "")}</span>
             </div>
-            {activeFranchise && (
-              <div className="flex items-center gap-1.5 mt-1">
-                <span className="text-[9px] font-mono font-bold bg-[#eff6ff] text-[#2563eb] px-1.5 py-0.5 rounded border border-[#bfdbfe]">
-                  {activeFranchise.code}
-                </span>
-                <span className="text-[10px] text-[#64748b] truncate">
-                  📍 {activeFranchise.city}{activeFranchise.state ? `/${activeFranchise.state}` : ""}
-                </span>
-              </div>
-            )}
           </div>
+          {activeFranchise && (
+            <div className="flex items-center gap-1.5 border-t border-[#eef1f6] pt-2 text-[10px] text-[#64748b]">
+              <span className="font-semibold text-[#315bc5]">{activeFranchise.code}</span>
+              <span className="truncate">{activeFranchise.city}{activeFranchise.state ? `/${activeFranchise.state}` : ""}</span>
+            </div>
+          )}
 
           {/* Seletor de Rede/Negócio para Administrador/Dono */}
           {!isFranchisee && (

@@ -1,13 +1,13 @@
 import React from "react";
 import { UserSession, ScreenType } from "../types";
-import { Menu, Cloud, LogOut, ShieldCheck, Store, Building2, PanelLeftClose, PanelLeftOpen, UploadCloud } from "lucide-react";
+import { Menu, LogOut, PanelLeftClose, PanelLeftOpen, UploadCloud } from "lucide-react";
 
 interface HeaderProps {
   userSession: UserSession | null;
   currentScreen: ScreenType;
   tenantName: string;
-  isCloudConnected: boolean;
-  lastSyncTime: string;
+  isCloudConnected?: boolean;
+  lastSyncTime?: string;
   onOpenMobileMenu: () => void;
   onLogout: () => void;
   onForceSync: () => void;
@@ -44,8 +44,6 @@ export const Header: React.FC<HeaderProps> = ({
   userSession,
   currentScreen,
   tenantName,
-  isCloudConnected,
-  lastSyncTime,
   onOpenMobileMenu,
   onLogout,
   onForceSync,
@@ -76,13 +74,6 @@ export const Header: React.FC<HeaderProps> = ({
         return "Usuário";
     }
   };
-
-  // Generate the clean "Gestão: [Nome]" text
-  const gestaoLabel = tenantName.startsWith("Gestão:")
-    ? tenantName
-    : `Gestão: ${tenantName}`;
-
-  const isFranchisee = userSession?.profile === "franqueado" || userSession?.profile === "operador";
 
   return (
     <header
@@ -137,35 +128,22 @@ export const Header: React.FC<HeaderProps> = ({
             <span className="hidden sm:inline">Upload de bases</span>
           </button>
         )}
-        {/* Cloud Sync Status - Calm static indicator, no blinking/pinging */}
-        <button
-          id="btn-cloud-sync-status"
-          onClick={onForceSync}
-          title={`Nuvem conectada. Última sincronização: ${lastSyncTime}. Clique para sincronizar agora.`}
-          className="flex items-center gap-1.5 rounded-full bg-[#f8faff] border border-[#e5eaf1] px-2.5 py-1 text-[11px] font-bold text-[#152238] hover:bg-[#edf2ff] transition-colors cursor-pointer shadow-2xs"
-        >
-          <span
-            className={`h-2 w-2 rounded-full ${
-              isCloudConnected ? "bg-emerald-600" : "bg-rose-600"
-            }`}
-          />
-          <Cloud className="h-3.5 w-3.5 text-[#3c63da] hidden sm:inline" />
-          <span className="hidden md:inline">Nuvem Conectada</span>
-        </button>
-
-        {/* User Role Badge */}
-        <span
-          id="badge-user-role"
-          className="hidden sm:inline-flex items-center gap-1 rounded-full bg-[#edf2ff] px-2.5 py-1 text-xs font-bold text-[#3c63da]"
-        >
-          <ShieldCheck className="h-3 w-3" />
-          {getRoleLabel()}
-        </span>
-
-        {/* Avatar */}
+        {/* Perfil do usuário: identificação humana, sem indicadores técnicos */}
+        <div id="user-profile-summary" className="hidden items-center gap-2 rounded-xl border border-[#e5eaf1] bg-[#f8fafc] px-2.5 py-1.5 sm:flex">
+          <div
+            id="avatar-user"
+            className="flex h-8 w-8 items-center justify-center rounded-full bg-[#e8efff] font-extrabold text-[#315bc5] text-xs border border-[#cbdafc]"
+            title={userSession?.name || "Usuário"}
+          >
+            {getAvatarInitials()}
+          </div>
+          <div className="max-w-[150px] leading-tight">
+            <p className="truncate text-xs font-extrabold text-[#152238]">{userSession?.name || "Usuário"}</p>
+            <p className="truncate text-[10px] font-medium text-[#69778c]">{getRoleLabel()}</p>
+          </div>
+        </div>
         <div
-          id="avatar-user"
-          className="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-full bg-[#edf2ff] font-extrabold text-[#3c63da] text-xs shadow-xs border border-[#3c63da]/20"
+          className="flex h-8 w-8 items-center justify-center rounded-full bg-[#e8efff] font-extrabold text-[#315bc5] text-xs border border-[#cbdafc] sm:hidden"
           title={userSession?.name || "Usuário"}
         >
           {getAvatarInitials()}
