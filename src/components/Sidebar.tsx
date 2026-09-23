@@ -20,8 +20,6 @@ import {
   Settings,
   CloudCog,
   X,
-  ChevronLeft,
-  ChevronRight,
   PanelLeftClose,
   PanelLeftOpen,
   Store,
@@ -270,7 +268,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <Store className="h-4 w-4" />
             </div>
             <div className="min-w-0">
-              <span className="block text-[9px] font-extrabold uppercase tracking-wider text-[#7a879b]">Unidade em uso</span>
+              <span className="block text-[9px] font-extrabold uppercase tracking-wider text-[#7a879b]">Contexto atual</span>
               <span className="block truncate text-xs font-extrabold text-[#152238]">{getGestaoTitle().replace(/^Gestão:\s*/, "")}</span>
             </div>
           </div>
@@ -285,7 +283,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           {!isFranchisee && (
             <div className="mt-2.5">
               <label className="block text-[9px] font-extrabold uppercase tracking-wider text-[#8ea1be] mb-1">
-                Negócio / Rede
+                Rede
               </label>
               <select
                 id="select-business-context"
@@ -295,22 +293,22 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 className="w-full rounded-lg bg-white border border-[#cbd5e1] px-2.5 py-1.5 text-xs font-semibold text-[#0f172a] focus:outline-none focus:border-[#2563eb] disabled:opacity-75 truncate"
               >
                 {isOwner && (
-                  <option value="all">🌐 Todos os Negócios (Consolidado)</option>
+                  <option value="all">Todas as redes</option>
                 )}
                 {businesses.map((b) => (
                   <option key={b.id} value={b.id}>
-                    🏢 {b.name}
+                    {b.name}
                   </option>
                 ))}
               </select>
             </div>
           )}
 
-          {/* Seletor de Franquia / Unidade Conectada */}
+          {/* Seletor da unidade */}
           <div className="mt-2.5">
             <div className="flex items-center justify-between mb-1">
               <label className="block text-[9px] font-extrabold uppercase tracking-wider text-[#8ea1be]">
-                {isFranchisee ? "Franquia Conectada" : "Alternar Unidade"}
+                Unidade
               </label>
               {isFranchisee && (
                 <span className="text-[9px] font-semibold text-[#8ea1be]">
@@ -322,7 +320,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
             {isFranchisee && availableFranchises.length <= 1 ? (
               <div className="flex items-center justify-between rounded-lg bg-white border border-[#cbd5e1] px-2.5 py-1.5 text-xs font-semibold text-[#0f172a]">
                 <div className="flex items-center gap-1.5 truncate">
-                  <span className="text-[#3c63da]">📍</span>
                   <span className="truncate">{activeFranchise?.name || "Minha Unidade"}</span>
                 </div>
                   <span className="text-[9px] font-mono font-bold bg-[#eff6ff] text-[#2563eb] px-1.5 py-0.5 rounded border border-[#bfdbfe]">
@@ -337,18 +334,18 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 className="w-full rounded-lg bg-white border border-[#cbd5e1] px-2.5 py-1.5 text-xs font-semibold text-[#0f172a] focus:outline-none focus:border-[#2563eb] cursor-pointer truncate"
               >
                 {isOwner && currentBusinessId === "all" && (
-                  <option value="dono">👑 Visão do Dono (Todas as Redes)</option>
+                  <option value="dono">Todas as unidades</option>
                 )}
                 {businesses
                   .filter((b) => currentBusinessId === "all" || b.id === currentBusinessId)
                   .map((b) => (
                     <option key={`matriz_${b.id}`} value={b.id}>
-                      🏢 Matriz {b?.brand || b?.name || b?.id}
+                      Matriz {b?.brand || b?.name || b?.id}
                     </option>
                   ))}
                 {availableFranchises.map((f) => (
                   <option key={f.id} value={f.id}>
-                    📍 {f?.name || f?.code} ({f?.code})
+                    {f?.name || f?.code} ({f?.code})
                   </option>
                 ))}
               </select>
@@ -356,7 +353,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           </div>
         </div>
       ) : (
-        <div className="my-2 flex flex-col items-center gap-1.5 py-2 border-b border-[#304566]/60">
+        <div className="my-2 flex flex-col items-center gap-1.5 py-2 border-b border-[#e2e8f0]">
           <button
             onClick={() => onSelectScreen("home")}
             title={getGestaoTitle()}
@@ -395,23 +392,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         {renderNavGroup("Gestão & Sistema", managementNav)}
       </div>
 
-      {/* Collapse Toggle at Bottom */}
-      <div className="mt-auto pt-2 border-t border-[#304566]">
-        <button
-          onClick={onToggleCollapse}
-          className="hidden lg:flex w-full items-center justify-center gap-2 rounded-lg bg-[#1b2d4b]/60 px-2 py-1.5 text-[11px] font-semibold text-[#8ea1be] hover:bg-[#1b2d4b] hover:text-white transition-colors cursor-pointer"
-          title={isCollapsed ? "Expandir Menu" : "Recolher Menu"}
-        >
-          {isCollapsed ? (
-            <ChevronRight className="h-4 w-4" />
-          ) : (
-            <>
-              <ChevronLeft className="h-4 w-4" />
-              <span>Recolher Menu</span>
-            </>
-          )}
-        </button>
-      </div>
+      <div className="mt-auto" aria-hidden="true" />
     </div>
   );
 

@@ -1,6 +1,6 @@
 import React from "react";
 import { UserSession, ScreenType } from "../types";
-import { Menu, LogOut, PanelLeftClose, PanelLeftOpen, UploadCloud } from "lucide-react";
+import { Menu, LogOut, PanelLeftClose, PanelLeftOpen } from "lucide-react";
 
 interface HeaderProps {
   userSession: UserSession | null;
@@ -117,17 +117,6 @@ export const Header: React.FC<HeaderProps> = ({
       </div>
 
       <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
-        {onOpenImport && (
-          <button
-            id="btn-header-import-base"
-            onClick={onOpenImport}
-            className="flex items-center gap-1.5 rounded-xl border border-[#9ab9f5] bg-[#edf4ff] px-2.5 py-2 text-[11px] font-extrabold text-[#2456b8] hover:bg-[#dceaff] transition-colors cursor-pointer shadow-2xs"
-            title="Abrir upload de bases Excel ou PDF"
-          >
-            <UploadCloud className="h-4 w-4" />
-            <span className="hidden sm:inline">Upload de bases</span>
-          </button>
-        )}
         {/* Perfil do usuário: identificação humana, sem indicadores técnicos */}
         <div id="user-profile-summary" className="hidden items-center gap-2 rounded-xl border border-[#e5eaf1] bg-[#f8fafc] px-2.5 py-1.5 sm:flex">
           <div
