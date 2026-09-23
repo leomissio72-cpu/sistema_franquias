@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { UserSession } from "../types";
 import { loginAPI } from "../api";
-import { Lock, User, Key, ArrowRight, Sparkles, X, Store } from "lucide-react";
+import { Lock, User, Key, ArrowRight, X } from "lucide-react";
 
 interface LoginModalProps {
   isOpen: boolean;
@@ -18,7 +18,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onSuccess, onClo
   if (!isOpen) return null;
 
   const handleSubmit = async (e?: React.FormEvent) => {
-    if (e) e.preventDefault();
+    e?.preventDefault();
     if (!username.trim() || !password) {
       setErrorMsg("Por favor, preencha o login e a senha.");
       return;
@@ -30,15 +30,15 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onSuccess, onClo
     try {
       const data = await loginAPI(username.trim(), password);
       const user = data.user;
-      const session: UserSession = {
+      onSuccess({
         login: user.login,
         name: user.nome,
         tenant: user.unidade,
         profile: user.perfil,
         token: data.token,
-      };
-      onSuccess(session);
-      if (onClose) onClose();
+        expiresAt: data.expiresAt,
+      });
+      onClose?.();
     } catch (err: any) {
       setErrorMsg(err.message || "Erro de autenticação. Verifique seu login e senha.");
     } finally {
@@ -46,218 +46,96 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onSuccess, onClo
     }
   };
 
-  const handleQuickLogin = async (demoUser: string, demoPass: string) => {
-    setUsername(demoUser);
-    setPassword(demoPass);
-    setIsLoading(true);
-    setErrorMsg("");
-
-    try {
-      const data = await loginAPI(demoUser, demoPass);
-      const user = data.user;
-      const session: UserSession = {
-        login: user.login,
-        name: user.nome,
-        tenant: user.unidade,
-        profile: user.perfil,
-        token: data.token,
-      };
-      onSuccess(session);
-      if (onClose) onClose();
-    } catch (err: any) {
-      setErrorMsg(err.message || "Erro ao conectar conta de teste.");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-[#f3f6fb] p-4 sm:p-6">
-      <div className="relative my-auto w-full max-w-4xl overflow-hidden rounded-3xl border border-[#dfe6f0] bg-white shadow-[0_24px_70px_rgba(43,65,96,0.16)] animate-in fade-in zoom-in-95 duration-200 lg:grid lg:grid-cols-[0.95fr_1.05fr]">
-        <div className="relative h-44 overflow-hidden bg-[#eaf2ff] p-6 sm:h-56 sm:p-8 lg:min-h-[640px]">
-          <img src="/login-visual.png" alt="Visão de gestão financeira e operacional" className="absolute inset-0 h-full w-full object-cover" />
-          <div className="absolute inset-0 bg-gradient-to-t from-[#06132f]/80 via-[#06132f]/20 to-transparent" />
-          <div className="relative z-10 max-w-xs text-white">
-            <p className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-cyan-200">Gestão de Franquias</p>
-            <h3 className="mt-4 text-3xl font-extrabold leading-tight">Clareza para decidir melhor.</h3>
-            <p className="mt-4 text-sm font-medium leading-6 text-white/80">Uma visão organizada da operação, dos resultados e das unidades da sua rede.</p>
-          </div>
-        </div>
-        <div className="relative p-6 sm:p-8">
-        {onClose && (
-          <button
-            onClick={onClose}
-            className="absolute top-4 right-4 p-1.5 text-[#69778c] hover:text-[#152238] rounded-lg hover:bg-[#f4f7fb] cursor-pointer"
-            aria-label="Fechar"
-          >
-            <X className="h-5 w-5" />
-          </button>
-        )}
+    <div className="fixed inset-0 z-50 min-h-screen overflow-y-auto bg-[#071326]">
+      <img
+        src="/login-visual.png"
+        alt="Visão de gestão financeira e operacional"
+        className="fixed inset-0 h-full w-full object-cover"
+      />
+      <div className="fixed inset-0 bg-[#06132f]/60" />
+      <div className="fixed inset-0 bg-gradient-to-br from-[#06132f]/30 via-transparent to-[#020817]/80" />
 
-        <div className="text-center mb-6">
-          <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl border border-[#d7e2fb] bg-[#f0f5ff] text-[#315bc5]">
-            <Lock className="h-7 w-7" />
-          </div>
-          <h2 className="text-2xl font-extrabold tracking-tight text-[#152238]">
-            Sofia CFO
-          </h2>
-          <div className="mt-1 inline-block rounded-full border border-[#d7e2fb] bg-[#f0f5ff] px-2.5 py-0.5 text-[11px] font-extrabold uppercase tracking-wide text-[#315bc5]">
-            Gestão de Franquias
-          </div>
-          <p className="text-xs text-[#69778c] mt-2 leading-relaxed">
-            Plataforma Centralizada de Gestão Financeira para Redes de Franquias em Nuvem.
-          </p>
-        </div>
+      <div className="relative flex min-h-screen items-center justify-center p-4 sm:p-6">
+        <section className="relative w-full max-w-md overflow-hidden rounded-2xl border border-white/30 bg-white/95 p-6 shadow-[0_24px_80px_rgba(0,0,0,0.35)] backdrop-blur-md sm:p-8">
+          {onClose && (
+            <button
+              onClick={onClose}
+              className="absolute right-4 top-4 rounded-lg p-1.5 text-[#69778c] transition hover:bg-[#f4f7fb] hover:text-[#152238]"
+              aria-label="Fechar"
+            >
+              <X className="h-5 w-5" />
+            </button>
+          )}
 
-        {errorMsg && (
-          <div className="mb-4 rounded-xl bg-[#fff0f0] border border-[#f0d0d0] p-3 text-xs font-semibold text-[#b44b4b]">
-            {errorMsg}
-          </div>
-        )}
-
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-[10px] font-extrabold uppercase tracking-wider text-[#69778c] mb-1.5">
-              Login ou Usuário
-            </label>
-            <div className="relative">
-              <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-[#69778c]">
-                <User className="h-4 w-4" />
-              </div>
-              <input
-                id="input-login-username"
-                type="text"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                placeholder="Ex.: dono, renata.f001"
-                className="w-full rounded-xl border border-[#e5eaf1] bg-[#fbfcff] py-2.5 pl-9 pr-3 text-sm text-[#152238] focus:border-[#3c63da] focus:bg-white focus:outline-none focus:ring-3 focus:ring-[#3c63da]/20 transition-all font-medium"
-                autoComplete="username"
-              />
+          <div className="mb-7 text-center">
+            <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-[#173d86] text-white shadow-lg shadow-[#173d86]/20">
+              <Lock className="h-6 w-6" />
             </div>
+            <p className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-[#315bc5]">Gestão de Franquias</p>
+            <h1 className="mt-2 text-2xl font-extrabold tracking-tight text-[#152238]">Sofia CFO</h1>
+            <p className="mx-auto mt-2 max-w-xs text-xs leading-relaxed text-[#69778c]">
+              Acesse sua operação financeira, suas unidades e seus resultados.
+            </p>
           </div>
 
-          <div>
-            <label className="block text-[10px] font-extrabold uppercase tracking-wider text-[#69778c] mb-1.5">
-              Senha de Acesso
-            </label>
-            <div className="relative">
-              <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-[#69778c]">
-                <Key className="h-4 w-4" />
-              </div>
-              <input
-                id="input-login-password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
-                className="w-full rounded-xl border border-[#e5eaf1] bg-[#fbfcff] py-2.5 pl-9 pr-3 text-sm text-[#152238] focus:border-[#3c63da] focus:bg-white focus:outline-none focus:ring-3 focus:ring-[#3c63da]/20 transition-all font-medium"
-                autoComplete="current-password"
-              />
+          {errorMsg && (
+            <div className="mb-4 rounded-xl border border-[#f0d0d0] bg-[#fff0f0] p-3 text-xs font-semibold text-[#b44b4b]">
+              {errorMsg}
             </div>
-          </div>
+          )}
 
-          <button
-            id="btn-submit-login"
-            type="submit"
-            disabled={isLoading}
-            className="w-full flex items-center justify-center gap-2 rounded-xl bg-[#3c63da] py-3 text-sm font-bold text-white hover:bg-[#2f52c0] focus:outline-none focus:ring-4 focus:ring-[#3c63da]/30 shadow-md shadow-[#3c63da]/20 disabled:opacity-50 transition-all cursor-pointer"
-          >
-            {isLoading ? (
-              <span>Entrando...</span>
-            ) : (
-              <>
-                <span>Acessar Gestão de Franquias</span>
-                <ArrowRight className="h-4 w-4" />
-              </>
-            )}
-          </button>
-        </form>
-
-        {/* Quick Demo Accounts */}
-        <div className="mt-6 pt-5 border-t border-[#e5eaf1]">
-          <div className="flex items-center gap-1.5 text-[11px] font-bold text-[#152238] mb-1">
-            <Sparkles className="h-3.5 w-3.5 text-amber-500" />
-            <span>Acessos por franquia</span>
-          </div>
-          <p className="text-[10px] text-[#69778c] mb-2.5">Cada franqueado entra com seu próprio usuário e visualiza somente a unidade autorizada.</p>
-          <div className="grid grid-cols-2 gap-2 text-xs">
-            <button
-              type="button"
-              onClick={() => handleQuickLogin("renata.f001", "1234")}
-              className="flex flex-col items-start rounded-lg border-2 border-[#3c63da]/30 bg-[#edf2ff] p-2 hover:border-[#3c63da] hover:bg-[#e1ebff] transition-all text-left cursor-pointer shadow-xs"
-            >
-              <div className="flex items-center gap-1">
-                <Store className="h-3 w-3 text-[#3c63da]" />
-                <b className="text-[#3c63da] text-[11px]">Gestão: Café</b>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label htmlFor="input-login-username" className="mb-1.5 block text-[10px] font-extrabold uppercase tracking-wider text-[#69778c]">
+                Login ou usuário
+              </label>
+              <div className="relative">
+                <User className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#69778c]" />
+                <input
+                  id="input-login-username"
+                  type="text"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  placeholder="Digite seu usuário"
+                  className="w-full rounded-xl border border-[#dce4ef] bg-white py-3 pl-10 pr-3 text-sm font-medium text-[#152238] outline-none transition focus:border-[#3c63da] focus:ring-4 focus:ring-[#3c63da]/15"
+                  autoComplete="username"
+                />
               </div>
-              <span className="text-[10px] text-[#294285] font-semibold">Franq. Paulista</span>
-              <span className="text-[9px] text-[#69778c] font-mono">renata.f001 / 1234</span>
-            </button>
+            </div>
 
-            <button
-              type="button"
-              onClick={() => handleQuickLogin("marcos.f002", "1234")}
-              className="flex flex-col items-start rounded-lg border-2 border-emerald-300 bg-emerald-50/70 p-2 hover:border-emerald-500 hover:bg-emerald-100 transition-all text-left cursor-pointer shadow-xs"
-            >
-              <div className="flex items-center gap-1">
-                <Store className="h-3 w-3 text-emerald-700" />
-                <b className="text-emerald-800 text-[11px]">Gestão: Café</b>
+            <div>
+              <label htmlFor="input-login-password" className="mb-1.5 block text-[10px] font-extrabold uppercase tracking-wider text-[#69778c]">
+                Senha de acesso
+              </label>
+              <div className="relative">
+                <Key className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#69778c]" />
+                <input
+                  id="input-login-password"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Digite sua senha"
+                  className="w-full rounded-xl border border-[#dce4ef] bg-white py-3 pl-10 pr-3 text-sm font-medium text-[#152238] outline-none transition focus:border-[#3c63da] focus:ring-4 focus:ring-[#3c63da]/15"
+                  autoComplete="current-password"
+                />
               </div>
-              <span className="text-[10px] text-emerald-900 font-semibold">Franq. Vila Mariana</span>
-              <span className="text-[9px] text-[#69778c] font-mono">marcos.f002 / 1234</span>
-            </button>
+            </div>
 
             <button
-              type="button"
-              onClick={() => handleQuickLogin("juliana.f004", "1234")}
-              className="flex flex-col items-start rounded-lg border-2 border-violet-300 bg-violet-50/70 p-2 hover:border-violet-500 hover:bg-violet-100 transition-all text-left cursor-pointer shadow-xs"
+              id="btn-submit-login"
+              type="submit"
+              disabled={isLoading}
+              className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#2457c5] py-3.5 text-sm font-bold text-white shadow-lg shadow-[#2457c5]/20 transition hover:bg-[#1d49a8] focus:outline-none focus:ring-4 focus:ring-[#2457c5]/25 disabled:cursor-not-allowed disabled:opacity-50"
             >
-              <div className="flex items-center gap-1">
-                <Store className="h-3 w-3 text-violet-700" />
-                <b className="text-violet-800 text-[11px]">Gestão: EduKids</b>
-              </div>
-              <span className="text-[10px] text-violet-900 font-semibold">Franquia EduKids</span>
-              <span className="text-[9px] text-[#69778c] font-mono">juliana.f004 / 1234</span>
+              {isLoading ? <span>Entrando...</span> : <><span>Acessar gestão</span><ArrowRight className="h-4 w-4" /></>}
             </button>
+          </form>
 
-            <button
-              type="button"
-              onClick={() => handleQuickLogin("ana.f007", "1234")}
-              className="flex flex-col items-start rounded-lg border-2 border-rose-300 bg-rose-50/70 p-2 hover:border-rose-500 hover:bg-rose-100 transition-all text-left cursor-pointer shadow-xs"
-            >
-              <div className="flex items-center gap-1">
-                <Store className="h-3 w-3 text-rose-700" />
-                <b className="text-rose-800 text-[11px]">Gestão: Unidade F007</b>
-              </div>
-              <span className="text-[10px] text-rose-900 font-semibold">Franqueada Ana</span>
-              <span className="text-[9px] text-[#69778c] font-mono">ana.f007 / 1234</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => handleQuickLogin("dono", "1234")}
-              className="flex flex-col items-start rounded-lg border border-[#e5eaf1] bg-[#f8faff] p-2 hover:border-[#3c63da] hover:bg-[#edf2ff] transition-all text-left cursor-pointer"
-            >
-              <b className="text-[#152238] text-[11px]">👑 Dono Geral</b>
-              <span className="text-[10px] text-[#69778c]">Gestão: Todas as Redes</span>
-              <span className="text-[9px] text-[#69778c] font-mono">dono / 1234</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => handleQuickLogin("admin.cafe", "1234")}
-              className="flex flex-col items-start rounded-lg border border-[#e5eaf1] bg-[#f8faff] p-2 hover:border-[#3c63da] hover:bg-[#edf2ff] transition-all text-left cursor-pointer"
-            >
-              <b className="text-[#6a4ecb] text-[11px]">🏢 Admin Rede Café</b>
-              <span className="text-[10px] text-[#69778c]">Gestão: Café Prime</span>
-              <span className="text-[9px] text-[#69778c] font-mono">admin.cafe / 1234</span>
-            </button>
-          </div>
-          <p className="mt-3 text-[10px] text-center text-[#8ea1be]">
-            Acesso seguro com isolamento por perfil e sincronização instantânea em nuvem.
+          <p className="mt-6 text-center text-[10px] font-medium text-[#8a98ab]">
+            Acesso protegido por perfil e unidade autorizada.
           </p>
-        </div>
-      </div>
+        </section>
       </div>
     </div>
   );
