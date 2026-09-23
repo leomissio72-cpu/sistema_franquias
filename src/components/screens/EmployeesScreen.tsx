@@ -1,108 +1,60 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import { Employee, ScreenType, FranchiseUnit } from "../../types";
 import { formatBrl2 } from "../../utils/calculations";
-import { Users2, Plus, Search, Trash2, Mail, Phone, Building } from "lucide-react";
+import { Building2, Mail, Pencil, Phone, Plus, Search, UserRound, Wallet, X } from "lucide-react";
 
 interface EmployeesScreenProps {
   currentTenantId: string;
   franchises: FranchiseUnit[];
+  employees: Employee[];
+  onSaveEmployees: (employees: Employee[]) => Promise<void>;
   onNavigate: (screen: ScreenType) => void;
 }
 
-export const EmployeesScreen: React.FC<EmployeesScreenProps> = ({
-  currentTenantId,
-  franchises,
-  onNavigate,
-}) => {
-  const [employees, setEmployees] = useState<Employee[]>([
-    { id: "e1", nome: "Renata Souza", cargo: "Gerente Geral", unidade: "f001", matricula: "0012", email: "renata@jardins.com", phone: "(11) 98765-4321", salary: 5500, vt: true, active: true },
-    { id: "e2", nome: "Carlos Eduardo", cargo: "Atendente Sênior", unidade: "f001", matricula: "0018", email: "carlos@jardins.com", phone: "(11) 98765-4322", salary: 2800, vt: true, active: true },
-    { id: "e3", nome: "Mariana Costa", cargo: "Caixa / Operações", unidade: "f002", matricula: "0021", email: "mariana@moema.com", phone: "(11) 98765-4323", salary: 2600, vt: true, active: true },
-    { id: "e4", nome: "Felipe Andrade", cargo: "Supervisor Regional", unidade: "dono", matricula: "0001", email: "felipe@sofiacfo.com", phone: "(11) 99999-8888", salary: 8200, vt: false, active: true },
-  ]);
+type EmployeeForm = Omit<Employee, "id">;
+const emptyForm: EmployeeForm = { nome: "", matricula: "", cargo: "", unidade: "", email: "", phone: "", vt: false, salary: 0, active: true, cpf: "", admissionDate: "", paymentMethod: "PIX", bank: "", pixKey: "", notes: "" };
 
+export const EmployeesScreen: React.FC<EmployeesScreenProps> = ({ currentTenantId, franchises, employees, onSaveEmployees, onNavigate }) => {
   const [search, setSearch] = useState("");
+  const [showForm, setShowForm] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [form, setForm] = useState<EmployeeForm>({ ...emptyForm, unidade: currentTenantId === "dono" ? "" : currentTenantId });
+  const [saving, setSaving] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
 
-  const getUnitName = (unidadeId: string) => {
-    if (unidadeId === "dono") return "Rede Consolidada (Matriz)";
-    const found = franchises.find((f) => f.id === unidadeId);
-    return found ? found.name : unidadeId;
+  const getUnitName = (id: string) => id === "dono" ? "Rede Consolidada (Matriz)" : franchises.find((item) => item.id === id)?.name || id || "Sem unidade";
+  const filtered = useMemo(() => employees.filter((employee) => `${employee.nome} ${employee.cargo} ${employee.matricula} ${getUnitName(employee.unidade)}`.toLowerCase().includes(search.toLowerCase())), [employees, search, franchises]);
+
+  const openNew = () => { setEditingId(null); setForm({ ...emptyForm, unidade: currentTenantId === "dono" ? "" : currentTenantId }); setShowForm(true); };
+  const openEdit = (employee: Employee) => { setEditingId(employee.id); setForm({ ...emptyForm, ...employee }); setShowForm(true); };
+  const update = (key: keyof EmployeeForm, value: any) => setForm((previous) => ({ ...previous, [key]: value }));
+
+  const save = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!form.nome.trim() || !form.cargo.trim() || !form.unidade) { setMessage("Preencha nome, cargo e unidade."); return; }
+    setSaving(true); setMessage(null);
+    try {
+      const next: Employee[] = editingId ? employees.map((employee) => employee.id === editingId ? { ...form, id: editingId, nome: form.nome.trim(), cargo: form.cargo.trim() } : employee) : [...employees, { ...form, id: `employee-${Date.now()}`, nome: form.nome.trim(), cargo: form.cargo.trim() }];
+      await onSaveEmployees(next);
+      setShowForm(false); setMessage(editingId ? "Funcionário atualizado com sucesso." : "Funcionário cadastrado com sucesso.");
+    } catch (error) { console.error(error); setMessage("Não foi possível salvar o funcionário."); }
+    finally { setSaving(false); }
   };
 
-  const filtered = employees.filter(
-    (e) =>
-      e.nome.toLowerCase().includes(search.toLowerCase()) ||
-      e.cargo.toLowerCase().includes(search.toLowerCase()) ||
-      getUnitName(e.unidade).toLowerCase().includes(search.toLowerCase())
-  );
-
-  return (
-    <div className="space-y-6 animate-in fade-in duration-150">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <div className="text-[10px] font-extrabold uppercase tracking-widest text-[#3c63da]">
-            Quadro de Pessoal
-          </div>
-          <h2 className="text-2xl font-extrabold tracking-tight text-[#152238] flex items-center gap-2 mt-1">
-            <Users2 className="h-6 w-6 text-[#3c63da]" />
-            Colaboradores & Funcionários ({employees.length})
-          </h2>
-          <p className="text-xs text-[#69778c] mt-1">
-            Quadro de funcionários por loja, cargos, salários e controle de admissões.
-          </p>
-        </div>
-      </div>
-
-      {/* Filter */}
-      <div className="relative">
-        <Search className="absolute left-3 top-2.5 h-4 w-4 text-[#69778c]" />
-        <input
-          type="text"
-          placeholder="Buscar colaborador por nome, cargo ou unidade..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="w-full rounded-xl border border-[#e5eaf1] bg-white pl-9 pr-3 py-2 text-xs font-medium text-[#152238] focus:border-[#3c63da] focus:outline-none shadow-xs"
-        />
-      </div>
-
-      {/* Table */}
-      <div className="rounded-2xl border border-[#e5eaf1] bg-white p-5 sm:p-6 shadow-xs space-y-4">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs border-collapse">
-            <thead>
-              <tr className="bg-[#f8f9fc] text-[#69778c] uppercase text-[9px] tracking-wider border-b border-[#e5eaf1]">
-                <th className="p-3">Colaborador</th>
-                <th className="p-3">Cargo / Função</th>
-                <th className="p-3">Unidade Vinculada</th>
-                <th className="p-3">Contato</th>
-                <th className="p-3 text-right">Salário Base</th>
-                <th className="p-3 text-right">Status</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-[#e5eaf1]">
-              {filtered.map((emp) => (
-                <tr key={emp.id} className="hover:bg-[#f8faff]">
-                  <td className="p-3">
-                    <b className="text-[#152238] block">{emp.nome}</b>
-                    <span className="text-[10px] text-[#69778c]">{emp.email}</span>
-                  </td>
-                  <td className="p-3 font-semibold text-[#152238]">{emp.cargo}</td>
-                  <td className="p-3 text-[#69778c]">{getUnitName(emp.unidade)}</td>
-                  <td className="p-3 text-[#69778c]">{emp.phone || "—"}</td>
-                  <td className="p-3 text-right font-mono font-bold text-[#152238]">
-                    {formatBrl2(emp.salary || 0)}
-                  </td>
-                  <td className="p-3 text-right">
-                    <span className="bg-emerald-50 text-emerald-700 px-2 py-0.5 text-[10px] font-bold rounded-full">
-                      Ativo
-                    </span>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
+  return <div className="space-y-6 animate-in fade-in duration-150">
+    <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+      <div><div className="text-[10px] font-extrabold uppercase tracking-widest text-[#3c63da]">Pessoas & Folha</div><h2 className="mt-1 flex items-center gap-2 text-2xl font-extrabold tracking-tight text-[#152238]"><UserRound className="h-6 w-6 text-[#3c63da]" />Funcionários ({employees.length})</h2><p className="mt-1 text-xs text-[#69778c]">Cadastre informações profissionais, remuneração, unidade e forma de pagamento de cada colaborador.</p></div>
+      <button type="button" onClick={openNew} className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#3c63da] px-4 py-2.5 text-xs font-bold text-white shadow-sm hover:bg-[#2f52c0]"><Plus className="h-4 w-4" />Novo funcionário</button>
     </div>
-  );
+    {message && <div className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-xs font-semibold text-blue-900">{message}</div>}
+    <div className="relative"><Search className="absolute left-3 top-2.5 h-4 w-4 text-[#69778c]" /><input type="text" placeholder="Buscar por nome, cargo, matrícula ou unidade..." value={search} onChange={(event) => setSearch(event.target.value)} className="w-full rounded-xl border border-[#e5eaf1] bg-white py-2.5 pl-9 pr-3 text-xs font-medium text-[#152238] shadow-xs focus:border-[#3c63da] focus:outline-none" /></div>
+    <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
+      {filtered.map((employee) => <article key={employee.id} className="rounded-2xl border border-[#e5eaf1] bg-white p-4 shadow-xs transition-shadow hover:shadow-sm"><div className="flex items-start justify-between gap-3"><div className="flex min-w-0 items-center gap-3"><div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#edf2ff] text-[#3c63da]"><UserRound className="h-5 w-5" /></div><div className="min-w-0"><h3 className="truncate text-sm font-extrabold text-[#152238]">{employee.nome}</h3><p className="truncate text-[11px] text-[#69778c]">{employee.cargo} · Matrícula {employee.matricula || "—"}</p></div></div><button type="button" onClick={() => openEdit(employee)} className="rounded-lg p-2 text-[#3c63da] hover:bg-[#edf2ff]" aria-label={`Editar ${employee.nome}`}><Pencil className="h-4 w-4" /></button></div><div className="mt-4 space-y-2 text-xs text-[#526078]"><div className="flex items-center gap-2"><Building2 className="h-3.5 w-3.5 text-[#3c63da]" />{getUnitName(employee.unidade)}</div><div className="flex items-center gap-2"><Mail className="h-3.5 w-3.5 text-[#3c63da]" />{employee.email || "E-mail não informado"}</div><div className="flex items-center gap-2"><Phone className="h-3.5 w-3.5 text-[#3c63da]" />{employee.phone || "Telefone não informado"}</div><div className="flex items-center gap-2"><Wallet className="h-3.5 w-3.5 text-[#3c63da]" />{employee.paymentMethod || "PIX"}{employee.pixKey ? ` · ${employee.pixKey}` : ""}</div></div><div className="mt-4 flex items-center justify-between border-t border-[#eef1f6] pt-3"><span className="text-xs font-bold text-[#152238]">{formatBrl2(Number(employee.salary) || 0)}</span><span className={`rounded-full px-2 py-1 text-[10px] font-bold ${employee.active === false ? "bg-slate-100 text-slate-600" : "bg-emerald-50 text-emerald-700"}`}>{employee.active === false ? "Inativo" : "Ativo"}</span></div></article>)}
+    </div>
+    {!filtered.length && <div className="rounded-2xl border border-dashed border-[#cdd7e7] bg-white p-8 text-center text-sm text-[#69778c]">Nenhum funcionário encontrado.</div>}
+
+    {showForm && <div className="fixed inset-0 z-[80] flex items-center justify-center bg-[#152238]/45 p-4" role="dialog" aria-modal="true"><form onSubmit={save} className="max-h-[92vh] w-full max-w-3xl overflow-y-auto rounded-2xl bg-white p-5 shadow-2xl sm:p-6"><div className="flex items-start justify-between gap-4 border-b border-[#e5eaf1] pb-4"><div><h3 className="text-lg font-extrabold text-[#152238]">{editingId ? "Editar funcionário" : "Cadastrar funcionário"}</h3><p className="mt-1 text-xs text-[#69778c]">Informações usadas para gestão de pessoal, VT e pagamentos.</p></div><button type="button" onClick={() => setShowForm(false)} className="rounded-lg p-2 text-[#69778c] hover:bg-[#f3f6fb]" aria-label="Fechar"><X className="h-5 w-5" /></button></div><div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2"><Field label="Nome completo" value={form.nome} onChange={(value) => update("nome", value)} required /><Field label="Matrícula" value={form.matricula} onChange={(value) => update("matricula", value)} /><Field label="Cargo / função" value={form.cargo} onChange={(value) => update("cargo", value)} required /><Field label="CPF" value={form.cpf || ""} onChange={(value) => update("cpf", value)} /><Field label="E-mail" value={form.email} onChange={(value) => update("email", value)} type="email" /><Field label="Telefone" value={form.phone || ""} onChange={(value) => update("phone", value)} /><label className="space-y-1 text-xs font-bold text-[#526078]">Unidade<select value={form.unidade} onChange={(event) => update("unidade", event.target.value)} className="mt-1 w-full rounded-lg border border-[#dce4f0] bg-white px-3 py-2.5 text-sm font-medium text-[#152238] outline-none focus:border-[#3c63da]" required><option value="">Selecione</option><option value="dono">Rede Consolidada (Matriz)</option>{franchises.map((franchise) => <option key={franchise.id} value={franchise.id}>{franchise.name} ({franchise.code})</option>)}</select></label><Field label="Data de admissão" value={form.admissionDate || ""} onChange={(value) => update("admissionDate", value)} type="date" /><Field label="Salário base (R$)" value={String(form.salary || "")} onChange={(value) => update("salary", Number(value) || 0)} type="number" /><label className="space-y-1 text-xs font-bold text-[#526078]">Modo de pagamento<select value={form.paymentMethod || "PIX"} onChange={(event) => update("paymentMethod", event.target.value)} className="mt-1 w-full rounded-lg border border-[#dce4f0] bg-white px-3 py-2.5 text-sm font-medium text-[#152238] outline-none focus:border-[#3c63da]"><option>PIX</option><option>Transferência bancária</option><option>Conta salário</option><option>Dinheiro</option><option>Cheque</option></select></label><Field label="Banco / agência / conta" value={form.bank || ""} onChange={(value) => update("bank", value)} /><Field label="Chave PIX" value={form.pixKey || ""} onChange={(value) => update("pixKey", value)} /><label className="flex items-center gap-2 pt-7 text-xs font-bold text-[#526078]"><input type="checkbox" checked={Boolean(form.vt)} onChange={(event) => update("vt", event.target.checked)} />Recebe vale-transporte</label><label className="space-y-1 text-xs font-bold text-[#526078] sm:col-span-2">Observações<textarea value={form.notes || ""} onChange={(event) => update("notes", event.target.value)} rows={3} className="mt-1 w-full rounded-lg border border-[#dce4f0] px-3 py-2.5 text-sm font-medium text-[#152238] outline-none focus:border-[#3c63da]" placeholder="Informações adicionais do colaborador" /></label><label className="flex items-center gap-2 text-xs font-bold text-[#526078] sm:col-span-2"><input type="checkbox" checked={form.active !== false} onChange={(event) => update("active", event.target.checked)} />Cadastro ativo</label></div><div className="mt-6 flex flex-col-reverse gap-2 border-t border-[#e5eaf1] pt-4 sm:flex-row sm:justify-end"><button type="button" onClick={() => setShowForm(false)} className="rounded-xl border border-[#dce4f0] px-4 py-2.5 text-xs font-bold text-[#526078] hover:bg-[#f7f9fc]">Cancelar</button><button type="submit" disabled={saving} className="rounded-xl bg-[#3c63da] px-5 py-2.5 text-xs font-bold text-white hover:bg-[#2f52c0] disabled:opacity-60">{saving ? "Salvando..." : "Salvar funcionário"}</button></div></form></div>}
+  </div>;
 };
+
+function Field({ label, value, onChange, type = "text", required = false }: { label: string; value: string; onChange: (value: string) => void; type?: string; required?: boolean }) { return <label className="space-y-1 text-xs font-bold text-[#526078]">{label}<input type={type} value={value} required={required} onChange={(event) => onChange(event.target.value)} className="mt-1 w-full rounded-lg border border-[#dce4f0] bg-white px-3 py-2.5 text-sm font-medium text-[#152238] outline-none focus:border-[#3c63da]" /></label>; }

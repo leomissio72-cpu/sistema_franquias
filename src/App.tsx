@@ -15,6 +15,7 @@ import {
   AuditLog,
   CloudState,
   UserAccount
+  ,Employee
 } from "./types";
 import {
   fetchServerState,
@@ -224,6 +225,11 @@ export const App: React.FC = () => {
 
   const handleSaveUsers = async (users: UserAccount[]) => {
     const updatedState = await syncStateSection("users", users, userSession?.name || "Administrador");
+    setServerState(updatedState);
+  };
+
+  const handleSaveEmployees = async (employees: Employee[]) => {
+    const updatedState = await syncStateSection("employees", employees, userSession?.name || "Administrador");
     setServerState(updatedState);
   };
 
@@ -589,6 +595,8 @@ export const App: React.FC = () => {
             <EmployeesScreen
               currentTenantId={currentTenantId}
               franchises={franchises}
+              employees={serverState.employees || []}
+              onSaveEmployees={handleSaveEmployees}
               onNavigate={setCurrentScreen}
             />
           )}

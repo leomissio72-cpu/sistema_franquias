@@ -122,7 +122,12 @@ export const ConciliationScreen: React.FC<ConciliationScreenProps> = ({
   };
 
   const handleApproveSelected = () => {
-    setToastMsg(`${selectedIds.length} movimentações aprovadas e conciliadas no DRE com sucesso!`);
+    const selectedItems = filteredItems.filter((_, index) => selectedIds.includes(index));
+    if (!selectedItems.length) return;
+    setItems((previous) => previous.map((item) => selectedItems.includes(item)
+      ? { ...item, status: "match", label: "Conciliado", tone: "green", match: "Conciliação confirmada" }
+      : item));
+    setToastMsg(`${selectedItems.length} movimentação(ões) aprovada(s) e conciliada(s) com sucesso.`);
     setSelectedIds([]);
     setTimeout(() => setToastMsg(null), 3500);
   };

@@ -156,6 +156,12 @@ export interface Employee {
   phone?: string;
   salary?: number;
   active?: boolean;
+  cpf?: string;
+  admissionDate?: string;
+  paymentMethod?: string;
+  bank?: string;
+  pixKey?: string;
+  notes?: string;
 }
 
 export interface UserAccount {
