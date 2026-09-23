@@ -2,48 +2,151 @@
 
 html.theme-dark,
 html.theme-dark body {
-  background: #0f172a;
+  background: #0b1220;
+  color: #e5edf8;
 }
 
 html.theme-dark .app-shell {
-  background: #0f172a !important;
-  color: #e2e8f0 !important;
+  background: #0b1220 !important;
+  color: #e5edf8 !important;
 }
 
 html.theme-dark #main-topbar {
-  background: #111c31 !important;
-  border-color: #263650 !important;
+  background: #111b2d !important;
+  border-color: #263957 !important;
 }
 
 html.theme-dark #main-topbar h1,
 html.theme-dark #main-topbar p,
 html.theme-dark #main-topbar button,
 html.theme-dark #main-topbar svg {
-  color: #e2e8f0 !important;
+  color: #e5edf8 !important;
 }
 
+html.theme-dark aside,
 html.theme-dark aside > div,
 html.theme-dark .bg-white {
-  background-color: #111c31 !important;
-  border-color: #263650 !important;
+  background-color: #111b2d !important;
+  border-color: #263957 !important;
 }
 
 html.theme-dark input,
 html.theme-dark select,
 html.theme-dark textarea {
-  background-color: #17243b !important;
-  border-color: #334765 !important;
-  color: #e2e8f0 !important;
+  background-color: #17263d !important;
+  border-color: #385071 !important;
+  color: #edf4ff !important;
 }
 
+html.theme-dark input::placeholder,
+html.theme-dark textarea::placeholder {
+  color: #8fa3bf !important;
+}
+
+html.theme-dark option {
+  background: #17263d;
+  color: #edf4ff;
+}
+
+/* Surfaces used throughout the screens */
+html.theme-dark .bg-\[\#f8faff\],
+html.theme-dark .bg-\[\#f8fafc\],
+html.theme-dark .bg-\[\#fbfcff\],
+html.theme-dark .bg-\[\#f3f6fb\],
+html.theme-dark .bg-\[\#f4f7fb\],
+html.theme-dark .bg-\[\#eef2f8\],
+html.theme-dark .bg-\[\#edf2ff\],
+html.theme-dark .bg-\[\#eff6ff\],
+html.theme-dark .bg-\[\#f0f5ff\] {
+  background-color: #17243a !important;
+}
+
+html.theme-dark .hover\:bg-\[\#f4f7fb\]:hover,
+html.theme-dark .hover\:bg-\[\#f8faff\]:hover,
+html.theme-dark .hover\:bg-\[\#f8fafc\]:hover,
+html.theme-dark .hover\:bg-white:hover {
+  background-color: #213452 !important;
+}
+
+/* Text contrast */
 html.theme-dark .text-\[\#152238\],
 html.theme-dark .text-\[\#0f172a\],
 html.theme-dark .text-\[\#334155\],
-html.theme-dark .text-\[\#475569\] {
-  color: #e2e8f0 !important;
+html.theme-dark .text-\[\#475569\],
+html.theme-dark .text-\[\#526078\],
+html.theme-dark .text-\[\#1e293b\] {
+  color: #e5edf8 !important;
 }
 
+html.theme-dark .text-\[\#69778c\],
+html.theme-dark .text-\[\#64748b\],
+html.theme-dark .text-\[\#94a3b8\],
+html.theme-dark .text-\[\#6b7280\] {
+  color: #a9b8cf !important;
+}
+
+html.theme-dark .text-\[\#315bc5\],
+html.theme-dark .text-\[\#3c63da\],
+html.theme-dark .text-\[\#2563eb\] {
+  color: #8db4ff !important;
+}
+
+/* Borders and separators */
 html.theme-dark .border-\[\#e5eaf1\],
-html.theme-dark .border-\[\#e2e8f0\] {
-  border-color: #263650 !important;
+html.theme-dark .border-\[\#e2e8f0\],
+html.theme-dark .border-\[\#dbe3ee\],
+html.theme-dark .border-\[\#cbd5e1\],
+html.theme-dark .border-\[\#eef2f7\],
+html.theme-dark .border-\[\#f0f4f9\] {
+  border-color: #2b4161 !important;
+}
+
+html.theme-dark .divide-\[\#eef2f7\] > :not([hidden]) ~ :not([hidden]) {
+  border-color: #2b4161 !important;
+}
+
+html.theme-dark .shadow-xs,
+html.theme-dark .shadow-sm,
+html.theme-dark .shadow-md {
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.22) !important;
+}
+
+/* Keep primary actions readable in both modes */
+html.theme-dark .bg-\[\#152238\] {
+  background-color: #2e5fc4 !important;
+}
+
+html.theme-dark .hover\:bg-\[\#25395a\]:hover {
+  background-color: #3a70dc !important;
+}
+
+html.theme-dark .bg-\[\#3c63da\] {
+  background-color: #3c70e5 !important;
+}
+
+html.theme-dark .text-white {
+  color: #ffffff !important;
+}
+
+html.theme-dark .ring-\[\#3c63da\]\/20 {
+  --tw-ring-color: rgb(91 141 255 / 0.28) !important;
+}
+
+/* Scrollbars */
+html.theme-dark ::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+html.theme-dark ::-webkit-scrollbar-track {
+  background: #0b1220;
+}
+
+html.theme-dark ::-webkit-scrollbar-thumb {
+  background: #2b4161;
+  border-radius: 999px;
+}
+
+html.theme-dark ::-webkit-scrollbar-thumb:hover {
+  background: #41618e;
 }
