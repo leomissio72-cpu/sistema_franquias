@@ -388,6 +388,27 @@ function loadDatabase(): DatabaseState {
   return initialDB;
 }
 
+function removeDemonstrationData(data: DatabaseState): DatabaseState {
+  const demoIds = {
+    businesses: new Set(["biz1", "biz2", "biz3"]),
+    franchises: new Set(["f001", "f002", "f003", "f004", "f005", "f006", "f007", "f008", "f009"]),
+    employees: new Set(["e2", "e3", "e4", "e5", "e6", "e7"]),
+    users: new Set(["u2", "u3", "u4", "u5", "u6", "u7", "u8", "u9"]),
+    manualEntries: new Set(["m1", "m2"]),
+  };
+  const withoutDemo = (items: any[], ids: Set<string>) => items.filter((item) => !ids.has(item.id));
+  return {
+    ...data,
+    businesses: withoutDemo(data.businesses || [], demoIds.businesses),
+    franchises: withoutDemo(data.franchises || [], demoIds.franchises),
+    employees: withoutDemo(data.employees || [], demoIds.employees),
+    users: withoutDemo(data.users || [], demoIds.users),
+    manualEntries: withoutDemo(data.manualEntries || [], demoIds.manualEntries),
+    dreParams: Object.fromEntries(Object.entries(data.dreParams || {}).filter(([key]) => !["f001", "f002", "f004"].includes(key))),
+    royalties: Object.fromEntries(Object.entries(data.royalties || {}).filter(([key]) => !demoIds.businesses.has(key))),
+  };
+}
+
 function saveDatabase(data: DatabaseState) {
   try {
     data.lastUpdated = new Date().toISOString();
@@ -397,7 +418,7 @@ function saveDatabase(data: DatabaseState) {
   }
 }
 
-let db = loadDatabase();
+let db = removeDemonstrationData(loadDatabase());
 for (const account of db.users) {
   if (account.pass && !account.pass.startsWith("scrypt$")) account.pass = hashPassword(account.pass);
 }
