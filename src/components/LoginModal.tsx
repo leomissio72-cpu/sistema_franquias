@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { UserSession } from "../types";
 import { loginAPI } from "../api";
-import { ArrowRight, Key, Lock, User, X } from "lucide-react";
+import { ArrowRight, Key, User, X } from "lucide-react";
 
 interface LoginModalProps {
   isOpen: boolean;
@@ -53,7 +53,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onSuccess, onClo
           <img src="/login-visual.png" alt="Visão de gestão financeira e operacional" className="absolute inset-0 h-full w-full object-cover" />
           <div className="absolute inset-0 bg-gradient-to-t from-[#06132f]/80 via-[#06132f]/20 to-transparent" />
           <div className="relative z-10 max-w-xs text-white">
-            <p className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-cyan-200">Gestão de Franquias</p>
+            <p className="text-[10px] font-extrabold uppercase tracking-[0.2em] text-cyan-200">Gestão de Pessoas</p>
             <h2 className="mt-4 text-3xl font-extrabold leading-tight">Clareza para decidir melhor.</h2>
             <p className="mt-4 text-sm font-medium leading-6 text-white/80">Uma visão organizada da operação, dos resultados e das unidades da sua rede.</p>
           </div>
@@ -67,10 +67,12 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onSuccess, onClo
           )}
 
           <div className="mb-6 text-center">
-            <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl border border-[#d7e2fb] bg-[#f0f5ff] text-[#315bc5]"><Lock className="h-7 w-7" /></div>
+            <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center overflow-hidden rounded-2xl border border-[#d7e2fb] bg-[#f0f5ff] shadow-sm">
+              <img src="/login-visual.svg" alt="" className="h-full w-full object-cover object-[50%_42%]" />
+            </div>
             <h1 id="login-title" className="text-2xl font-extrabold tracking-tight text-[#152238]">Sofia CFO</h1>
-            <div className="mt-1 inline-block rounded-full border border-[#d7e2fb] bg-[#f0f5ff] px-2.5 py-0.5 text-[11px] font-extrabold uppercase tracking-wide text-[#315bc5]">Gestão de Franquias</div>
-            <p className="mt-2 text-xs leading-relaxed text-[#69778c]">Plataforma Centralizada de Gestão Financeira para Redes de Franquias em Nuvem.</p>
+            <div className="mt-1 inline-block rounded-full border border-[#d7e2fb] bg-[#f0f5ff] px-2.5 py-0.5 text-[11px] font-extrabold uppercase tracking-wide text-[#315bc5]">Gestão de Pessoas</div>
+            <p className="mt-2 text-xs leading-relaxed text-[#69778c]">Plataforma centralizada para organizar pessoas, acessos e unidades da sua operação.</p>
           </div>
 
           {errorMsg && <div className="mb-4 rounded-xl border border-[#f0d0d0] bg-[#fff0f0] p-3 text-xs font-semibold text-[#b44b4b]" role="alert">{errorMsg}</div>}
@@ -93,7 +95,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onSuccess, onClo
             </div>
 
             <button id="btn-submit-login" type="submit" disabled={isLoading} className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#3c63da] py-3 text-sm font-bold text-white shadow-md shadow-[#3c63da]/20 transition hover:bg-[#2f52c0] focus:outline-none focus:ring-4 focus:ring-[#3c63da]/30 disabled:cursor-not-allowed disabled:opacity-60">
-              {isLoading ? <span>Entrando...</span> : <><span>Acessar Gestão de Franquias</span><ArrowRight className="h-4 w-4" /></>}
+              {isLoading ? <span>Entrando...</span> : <><span>Acessar Gestão de Pessoas</span><ArrowRight className="h-4 w-4" /></>}
             </button>
           </form>
 
