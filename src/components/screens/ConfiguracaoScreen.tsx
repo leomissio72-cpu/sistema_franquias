@@ -1074,9 +1074,9 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
                 <p className="text-[#8ba2c7]"># 1. Inicialize o repositório git (se necessário)</p>
                 <p>git init</p>
                 <p>git add .</p>
-                <p>git commit -m "feat: Sofia CFO plataforma de franquias em nuvem"</p>
+                <p>git commit -m "feat: Gestão de Franquias plataforma de franquias em nuvem"</p>
                 <p className="text-[#8ba2c7] mt-2"># 2. Conecte ao seu repositório no GitHub e faça o push</p>
-                <p>git remote add origin https://github.com/SEU_USUARIO/sofia-cfo.git</p>
+                <p>git remote add origin https://github.com/SEU_USUARIO/gestao-franquias.git</p>
                 <p>git branch -M main</p>
                 <p>git push -u origin main</p>
               </div>
@@ -1089,7 +1089,7 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
               </span>
               <div className="space-y-2 text-xs text-[#152238] leading-relaxed">
                 <p>1. Acesse <strong>vercel.com</strong> e faça login com a sua conta do GitHub.</p>
-                <p>2. Clique em <strong>"Add New... &gt; Project"</strong> e selecione o repositório do Sofia CFO.</p>
+                <p>2. Clique em <strong>"Add New... &gt; Project"</strong> e selecione o repositório da Gestão de Franquias.</p>
                 <p>3. O arquivo <code className="bg-[#f0f4f9] px-1.5 py-0.5 rounded font-mono font-bold">vercel.json</code> já está configurado na raiz com as rotas SPA e cabeçalhos de segurança.</p>
                 <p>4. Em <strong>Framework Preset</strong>, selecione <strong>Vite</strong>.</p>
                 <p>5. Clique em <strong>Deploy</strong>. Em cerca de 40 segundos seu site estará online na nuvem!</p>

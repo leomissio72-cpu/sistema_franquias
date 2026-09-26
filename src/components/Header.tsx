@@ -95,22 +95,7 @@ export const Header: React.FC<HeaderProps> = ({
           <Menu className="h-5 w-5" />
         </button>
 
-        {/* Desktop sidebar collapse toggle */}
-        {onToggleSidebarCollapse && (
-          <button
-            id="btn-desktop-sidebar-toggle"
-            onClick={onToggleSidebarCollapse}
-            className="hidden lg:flex h-9 w-9 items-center justify-center rounded-lg border border-[#e5eaf1] text-[#152238] hover:bg-[#f4f7fb] hover:text-[#3c63da] transition-colors flex-shrink-0 cursor-pointer"
-            title={isSidebarCollapsed ? "Expandir barra lateral" : "Recolher barra lateral"}
-            aria-label={isSidebarCollapsed ? "Expandir menu" : "Recolher menu"}
-          >
-            {isSidebarCollapsed ? (
-              <PanelLeftOpen className="h-4 w-4" />
-            ) : (
-              <PanelLeftClose className="h-4 w-4" />
-            )}
-          </button>
-        )}
+
 
         {/* Brand Title: Exactly "Gestão de Franquias" as requested */}
         <div className="flex items-center gap-2 flex-shrink-0">

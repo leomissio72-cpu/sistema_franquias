@@ -17,7 +17,7 @@ app.use((req, res, next) => {
     return res.redirect(308, `https://${req.header("host")}${req.originalUrl}`);
   }
   res.setHeader("Strict-Transport-Security", "max-age=31536000; includeSubDomains; preload");
-  res.setHeader("Content-Security-Policy", "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: blob: https:; font-src 'self' data: https://fonts.gstatic.com; connect-src 'self' https:; frame-src 'self' https://app.powerbi.com; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'self'");
+  res.setHeader("Content-Security-Policy", "default-src 'self' data: blob: https:; script-src 'self' 'unsafe-inline' 'unsafe-eval' https:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: blob: https:; font-src 'self' data: https://fonts.gstatic.com; connect-src 'self' https: ws: wss:; frame-src 'self' https://app.powerbi.com; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'self' https://*.google.com https://*.googleusercontent.com https://*.run.app;");
   res.setHeader("Permissions-Policy", "camera=(), microphone=(), geolocation=(), payment=()");
   res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
   res.setHeader("Cache-Control", req.path.startsWith("/api/") ? "no-store" : "public, max-age=0, must-revalidate");
@@ -57,7 +57,7 @@ const defaultConfigs = [
   {
     key: "app_name",
     name: "Nome da Plataforma",
-    value: "Sofia CFO — SaaS Financeiro para Franquias",
+    value: "Gestão de Franquias — SaaS Financeiro para Franquias",
     type: "string",
     category: "Geral",
     description: "Nome exibido no cabeçalho e relatórios",
@@ -358,7 +358,7 @@ function loadDatabase(): DatabaseState {
         action: "INITIALIZE_DATABASE",
         key: "all",
         oldValue: null,
-        newValue: "Nuvem Sofia CFO provisionada com sucesso",
+        newValue: "Nuvem Gestão de Franquias provisionada com sucesso",
         user: "Sistema Central",
       }
     ],

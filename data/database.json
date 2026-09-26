@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "lastUpdated": "2026-09-23T22:00:00.000Z",
+  "lastUpdated": "2026-09-26T21:31:30.815Z",
   "configs": [
     {
       "key": "app_name",
@@ -119,7 +119,7 @@
       "timestamp": "2026-09-18T17:58:26.589Z",
       "action": "UPDATE_CONFIG",
       "key": "app_name",
-      "oldValue": "Sofia CFO — SaaS Financeiro para Franquias",
+      "oldValue": "Gestão de Franquias — SaaS Financeiro para Franquias",
       "newValue": " SaaS Financeiro para Franquias",
       "user": "Luís Matos (Dono da Rede)"
     },
@@ -153,7 +153,7 @@
       "nome": "Administrador",
       "email": "",
       "login": "dono",
-      "pass": "1234",
+      "pass": "scrypt$1a9580e777e4b19b5c0164a80a4d2e31$846b0fdcdd6b822fca886c3e671e77696244a888904af364df1b32772332d705fd180ab513b76778b958c46f2f3348e0251388c02b6a6ac1b639523a831ae7bc",
       "perfil": "dono",
       "unidade": "dono",
       "status": "ativo",

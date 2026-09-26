@@ -111,7 +111,7 @@ export function initializeSecurityProtection(options: SecurityOptions = {}): () 
     if (onViolation) {
       onViolation(message);
     }
-    showSecurityToast(message);
+    // Suprime a mensagem visual de toast em tela ao pressionar F12 mantendo a segurança e o bloqueio ativos
   }
 
   // Attach global listeners

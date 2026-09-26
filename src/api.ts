@@ -97,8 +97,8 @@ function getLocalFallbackState(): CloudState {
     permissions: {},
     vtConfigs: {},
     systemSettings: {
-      appName: "Sofia CFO — Gestão Financeira para Franquias",
-      companyName: "Sofia Franqueadora & Participações S.A.",
+      appName: "Gestão de Franquias",
+      companyName: "Gestão de Franquias S.A.",
       cnpjMatriz: "12.345.678/0001-90",
     },
   };
@@ -129,14 +129,14 @@ export async function fetchServerState(): Promise<CloudState> {
       paymentMethods: safePaymentMethods,
       businessRules: safeRules,
       systemSettings: data.systemSettings || {
-        appName: "Sofia CFO — Gestão Financeira para Franquias",
-        companyName: "Sofia Franqueadora & Participações S.A.",
+        appName: "Gestão de Franquias",
+        companyName: "Gestão de Franquias S.A.",
         cnpjMatriz: "12.345.678/0001-90",
       },
     };
 
     try {
-      localStorage.setItem("sofiacfo_cloud_state", JSON.stringify(state));
+      localStorage.setItem("gestaofranquias_cloud_state", JSON.stringify(state));
     } catch (e) {}
 
     return state;

@@ -1,4 +1,4 @@
-# Sofia CFO — SaaS Financeiro para Franquias & Redes
+# Gestão de Franquias — SaaS Financeiro para Franquias & Redes
 
 Sistema completo, moderno e responsivo de gestão financeira, DRE, conciliação e governança para franquias e redes com sincronização centralizada em nuvem e painel administrativo protegido em `/configuracao`.
 
@@ -20,7 +20,7 @@ git add .
 
 ### 3. Fazer o commit inicial
 ```bash
-git commit -m "feat: initial commit - Sofia CFO pronto para GitHub e Vercel"
+git commit -m "feat: initial commit - Gestão de Franquias pronto para GitHub e Vercel"
 ```
 
 ### 4. Renomear o branch principal para `main`

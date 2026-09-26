@@ -98,7 +98,7 @@ export const initialConfigs: ConfigItem[] = [
   {
     key: "app_name",
     name: "Nome da Plataforma",
-    value: "Sofia CFO — SaaS Financeiro para Franquias",
+    value: "Gestão de Franquias — SaaS Financeiro para Franquias",
     type: "string",
     category: "Geral",
     description: "Nome exibido no cabeçalho e relatórios",

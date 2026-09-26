@@ -138,13 +138,9 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
       if (userSession.tenant?.startsWith("biz")) return f.businessId === userSession.tenant;
       return true;
     }
-    // Para franqueados: verifica tenant direto ou se pertence ao mesmo proprietário/responsável
+    // Para franqueados: verifica tenant direto
     const allowedTenants = (userSession.tenant || "").split(",").map((t) => t.trim().toLowerCase());
-    if (allowedTenants.includes(f.id.toLowerCase())) return true;
-    if (userSession.name && f.resp && f.resp.toLowerCase().trim() === userSession.name.toLowerCase().trim()) {
-      return true;
-    }
-    return false;
+    return allowedTenants.includes(f.id.toLowerCase());
   };
 
   // Available franchises given current brand selection and user permissions

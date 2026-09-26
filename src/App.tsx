@@ -292,12 +292,7 @@ export const App: React.FC = () => {
       }
       // Regra para franqueado/operador:
       const allowedTenants = (userSession.tenant || "").split(",").map((t) => t.trim().toLowerCase());
-      if (allowedTenants.includes(tenantId.toLowerCase())) return true;
-      const targetUnit = (serverState?.franchises || []).find((f) => f.id.toLowerCase() === tenantId.toLowerCase());
-      if (userSession.name && targetUnit?.resp && targetUnit.resp.toLowerCase().trim() === userSession.name.toLowerCase().trim()) {
-        return true;
-      }
-      return false;
+      return allowedTenants.includes(tenantId.toLowerCase());
     },
     [userSession, serverState]
   );

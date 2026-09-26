@@ -152,6 +152,8 @@ export interface Employee {
   unidade: string;
   email: string;
   vt: boolean;
+  vtCidade?: string;
+  vtConducoes?: Array<{ id: string; nome: string; quantidade: number; tarifa: number }>;
   login?: string;
   phone?: string;
   salary?: number;

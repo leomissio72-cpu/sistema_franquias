@@ -21,7 +21,7 @@ async function startServer() {
   }
 
   app.listen(PORT, "0.0.0.0", () => {
-    console.log(`[Sofia CFO Server] Running on http://0.0.0.0:${PORT}`);
+    console.log(`[Gestão de Franquias Server] Running on http://0.0.0.0:${PORT}`);
   });
 }
 
