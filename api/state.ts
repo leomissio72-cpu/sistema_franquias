@@ -1,23 +1,7 @@
-import fs from "node:fs";
-import path from "node:path";
+import { readDatabase as readSharedDatabase } from "./_store";
 
 function readDatabase() {
-  const candidates = [
-    path.join(process.cwd(), "data", "database.json"),
-    path.join(process.cwd(), "database.json"),
-  ];
-  for (const file of candidates) {
-    try {
-      if (fs.existsSync(file)) return JSON.parse(fs.readFileSync(file, "utf8"));
-    } catch {
-      // Try the next known location.
-    }
-  }
-  return {
-    businesses: [], franchises: [], employees: [], users: [], manualEntries: [],
-    configs: [], dreParams: {}, paymentMethods: [], businessRules: {},
-    royalties: {}, permissions: {}, vtConfigs: {}, lastUpdated: null,
-  };
+  return readSharedDatabase();
 }
 
 export default function handler(_req: any, res: any) {
