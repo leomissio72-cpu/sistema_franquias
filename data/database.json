@@ -1,152 +1,11 @@
 {
   "version": 1,
-  "lastUpdated": "2026-09-26T21:31:30.815Z",
-  "configs": [
-    {
-      "key": "app_name",
-      "name": "Nome da Plataforma",
-      "value": " SaaS Financeiro para Franquias",
-      "type": "string",
-      "category": "Geral",
-      "description": "Nome exibido no cabeçalho e relatórios",
-      "lastModified": "2026-09-18T17:58:26.589Z",
-      "modifiedBy": "Luís Matos (Dono da Rede)"
-    },
-    {
-      "key": "tax_default",
-      "name": "Alíquota Padrão de Impostos (%)",
-      "value": "8.00",
-      "type": "number",
-      "category": "Financeiro",
-      "description": "Imposto sobre vendas padrão aplicado às novas franquias",
-      "lastModified": "2026-09-18T14:47:19.012Z",
-      "modifiedBy": "Sistema"
-    },
-    {
-      "key": "cmv_default",
-      "name": "CMV Padrão (%)",
-      "value": "30.00",
-      "type": "number",
-      "category": "Financeiro",
-      "description": "Custo de Mercadoria Vendida padrão estimado",
-      "lastModified": "2026-09-18T14:47:19.012Z",
-      "modifiedBy": "Sistema"
-    },
-    {
-      "key": "royalty_default",
-      "name": "Royalty Médio de Franquia (%)",
-      "value": "6.00",
-      "type": "number",
-      "category": "Financeiro",
-      "description": "Percentual sobre receita bruta pago à matriz",
-      "lastModified": "2026-09-18T14:47:19.012Z",
-      "modifiedBy": "Sistema"
-    },
-    {
-      "key": "max_discount_limit",
-      "name": "Limite Máximo de Desconto (%)",
-      "value": "15.00",
-      "type": "number",
-      "category": "Regras de Negócio",
-      "description": "Desconto máximo permitido sem autorização da diretoria",
-      "lastModified": "2026-09-18T14:47:19.012Z",
-      "modifiedBy": "Sistema"
-    },
-    {
-      "key": "bank_cutoff_hour",
-      "name": "Horário de Corte Bancário Padrão",
-      "value": "18:00",
-      "type": "string",
-      "category": "Regras de Negócio",
-      "description": "Vendas após este horário são liquidadas no ciclo seguinte",
-      "lastModified": "2026-09-18T14:47:19.012Z",
-      "modifiedBy": "Sistema"
-    },
-    {
-      "key": "realtime_sync_enabled",
-      "name": "Sincronização em Tempo Real na Nuvem",
-      "value": "true",
-      "type": "boolean",
-      "category": "Sincronização",
-      "description": "Propagação instantânea de alterações para todos os aparelhos conectados",
-      "lastModified": "2026-09-18T14:47:19.012Z",
-      "modifiedBy": "Sistema"
-    },
-    {
-      "key": "audit_log_retention_days",
-      "name": "Retenção de Logs de Auditoria (dias)",
-      "value": "90",
-      "type": "number",
-      "category": "Segurança",
-      "description": "Tempo de armazenamento do histórico de alterações administrativas",
-      "lastModified": "2026-09-18T14:47:19.012Z",
-      "modifiedBy": "Sistema"
-    },
-    {
-      "key": "two_factor_auth_required",
-      "name": "Exigir 2FA para Administradores",
-      "value": "false",
-      "type": "boolean",
-      "category": "Segurança",
-      "description": "Obrigatoriedade de autenticação de dois fatores no painel administrativo",
-      "lastModified": "2026-09-18T14:47:19.012Z",
-      "modifiedBy": "Sistema"
-    },
-    {
-      "key": "auto_conciliation_threshold",
-      "name": "Tolerância de Conciliação Automática (R$)",
-      "value": "0.05",
-      "type": "number",
-      "category": "Operação",
-      "description": "Diferença máxima aceita para correspondência automática de extrato",
-      "lastModified": "2026-09-18T14:47:19.012Z",
-      "modifiedBy": "Sistema"
-    },
-    {
-      "key": "system_maintenance_mode",
-      "name": "Modo de Manutenção",
-      "value": "false",
-      "type": "boolean",
-      "category": "Geral",
-      "description": "Bloqueia edições por franqueados mantendo apenas leitura",
-      "lastModified": "2026-09-18T14:47:19.012Z",
-      "modifiedBy": "Sistema"
-    }
-  ],
-  "auditLogs": [
-    {
-      "id": "audit_1789754306589",
-      "timestamp": "2026-09-18T17:58:26.589Z",
-      "action": "UPDATE_CONFIG",
-      "key": "app_name",
-      "oldValue": "Gestão de Franquias — SaaS Financeiro para Franquias",
-      "newValue": " SaaS Financeiro para Franquias",
-      "user": "Luís Matos (Dono da Rede)"
-    },
-    {
-      "id": "log_init",
-      "timestamp": "2026-09-18T14:47:19.012Z",
-      "action": "INITIALIZE_DATABASE",
-      "key": "system",
-      "oldValue": null,
-      "newValue": "Initial cloud setup",
-      "user": "Sistema"
-    }
-  ],
+  "lastUpdated": "2026-09-29T00:38:19.115182Z",
+  "configs": [],
+  "auditLogs": [],
   "businesses": [],
   "franchises": [],
-  "employees": [
-    {
-      "id": "e1",
-      "nome": "Administrador",
-      "matricula": "0001",
-      "cargo": "Administrador",
-      "unidade": "dono",
-      "email": "",
-      "vt": false,
-      "login": "dono"
-    }
-  ],
+  "employees": [],
   "users": [
     {
       "id": "u1",
@@ -157,100 +16,19 @@
       "perfil": "dono",
       "unidade": "dono",
       "status": "ativo",
-      "last": "Agora",
-      "employeeId": "e1"
+      "last": "Agora"
     }
   ],
   "manualEntries": [],
   "dreParams": {},
-  "paymentMethods": [
-    {
-      "id": "dinheiro",
-      "name": "Dinheiro",
-      "icon": "💵",
-      "fee": 0,
-      "prazoDias": 0,
-      "cutoffHour": 23,
-      "parcelas": false,
-      "bandeira": null
-    },
-    {
-      "id": "pix",
-      "name": "PIX",
-      "icon": "⚡",
-      "fee": 0.005,
-      "prazoDias": 0,
-      "cutoffHour": 23,
-      "parcelas": false,
-      "bandeira": null
-    },
-    {
-      "id": "debito",
-      "name": "Cartão de Débito",
-      "icon": "💳",
-      "fee": 0.012,
-      "prazoDias": 1,
-      "cutoffHour": 18,
-      "parcelas": false,
-      "bandeira": "Visa/Master"
-    },
-    {
-      "id": "credito",
-      "name": "Cartão de Crédito",
-      "icon": "💳",
-      "fee": 0.03,
-      "prazoDias": 30,
-      "cutoffHour": 18,
-      "parcelas": true,
-      "bandeira": "Visa/Master"
-    },
-    {
-      "id": "credito2",
-      "name": "Crédito 2-6x",
-      "icon": "🪙",
-      "fee": 0.038,
-      "prazoDias": 30,
-      "cutoffHour": 18,
-      "parcelas": true,
-      "bandeira": "Visa/Master"
-    },
-    {
-      "id": "credito12",
-      "name": "Crédito 7-12x",
-      "icon": "🪙",
-      "fee": 0.045,
-      "prazoDias": 30,
-      "cutoffHour": 18,
-      "parcelas": true,
-      "bandeira": "Visa/Master"
-    },
-    {
-      "id": "boleto",
-      "name": "Boleto Bancário",
-      "icon": "📄",
-      "fee": 0.015,
-      "prazoDias": 2,
-      "cutoffHour": 14,
-      "parcelas": false,
-      "bandeira": null
-    },
-    {
-      "id": "voucher",
-      "name": "Vale / Voucher",
-      "icon": "🎟️",
-      "fee": 0.035,
-      "prazoDias": 15,
-      "cutoffHour": 18,
-      "parcelas": false,
-      "bandeira": "Alelo/VR"
-    }
-  ],
-  "businessRules": {
-    "maxDiscount": 10,
-    "minTicket": 20,
-    "advance": false
-  },
+  "paymentMethods": [],
+  "businessRules": {},
   "royalties": {},
   "permissions": {},
-  "vtConfigs": {}
+  "vtConfigs": {},
+  "systemSettings": {
+    "appName": "Gestão de Franquias",
+    "companyName": "Gestão de Franquias",
+    "cnpjMatriz": ""
+  }
 }
