@@ -1,6 +1,5 @@
 import fs from "node:fs";
 import path from "node:path";
-import crypto from "node:crypto";
 
 const TEMP_DB = "/tmp/gestao-franquias-database.json";
 const sourceCandidates = [
@@ -39,7 +38,7 @@ export function sessionUser(req: any): any | null {
 }
 
 export function createSessionToken(userId: string): string {
-  return `${userId}.${Date.now()}.${crypto.randomBytes(12).toString("hex")}`;
+  return `${userId}.${Date.now()}.${Math.random().toString(36).slice(2)}${Math.random().toString(36).slice(2)}`;
 }
 
 export function json(res: any, status: number, payload: any): void {
