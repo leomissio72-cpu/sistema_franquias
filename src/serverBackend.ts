@@ -231,8 +231,7 @@ const defaultEmployees = [
 ];
 
 const defaultUsers = [
-  { id: "u1", nome: "Dono da Plataforma", email: "dono@sofiacfo.com", login: "dono", pass: "1234", perfil: "dono", unidade: "dono", status: "ativo", last: "Agora", employeeId: "e1" },
-  { id: "u2", nome: "Equipe de Suporte", email: "equipe@sofiacfo.com", login: "equipe", pass: "1234", perfil: "equipe", unidade: "dono", status: "ativo", last: "Hoje 09:30", employeeId: "" },
+  { id: "u1", nome: "Administrador", email: "", login: "dono", pass: "1234", perfil: "dono", unidade: "dono", status: "ativo", last: "Agora", employeeId: "e1" },
   { id: "u3", nome: "Admin Café Prime", email: "admin@cafeprime.com", login: "admin.cafe", pass: "1234", perfil: "admin", unidade: "biz1", status: "ativo", last: "Hoje 08:15", employeeId: "" },
   { id: "u4", nome: "Admin Beleza & Co", email: "admin@beleza.com", login: "admin.beleza", pass: "1234", perfil: "admin", unidade: "biz2", status: "ativo", last: "Ontem 17:40", employeeId: "" },
   { id: "u5", nome: "Admin EduKids", email: "admin@edukids.com", login: "admin.edukids", pass: "1234", perfil: "admin", unidade: "biz3", status: "ativo", last: "Ontem 16:10", employeeId: "" },
