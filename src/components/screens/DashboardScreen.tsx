@@ -282,7 +282,26 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
       ? currentTenantId
       : allowedUnits[0]?.id || franchises[0]?.id;
 
-  const activeUnit = franchises.find((u) => u.id === activeUnitId) || allowedUnits[0] || franchises[0];
+  // O banco pode estar legitimamente vazio após o reset. O Dashboard precisa
+  // continuar navegável e mostrar estado vazio, em vez de acessar
+  // `businessId` de uma unidade inexistente e desmontar toda a aplicação.
+  const activeUnit = franchises.find((u) => u.id === activeUnitId) || allowedUnits[0] || franchises[0] || {
+    id: "empty",
+    businessId: "empty",
+    name: "Nenhuma unidade cadastrada",
+    code: "—",
+    resp: "—",
+    address: "",
+    city: "",
+    state: "",
+    region: "",
+    lat: 0,
+    lng: 0,
+    faturamento: 0,
+    pendencias: 0,
+    rpDone: 0,
+    status: "green" as const,
+  };
   const activeBiz = businesses.find((b) => b.id === activeUnit.businessId);
 
   // Dedicated metrics for activeUnit

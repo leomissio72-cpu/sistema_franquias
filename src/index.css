@@ -150,3 +150,23 @@ html.theme-dark ::-webkit-scrollbar-thumb {
 html.theme-dark ::-webkit-scrollbar-thumb:hover {
   background: #41618e;
 }
+
+
+/* Mobile shell: preserve the desktop information architecture without horizontal overflow. */
+@media (max-width: 1023px) {
+  html, body, #root { min-width: 0; width: 100%; overflow-x: hidden; }
+  .app-shell { min-width: 0 !important; width: 100%; overflow-x: hidden; }
+  #main-topbar { min-width: 0; padding-inline: .75rem !important; }
+  #main-topbar > div { min-width: 0; }
+  #main-topbar h1 { max-width: 42vw; overflow: hidden; text-overflow: ellipsis; }
+  main { min-width: 0; width: 100%; overflow-x: hidden; }
+  main > * { min-width: 0; max-width: 100%; }
+  .leaflet-container { min-height: 240px; }
+  canvas { max-width: 100%; }
+}
+
+@media (max-width: 639px) {
+  #main-topbar { height: 3.75rem; }
+  main { padding: .75rem !important; padding-bottom: 5rem !important; }
+  .fixed.inset-0 > .max-w-xs { width: min(88vw, 20rem); }
+}
