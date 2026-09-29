@@ -52,6 +52,10 @@ async function safeResponseJSON(res: Response, defaultErrorMsg: string): Promise
     }
   }
 
+  if (!text.trim()) {
+    throw new Error(`${defaultErrorMsg}: o servidor retornou uma resposta vazia.`);
+  }
+
   try {
     return JSON.parse(text);
   } catch (err) {
