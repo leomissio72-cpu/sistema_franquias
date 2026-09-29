@@ -37,6 +37,7 @@ export const MapScreen: React.FC<MapScreenProps> = ({
 
   const totalFat = visibleUnits.reduce((s, f) => s + f.faturamento, 0);
   const citiesCount = new Set(visibleUnits.map((f) => f.city)).size;
+  const healthRate = franchises.length ? Math.round((franchises.filter((f) => f.status === "green").length / franchises.length) * 100) : 0;
 
   useEffect(() => {
     if (!mapContainerRef.current) return;
@@ -201,7 +202,7 @@ export const MapScreen: React.FC<MapScreenProps> = ({
             Saúde Consolidada
           </span>
           <strong className="text-2xl font-extrabold text-[#118464] block mt-1">
-            {Math.round((franchises.filter((f) => f.status === "green").length / franchises.length) * 100)}%
+            {healthRate}%
           </strong>
           <small className="text-[11px] text-[#69778c] block mt-0.5">Operação em conformidade</small>
         </div>
@@ -219,7 +220,13 @@ export const MapScreen: React.FC<MapScreenProps> = ({
             <h3 className="text-xs font-extrabold uppercase tracking-wider text-[#69778c] mb-2">
               Unidades Encontradas ({visibleUnits.length})
             </h3>
-            {visibleUnits.map((f) => {
+            {visibleUnits.length === 0 ? (
+              <div className="rounded-xl border border-dashed border-[#cdd7e7] bg-[#fbfcff] p-6 text-center">
+                <MapPin className="mx-auto h-8 w-8 text-[#9aa9bf]" />
+                <p className="mt-3 text-sm font-bold text-[#334155]">Nenhuma unidade para exibir</p>
+                <p className="mt-1 text-xs text-[#69778c]">O mapa está pronto. Quando houver unidades, elas aparecerão aqui automaticamente.</p>
+              </div>
+            ) : visibleUnits.map((f) => {
               const isSelected = selectedUnitId === f.id;
               return (
                 <div

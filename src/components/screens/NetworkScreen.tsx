@@ -52,6 +52,7 @@ export const NetworkScreen: React.FC<NetworkScreenProps> = ({
   const healthyCount = visibleUnits.filter((f) => f.status === "green").length;
   const warnCount = visibleUnits.filter((f) => f.status !== "green").length;
   const maxFat = Math.max(...visibleUnits.map((f) => f.faturamento), 1);
+  const healthRate = visibleUnits.length ? Math.round((healthyCount / visibleUnits.length) * 100) : 0;
 
   const getBusinessBrand = (bizId: string) => {
     return businesses.find((b) => b.id === bizId)?.brand || bizId;
@@ -160,7 +161,13 @@ export const NetworkScreen: React.FC<NetworkScreenProps> = ({
           </div>
 
           <div className="space-y-4">
-            {visibleUnits.map((f) => {
+            {visibleUnits.length === 0 ? (
+              <div className="rounded-xl border border-dashed border-[#cdd7e7] bg-[#fbfcff] p-8 text-center">
+                <Building2 className="mx-auto h-8 w-8 text-[#9aa9bf]" />
+                <p className="mt-3 text-sm font-bold text-[#334155]">Nenhuma unidade cadastrada</p>
+                <p className="mt-1 text-xs text-[#69778c]">Esta página continua disponível. Cadastre uma unidade para ver os indicadores.</p>
+              </div>
+            ) : visibleUnits.map((f) => {
               const p = dreParams[f.id] || dreParams["dono"];
               const roy = royalties[f.businessId];
               const calc = calculateDre(f.faturamento, p, roy);
@@ -213,16 +220,16 @@ export const NetworkScreen: React.FC<NetworkScreenProps> = ({
             <div className="flex justify-between text-xs font-semibold mb-1.5">
               <span className="text-[#69778c]">Status Operacional:</span>
               <span className="text-emerald-700 font-bold">
-                {Math.round((healthyCount / visibleUnits.length) * 100)}% Saudável
+                {healthRate}% Saudável
               </span>
             </div>
             <div className="h-2.5 w-full rounded-full bg-[#eef2f8] overflow-hidden flex">
               <div
-                style={{ width: `${(healthyCount / visibleUnits.length) * 100}%` }}
+                style={{ width: `${healthRate}%` }}
                 className="h-full bg-[#118464]"
               />
               <div
-                style={{ width: `${(warnCount / visibleUnits.length) * 100}%` }}
+                style={{ width: `${visibleUnits.length ? (warnCount / visibleUnits.length) * 100 : 0}%` }}
                 className="h-full bg-[#a86a08]"
               />
             </div>

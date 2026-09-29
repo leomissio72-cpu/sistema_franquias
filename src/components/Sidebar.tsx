@@ -25,7 +25,10 @@ import {
   Store,
   CreditCard,
   UploadCloud,
-  PackageCheck
+  PackageCheck,
+  Building2,
+  MapPin,
+  SlidersHorizontal
 } from "lucide-react";
 
 interface SidebarProps {
@@ -156,8 +159,23 @@ export const Sidebar: React.FC<SidebarProps> = ({
         { id: "users", label: "Acessos e Logins", icon: <KeyRound className="h-4 w-4" /> },
       ];
 
-  // Catálogo mantido no estado para compatibilidade, mas retirado da navegação principal.
-  const catalogNav: NavItem[] = [];
+  // Todas as áreas continuam visíveis para o dono/equipe mesmo quando o banco está vazio.
+  const networkNav: NavItem[] = [
+    { id: "network", label: "Rede e Unidades", icon: <Building2 className="h-4 w-4" /> },
+    { id: "map", label: "Mapa das Unidades", icon: <MapPin className="h-4 w-4" /> },
+    { id: "reports", label: "Relatórios", icon: <FileBarChart className="h-4 w-4" /> },
+    { id: "permissoes", label: "Permissões e Royalties", icon: <KeyRound className="h-4 w-4" /> },
+    { id: "tenants", label: "Cadastro de Franqueados", icon: <Store className="h-4 w-4" /> },
+  ];
+
+  const operationsNav: NavItem[] = [
+    { id: "dreparams", label: "Parâmetros do DRE", icon: <SlidersHorizontal className="h-4 w-4" /> },
+    { id: "lancamentos", label: "Lançamentos Manuais", icon: <FilePenLine className="h-4 w-4" /> },
+    { id: "conciliation", label: "Conciliação Bancária", icon: <ArrowLeftRight className="h-4 w-4" /> },
+    { id: "vt", label: "Vale-Transporte", icon: <FileSpreadsheet className="h-4 w-4" /> },
+    { id: "rp", label: "Rotinas / RP", icon: <ArrowLeftRight className="h-4 w-4" /> },
+    { id: "produtos", label: "Produtos Homologados", icon: <PackageCheck className="h-4 w-4" /> },
+  ];
 
   const handleNavClick = (screen: ScreenType) => {
     onSelectScreen(screen);
@@ -375,6 +393,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
       <div className="flex-1 space-y-1 mt-1">
         {renderNavGroup("Principal", principalNav)}
         {renderNavGroup("Financeiro", financialNav)}
+        {renderNavGroup("Rede", networkNav)}
+        {renderNavGroup("Operação", operationsNav)}
         {renderNavGroup("Gestão & Sistema", managementNav)}
       </div>
 

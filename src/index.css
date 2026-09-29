@@ -170,3 +170,33 @@ html.theme-dark ::-webkit-scrollbar-thumb:hover {
   main { padding: .75rem !important; padding-bottom: 5rem !important; }
   .fixed.inset-0 > .max-w-xs { width: min(88vw, 20rem); }
 }
+
+/* Mobile product shell: one readable column, no accidental desktop overflow. */
+@media (max-width: 1023px) {
+  .app-shell { display: block !important; min-height: 100dvh; }
+  #main-topbar { position: sticky; top: 0; z-index: 30; }
+  #main-topbar > div:last-child { gap: .375rem; }
+  #main-topbar h1 { font-size: .8125rem; }
+  main { max-width: none !important; }
+  main .grid { min-width: 0; }
+  main table { display: block; max-width: 100%; overflow-x: auto; white-space: nowrap; }
+  main .overflow-x-auto { max-width: 100%; -webkit-overflow-scrolling: touch; }
+  main canvas { max-height: 320px; }
+  .leaflet-container { width: 100%; max-width: 100%; }
+}
+
+@media (max-width: 639px) {
+  #main-topbar { padding-inline: .75rem !important; }
+  #main-topbar .hidden.sm\:flex { display: none !important; }
+  #main-topbar button { min-height: 2.25rem; }
+  main { padding: .75rem !important; }
+  main h2 { font-size: 1.25rem; line-height: 1.25; }
+  main h3 { line-height: 1.3; }
+  main .grid-cols-2 { grid-template-columns: minmax(0, 1fr) !important; }
+  main [class*="grid-cols-4"], main [class*="grid-cols-3"] { grid-template-columns: minmax(0, 1fr) !important; }
+  main .flex-col.sm\:flex-row > button,
+  main .flex-col.sm\:flex-row > .flex { width: 100%; }
+  main .fixed.inset-0 { padding: .75rem; }
+  main .fixed.inset-0 form { max-height: calc(100dvh - 1.5rem); }
+  .leaflet-container { min-height: 280px !important; }
+}

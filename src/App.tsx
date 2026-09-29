@@ -454,7 +454,7 @@ export const App: React.FC = () => {
             />
           )}
 
-          {(currentScreen === "configuracao" || currentScreen === "settings") && !isFranchisee && (
+          {currentScreen === "configuracao" && !isFranchisee && (
             <ConfiguracaoScreen
               configs={configs}
               auditLogs={auditLogs}
@@ -465,7 +465,7 @@ export const App: React.FC = () => {
               permissions={permissions}
               settings={systemSettings}
               users={serverState.users}
-              initialTab={currentScreen === "settings" ? "preferencias" : "configs"}
+              initialTab="configs"
               onUpdateConfig={handleUpdateConfig}
               onBulkUpdate={handleBulkUpdateConfig}
               onSaveRoyalties={handleSaveRoyalties}
@@ -475,6 +475,15 @@ export const App: React.FC = () => {
               onResetDatabase={handleResetDatabase}
               onRefresh={loadState}
               isSaving={isSavingConfig}
+            />
+          )}
+
+          {currentScreen === "settings" && !isFranchisee && (
+            <SettingsScreen
+              settings={systemSettings}
+              onSaveSettings={handleSaveSettings}
+              onResetDatabase={handleResetDatabase}
+              onNavigate={setCurrentScreen}
             />
           )}
 
