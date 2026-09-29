@@ -43,5 +43,7 @@ export function createSessionToken(userId: string): string {
 }
 
 export function json(res: any, status: number, payload: any): void {
-  res.status(status).setHeader("Content-Type", "application/json; charset=utf-8").json(payload);
+  res.statusCode = status;
+  res.setHeader("Content-Type", "application/json; charset=utf-8");
+  res.end(JSON.stringify(payload));
 }
