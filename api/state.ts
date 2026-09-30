@@ -7,7 +7,9 @@ function readDatabase() {
 export default function handler(_req: any, res: any) {
   const db = readDatabase();
   res.setHeader("Cache-Control", "no-store");
-  res.status(200).json({
+  res.statusCode = 200;
+  res.setHeader("Content-Type", "application/json; charset=utf-8");
+  res.end(JSON.stringify({
     businesses: db.businesses || [],
     franchises: db.franchises || [],
     employees: db.employees || [],
@@ -22,5 +24,5 @@ export default function handler(_req: any, res: any) {
     vtConfigs: db.vtConfigs || {},
     systemSettings: db.systemSettings || { appName: "Gestão de Franquias", companyName: "Gestão de Franquias" },
     lastUpdated: db.lastUpdated || null,
-  });
+  }));
 }

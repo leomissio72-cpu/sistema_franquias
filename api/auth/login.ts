@@ -69,6 +69,10 @@ export default function handler(req: any, res: any) {
   const token = `${user.id}.${Date.now()}.${Math.random().toString(36).slice(2)}${Math.random().toString(36).slice(2)}`;
   const expiresAt = Date.now() + 8 * 60 * 60 * 1000;
   const { pass: _pass, password: _password, ...safeUser } = user;
-  res.setHeader("Set-Cookie", `sofia_session=${encodeURIComponent(token)}; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=${8 * 60 * 60}`);
+  const cookieOptions = "HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=28800";
+  res.setHeader("Set-Cookie", [
+    `sofia_session=${encodeURIComponent(token)}; ${cookieOptions}`,
+    `gestao_session=${encodeURIComponent(token)}; ${cookieOptions}`,
+  ]);
   return json(res, 200, { user: safeUser, token, expiresAt });
 }
