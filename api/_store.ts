@@ -1,5 +1,5 @@
-import fs from "node:fs";
-import path from "node:path";
+import fs from "fs";
+import path from "path";
 
 const TEMP_DB = "/tmp/gestao-franquias-database.json";
 const sourceCandidates = [
@@ -21,11 +21,18 @@ export function readDatabase(): any {
 
 export function writeDatabase(db: any): void {
   db.lastUpdated = new Date().toISOString();
-  fs.writeFileSync(TEMP_DB, JSON.stringify(db, null, 2), "utf8");
+  try {
+    fs.writeFileSync(TEMP_DB, JSON.stringify(db, null, 2), "utf8");
+  } catch {
+    // Keep the request alive; the caller can return a controlled JSON response.
+  }
 }
 
 export function readRequestBody(req: any): any {
   if (req.body && typeof req.body === "object") return req.body;
+  if (typeof req.body === "string") {
+    try { return JSON.parse(req.body); } catch { return {}; }
+  }
   return {};
 }
 
