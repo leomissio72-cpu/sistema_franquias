@@ -6,7 +6,7 @@ interface AccessManagementPanelProps {
   users: UserAccount[];
   businesses: Business[];
   franchises: FranchiseUnit[];
-  onSaveUsers: (users: UserAccount[]) => Promise<void>;
+  onSaveUsers: (users: UserAccount[], credential?: { userId: string; password: string }) => Promise<void>;
 }
 
 const roleInfo: Record<string, { label: string; description: string; tone: string }> = {
@@ -45,13 +45,12 @@ export const AccessManagementPanel: React.FC<AccessManagementPanelProps> = ({ us
         nome: form.nome.trim(),
         email: form.email.trim(),
         login: form.login.trim(),
-        pass: form.pass,
         perfil: form.perfil,
         unidade: form.perfil === "dono" || form.perfil === "equipe" ? "dono" : form.unidade,
         status: "ativo",
         last: "Nunca acessou",
       };
-      await onSaveUsers([...users, newUser]);
+      await onSaveUsers([...users, newUser], { userId: newUser.id, password: form.pass });
       setMessage(`Acesso de ${newUser.nome} criado. Entregue o login e a senha inicial com segurança.`);
       resetForm();
       setIsAdding(false);

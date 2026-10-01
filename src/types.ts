@@ -141,6 +141,8 @@ export interface ManualEntry {
   catName: string;
   pay: string;
   note?: string;
+  sourceFile?: string;
+  conciliationStatus?: "review" | "matched";
   created: string;
 }
 
@@ -165,7 +167,6 @@ export interface Employee {
   pixKey?: string;
   notes?: string;
   accessProfile?: "operador" | "franqueado" | "admin" | "equipe" | "dono";
-  accessPassword?: string;
 }
 
 export interface UserAccount {
@@ -173,7 +174,6 @@ export interface UserAccount {
   nome: string;
   email: string;
   login: string;
-  pass?: string;
   perfil: "dono" | "equipe" | "admin" | "franqueado" | "operador" | string;
   unidade: string;
   status: "ativo" | "inativo";
@@ -285,6 +285,7 @@ export interface RoutineRP {
 }
 
 export interface ConciliationItem {
+  entryId?: string;
   date: string;
   desc: string;
   value: string;

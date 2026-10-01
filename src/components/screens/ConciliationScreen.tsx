@@ -1,7 +1,6 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { ConciliationItem, ManualEntry, ScreenType } from "../../types";
-import { sampleConciliation } from "../../data/initialData";
-import * as XLSX from "xlsx";
+import ExcelJS from "exceljs";
 import * as pdfjsLib from "pdfjs-dist/legacy/build/pdf.mjs";
 // O worker precisa ser apontado para um arquivo servido pelo próprio bundle Vite.
 pdfjsLib.GlobalWorkerOptions.workerSrc = new URL("pdfjs-dist/legacy/build/pdf.worker.mjs", import.meta.url).toString();
@@ -19,8 +18,10 @@ import {
 
 interface ConciliationScreenProps {
   currentTenantId: string;
+  manualEntries: ManualEntry[];
   onNavigate: (screen: ScreenType) => void;
   onImportEntries: (entries: Array<Partial<ManualEntry>>) => Promise<void>;
+  onUpdateEntry: (id: string, patch: Partial<ManualEntry>) => Promise<void>;
 }
 
 const parseAmount = (value: unknown) => {
@@ -54,6 +55,24 @@ function rowToItem(row: Record<string, unknown>, index: number): ConciliationIte
   return { date, desc: description || `Linha importada ${index + 1}`, value: numericValue.toLocaleString("pt-BR", { style: "currency", currency: "BRL" }), numericValue, categoria: "Importado", match: "Aguardando classificação", status: "review", label: "Importado", tone: "amber", toDre: numericValue < 0 };
 }
 
+function entryToItem(entry: ManualEntry): ConciliationItem {
+  const numericValue = entry.type === "despesa" ? -Math.abs(Number(entry.value)) : Math.abs(Number(entry.value));
+  const matched = entry.conciliationStatus === "matched";
+  return {
+    entryId: entry.id,
+    date: entry.date,
+    desc: entry.desc,
+    value: numericValue.toLocaleString("pt-BR", { style: "currency", currency: "BRL" }),
+    numericValue,
+    categoria: entry.catName || "Importado",
+    match: matched ? "Conciliação confirmada" : "Aguardando classificação",
+    status: matched ? "match" : "review",
+    label: entry.sourceFile ? "Importado" : "Lançamento salvo",
+    tone: matched ? "green" : "amber",
+    toDre: numericValue < 0,
+  };
+}
+
 async function readImportFile(file: File): Promise<ConciliationItem[]> {
   if (file.size > 15 * 1024 * 1024) throw new Error("O arquivo excede o limite de 15 MB.");
   if (/\.(ofx|qif|txt)$/i.test(file.name)) {
@@ -81,27 +100,37 @@ async function readImportFile(file: File): Promise<ConciliationItem[]> {
     }
     return rows;
   }
-  const workbook = XLSX.read(await file.arrayBuffer(), {
-    type: "array",
-    cellDates: true,
-    sheetRows: 5001,
-    cellFormula: false,
-    cellHTML: false,
-    cellNF: false,
-    bookFiles: false,
-    WTF: false,
-  });
+  const workbook = new ExcelJS.Workbook();
+  await workbook.xlsx.load(await file.arrayBuffer());
   const rawRows: Record<string, unknown>[] = [];
-  workbook.SheetNames.forEach(sheet => rawRows.push(...XLSX.utils.sheet_to_json<Record<string, unknown>>(workbook.Sheets[sheet], { defval: "", raw: true })));
+  workbook.worksheets.forEach((sheet) => {
+    let headers: string[] = [];
+    sheet.eachRow({ includeEmpty: false }, (row, rowNumber) => {
+      const values = Array.isArray(row.values) ? row.values.slice(1) : [];
+      if (rowNumber === 1) {
+        headers = values.map((value: any, index: number) => String(value ?? `Coluna ${index + 1}`).trim() || `Coluna ${index + 1}`);
+        return;
+      }
+      if (!headers.length || rawRows.length >= 5000) return;
+      const record: Record<string, unknown> = {};
+      headers.forEach((header, index) => {
+        const value: any = values[index];
+        record[header] = value instanceof Date ? value.toISOString().slice(0, 10) : value?.result ?? value?.text ?? value ?? "";
+      });
+      if (Object.values(record).some(Boolean)) rawRows.push(record);
+    });
+  });
   return rawRows.slice(0, 5000).map(rowToItem);
 }
 
 export const ConciliationScreen: React.FC<ConciliationScreenProps> = ({
   currentTenantId,
+  manualEntries,
   onNavigate,
   onImportEntries,
+  onUpdateEntry,
 }) => {
-  const [items, setItems] = useState<ConciliationItem[]>(sampleConciliation);
+  const [items, setItems] = useState<ConciliationItem[]>(() => manualEntries.filter((entry) => entry.tenant === currentTenantId).map(entryToItem));
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [filter, setFilter] = useState<"all" | "match" | "review">("all");
   const [uploadedFileName, setUploadedFileName] = useState<string | null>("Extrato_Setembro_2026.ofx");
@@ -110,6 +139,13 @@ export const ConciliationScreen: React.FC<ConciliationScreenProps> = ({
   const [isReadingFile, setIsReadingFile] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
   const [importError, setImportError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!isReadingFile && !isImporting) {
+      setItems(manualEntries.filter((entry) => entry.tenant === currentTenantId).map(entryToItem));
+      setSelectedIds([]);
+    }
+  }, [currentTenantId, manualEntries, isImporting, isReadingFile]);
 
   const filteredItems = items.filter((item) => {
     if (filter === "all") return true;
@@ -130,9 +166,15 @@ export const ConciliationScreen: React.FC<ConciliationScreenProps> = ({
     );
   };
 
-  const handleApproveSelected = () => {
+  const handleApproveSelected = async () => {
     const selectedItems = filteredItems.filter((_, index) => selectedIds.includes(index));
     if (!selectedItems.length) return;
+    try {
+      await Promise.all(selectedItems.filter((item) => item.entryId).map((item) => onUpdateEntry(item.entryId as string, { conciliationStatus: "matched" })));
+    } catch (error: any) {
+      setImportError(error?.message || "Não foi possível salvar a conciliação.");
+      return;
+    }
     setItems((previous) => previous.map((item) => selectedItems.includes(item)
       ? { ...item, status: "match", label: "Conciliado", tone: "green", match: "Conciliação confirmada" }
       : item));
@@ -159,7 +201,7 @@ export const ConciliationScreen: React.FC<ConciliationScreenProps> = ({
   };
 
   const handleImportEntries = async () => {
-    const entries: Array<Partial<ManualEntry>> = items.filter(item => item.label === "Importado").map(item => ({ tenant: currentTenantId, type: item.numericValue >= 0 ? "entrada" as const : "despesa" as const, date: item.date, value: Math.abs(item.numericValue), desc: item.desc, catId: "importado", catName: item.categoria, pay: "Importação", note: `Importado de ${uploadedFileName || "arquivo"}`, created: new Date().toISOString() }));
+    const entries: Array<Partial<ManualEntry>> = items.filter(item => item.label === "Importado" && !item.entryId).map(item => ({ tenant: currentTenantId, type: item.numericValue >= 0 ? "entrada" as const : "despesa" as const, date: item.date, value: Math.abs(item.numericValue), desc: item.desc, catId: "importado", catName: item.categoria, pay: "Importação", note: `Importado de ${uploadedFileName || "arquivo"}`, sourceFile: uploadedFileName || undefined, conciliationStatus: item.status === "match" ? "matched" : "review", created: new Date().toISOString() }));
     if (!entries.length) return;
     setIsImporting(true);
     try {
@@ -195,7 +237,7 @@ export const ConciliationScreen: React.FC<ConciliationScreenProps> = ({
         </div>
 
         <button
-          onClick={handleApproveSelected}
+          onClick={() => void handleApproveSelected()}
           disabled={selectedIds.length === 0}
           className="flex items-center gap-1.5 rounded-lg bg-[#3c63da] px-4 py-2 text-xs font-bold text-white hover:bg-[#2f52c0] shadow-sm disabled:opacity-50 cursor-pointer"
         >

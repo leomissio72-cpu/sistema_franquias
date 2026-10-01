@@ -12,13 +12,13 @@
       "nome": "Administrador",
       "email": "",
       "login": "dono",
-      "pass": "scrypt$1a9580e777e4b19b5c0164a80a4d2e31$846b0fdcdd6b822fca886c3e671e77696244a888904af364df1b32772332d705fd180ab513b76778b958c46f2f3348e0251388c02b6a6ac1b639523a831ae7bc",
       "perfil": "dono",
       "unidade": "dono",
       "status": "ativo",
       "last": "Agora"
     }
   ],
+  "credentials": {},
   "manualEntries": [],
   "dreParams": {},
   "paymentMethods": [],

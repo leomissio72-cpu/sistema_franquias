@@ -2,6 +2,7 @@ import express, { Request, Response } from "express";
 import path from "path";
 import fs from "fs";
 import crypto from "crypto";
+import { cookieOptions, createSignedSessionToken, getCredential, migrateLegacyCredentials, safeUser, setCredential, stripSensitiveFields, verifyPassword, verifySignedSessionToken } from "./serverSecurity";
 
 const app = express();
 
@@ -9,7 +10,6 @@ app.use(express.json({ limit: "10mb" }));
 
 const SESSION_TTL_MS = 8 * 60 * 60 * 1000;
 const loginAttempts = new Map<string, { count: number; resetAt: number }>();
-const sessions = new Map<string, { userId: string; expiresAt: number }>();
 
 app.disable("x-powered-by");
 app.use((req, res, next) => {
@@ -17,35 +17,38 @@ app.use((req, res, next) => {
     return res.redirect(308, `https://${req.header("host")}${req.originalUrl}`);
   }
   res.setHeader("Strict-Transport-Security", "max-age=31536000; includeSubDomains; preload");
-  res.setHeader("Content-Security-Policy", "default-src 'self' data: blob: https:; script-src 'self' 'unsafe-inline' 'unsafe-eval' https:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: blob: https:; font-src 'self' data: https://fonts.gstatic.com; connect-src 'self' https: ws: wss:; frame-src 'self' https://app.powerbi.com; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'self' https://*.google.com https://*.googleusercontent.com https://*.run.app;");
+  res.setHeader("Content-Security-Policy", "default-src 'self' data: blob: https:; script-src 'self' 'unsafe-inline' 'unsafe-eval' https:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: blob: https:; font-src 'self' data: https://fonts.gstatic.com; connect-src 'self' https: ws: wss:; frame-src 'self' https://app.powerbi.com; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'self';");
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  res.setHeader("X-Frame-Options", "SAMEORIGIN");
+  res.setHeader("Cross-Origin-Opener-Policy", "same-origin-allow-popups");
+  res.setHeader("Cross-Origin-Resource-Policy", "same-origin");
+  res.setHeader("X-Permitted-Cross-Domain-Policies", "none");
   res.setHeader("Permissions-Policy", "camera=(), microphone=(), geolocation=(), payment=()");
   res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
   res.setHeader("Cache-Control", req.path.startsWith("/api/") ? "no-store" : "public, max-age=0, must-revalidate");
   next();
 });
 
-function hashPassword(password: string, salt = crypto.randomBytes(16).toString("hex")) {
-  return `scrypt$${salt}$${crypto.scryptSync(password, salt, 64).toString("hex")}`;
-}
-function verifyPassword(password: string, stored: string) {
-  if (!stored?.startsWith("scrypt$")) return stored === password;
-  const [, salt, expected] = stored.split("$");
-  const actual = crypto.scryptSync(password, salt, 64).toString("hex");
-  return crypto.timingSafeEqual(Buffer.from(actual, "hex"), Buffer.from(expected, "hex"));
-}
 function parseCookies(req: Request) {
   return Object.fromEntries((req.header("cookie") || "").split(";").filter(Boolean).map((part) => { const [key, ...value] = part.trim().split("="); return [key, decodeURIComponent(value.join("="))]; }));
 }
 function requireSession(req: Request, res: Response, next: any) {
-  const token = parseCookies(req).sofia_session;
-  const session = token ? sessions.get(token) : undefined;
-  if (!session || session.expiresAt <= Date.now()) {
-    if (token) sessions.delete(token);
+  const token = parseCookies(req).gestao_session;
+  const session = token ? verifySignedSessionToken(token) : null;
+  const user = session ? db.users.find((candidate: any) => candidate.id === session.sub && candidate.status === "ativo") : null;
+  const credential = user ? getCredential(db, user.id) : null;
+  if (!session || !user || !credential || credential.version !== session.cv || (user.perfil === "dono" && !session.mfa)) {
     return res.status(401).json({ error: "Sessão expirada. Faça login novamente." });
   }
-  (req as any).auth = { ...session, user: db.users.find((user: any) => user.id === session.userId) };
+  (req as any).auth = { ...session, user: safeUser(user), userId: user.id, expiresAt: session.exp };
   next();
 }
+
+app.use((req, res, next) => {
+  const openPath = ["/api/health", "/health", "/api/auth/login", "/auth/login", "/api/auth/logout", "/auth/logout", "/api/events", "/events"].includes(req.path);
+  if (openPath || !req.path.startsWith("/api")) return next();
+  return requireSession(req, res, next);
+});
 
 // Serverless / Read-only filesystem auto-detection and setup
 const isServerless = process.env.VERCEL === "1" || process.env.NODE_ENV === "production";
@@ -231,14 +234,14 @@ const defaultEmployees = [
 ];
 
 const defaultUsers = [
-  { id: "u1", nome: "Administrador", email: "", login: "dono", pass: "1234", perfil: "dono", unidade: "dono", status: "ativo", last: "Agora", employeeId: "e1" },
-  { id: "u3", nome: "Admin Café Prime", email: "admin@cafeprime.com", login: "admin.cafe", pass: "1234", perfil: "admin", unidade: "biz1", status: "ativo", last: "Hoje 08:15", employeeId: "" },
-  { id: "u4", nome: "Admin Beleza & Co", email: "admin@beleza.com", login: "admin.beleza", pass: "1234", perfil: "admin", unidade: "biz2", status: "ativo", last: "Ontem 17:40", employeeId: "" },
-  { id: "u5", nome: "Admin EduKids", email: "admin@edukids.com", login: "admin.edukids", pass: "1234", perfil: "admin", unidade: "biz3", status: "ativo", last: "Ontem 16:10", employeeId: "" },
-  { id: "u6", nome: "Renata Campos", email: "renata@f001.com", login: "renata.f001", pass: "1234", perfil: "franqueado", unidade: "f001", status: "ativo", last: "Hoje 08:40", employeeId: "e2" },
-  { id: "u7", nome: "Marcos Silva", email: "marcos@f002.com", login: "marcos.f002", pass: "1234", perfil: "franqueado", unidade: "f002", status: "ativo", last: "Ontem 18:22", employeeId: "e5" },
-  { id: "u8", nome: "Juliana Prado", email: "juliana@f004.com", login: "juliana.f004", pass: "1234", perfil: "franqueado", unidade: "f004", status: "ativo", last: "Ontem 17:05", employeeId: "e6" },
-  { id: "u9", nome: "Ana Beatriz Lima", email: "ana@f007.com", login: "ana.f007", pass: "1234", perfil: "franqueado", unidade: "f007", status: "ativo", last: "Hoje 07:50", employeeId: "e7" }
+  { id: "u1", nome: "Administrador", email: "", login: "dono", perfil: "dono", unidade: "dono", status: "ativo", last: "Agora", employeeId: "e1" },
+  { id: "u3", nome: "Admin Café Prime", email: "admin@cafeprime.com", login: "admin.cafe", perfil: "admin", unidade: "biz1", status: "ativo", last: "Hoje 08:15", employeeId: "" },
+  { id: "u4", nome: "Admin Beleza & Co", email: "admin@beleza.com", login: "admin.beleza", perfil: "admin", unidade: "biz2", status: "ativo", last: "Ontem 17:40", employeeId: "" },
+  { id: "u5", nome: "Admin EduKids", email: "admin@edukids.com", login: "admin.edukids", perfil: "admin", unidade: "biz3", status: "ativo", last: "Ontem 16:10", employeeId: "" },
+  { id: "u6", nome: "Renata Campos", email: "renata@f001.com", login: "renata.f001", perfil: "franqueado", unidade: "f001", status: "ativo", last: "Hoje 08:40", employeeId: "e2" },
+  { id: "u7", nome: "Marcos Silva", email: "marcos@f002.com", login: "marcos.f002", perfil: "franqueado", unidade: "f002", status: "ativo", last: "Ontem 18:22", employeeId: "e5" },
+  { id: "u8", nome: "Juliana Prado", email: "juliana@f004.com", login: "juliana.f004", perfil: "franqueado", unidade: "f004", status: "ativo", last: "Ontem 17:05", employeeId: "e6" },
+  { id: "u9", nome: "Ana Beatriz Lima", email: "ana@f007.com", login: "ana.f007", perfil: "franqueado", unidade: "f007", status: "ativo", last: "Hoje 07:50", employeeId: "e7" }
 ];
 
 const defaultManualEntries = [
@@ -303,6 +306,8 @@ interface DatabaseState {
   permissions: Record<string, any>;
   vtConfigs: Record<string, any>;
   systemSettings?: any;
+  credentials?: Record<string, any>;
+  mfaSecrets?: Record<string, string>;
 }
 
 function loadDatabase(): DatabaseState {
@@ -377,6 +382,8 @@ function loadDatabase(): DatabaseState {
     royalties: { biz1: 0.06, biz2: 0.05, biz3: 0.07 },
     permissions: {},
     vtConfigs: {}
+    , credentials: {},
+    mfaSecrets: {}
   };
 
   try {
@@ -418,9 +425,8 @@ function saveDatabase(data: DatabaseState) {
 }
 
 let db = removeDemonstrationData(loadDatabase());
-for (const account of db.users) {
-  if (account.pass && !account.pass.startsWith("scrypt$")) account.pass = hashPassword(account.pass);
-}
+const migratedCredentials = migrateLegacyCredentials(db);
+db = migratedCredentials.database as DatabaseState;
 saveDatabase(db);
 
 type SSEClient = { id: string; res: Response };
@@ -467,11 +473,11 @@ routeBoth("post", "/api/auth/login", (req: Request, res: Response) => {
   if (attempt && attempt.resetAt > Date.now() && attempt.count >= 8) {
     return res.status(429).json({ error: "Muitas tentativas. Aguarde alguns minutos e tente novamente." });
   }
-  const user = db.users.find(
-    (u) =>
-      u.login.toLowerCase() === String(username || "").trim().toLowerCase() &&
-      verifyPassword(String(password || ""), u.pass || "")
-  );
+  const user = db.users.find((u: any) => {
+    const matches = u.login.toLowerCase() === String(username || "").trim().toLowerCase();
+    const credential = db.credentials?.[u.id];
+    return matches && verifyPassword(String(password || ""), credential?.passwordHash);
+  });
 
   if (!user) {
     const current = loginAttempts.get(clientKey);
@@ -488,22 +494,20 @@ routeBoth("post", "/api/auth/login", (req: Request, res: Response) => {
   user.last = new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
   saveDatabase(db);
 
-  const { pass, ...safeUser } = user;
-  const token = crypto.randomBytes(32).toString("base64url");
+  const credential = db.credentials?.[user.id];
+  if (!credential) return res.status(401).json({ error: "Credencial antiga revogada. Cadastre uma nova senha pelo acesso administrativo." });
+  if (user.perfil === "dono") return res.status(401).json({ error: "O acesso master exige ativação do MFA no endpoint principal." });
+  const token = createSignedSessionToken(user.id, credential.version, false);
   const expiresAt = Date.now() + SESSION_TTL_MS;
-  sessions.set(token, { userId: user.id, expiresAt });
-  res.setHeader("Set-Cookie", `sofia_session=${encodeURIComponent(token)}; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=${SESSION_TTL_MS / 1000}`);
+  res.setHeader("Set-Cookie", `gestao_session=${encodeURIComponent(token)}; ${cookieOptions()}`);
   res.json({
-    user: safeUser,
-    token,
+    user: safeUser(user),
     expiresAt,
   });
 });
 
 routeBoth("post", "/api/auth/logout", (req: Request, res: Response) => {
-  const token = parseCookies(req).sofia_session;
-  if (token) sessions.delete(token);
-  res.setHeader("Set-Cookie", "sofia_session=; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=0");
+  res.setHeader("Set-Cookie", "gestao_session=; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=0");
   res.json({ success: true });
 });
 
@@ -624,7 +628,7 @@ routeBoth("get", "/api/state", (req: Request, res: Response) => {
     businesses: db.businesses,
     franchises: db.franchises,
     employees: db.employees,
-    users: db.users.map(({ pass, ...u }) => u),
+    users: db.users.map((user: any) => safeUser(user)),
     manualEntries: db.manualEntries,
     configs: db.configs,
     dreParams: db.dreParams,
@@ -638,7 +642,7 @@ routeBoth("get", "/api/state", (req: Request, res: Response) => {
 });
 
 routeBoth("post", "/api/state/sync", requireSession, (req: Request, res: Response) => {
-  const { section, data: incomingData, user, userProfile, userTenant } = req.body || {};
+  const { section, data: incomingData, user, userProfile, userTenant, credential } = req.body || {};
   const authenticatedUser = (req as any).auth?.user;
   const effectiveProfile = authenticatedUser?.perfil || userProfile;
   const effectiveTenant = authenticatedUser?.unidade || userTenant;
@@ -659,16 +663,16 @@ routeBoth("post", "/api/state/sync", requireSession, (req: Request, res: Respons
         const protectedUsers = db.users.filter((existing: any) => existing.unidade !== effectiveTenant);
         data = [...protectedUsers, ...ownUsers];
       }
-      data = data.map((incoming: any) => {
-        const current = db.users.find((existing: any) => existing.id === incoming.id);
-        const incomingPassword = incoming.pass || current?.pass || "";
-        return { ...incoming, pass: incomingPassword && !incomingPassword.startsWith("scrypt$") ? hashPassword(incomingPassword) : incomingPassword };
-      });
+      data = data.map((incoming: any) => stripSensitiveFields(incoming));
     }
     if (section === "systemSettings" && data && typeof data === "object") {
       data = { ...data, autoSync: true, syncInterval: Number(data.syncInterval) > 0 ? Number(data.syncInterval) : 30 };
     }
-    (db as any)[section] = data;
+    (db as any)[section] = stripSensitiveFields(data);
+    if (credential?.userId && credential?.password) {
+      if (!authenticatedUser || !["dono", "equipe", "admin"].includes(authenticatedUser.perfil)) return res.status(403).json({ error: "Você não pode alterar esta credencial." });
+      Object.assign(db, setCredential(db, String(credential.userId), String(credential.password)));
+    }
     db.auditLogs.unshift({
       id: `audit_${Date.now()}`,
       timestamp: new Date().toISOString(),

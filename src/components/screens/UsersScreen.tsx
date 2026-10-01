@@ -7,7 +7,7 @@ interface UsersScreenProps {
   employees: Employee[];
   franchises: FranchiseUnit[];
   userSession: UserSession | null;
-  onSaveUsers: (users: UserAccount[]) => Promise<void>;
+  onSaveUsers: (users: UserAccount[], credential?: { userId: string; password: string }) => Promise<void>;
   onNavigate: (screen: ScreenType) => void;
 }
 
@@ -61,11 +61,11 @@ export const UsersScreen: React.FC<UsersScreenProps> = ({ users, employees, fran
     try {
       const nextUser: UserAccount = {
         id: editingId || `user-${Date.now()}`,
-        nome: form.nome.trim(), email: form.email.trim(), login: form.login.trim(), pass: form.pass || users.find((user) => user.id === editingId)?.pass || "",
+        nome: form.nome.trim(), email: form.email.trim(), login: form.login.trim(),
         perfil: form.perfil, unidade: form.unidade, status: form.status, employeeId: form.employeeId || undefined,
       };
       const next = editingId ? users.map((user) => user.id === editingId ? { ...user, ...nextUser } : user) : [...users, nextUser];
-      await onSaveUsers(next);
+      await onSaveUsers(next, form.pass.trim() ? { userId: nextUser.id, password: form.pass } : undefined);
       setShowForm(false); setMessage(editingId ? "Acesso atualizado." : "Acesso criado com sucesso.");
     } catch (error) { console.error(error); setMessage("Não foi possível salvar o acesso."); }
     finally { setSaving(false); }

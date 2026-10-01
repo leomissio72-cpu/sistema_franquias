@@ -110,6 +110,7 @@ export const App: React.FC = () => {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isSavingConfig, setIsSavingConfig] = useState<boolean>(false);
   const [isCloudConnected, setIsCloudConnected] = useState<boolean>(true);
+  const [loadError, setLoadError] = useState<string>("");
 
   // Server State & Audit Logs
   const [serverState, setServerState] = useState<CloudState | null>(null);
@@ -137,6 +138,7 @@ export const App: React.FC = () => {
     try {
       const state = await fetchServerState();
       setServerState(state);
+      setLoadError("");
       setLastSyncTime(new Date(state.lastUpdated || Date.now()).toLocaleTimeString("pt-BR"));
       setIsCloudConnected(true);
 
@@ -147,15 +149,28 @@ export const App: React.FC = () => {
     } catch (err) {
       console.error("Failed to load initial server state:", err);
       setIsCloudConnected(false);
+      setLoadError("Não foi possível carregar os dados desta conta na nuvem. Nenhum dado antigo foi exibido.");
     } finally {
       setIsLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    loadState();
+    if (!userSession) {
+      setServerState(null);
+      setLoadError("");
+      setIsLoading(false);
+      setAuditLogs([]);
+      return;
+    }
 
-    // Subscribe to SSE updates from server
+    setServerState(null);
+    setLoadError("");
+    setAuditLogs([]);
+    setIsLoading(true);
+    void loadState();
+
+    // Subscribe only while the current authenticated account is active.
     const unsubscribe = subscribeToEvents((newState: CloudState) => {
       setServerState(newState);
       setLastSyncTime(new Date(newState.lastUpdated || Date.now()).toLocaleTimeString("pt-BR"));
@@ -170,7 +185,7 @@ export const App: React.FC = () => {
     return () => {
       unsubscribe();
     };
-  }, [loadState]);
+  }, [loadState, userSession]);
 
   // Action Handlers
   const handleUpdateConfig = async (key: string, value: any) => {
@@ -232,17 +247,24 @@ export const App: React.FC = () => {
     setServerState(updatedState);
   };
 
+  const handleUpdateManualEntry = async (id: string, patch: Partial<ManualEntry>) => {
+    const currentEntries = serverState?.manualEntries || [];
+    const updatedEntries = currentEntries.map((entry) => entry.id === id ? { ...entry, ...patch } : entry);
+    const updatedState = await syncStateSection("manualEntries", updatedEntries, userSession?.name || "Admin", userSession || undefined);
+    setServerState(updatedState);
+  };
+
   const handleSaveSettings = async (settings: SystemSettings) => {
     const updatedState = await saveSystemSettings({ ...settings, autoSync: true, syncInterval: settings.syncInterval || 30 }, userSession?.name || "Admin");
     setServerState(updatedState);
   };
 
-  const handleSaveUsers = async (users: UserAccount[]) => {
-    const updatedState = await syncStateSection("users", users, userSession?.name || "Administrador", userSession || undefined);
+  const handleSaveUsers = async (users: UserAccount[], credential?: { userId: string; password: string }) => {
+    const updatedState = await syncStateSection("users", users, userSession?.name || "Administrador", userSession || undefined, credential);
     setServerState(updatedState);
   };
 
-  const handleSaveEmployees = async (employees: Employee[]) => {
+  const handleSaveEmployees = async (employees: Employee[], credential?: { userId: string; password: string }) => {
     const currentUsers = serverState?.users || [];
     const generatedUsers = employees
       .filter((employee) => employee.login?.trim())
@@ -253,7 +275,6 @@ export const App: React.FC = () => {
           nome: employee.nome,
           email: employee.email,
           login: employee.login!.trim(),
-          pass: employee.accessPassword || existing?.pass || "1234",
           perfil: employee.accessProfile || existing?.perfil || "operador",
           unidade: employee.unidade,
           status: employee.active === false ? "inativo" : "ativo",
@@ -263,7 +284,7 @@ export const App: React.FC = () => {
     const generatedIds = new Set(generatedUsers.map((user) => user.id));
     const preservedUsers = currentUsers.filter((user) => !user.employeeId || !employees.some((employee) => employee.id === user.employeeId));
     const updatedState = await syncStateSection("employees", employees, userSession?.name || "Administrador", userSession || undefined);
-    const stateWithUsers = await syncStateSection("users", [...preservedUsers.filter((user) => !generatedIds.has(user.id)), ...generatedUsers], userSession?.name || "Administrador", userSession || undefined);
+    const stateWithUsers = await syncStateSection("users", [...preservedUsers.filter((user) => !generatedIds.has(user.id)), ...generatedUsers], userSession?.name || "Administrador", userSession || undefined, credential);
     setServerState({ ...updatedState, ...stateWithUsers });
   };
 
@@ -335,9 +356,22 @@ export const App: React.FC = () => {
       localStorage.removeItem("sofiacfo_user_session");
     } catch (e) {}
     setUserSession(null);
+    setServerState(null);
+    setLastSyncTime("");
+    setAuditLogs([]);
     setCurrentTenantId("dono");
     setIsLoginOpen(true);
   };
+
+  // Se não estiver logado, exibe apenas a tela de Login segura.
+  if (!userSession) {
+    return (
+      <LoginModal
+        isOpen={true}
+        onSuccess={handleLoginSuccess}
+      />
+    );
+  }
 
   if (isLoading || !serverState) {
     return (
@@ -348,20 +382,11 @@ export const App: React.FC = () => {
           </div>
           <div>
             <h1 className="text-xl font-extrabold tracking-tight">Gestão de Franquias</h1>
-            <p className="text-xs text-[#8ea1be]">Conectando à base central na nuvem...</p>
+            <p className="max-w-md text-xs text-[#8ea1be]">{loadError || "Conectando à base central na nuvem..."}</p>
+            {loadError && <button type="button" onClick={() => void loadState()} className="mt-4 rounded-xl bg-[#3c63da] px-4 py-2 text-xs font-bold text-white">Tentar novamente</button>}
           </div>
         </div>
       </div>
-    );
-  }
-
-  // Se não estiver logado, exibe apenas a tela de Login segura
-  if (!userSession) {
-    return (
-      <LoginModal
-        isOpen={true}
-        onSuccess={handleLoginSuccess}
-      />
     );
   }
 
@@ -582,6 +607,7 @@ export const App: React.FC = () => {
                 setServerState(updatedState);
               }}
               onDeleteEntry={handleDeleteManualEntry}
+              onUpdateEntry={handleUpdateManualEntry}
               vtConfigs={vtConfigs}
               onSaveVtConfig={handleSaveVtConfig}
               onNavigate={setCurrentScreen}

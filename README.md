@@ -108,10 +108,8 @@ npm start
 ## 🔐 Acesso ao Painel Administrativo (/configuracao)
 
 - **URL Direta**: Acesse clicando no menu lateral em **"Configurações da Nuvem"** ou navegando para `/configuracao` (ou `#configuracao`).
-- **Usuário Padrão Administrador**:
-  - **Login**: `dono`
-  - **Senha**: `1234`
-  *(Usuários comuns e franqueados não têm acesso a esta área e visualizam apenas suas respectivas unidades).*
+- **Acesso administrativo**: não existe senha padrão no código ou no repositório. O acesso master deve ser provisionado pelo administrador, com senha forte temporária e MFA obrigatório no primeiro login.
+- Usuários comuns e franqueados não têm acesso a esta área e visualizam apenas suas respectivas unidades.
 
 ---
 

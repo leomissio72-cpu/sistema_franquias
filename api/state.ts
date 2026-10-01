@@ -1,47 +1,29 @@
-import fs from "fs";
-import path from "path";
+import { isTrustedRequest, json, publicState, readDatabase, sessionUser } from "./_store";
 
-type AnyRecord = Record<string, any>;
-
-function readDatabase(): AnyRecord {
-  const candidates = [
-    path.join(process.cwd(), "data", "database.json"),
-    path.join("/var/task", "data", "database.json"),
-    path.join("/tmp", "database.json"),
-  ];
-  for (const filename of candidates) {
-    try {
-      if (fs.existsSync(filename)) {
-        const parsed = JSON.parse(fs.readFileSync(filename, "utf8"));
-        if (parsed && typeof parsed === "object") return parsed;
-      }
-    } catch {
-      // Try the next known location.
-    }
-  }
-  return { businesses: [], franchises: [], employees: [], users: [], manualEntries: [], configs: [] };
-}
-
-export default function handler(_req: any, res: any) {
-  const db = readDatabase();
-  const payload = {
-    businesses: Array.isArray(db.businesses) ? db.businesses : [],
-    franchises: Array.isArray(db.franchises) ? db.franchises : [],
-    employees: Array.isArray(db.employees) ? db.employees : [],
-    users: (Array.isArray(db.users) ? db.users : []).map(({ pass: _pass, password: _password, ...user }: AnyRecord) => user),
-    manualEntries: Array.isArray(db.manualEntries) ? db.manualEntries : [],
-    configs: Array.isArray(db.configs) ? db.configs : [],
-    dreParams: db.dreParams || {},
-    paymentMethods: Array.isArray(db.paymentMethods) ? db.paymentMethods : [],
-    businessRules: db.businessRules || {},
-    royalties: db.royalties || {},
-    permissions: db.permissions || {},
-    vtConfigs: db.vtConfigs || {},
-    systemSettings: db.systemSettings || { appName: "Gestão de Franquias", companyName: "Gestão de Franquias" },
-    lastUpdated: db.lastUpdated || null,
-  };
-  res.statusCode = 200;
-  res.setHeader("Content-Type", "application/json; charset=utf-8");
-  res.setHeader("Cache-Control", "no-store");
-  res.end(JSON.stringify(payload));
+export default async function handler(req: any, res: any) {
+  if (req.method !== "GET") return json(res, 405, { error: "Método não permitido." });
+  if (!isTrustedRequest(req)) return json(res, 403, { error: "Origem não autorizada." });
+  const user = await sessionUser(req);
+  if (!user) return json(res, 401, { error: "Sessão expirada. Faça login novamente." });
+  const safe = publicState(await readDatabase());
+  const restricted = ["franqueado", "operador"].includes(String(user.perfil || ""));
+  const tenant = String(user.unidade || "");
+  const visibleFranchises = restricted ? (safe.franchises || []).filter((item: any) => item.id === tenant) : (safe.franchises || []);
+  const visibleBusinessIds = new Set(visibleFranchises.map((item: any) => item.businessId).filter(Boolean));
+  return json(res, 200, {
+    businesses: (Array.isArray(safe.businesses) ? safe.businesses : []).filter((item: any) => !restricted || visibleBusinessIds.has(item.id)),
+    franchises: visibleFranchises,
+    employees: (Array.isArray(safe.employees) ? safe.employees : []).filter((item: any) => !restricted || item.unidade === tenant),
+    users: (Array.isArray(safe.users) ? safe.users : []).filter((item: any) => !restricted || item.unidade === tenant),
+    manualEntries: (Array.isArray(safe.manualEntries) ? safe.manualEntries : []).filter((item: any) => !restricted || item.tenant === tenant),
+    configs: Array.isArray(safe.configs) ? safe.configs : [],
+    dreParams: safe.dreParams || {},
+    paymentMethods: Array.isArray(safe.paymentMethods) ? safe.paymentMethods : [],
+    businessRules: safe.businessRules || {},
+    royalties: safe.royalties || {},
+    permissions: safe.permissions || {},
+    vtConfigs: safe.vtConfigs || {},
+    systemSettings: safe.systemSettings || { appName: "Gestão de Franquias", companyName: "Gestão de Franquias" },
+    lastUpdated: safe.lastUpdated || null,
+  });
 }

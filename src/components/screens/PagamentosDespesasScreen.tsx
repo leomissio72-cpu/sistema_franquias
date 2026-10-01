@@ -30,6 +30,7 @@ interface PagamentosDespesasScreenProps {
   onCreateEntry: (entry: Partial<ManualEntry>) => Promise<void>;
   onCreateEntriesBulk: (entries: Array<Partial<ManualEntry>>) => Promise<void>;
   onDeleteEntry: (id: string) => Promise<void>;
+  onUpdateEntry: (id: string, patch: Partial<ManualEntry>) => Promise<void>;
   vtConfigs: Record<string, VTConfig>;
   onSaveVtConfig: (tenantId: string, config: VTConfig) => Promise<void>;
   onNavigate: (screen: ScreenType) => void;
@@ -43,6 +44,7 @@ export const PagamentosDespesasScreen: React.FC<PagamentosDespesasScreenProps> =
   onCreateEntry,
   onCreateEntriesBulk,
   onDeleteEntry,
+  onUpdateEntry,
   vtConfigs,
   onSaveVtConfig,
   onNavigate,
@@ -175,8 +177,10 @@ export const PagamentosDespesasScreen: React.FC<PagamentosDespesasScreenProps> =
         {activeTab === "conciliation" && (
           <ConciliationScreen
             currentTenantId={currentTenantId}
+            manualEntries={manualEntries}
             onNavigate={onNavigate}
             onImportEntries={onCreateEntriesBulk}
+            onUpdateEntry={onUpdateEntry}
           />
         )}
 

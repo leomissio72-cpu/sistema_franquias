@@ -63,6 +63,29 @@ async function safeResponseJSON(res: Response, defaultErrorMsg: string): Promise
   }
 }
 
+function sanitizeClientValue(value: any): any {
+  if (Array.isArray(value)) return value.map(sanitizeClientValue);
+  if (!value || typeof value !== "object") return value;
+  return Object.fromEntries(Object.entries(value)
+    .filter(([key]) => !["pass", "password", "senha", "senhaInicial", "passwordHash", "accessPassword", "access_password", "token", "sessionToken"].includes(key))
+    .map(([key, item]) => [key, sanitizeClientValue(item)]));
+}
+
+export function sanitizeLegacyClientStorage() {
+  try {
+    const cached = localStorage.getItem("sofiacfo_cloud_state");
+    if (cached) {
+      localStorage.setItem("gestaofranquias_cloud_state", JSON.stringify(sanitizeClientValue(JSON.parse(cached))));
+      localStorage.removeItem("sofiacfo_cloud_state");
+    }
+    ["sofiacfo_user_session", "gestao_user_session"].forEach((key) => localStorage.removeItem(key));
+  } catch {
+    // A ausência de storage não impede o login por cookie HttpOnly.
+  }
+}
+
+sanitizeLegacyClientStorage();
+
 export async function fetchHealth() {
   try {
     const res = await fetchWithTimeout("/api/health", {}, 2000);
@@ -76,7 +99,7 @@ function getLocalFallbackState(): CloudState {
   try {
     const cached = localStorage.getItem("sofiacfo_cloud_state");
     if (cached) {
-      const parsed = JSON.parse(cached);
+      const parsed = sanitizeClientValue(JSON.parse(cached));
       if (parsed && parsed.businesses && parsed.businesses.length > 0) {
         return parsed;
       }
@@ -140,13 +163,14 @@ export async function fetchServerState(): Promise<CloudState> {
     };
 
     try {
-      localStorage.setItem("gestaofranquias_cloud_state", JSON.stringify(state));
+      localStorage.setItem("gestaofranquias_cloud_state", JSON.stringify(sanitizeClientValue(state)));
+      localStorage.removeItem("sofiacfo_cloud_state");
     } catch (e) {}
 
     return state;
   } catch (err) {
-    console.warn("Could not reach /api/state, using local/cached state:", err);
-    return getLocalFallbackState();
+    console.warn("Could not reach /api/state; refusing to display stale account data:", err);
+    throw err;
   }
 }
 
@@ -194,11 +218,11 @@ export async function fetchAuditLogs(): Promise<{ auditLogs: AuditLog[] }> {
   }
 }
 
-export async function syncStateSection(section: string, data: any, user?: string, actor?: { profile?: string; tenant?: string; login?: string }): Promise<CloudState> {
+export async function syncStateSection(section: string, data: any, user?: string, actor?: { profile?: string; tenant?: string; login?: string }, credential?: { userId: string; password: string }): Promise<CloudState> {
   const res = await fetch("/api/state/sync", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ section, data, user, userProfile: actor?.profile, userTenant: actor?.tenant, userLogin: actor?.login }),
+    body: JSON.stringify({ section, data, user, userProfile: actor?.profile, userTenant: actor?.tenant, userLogin: actor?.login, credential }),
   });
   if (!res.ok) throw new Error("Failed to sync state section");
   return fetchServerState();
@@ -240,7 +264,7 @@ export async function saveSystemSettings(settings: SystemSettings, userName: str
 }
 
 export async function resetDatabase(): Promise<CloudState> {
-  const res = await fetch("/api/state/reset", { method: "POST" });
+  const res = await fetch("/api/state/reset", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ confirm: "RESETAR_BASE" }) });
   if (!res.ok) throw new Error("Failed to reset database");
   return fetchServerState();
 }
@@ -294,9 +318,22 @@ export async function loginAPI(username: string, password: string) {
   return safeResponseJSON(res, "Credenciais inválidas");
 }
 
+export async function verifyMfaAPI(payload: { challengeToken?: string; setupToken?: string; secret?: string; code: string }) {
+  const res = await fetch("/api/auth/mfa", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  return safeResponseJSON(res, "Não foi possível validar o MFA");
+}
+
 export async function logoutAPI() {
   const res = await fetch("/api/auth/logout", { method: "POST" });
-  return safeResponseJSON(res, "Não foi possível encerrar a sessão");
+  const result = await safeResponseJSON(res, "Não foi possível encerrar a sessão");
+  try {
+    ["sofiacfo_cloud_state", "gestaofranquias_cloud_state", "sofiacfo_user_session", "gestao_user_session"].forEach((key) => localStorage.removeItem(key));
+  } catch {}
+  return result;
 }
 
 export const loginApi = loginAPI;
