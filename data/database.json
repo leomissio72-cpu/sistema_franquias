@@ -1,8 +1,26 @@
 {
   "version": 1,
-  "lastUpdated": "2026-10-02T16:45:38.956Z",
+  "lastUpdated": "2026-10-02T17:52:41.153Z",
   "configs": [],
   "auditLogs": [
+    {
+      "id": "audit_1790963561083",
+      "timestamp": "2026-10-02T17:52:41.083Z",
+      "action": "SYNC_BUSINESSES",
+      "key": "businesses",
+      "oldValue": null,
+      "newValue": "Updated businesses",
+      "user": "Auditor"
+    },
+    {
+      "id": "audit_1790963561078",
+      "timestamp": "2026-10-02T17:52:41.078Z",
+      "action": "SYNC_FRANCHISES",
+      "key": "franchises",
+      "oldValue": null,
+      "newValue": "Updated franchises",
+      "user": "Auditor"
+    },
     {
       "id": "audit_1790959538886",
       "timestamp": "2026-10-02T16:45:38.886Z",
@@ -93,17 +111,17 @@
   ],
   "credentials": {
     "u1": {
-      "passwordHash": "scrypt$9de2bf70c617379c77f01d4b94071706$0758e2dad395e7593032164b2cbacb073baba7d04472e18d328234d7372a35f562f371fd41d577e3198bb3ea16c19df2b384046ca057d3427d4ee8b884d29a48",
-      "version": 4,
+      "passwordHash": "scrypt$1d091071220fdbf5c1cf6320159424e0$481cca947a6fc1152b8c8c38b5ef6150793cd73e4ff33e970cbda4f8885921a701e59ba2a3b359005d4e2516a694474d0d08a2cbd72be33f45a72ca156e517b6",
+      "version": 5,
       "createdAt": "2026-10-02T16:29:15.410Z",
-      "updatedAt": "2026-10-02T16:45:38.796Z",
+      "updatedAt": "2026-10-02T17:52:40.990Z",
       "mustReset": false
     },
     "u_op_test": {
-      "passwordHash": "scrypt$df6c9e2daeb817f0bf50b8e35246b406$13e3aef7dba1b785f28d00d60c1d2f125b76d0f4b19b708bcdc9955e6c30588ce35f58bafe7c16b17b776f67ba31a4229872088c7bdf03444658f49ec87a6a32",
-      "version": 3,
+      "passwordHash": "scrypt$f7a0d9b965eb50829b23132f125d5bdb$e677af3902096b29d33343035cdab97ddb525e614797af0e4bc1766f9e0a12b603c5a71a7513236be2abf1c7e2de669f1f616b4406ad5da1acd7dadf0937eb39",
+      "version": 4,
       "createdAt": "2026-10-02T16:29:29.508Z",
-      "updatedAt": "2026-10-02T16:45:38.887Z",
+      "updatedAt": "2026-10-02T17:52:41.084Z",
       "mustReset": false
     }
   },
