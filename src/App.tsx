@@ -28,6 +28,7 @@ import {
   saveVtConfig,
   saveRoyalties,
   saveFranchises,
+  saveBusinesses,
   createManualEntry,
   createManualEntriesBulk,
   deleteManualEntry,
@@ -233,8 +234,33 @@ export const App: React.FC = () => {
   };
 
   const handleSaveFranchises = async (newFranchises: FranchiseUnit[]) => {
-    const updatedState = await saveFranchises(newFranchises, userSession?.name || "Admin");
-    setServerState(updatedState);
+    setIsSavingConfig(true);
+    setServerState((prev) => (prev ? { ...prev, franchises: newFranchises } : prev));
+    try {
+      const updatedState = await saveFranchises(newFranchises, userSession?.name || "Admin");
+      setServerState(updatedState);
+      const logsRes = await fetchAuditLogs();
+      if (logsRes.auditLogs) setAuditLogs(logsRes.auditLogs);
+    } catch (e) {
+      console.error("Erro ao salvar franquias:", e);
+    } finally {
+      setIsSavingConfig(false);
+    }
+  };
+
+  const handleSaveBusinesses = async (newBusinesses: Business[]) => {
+    setIsSavingConfig(true);
+    setServerState((prev) => (prev ? { ...prev, businesses: newBusinesses } : prev));
+    try {
+      const updatedState = await saveBusinesses(newBusinesses, userSession?.name || "Admin");
+      setServerState(updatedState);
+      const logsRes = await fetchAuditLogs();
+      if (logsRes.auditLogs) setAuditLogs(logsRes.auditLogs);
+    } catch (e) {
+      console.error("Erro ao salvar marcas:", e);
+    } finally {
+      setIsSavingConfig(false);
+    }
   };
 
   const handleCreateManualEntry = async (entry: Partial<ManualEntry>) => {
@@ -495,6 +521,7 @@ export const App: React.FC = () => {
               onBulkUpdate={handleBulkUpdateConfig}
               onSaveRoyalties={handleSaveRoyalties}
               onSaveFranchises={handleSaveFranchises}
+              onSaveBusinesses={handleSaveBusinesses}
               onSaveSettings={handleSaveSettings}
               onSaveUsers={handleSaveUsers}
               onResetDatabase={handleResetDatabase}
@@ -655,6 +682,8 @@ export const App: React.FC = () => {
               businesses={businesses}
               onSelectTenant={setCurrentTenantId}
               onNavigate={setCurrentScreen}
+              onSaveFranchises={handleSaveFranchises}
+              onSaveBusinesses={handleSaveBusinesses}
             />
           )}
 

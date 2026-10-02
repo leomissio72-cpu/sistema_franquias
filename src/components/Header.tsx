@@ -1,6 +1,6 @@
 import React from "react";
 import { UserSession, ScreenType } from "../types";
-import { Menu, LogOut, PanelLeftClose, PanelLeftOpen, Moon, Sun } from "lucide-react";
+import { Menu, LogOut, PanelLeftClose, PanelLeftOpen, Moon, Sun, BookOpen } from "lucide-react";
 
 interface HeaderProps {
   userSession: UserSession | null;
@@ -16,6 +16,7 @@ interface HeaderProps {
   onOpenImport?: () => void;
   isDarkMode?: boolean;
   onToggleTheme?: () => void;
+  onNavigate?: (screen: ScreenType) => void;
 }
 
 const screenTitles: Record<ScreenType, string> = {
@@ -40,6 +41,7 @@ const screenTitles: Record<ScreenType, string> = {
   configuracao: "Configurações",
   settings: "Preferências do Usuário",
   produtos: "Produtos Homologados",
+  instrucoes: "Instruções & Ajuda",
 };
 
 export const Header: React.FC<HeaderProps> = ({
@@ -54,6 +56,7 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenImport,
   isDarkMode = false,
   onToggleTheme,
+  onNavigate,
 }) => {
   const getAvatarInitials = () => {
     if (!userSession?.name) return "SF";
@@ -106,6 +109,21 @@ export const Header: React.FC<HeaderProps> = ({
       </div>
 
       <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
+        {onNavigate && (
+          <button
+            id="btn-help-instructions"
+            onClick={() => onNavigate("instrucoes")}
+            className={`flex h-9 items-center gap-1.5 rounded-lg border px-2.5 sm:px-3 text-xs font-bold transition-all cursor-pointer ${
+              currentScreen === "instrucoes"
+                ? "border-[#3c63da] bg-[#edf2ff] text-[#3c63da]"
+                : "border-[#e5eaf1] bg-white text-[#526078] hover:bg-[#f4f7fb] hover:text-[#152238]"
+            }`}
+            title="Instruções de uso e documentação da ferramenta"
+          >
+            <BookOpen className="h-4 w-4 text-amber-500" />
+            <span className="hidden sm:inline">Instruções</span>
+          </button>
+        )}
         {onToggleTheme && (
           <button
             id="btn-theme-toggle"

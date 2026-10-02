@@ -1,8 +1,81 @@
 {
   "version": 1,
-  "lastUpdated": "2026-09-29T00:38:19.115182Z",
+  "lastUpdated": "2026-10-02T16:45:38.956Z",
   "configs": [],
-  "auditLogs": [],
+  "auditLogs": [
+    {
+      "id": "audit_1790959538886",
+      "timestamp": "2026-10-02T16:45:38.886Z",
+      "action": "SYNC_BUSINESSES",
+      "key": "businesses",
+      "oldValue": null,
+      "newValue": "Updated businesses",
+      "user": "Auditor"
+    },
+    {
+      "id": "audit_1790959538881",
+      "timestamp": "2026-10-02T16:45:38.881Z",
+      "action": "SYNC_FRANCHISES",
+      "key": "franchises",
+      "oldValue": null,
+      "newValue": "Updated franchises",
+      "user": "Auditor"
+    },
+    {
+      "id": "audit_1790958584523",
+      "timestamp": "2026-10-02T16:29:44.523Z",
+      "action": "SYNC_BUSINESSES",
+      "key": "businesses",
+      "oldValue": null,
+      "newValue": "Updated businesses",
+      "user": "Auditor"
+    },
+    {
+      "id": "audit_1790958584518",
+      "timestamp": "2026-10-02T16:29:44.518Z",
+      "action": "SYNC_FRANCHISES",
+      "key": "franchises",
+      "oldValue": null,
+      "newValue": "Updated franchises",
+      "user": "Auditor"
+    },
+    {
+      "id": "audit_1790958569507",
+      "timestamp": "2026-10-02T16:29:29.507Z",
+      "action": "SYNC_BUSINESSES",
+      "key": "businesses",
+      "oldValue": null,
+      "newValue": "Updated businesses",
+      "user": "Auditor"
+    },
+    {
+      "id": "audit_1790958569502",
+      "timestamp": "2026-10-02T16:29:29.502Z",
+      "action": "SYNC_FRANCHISES",
+      "key": "franchises",
+      "oldValue": null,
+      "newValue": "Updated franchises",
+      "user": "Auditor"
+    },
+    {
+      "id": "audit_1790958555507",
+      "timestamp": "2026-10-02T16:29:15.507Z",
+      "action": "SYNC_BUSINESSES",
+      "key": "businesses",
+      "oldValue": null,
+      "newValue": "Updated businesses",
+      "user": "Auditor"
+    },
+    {
+      "id": "audit_1790958555502",
+      "timestamp": "2026-10-02T16:29:15.502Z",
+      "action": "SYNC_FRANCHISES",
+      "key": "franchises",
+      "oldValue": null,
+      "newValue": "Updated franchises",
+      "user": "Auditor"
+    }
+  ],
   "businesses": [],
   "franchises": [],
   "employees": [],
@@ -18,7 +91,22 @@
       "last": "Agora"
     }
   ],
-  "credentials": {},
+  "credentials": {
+    "u1": {
+      "passwordHash": "scrypt$9de2bf70c617379c77f01d4b94071706$0758e2dad395e7593032164b2cbacb073baba7d04472e18d328234d7372a35f562f371fd41d577e3198bb3ea16c19df2b384046ca057d3427d4ee8b884d29a48",
+      "version": 4,
+      "createdAt": "2026-10-02T16:29:15.410Z",
+      "updatedAt": "2026-10-02T16:45:38.796Z",
+      "mustReset": false
+    },
+    "u_op_test": {
+      "passwordHash": "scrypt$df6c9e2daeb817f0bf50b8e35246b406$13e3aef7dba1b785f28d00d60c1d2f125b76d0f4b19b708bcdc9955e6c30588ce35f58bafe7c16b17b776f67ba31a4229872088c7bdf03444658f49ec87a6a32",
+      "version": 3,
+      "createdAt": "2026-10-02T16:29:29.508Z",
+      "updatedAt": "2026-10-02T16:45:38.887Z",
+      "mustReset": false
+    }
+  },
   "manualEntries": [],
   "dreParams": {},
   "paymentMethods": [],

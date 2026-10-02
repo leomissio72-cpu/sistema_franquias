@@ -19,7 +19,8 @@ export type ScreenType =
   | "users"
   | "configuracao"
   | "settings"
-  | "produtos";
+  | "produtos"
+  | "instrucoes";
 
 export interface ConfigItem {
   key: string;

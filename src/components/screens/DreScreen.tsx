@@ -165,7 +165,12 @@ export const DreScreen: React.FC<DreScreenProps> = ({
     dreParams[targetTenantKey] || dreParams["dono"] || defaultDreParams;
 
   const targetUnit = franchises.find((f) => f.id === selectedFranchise);
-  const unitRoyalty = targetUnit ? royalties[targetUnit.businessId] : undefined;
+  const targetBiz = businesses.find(
+    (b) => b.id === (targetUnit?.businessId || (selectedBusiness !== "all" ? selectedBusiness : ""))
+  );
+  const unitRoyalty = targetUnit
+    ? (royalties[targetUnit.businessId] ?? targetBiz?.royalty ?? 0.06)
+    : (selectedBusiness !== "all" ? (royalties[selectedBusiness] ?? targetBiz?.royalty) : undefined);
 
   const dre = calculateDre(baseFat, currentParams, unitRoyalty);
 

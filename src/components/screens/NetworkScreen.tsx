@@ -9,7 +9,8 @@ import {
   ArrowRight,
   AlertCircle,
   CheckCircle2,
-  Layers
+  Layers,
+  Plus
 } from "lucide-react";
 
 interface NetworkScreenProps {
@@ -76,7 +77,14 @@ export const NetworkScreen: React.FC<NetworkScreenProps> = ({
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            onClick={() => onNavigate("tenants")}
+            className="flex items-center gap-1.5 rounded-lg bg-[#3c63da] hover:bg-[#2f52c0] px-3.5 py-2 text-xs font-bold text-white shadow-xs transition-all cursor-pointer"
+          >
+            <Plus className="h-3.5 w-3.5" />
+            <span>Cadastrar Novo Franqueado</span>
+          </button>
           <button
             onClick={() => onNavigate("map")}
             className="flex items-center gap-1.5 rounded-lg border border-[#e5eaf1] bg-white px-3 py-2 text-xs font-bold text-[#152238] hover:bg-[#f4f7fb] transition-all cursor-pointer"
@@ -87,9 +95,9 @@ export const NetworkScreen: React.FC<NetworkScreenProps> = ({
           {onRefreshData && (
             <button
               onClick={onRefreshData}
-              className="flex items-center gap-1.5 rounded-lg bg-[#3c63da] px-3.5 py-2 text-xs font-bold text-white hover:bg-[#2f52c0] transition-all shadow-xs cursor-pointer"
+              className="flex items-center gap-1.5 rounded-lg border border-[#e5eaf1] bg-white px-3 py-2 text-xs font-bold text-[#152238] hover:bg-[#f4f7fb] transition-all shadow-2xs cursor-pointer"
             >
-              <RefreshCw className="h-3.5 w-3.5" />
+              <RefreshCw className="h-3.5 w-3.5 text-[#3c63da]" />
               <span>Atualizar</span>
             </button>
           )}

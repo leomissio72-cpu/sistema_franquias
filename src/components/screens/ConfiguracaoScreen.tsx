@@ -54,6 +54,7 @@ interface ConfiguracaoScreenProps {
   onBulkUpdate: (updates: Array<{ key: string; value: any }>) => Promise<void>;
   onSaveRoyalties?: (royalties: Record<string, number>) => Promise<void>;
   onSaveFranchises?: (franchises: FranchiseUnit[]) => Promise<void>;
+  onSaveBusinesses?: (businesses: Business[]) => Promise<void>;
   onSaveSettings?: (settings: SystemSettings) => Promise<void>;
   onSaveUsers?: (users: UserAccount[]) => Promise<void>;
   onResetDatabase?: () => Promise<void>;
@@ -61,7 +62,7 @@ interface ConfiguracaoScreenProps {
   isSaving: boolean;
 }
 
-export type ConfigTab = "preferencias" | "configs" | "permissoes" | "royalties" | "franqueados" | "audit" | "deploy";
+export type ConfigTab = "preferencias" | "marcas" | "configs" | "permissoes" | "royalties" | "franqueados" | "audit" | "deploy";
 
 export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
   configs,
@@ -77,6 +78,7 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
   onBulkUpdate,
   onSaveRoyalties,
   onSaveFranchises,
+  onSaveBusinesses,
   onSaveSettings,
   onResetDatabase,
   users = [],
@@ -166,8 +168,35 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
   const [searchFranchise, setSearchFranchise] = useState("");
   const [isSavedFranchises, setIsSavedFranchises] = useState(false);
   const [isAddingFranchise, setIsAddingFranchise] = useState(false);
+  const [isSubmittingFranchise, setIsSubmittingFranchise] = useState(false);
+  const [franchiseFormError, setFranchiseFormError] = useState("");
+
+  // Verificação estrita de posse: Somente o Dono da Rede pode alterar a taxa de royalties
+  const isOwner = userSession?.profile === "dono" || userSession?.login === "dono";
+
+  // 4. Modelos e Marcas (Businesses) State
+  const [businessList, setBusinessList] = useState<Business[]>(businesses);
+  const [isAddingBiz, setIsAddingBiz] = useState(false);
+  const [newBizName, setNewBizName] = useState("");
+  const [newBizBrand, setNewBizBrand] = useState("");
+  const [newBizColor, setNewBizColor] = useState("#3c63da");
+  const [newBizRoyalty, setNewBizRoyalty] = useState("6.0");
+  const [bizError, setBizError] = useState("");
+
+  // Editing existing business
+  const [editingBizId, setEditingBizId] = useState<string | null>(null);
+  const [editBizName, setEditBizName] = useState("");
+  const [editBizColor, setEditBizColor] = useState("#3c63da");
+  const [editBizRoyalty, setEditBizRoyalty] = useState("6.0");
+
+  // Inline business creation from within Franchise form
+  const [isAddingInlineBiz, setIsAddingInlineBiz] = useState(false);
+  const [inlineBizName, setInlineBizName] = useState("");
+  const [inlineBizRoyalty, setInlineBizRoyalty] = useState("6.0");
+  const [inlineBizColor, setInlineBizColor] = useState("#3c63da");
+
   const [newFranchise, setNewFranchise] = useState({
-    businessId: businesses[0]?.id || "biz1",
+    businessId: businesses[0]?.id || "",
     name: "",
     code: "",
     resp: "",
@@ -177,6 +206,155 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
     email: "",
     phone: "",
   });
+
+  React.useEffect(() => {
+    setBusinessList(businesses);
+    if (!newFranchise.businessId && businesses.length > 0) {
+      setNewFranchise((prev) => ({ ...prev, businessId: businesses[0].id }));
+    }
+  }, [businesses]);
+
+  const handleAddBusiness = async () => {
+    if (!newBizName.trim()) {
+      setBizError("Por favor informe o nome do Modelo / Marca.");
+      return;
+    }
+    const cleanId = (newBizBrand.trim() || newBizName.trim())
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-z0-9]/g, "_")
+      .replace(/^_+|_+$/g, "") || `biz_${Date.now()}`;
+
+    // Apenas o dono pode definir taxa personalizada. Se não for dono, adota padrão 6% (0.06)
+    const assignedRoyalty = isOwner ? (Number(newBizRoyalty) || 6) / 100 : 0.06;
+
+    const newBiz: Business = {
+      id: cleanId,
+      name: newBizName.trim(),
+      brand: newBizBrand.trim() || newBizName.trim(),
+      color: newBizColor || "#3c63da",
+      royalty: assignedRoyalty,
+    };
+
+    const updated = [...businessList.filter((b) => b.id !== cleanId), newBiz];
+    setBusinessList(updated);
+
+    try {
+      if (onSaveBusinesses) {
+        await onSaveBusinesses(updated);
+      }
+      const updatedRoyalties = { ...royaltyRates, [newBiz.id]: assignedRoyalty };
+      setRoyaltyRates(updatedRoyalties);
+      if (onSaveRoyalties && isOwner) {
+        await onSaveRoyalties(updatedRoyalties);
+      }
+      setIsAddingBiz(false);
+      setNewBizName("");
+      setNewBizBrand("");
+      setNewBizRoyalty("6.0");
+      setBizError("");
+      setSuccessMessage(`Modelo / Marca "${newBiz.name}" cadastrado e salvo com sucesso na nuvem!`);
+      setTimeout(() => setSuccessMessage(""), 4000);
+    } catch (err: any) {
+      setErrorMessage(err.message || "Erro ao salvar Modelo / Marca na nuvem.");
+      setTimeout(() => setErrorMessage(""), 4000);
+    }
+  };
+
+  const handleSaveEditBusiness = async (bizId: string) => {
+    if (!editBizName.trim()) return;
+    const existing = businessList.find((b) => b.id === bizId);
+    // Somente o dono pode alterar alíquota de royalty
+    const assignedRoyalty = isOwner
+      ? (Number(editBizRoyalty) || 6) / 100
+      : (existing?.royalty ?? royaltyRates[bizId] ?? 0.06);
+
+    const updated = businessList.map((b) =>
+      b.id === bizId
+        ? {
+            ...b,
+            name: editBizName.trim(),
+            brand: editBizName.trim(),
+            color: editBizColor || b.color || "#3c63da",
+            royalty: assignedRoyalty,
+          }
+        : b
+    );
+    setBusinessList(updated);
+    setEditingBizId(null);
+    try {
+      if (onSaveBusinesses) await onSaveBusinesses(updated);
+      if (isOwner) {
+        const updatedRoyalties = { ...royaltyRates, [bizId]: assignedRoyalty };
+        setRoyaltyRates(updatedRoyalties);
+        if (onSaveRoyalties) await onSaveRoyalties(updatedRoyalties);
+      }
+      setSuccessMessage("Modelo/Marca atualizado com sucesso!");
+      setTimeout(() => setSuccessMessage(""), 4000);
+    } catch (err: any) {
+      setErrorMessage(err.message || "Erro ao atualizar Modelo/Marca.");
+      setTimeout(() => setErrorMessage(""), 4000);
+    }
+  };
+
+  const handleAddInlineBusiness = async () => {
+    if (!inlineBizName.trim()) return;
+    const cleanId = inlineBizName
+      .trim()
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-z0-9]/g, "_")
+      .replace(/^_+|_+$/g, "") || `biz_${Date.now()}`;
+
+    const newBiz: Business = {
+      id: cleanId,
+      name: inlineBizName.trim(),
+      brand: inlineBizName.trim(),
+      color: inlineBizColor || "#3c63da",
+      royalty: (Number(inlineBizRoyalty) || 6) / 100,
+    };
+
+    const updated = [...businessList.filter((b) => b.id !== cleanId), newBiz];
+    setBusinessList(updated);
+    setIsAddingInlineBiz(false);
+    setInlineBizName("");
+    setNewFranchise((prev) => ({ ...prev, businessId: cleanId }));
+
+    try {
+      if (onSaveBusinesses) await onSaveBusinesses(updated);
+      const updatedRoyalties = { ...royaltyRates, [cleanId]: newBiz.royalty || 0.06 };
+      setRoyaltyRates(updatedRoyalties);
+      if (onSaveRoyalties) await onSaveRoyalties(updatedRoyalties);
+      setSuccessMessage(`Modelo/Marca "${newBiz.name}" criado e selecionado com sucesso!`);
+      setTimeout(() => setSuccessMessage(""), 4000);
+    } catch (err: any) {
+      setErrorMessage(err.message || "Erro ao salvar nova marca.");
+      setTimeout(() => setErrorMessage(""), 4000);
+    }
+  };
+
+  const handleDeleteBusiness = async (bizId: string) => {
+    const hasUnits = franchiseList.some((f) => f.businessId === bizId);
+    if (hasUnits) {
+      alert("Não é possível excluir esta marca pois existem franquias vinculadas a ela.");
+      return;
+    }
+    if (!confirm("Deseja realmente remover este modelo/marca?")) return;
+    const updated = businessList.filter((b) => b.id !== bizId);
+    setBusinessList(updated);
+    try {
+      if (onSaveBusinesses) {
+        await onSaveBusinesses(updated);
+      }
+      setSuccessMessage("Modelo/Marca removido com sucesso.");
+      setTimeout(() => setSuccessMessage(""), 4000);
+    } catch (err: any) {
+      setErrorMessage(err.message || "Erro ao remover modelo/marca.");
+      setTimeout(() => setErrorMessage(""), 4000);
+    }
+  };
 
   // Keep editValues in sync if configs change
   React.useEffect(() => {
@@ -254,46 +432,92 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
   };
 
   const handleSaveRoyalties = async () => {
+    if (!isOwner) {
+      setErrorMessage("Permissão negada: apenas o Dono da Rede pode alterar ou salvar taxas de royalties.");
+      setTimeout(() => setErrorMessage(""), 4000);
+      return;
+    }
     if (!onSaveRoyalties) return;
     try {
       await onSaveRoyalties(royaltyRates);
+      const updatedBusinesses = businessList.map((b) => ({
+        ...b,
+        royalty: royaltyRates[b.id] !== undefined ? royaltyRates[b.id] : (b.royalty ?? 0.06),
+      }));
+      setBusinessList(updatedBusinesses);
+      if (onSaveBusinesses) {
+        await onSaveBusinesses(updatedBusinesses);
+      }
       setIsSavedRoyalties(true);
-      setTimeout(() => setIsSavedRoyalties(false), 3000);
+      setSuccessMessage("Taxas de royalties atualizadas e salvas com sucesso pelo Dono da Rede!");
+      setTimeout(() => {
+        setIsSavedRoyalties(false);
+        setSuccessMessage("");
+      }, 3500);
     } catch (e: any) {
       setErrorMessage(e.message || "Erro ao salvar royalties.");
+      setTimeout(() => setErrorMessage(""), 4000);
     }
   };
 
   const handleAddFranchise = async () => {
-    if (!newFranchise.name || !newFranchise.code) {
-      setErrorMessage("Por favor, preencha ao menos o nome e o código da franquia.");
+    const trimmedName = (newFranchise.name || "").trim();
+    if (!trimmedName) {
+      setFranchiseFormError("Por favor, preencha o nome do franqueado / unidade.");
+      setTimeout(() => setFranchiseFormError(""), 4000);
       return;
+    }
+
+    setFranchiseFormError("");
+    setIsSubmittingFranchise(true);
+
+    // Gera código automático se deixado em branco (ex: F002, F003) para nunca travar o usuário
+    const autoCode = `F${String(franchiseList.length + 1).padStart(3, "0")}`;
+    const cleanCode = (newFranchise.code || "").trim().toUpperCase() || autoCode;
+
+    let effectiveBusinessId = newFranchise.businessId;
+    if (businessList.length === 0) {
+      const defaultBiz: Business = {
+        id: "biz_matriz",
+        name: "Franquia Matriz",
+        brand: "Matriz",
+        color: "#3c63da",
+        royalty: 0.06,
+      };
+      setBusinessList([defaultBiz]);
+      if (onSaveBusinesses) {
+        onSaveBusinesses([defaultBiz]).catch(() => undefined);
+      }
+      effectiveBusinessId = defaultBiz.id;
+    } else if (!effectiveBusinessId || !businessList.some((b) => b.id === effectiveBusinessId)) {
+      effectiveBusinessId = businessList[0]?.id || "biz_matriz";
     }
 
     const created: FranchiseUnit = {
       id: `f_${Date.now()}`,
-      businessId: newFranchise.businessId,
-      name: newFranchise.name,
-      code: newFranchise.code,
-      resp: newFranchise.resp || "Gerente Local",
-      address: newFranchise.address || "Endereço comercial",
-      city: newFranchise.city || "São Paulo - SP",
+      businessId: effectiveBusinessId,
+      name: trimmedName,
+      code: cleanCode,
+      resp: (newFranchise.resp || "").trim() || trimmedName,
+      address: (newFranchise.address || "").trim() || "Endereço comercial",
+      city: (newFranchise.city || "").trim() || "São Paulo - SP",
       region: "Sudeste",
       lat: -23.5505 + (Math.random() - 0.5) * 0.05,
       lng: -46.6333 + (Math.random() - 0.5) * 0.05,
-      faturamento: Number(newFranchise.faturamento) || 60000,
+      faturamento: Number(newFranchise.faturamento) > 0 ? Number(newFranchise.faturamento) : 50000,
       pendencias: 0,
       rpDone: 5,
       status: "green",
-      email: newFranchise.email,
-      phone: newFranchise.phone,
+      email: (newFranchise.email || "").trim() || `contato@${cleanCode.toLowerCase()}.com`,
+      phone: (newFranchise.phone || "").trim() || "(11) 3456-7890",
     };
 
     const updated = [...franchiseList, created];
+    // Atualização otimista imediata: a unidade aparece na hora na tela
     setFranchiseList(updated);
     setIsAddingFranchise(false);
     setNewFranchise({
-      businessId: businesses[0]?.id || "biz1",
+      businessId: businessList[0]?.id || effectiveBusinessId,
       name: "",
       code: "",
       resp: "",
@@ -304,10 +528,18 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
       phone: "",
     });
 
-    if (onSaveFranchises) {
-      await onSaveFranchises(updated);
+    try {
+      if (onSaveFranchises) {
+        await onSaveFranchises(updated);
+      }
+      setSuccessMessage(`Novo franqueado "${created.name}" (${created.code}) cadastrado com sucesso!`);
+      setTimeout(() => setSuccessMessage(""), 4000);
+    } catch (err: any) {
+      setErrorMessage(err.message || "Erro ao salvar novo franqueado na nuvem.");
+      setTimeout(() => setErrorMessage(""), 4000);
+    } finally {
+      setIsSubmittingFranchise(false);
     }
-    setSuccessMessage(`Franquia "${created.name}" cadastrada com sucesso na nuvem.`);
   };
 
   return (
@@ -364,6 +596,18 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
         >
           <Settings className="h-3.5 w-3.5" />
           <span>Preferências Gerais</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab("marcas")}
+          className={`flex items-center gap-1.5 rounded-lg px-3.5 py-2 text-xs font-bold transition-all cursor-pointer ${
+            activeTab === "marcas"
+              ? "bg-[#3c63da] text-white shadow-xs"
+              : "text-[#69778c] hover:bg-[#f4f7fb] hover:text-[#152238]"
+          }`}
+        >
+          <Layers className="h-3.5 w-3.5" />
+          <span>Modelos & Marcas ({businessList.length})</span>
         </button>
 
         <button
@@ -614,6 +858,314 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
       )}
 
       {/* ------------------------------------------------------------- */}
+      {/* NOVO: ABA MODELOS & MARCAS (BUSINESSES)                      */}
+      {/* ------------------------------------------------------------- */}
+      {activeTab === "marcas" && (
+        <div className="rounded-2xl border border-[#e5eaf1] bg-white p-5 sm:p-6 shadow-xs space-y-5">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[#e5eaf1]">
+            <div>
+              <h3 className="text-sm font-bold text-[#152238] flex items-center gap-2">
+                <Layers className="h-4 w-4 text-[#3c63da]" />
+                <span>Modelos de Franquia & Marcas da Rede</span>
+              </h3>
+              <p className="text-xs text-[#69778c] mt-0.5">
+                Cadastre e gerencie as marcas e modelos de negócio da sua rede. Cada unidade pertence a um modelo.
+              </p>
+            </div>
+
+            <button
+              onClick={() => setIsAddingBiz(!isAddingBiz)}
+              className="flex items-center gap-1.5 rounded-xl bg-[#3c63da] px-3.5 py-2 text-xs font-bold text-white hover:bg-[#2f52c0] shadow-sm cursor-pointer"
+            >
+              <Plus className="h-4 w-4" />
+              <span>{isAddingBiz ? "Fechar Cadastro" : "Cadastrar Novo Modelo / Marca"}</span>
+            </button>
+          </div>
+
+          {/* Form to Add New Business/Brand */}
+          {isAddingBiz && (
+            <div className="p-4 rounded-xl border border-[#3c63da]/30 bg-[#edf2ff]/40 space-y-3">
+              <h4 className="text-xs font-extrabold uppercase tracking-wider text-[#3c63da]">
+                Novo Modelo / Marca
+              </h4>
+              {bizError && (
+                <div className="p-2 rounded-lg bg-red-50 border border-red-200 text-xs font-semibold text-red-700">
+                  {bizError}
+                </div>
+              )}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                <div>
+                  <label className="block text-[10px] font-bold text-[#152238] mb-1">
+                    Nome da Marca / Modelo *
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Ex: Cafeteria Prime"
+                    value={newBizName}
+                    onChange={(e) => setNewBizName(e.target.value)}
+                    className="w-full rounded-lg border border-[#c4cdd9] bg-white px-2.5 py-1.5 text-xs font-bold"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-bold text-[#152238] mb-1">
+                    Sigla / Identificador Curto
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Ex: cafe_prime"
+                    value={newBizBrand}
+                    onChange={(e) => setNewBizBrand(e.target.value)}
+                    className="w-full rounded-lg border border-[#c4cdd9] bg-white px-2.5 py-1.5 text-xs font-bold"
+                  />
+                </div>
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block text-[10px] font-bold text-[#152238]">
+                      Royalty sobre Faturamento (%)
+                    </label>
+                    {!isOwner ? (
+                      <span className="inline-flex items-center gap-1 text-[9px] font-bold text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200">
+                        <Lock className="h-2.5 w-2.5" />
+                        Exclusivo do Dono
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 text-[9px] font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">
+                        👑 Dono
+                      </span>
+                    )}
+                  </div>
+                  <div className="relative">
+                    <input
+                      type="number"
+                      step="0.1"
+                      min="0"
+                      max="100"
+                      placeholder="6.0"
+                      value={isOwner ? newBizRoyalty : "6.0"}
+                      onChange={(e) => isOwner && setNewBizRoyalty(e.target.value)}
+                      disabled={!isOwner}
+                      className={`w-full rounded-lg border px-2.5 py-1.5 text-xs font-bold ${
+                        !isOwner
+                          ? "bg-slate-100 text-slate-500 border-slate-200 cursor-not-allowed"
+                          : "bg-white text-[#152238] border-[#c4cdd9] focus:border-[#3c63da] focus:outline-none"
+                      }`}
+                    />
+                    <span className="absolute right-2.5 top-1.5 text-xs font-bold text-[#69778c]">%</span>
+                  </div>
+                  {!isOwner ? (
+                    <span className="text-[10px] text-[#69778c] mt-0.5 block">
+                      Taxa padrão atribuída. Somente o Dono da Rede pode personalizar.
+                    </span>
+                  ) : (
+                    <span className="text-[10px] text-emerald-600 mt-0.5 block font-medium">
+                      Defina a taxa de royalty que este modelo repassará à matriz.
+                    </span>
+                  )}
+                </div>
+                <div>
+                  <label className="block text-[10px] font-bold text-[#152238] mb-1">
+                    Cor Visual da Marca
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="color"
+                      value={newBizColor}
+                      onChange={(e) => setNewBizColor(e.target.value)}
+                      className="h-8 w-10 rounded cursor-pointer border border-[#c4cdd9] p-0.5 bg-white"
+                    />
+                    <span className="text-xs font-mono font-bold text-[#152238]">{newBizColor}</span>
+                  </div>
+                </div>
+              </div>
+              <div className="flex justify-end gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsAddingBiz(false);
+                    setBizError("");
+                  }}
+                  className="px-3 py-1.5 rounded-lg border border-[#c4cdd9] text-xs font-semibold text-[#69778c] hover:bg-white"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  onClick={handleAddBusiness}
+                  className="px-4 py-1.5 rounded-lg bg-[#3c63da] text-xs font-bold text-white hover:bg-[#2f52c0] shadow-xs cursor-pointer"
+                >
+                  Salvar Marca na Nuvem
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Cards of Brands */}
+          {businessList.length === 0 ? (
+            <div className="p-8 text-center border-2 border-dashed border-[#d1dbe8] rounded-2xl bg-[#f8faff]">
+              <Layers className="h-10 w-10 text-[#3c63da] mx-auto mb-2 opacity-60" />
+              <h4 className="text-sm font-bold text-[#152238]">Nenhum Modelo ou Marca cadastrado</h4>
+              <p className="text-xs text-[#69778c] mt-1 max-w-sm mx-auto">
+                Crie o primeiro modelo de franquia (ex: Cafeteria, Loja Express, Quiosque) para poder associar unidades e calcular royalties.
+              </p>
+              <button
+                onClick={() => setIsAddingBiz(true)}
+                className="mt-4 px-4 py-2 rounded-xl bg-[#3c63da] text-xs font-bold text-white hover:bg-[#2f52c0] shadow-sm cursor-pointer"
+              >
+                + Cadastrar Primeira Marca
+              </button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+              {businessList.map((b) => {
+                const unitsCount = franchiseList.filter((f) => f.businessId === b.id).length;
+                const royaltyVal = ((b.royalty !== undefined ? b.royalty : (royaltyRates[b.id] ?? 0.06)) * 100).toFixed(1);
+                const isEditing = editingBizId === b.id;
+
+                return (
+                  <div
+                    key={b.id}
+                    className="p-4 rounded-xl border border-[#e5eaf1] bg-[#f8faff] space-y-3 relative overflow-hidden"
+                  >
+                    <div
+                      className="absolute top-0 left-0 right-0 h-1"
+                      style={{ backgroundColor: (isEditing ? editBizColor : b.color) || "#3c63da" }}
+                    />
+                    <div className="flex items-center justify-between pt-1">
+                      <div className="flex items-center gap-2">
+                        <span
+                          className="h-3.5 w-3.5 rounded-full border border-black/10 shadow-xs flex-shrink-0"
+                          style={{ backgroundColor: (isEditing ? editBizColor : b.color) || "#3c63da" }}
+                        />
+                        <span className="text-xs font-mono font-extrabold text-[#3c63da] bg-[#edf2ff] px-2 py-0.5 rounded">
+                          {b.id}
+                        </span>
+                      </div>
+                      <span className="text-[10px] font-bold text-[#69778c] bg-white px-2 py-0.5 rounded-full border border-[#e5eaf1]">
+                        {unitsCount} {unitsCount === 1 ? "loja" : "lojas"}
+                      </span>
+                    </div>
+
+                    {isEditing ? (
+                      <div className="space-y-2 pt-1">
+                        <div>
+                          <label className="block text-[10px] font-bold text-[#152238] mb-0.5">Nome do Modelo</label>
+                          <input
+                            type="text"
+                            value={editBizName}
+                            onChange={(e) => setEditBizName(e.target.value)}
+                            className="w-full rounded border border-[#c4cdd9] bg-white px-2 py-1 text-xs font-bold"
+                          />
+                        </div>
+                        <div className="grid grid-cols-2 gap-2">
+                          <div>
+                            <div className="flex items-center justify-between mb-0.5">
+                              <label className="block text-[10px] font-bold text-[#152238]">Royalty (%)</label>
+                              {!isOwner ? (
+                                <span className="inline-flex items-center gap-0.5 text-[9px] font-bold text-amber-700 bg-amber-50 px-1 rounded border border-amber-200">
+                                  <Lock className="h-2 w-2" />
+                                  Dono
+                                </span>
+                              ) : (
+                                <span className="text-[9px] font-bold text-emerald-700">👑 Dono</span>
+                              )}
+                            </div>
+                            <input
+                              type="number"
+                              step="0.1"
+                              value={editBizRoyalty}
+                              onChange={(e) => isOwner && setEditBizRoyalty(e.target.value)}
+                              disabled={!isOwner}
+                              className={`w-full rounded border px-2 py-1 text-xs font-bold ${
+                                !isOwner
+                                  ? "bg-slate-100 text-slate-500 border-slate-200 cursor-not-allowed"
+                                  : "border-[#c4cdd9] bg-white text-[#152238]"
+                              }`}
+                            />
+                            {!isOwner && (
+                              <span className="text-[9px] text-[#69778c] block mt-0.5">
+                                Apenas o Dono pode alterar.
+                              </span>
+                            )}
+                          </div>
+                          <div>
+                            <label className="block text-[10px] font-bold text-[#152238] mb-0.5">Cor</label>
+                            <input
+                              type="color"
+                              value={editBizColor}
+                              onChange={(e) => setEditBizColor(e.target.value)}
+                              className="h-7 w-full rounded border border-[#c4cdd9] p-0.5 bg-white cursor-pointer"
+                            />
+                          </div>
+                        </div>
+                        <div className="flex justify-end gap-1.5 pt-1">
+                          <button
+                            type="button"
+                            onClick={() => setEditingBizId(null)}
+                            className="px-2 py-1 rounded text-[11px] text-[#69778c] hover:bg-gray-100"
+                          >
+                            Cancelar
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleSaveEditBusiness(b.id)}
+                            className="px-3 py-1 rounded bg-[#3c63da] text-white text-[11px] font-bold hover:bg-[#2f52c0]"
+                          >
+                            Salvar
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                        <div>
+                          <h4 className="text-sm font-extrabold text-[#152238]">{b.name}</h4>
+                          {b.brand && b.brand !== b.name && (
+                            <span className="text-[11px] text-[#69778c]">{b.brand}</span>
+                          )}
+                        </div>
+
+                        <div className="pt-2 border-t border-[#e5eaf1] flex items-center justify-between text-xs">
+                          <div>
+                            <span className="text-[10px] text-[#69778c] block uppercase font-bold">
+                              Royalty Padrão
+                            </span>
+                            <strong className="text-emerald-700 font-extrabold font-mono">
+                              {royaltyVal}%
+                            </strong>
+                          </div>
+
+                          <div className="flex items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setEditingBizId(b.id);
+                                setEditBizName(b.name);
+                                setEditBizColor(b.color || "#3c63da");
+                                setEditBizRoyalty(royaltyVal);
+                              }}
+                              className="text-[11px] font-semibold text-[#3c63da] hover:underline cursor-pointer"
+                            >
+                              Editar
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleDeleteBusiness(b.id)}
+                              className="text-[11px] font-semibold text-rose-600 hover:text-rose-800 hover:underline cursor-pointer"
+                            >
+                              Excluir
+                            </button>
+                          </div>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ------------------------------------------------------------- */}
       {/* 1. ABA: PARÂMETROS DA NUVEM                                   */}
       {/* ------------------------------------------------------------- */}
       {activeTab === "configs" && (
@@ -824,60 +1376,190 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
       {/* 3. ABA: ROYALTIES POR MARCA                                   */}
       {/* ------------------------------------------------------------- */}
       {activeTab === "royalties" && (
-        <div className="rounded-2xl border border-[#e5eaf1] bg-white p-5 sm:p-6 shadow-xs space-y-4">
-          <div className="flex items-center justify-between pb-3 border-b border-[#e5eaf1]">
+        <div className="rounded-2xl border border-[#e5eaf1] bg-white p-5 sm:p-6 shadow-xs space-y-5">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[#e5eaf1]">
             <div>
-              <h3 className="text-sm font-bold text-[#152238]">Taxas de Royalties por Marca / Negócio</h3>
-              <p className="text-xs text-[#69778c]">
-                Percentual sobre o faturamento bruto cobrado das franquias da rede.
+              <div className="flex items-center gap-2">
+                <h3 className="text-sm font-bold text-[#152238]">Taxas de Royalties por Marca</h3>
+                {isOwner ? (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 border border-emerald-200 px-2 py-0.5 text-[10px] font-bold text-emerald-700">
+                    👑 Dono da Rede · Edição Liberada
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 border border-amber-200 px-2 py-0.5 text-[10px] font-bold text-amber-700">
+                    <Lock className="h-3 w-3" /> Modo Consulta · Exclusivo do Dono
+                  </span>
+                )}
+              </div>
+              <p className="text-xs text-[#69778c] mt-0.5">
+                Alíquota percentual sobre o faturamento bruto cobrada mensalmente das franquias de cada marca.
               </p>
             </div>
 
-            <button
-              onClick={handleSaveRoyalties}
-              className="flex items-center gap-1.5 rounded-xl bg-[#3c63da] px-4 py-2 text-xs font-bold text-white hover:bg-[#2f52c0] shadow-sm cursor-pointer"
-            >
-              {isSavedRoyalties ? <CheckCircle2 className="h-4 w-4 text-emerald-300" /> : <Save className="h-4 w-4" />}
-              <span>{isSavedRoyalties ? "Salvo na Nuvem!" : "Salvar Taxas"}</span>
-            </button>
+            <div className="flex items-center gap-2 flex-wrap">
+              <button
+                type="button"
+                onClick={() => {
+                  setActiveTab("marcas");
+                  setIsAddingBiz(true);
+                }}
+                className="flex items-center gap-1.5 rounded-xl border border-[#3c63da] bg-[#edf2ff] px-3.5 py-2 text-xs font-bold text-[#3c63da] hover:bg-[#dfe8fe] shadow-2xs cursor-pointer"
+              >
+                <Plus className="h-4 w-4" />
+                <span>+ Cadastrar Nova Marca</span>
+              </button>
+
+              <button
+                onClick={handleSaveRoyalties}
+                disabled={!isOwner || isSaving}
+                className={`flex items-center gap-1.5 rounded-xl px-4 py-2 text-xs font-bold text-white shadow-sm transition-all ${
+                  !isOwner
+                    ? "bg-slate-300 text-slate-500 cursor-not-allowed border border-slate-300"
+                    : "bg-[#3c63da] hover:bg-[#2f52c0] cursor-pointer"
+                }`}
+                title={!isOwner ? "Apenas o Dono da Rede pode alterar ou salvar taxas de royalties" : "Salvar alterações de royalties na nuvem"}
+              >
+                {isSavedRoyalties ? <CheckCircle2 className="h-4 w-4 text-emerald-300" /> : <Save className="h-4 w-4" />}
+                <span>{isSavedRoyalties ? "Salvo na Nuvem!" : !isOwner ? "Salvar (Exclusivo do Dono)" : "Salvar Taxas na Nuvem"}</span>
+              </button>
+            </div>
           </div>
 
+          {/* Banner de Governança de Royalties */}
+          {isOwner ? (
+            <div className="rounded-xl border border-emerald-200 bg-emerald-50/70 p-3.5 flex items-center justify-between gap-3 text-xs">
+              <div className="flex items-center gap-2.5">
+                <div className="h-8 w-8 rounded-lg bg-emerald-100 flex items-center justify-center text-emerald-700 flex-shrink-0 font-bold text-sm">
+                  👑
+                </div>
+                <div>
+                  <h4 className="font-extrabold text-emerald-900">
+                    Painel do Dono da Rede (Controle Master)
+                  </h4>
+                  <p className="text-[11px] text-emerald-700">
+                    Você possui autorização exclusiva para definir e ajustar as taxas de royalties de cada marca. Ao salvar, as novas alíquotas são refletidas automaticamente na DRE e nas apurações financeiras.
+                  </p>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="rounded-xl border border-amber-200 bg-amber-50/70 p-3.5 flex items-center gap-3 text-xs">
+              <div className="h-8 w-8 rounded-lg bg-amber-100 flex items-center justify-center text-amber-700 flex-shrink-0">
+                <Lock className="h-4 w-4" />
+              </div>
+              <div>
+                <h4 className="font-extrabold text-amber-900">
+                  Visualização em Modo Somente Leitura
+                </h4>
+                <p className="text-[11px] text-amber-700">
+                  A alteração das taxas de royalties é uma atribuição exclusiva do <b>Dono da Rede (perfil 'dono')</b>. Usuários operadores e franqueados visualizam os percentuais contratuais apenas para conferência.
+                </p>
+              </div>
+            </div>
+          )}
+
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-            {businesses.map((b) => {
-              const currentRate = (royaltyRates[b.id] ?? 0.06) * 100;
-              const unitsCount = franchiseList.filter((f) => f.businessId === b.id).length;
+            {businessList.length === 0 ? (
+              <div className="p-8 text-center border-2 border-dashed border-[#d1dbe8] rounded-xl bg-[#f8faff] col-span-full space-y-2">
+                <Building2 className="h-8 w-8 text-[#3c63da] mx-auto opacity-50" />
+                <p className="text-xs font-bold text-[#152238]">Nenhum modelo ou marca cadastrado no sistema.</p>
+                <p className="text-[11px] text-[#69778c]">Cadastre as marcas da rede para estipular a taxa de royalty de cada uma.</p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActiveTab("marcas");
+                    setIsAddingBiz(true);
+                  }}
+                  className="mt-2 inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-[#3c63da] text-xs font-bold text-white hover:bg-[#2f52c0]"
+                >
+                  <Plus className="h-3.5 w-3.5" />
+                  <span>Cadastrar Primeira Marca</span>
+                </button>
+              </div>
+            ) : (
+              businessList.map((b) => {
+                const currentRate = (royaltyRates[b.id] ?? b.royalty ?? 0.06) * 100;
+                const unitsCount = franchiseList.filter((f) => f.businessId === b.id).length;
+                const sampleRoyaltySim = (50000 * (currentRate / 100)).toLocaleString("pt-BR", {
+                  style: "currency",
+                  currency: "BRL",
+                });
 
-              return (
-                <div key={b.id} className="p-4 rounded-xl border border-[#e5eaf1] bg-[#f8faff] space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-extrabold text-[#152238]">{b?.name || b?.brand || b?.id}</span>
-                    <span className="text-[10px] text-[#69778c]">{unitsCount} lojas</span>
-                  </div>
+                return (
+                  <div
+                    key={b.id}
+                    className="p-4 rounded-xl border border-[#e5eaf1] bg-[#f8faff] space-y-3 relative overflow-hidden"
+                  >
+                    <div
+                      className="absolute top-0 left-0 right-0 h-1"
+                      style={{ backgroundColor: b.color || "#3c63da" }}
+                    />
+                    <div className="flex items-center justify-between pt-1">
+                      <div className="flex items-center gap-2">
+                        <span
+                          className="h-3.5 w-3.5 rounded-full border border-black/10 shadow-xs flex-shrink-0"
+                          style={{ backgroundColor: b.color || "#3c63da" }}
+                        />
+                        <span className="text-xs font-extrabold text-[#152238] truncate max-w-[150px]">
+                          {b.name || b.brand || b.id}
+                        </span>
+                      </div>
+                      <span className="text-[10px] font-bold text-[#69778c] bg-white px-2 py-0.5 rounded-full border border-[#e5eaf1]">
+                        {unitsCount} {unitsCount === 1 ? "loja" : "lojas"}
+                      </span>
+                    </div>
 
-                  <div>
-                    <label className="block text-[10px] font-extrabold uppercase text-[#69778c] mb-1">
-                      Royalty sobre Faturamento (%)
-                    </label>
-                    <div className="relative">
-                      <input
-                        type="number"
-                        step="0.5"
-                        min="0"
-                        max="100"
-                        value={currentRate.toFixed(1)}
-                        onChange={(e) => {
-                          const val = parseFloat(e.target.value || "0") / 100;
-                          setRoyaltyRates((prev) => ({ ...prev, [b.id]: val }));
-                          setIsSavedRoyalties(false);
-                        }}
-                        className="w-full rounded-xl border border-[#e5eaf1] bg-white px-3 py-2 text-xs font-bold text-[#152238] focus:border-[#3c63da] focus:outline-none"
-                      />
-                      <span className="absolute right-3 top-2 text-xs font-bold text-[#69778c]">%</span>
+                    <div>
+                      <div className="flex items-center justify-between mb-1">
+                        <label className="block text-[10px] font-extrabold uppercase text-[#69778c]">
+                          Royalty sobre Faturamento
+                        </label>
+                        {!isOwner ? (
+                          <span className="inline-flex items-center gap-0.5 text-[9px] font-bold text-amber-700 bg-amber-50 px-1.5 py-0.2 rounded border border-amber-200">
+                            <Lock className="h-2.5 w-2.5" />
+                            Exclusivo Dono
+                          </span>
+                        ) : (
+                          <span className="text-[9px] font-bold text-emerald-700 bg-emerald-50 px-1 rounded">
+                            Editável
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="relative">
+                        <input
+                          type="number"
+                          step="0.1"
+                          min="0"
+                          max="100"
+                          value={currentRate.toFixed(1)}
+                          onChange={(e) => {
+                            if (!isOwner) return;
+                            const val = parseFloat(e.target.value || "0") / 100;
+                            setRoyaltyRates((prev) => ({ ...prev, [b.id]: val }));
+                            setIsSavedRoyalties(false);
+                          }}
+                          disabled={!isOwner}
+                          className={`w-full rounded-xl border px-3 py-2 text-xs font-bold transition-all ${
+                            !isOwner
+                              ? "bg-slate-100 text-slate-500 border-slate-200 cursor-not-allowed"
+                              : "bg-white text-[#152238] border-[#e5eaf1] focus:border-[#3c63da] focus:outline-none focus:ring-1 focus:ring-[#3c63da]"
+                          }`}
+                        />
+                        <span className="absolute right-3 top-2 text-xs font-bold text-[#69778c]">%</span>
+                      </div>
+
+                      <div className="mt-2 pt-2 border-t border-[#e5eaf1]/60 flex items-center justify-between text-[11px] text-[#69778c]">
+                        <span>Simulação p/ R$ 50k:</span>
+                        <strong className="font-mono text-emerald-700 font-extrabold">
+                          {sampleRoyaltySim}
+                        </strong>
+                      </div>
                     </div>
                   </div>
-                </div>
-              );
-            })}
+                );
+              })
+            )}
           </div>
         </div>
       )}
@@ -889,103 +1571,206 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
         <div className="rounded-2xl border border-[#e5eaf1] bg-white p-5 sm:p-6 shadow-xs space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[#e5eaf1]">
             <div>
-              <h3 className="text-sm font-bold text-[#152238]">Gestão & Cadastro de Franqueados</h3>
+              <h3 className="text-sm font-bold text-[#152238] flex items-center gap-2">
+                <Store className="h-4 w-4 text-[#3c63da]" />
+                <span>Cadastro de Franqueados</span>
+              </h3>
               <p className="text-xs text-[#69778c]">
-                Gerenciamento centralizado de unidades, responsáveis e faturamento.
+                Gerenciamento centralizado de unidades, responsáveis e faturamento da rede.
               </p>
             </div>
 
             <button
-              onClick={() => setIsAddingFranchise(!isAddingFranchise)}
+              id="btn-add-franqueado-tab"
+              onClick={() => {
+                setIsAddingFranchise(!isAddingFranchise);
+                setFranchiseFormError("");
+              }}
               className="flex items-center gap-1.5 rounded-xl bg-[#3c63da] px-3.5 py-2 text-xs font-bold text-white hover:bg-[#2f52c0] shadow-sm cursor-pointer"
             >
               <Plus className="h-4 w-4" />
-              <span>{isAddingFranchise ? "Fechar Cadastro" : "Cadastrar Nova Franquia"}</span>
+              <span>{isAddingFranchise ? "Fechar Formulário" : "Cadastrar Novo Franqueado"}</span>
             </button>
           </div>
 
           {/* Form to Add New Franchise */}
           {isAddingFranchise && (
-            <div className="p-4 rounded-xl border border-[#3c63da]/30 bg-[#edf2ff]/40 space-y-3">
-              <h4 className="text-xs font-extrabold uppercase tracking-wider text-[#3c63da]">
-                Nova Franquia / Unidade
-              </h4>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <div>
-                  <label className="block text-[10px] font-bold text-[#152238] mb-1">Modelo / Marca</label>
-                  <select
-                    value={newFranchise.businessId}
-                    onChange={(e) => setNewFranchise({ ...newFranchise, businessId: e.target.value })}
-                    className="w-full rounded-lg border border-[#c4cdd9] bg-white px-2.5 py-1.5 text-xs font-bold"
-                  >
-                    {businesses.map((b) => (
-                      <option key={b.id} value={b.id}>{b?.name || b?.brand || b?.id}</option>
-                    ))}
-                  </select>
+            <div className="p-4 sm:p-5 rounded-xl border border-[#3c63da]/30 bg-[#edf2ff]/40 space-y-3 shadow-xs">
+              <div className="flex items-center justify-between border-b border-[#3c63da]/20 pb-2">
+                <h4 className="text-xs font-extrabold uppercase tracking-wider text-[#3c63da] flex items-center gap-1.5">
+                  <Store className="h-4 w-4" />
+                  <span>Cadastrar Novo Franqueado</span>
+                </h4>
+                <span className="text-[11px] text-[#69778c]">Cadastro ágil com sincronização instantânea na nuvem</span>
+              </div>
+
+              {franchiseFormError && (
+                <div className="p-2.5 rounded-lg bg-rose-50 border border-rose-200 text-xs font-bold text-rose-700">
+                  {franchiseFormError}
                 </div>
+              )}
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 <div>
-                  <label className="block text-[10px] font-bold text-[#152238] mb-1">Nome da Loja</label>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block text-[10px] font-bold text-[#152238]">Modelo / Marca *</label>
+                    <button
+                      type="button"
+                      onClick={() => setIsAddingInlineBiz(!isAddingInlineBiz)}
+                      className="text-[10px] font-bold text-[#3c63da] hover:underline"
+                    >
+                      {isAddingInlineBiz ? "Cancelar Nova Marca" : "+ Nova Marca Rápida"}
+                    </button>
+                  </div>
+                  {isAddingInlineBiz ? (
+                    <div className="p-2.5 rounded-lg border border-[#3c63da] bg-white space-y-2 shadow-xs">
+                      <div className="text-[10px] font-bold text-[#3c63da] uppercase">Criar e Selecionar Marca</div>
+                      <input
+                        type="text"
+                        placeholder="Nome (Ex: Quiosque Express)"
+                        value={inlineBizName}
+                        onChange={(e) => setInlineBizName(e.target.value)}
+                        className="w-full rounded border border-[#c4cdd9] bg-white px-2 py-1 text-xs font-bold"
+                      />
+                      <div className="flex items-center gap-2">
+                        <div className="flex-1">
+                          <input
+                            type="number"
+                            step="0.5"
+                            placeholder="Royalty %"
+                            value={inlineBizRoyalty}
+                            onChange={(e) => setInlineBizRoyalty(e.target.value)}
+                            className="w-full rounded border border-[#c4cdd9] bg-white px-2 py-1 text-xs font-bold"
+                          />
+                        </div>
+                        <input
+                          type="color"
+                          value={inlineBizColor}
+                          onChange={(e) => setInlineBizColor(e.target.value)}
+                          className="h-7 w-8 rounded border border-[#c4cdd9] p-0.5 cursor-pointer bg-white"
+                        />
+                        <button
+                          type="button"
+                          onClick={handleAddInlineBusiness}
+                          className="px-2.5 py-1 rounded bg-[#3c63da] text-white text-[11px] font-bold hover:bg-[#2f52c0] cursor-pointer"
+                        >
+                          Salvar
+                        </button>
+                      </div>
+                    </div>
+                  ) : businessList.length === 0 ? (
+                    <div className="p-2 bg-amber-50 border border-amber-200 rounded-lg text-[11px] text-amber-800">
+                      Nenhuma marca.{" "}
+                      <button
+                        type="button"
+                        onClick={() => setIsAddingInlineBiz(true)}
+                        className="font-bold underline text-[#3c63da]"
+                      >
+                        Criar Marca
+                      </button>
+                    </div>
+                  ) : (
+                    <select
+                      value={newFranchise.businessId}
+                      onChange={(e) => {
+                        if (e.target.value === "__new__") {
+                          setIsAddingInlineBiz(true);
+                        } else {
+                          setNewFranchise({ ...newFranchise, businessId: e.target.value });
+                        }
+                      }}
+                      className="w-full rounded-lg border border-[#c4cdd9] bg-white px-2.5 py-2 text-xs font-bold text-[#152238] focus:border-[#3c63da] focus:outline-none"
+                    >
+                      {businessList.map((b) => (
+                        <option key={b.id} value={b.id}>{b?.name || b?.brand || b?.id}</option>
+                      ))}
+                      <option value="__new__">+ Cadastrar Novo Modelo/Marca...</option>
+                    </select>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-bold text-[#152238] mb-1">
+                    Nome da Loja / Franqueado *
+                  </label>
                   <input
                     type="text"
-                    placeholder="Ex: Café Bela Vista"
+                    placeholder="Ex: Café Bela Vista Jardins"
                     value={newFranchise.name}
                     onChange={(e) => setNewFranchise({ ...newFranchise, name: e.target.value })}
-                    className="w-full rounded-lg border border-[#c4cdd9] bg-white px-2.5 py-1.5 text-xs font-bold"
+                    className="w-full rounded-lg border border-[#c4cdd9] bg-white px-2.5 py-2 text-xs font-bold text-[#152238] focus:border-[#3c63da] focus:outline-none"
                   />
                 </div>
+
                 <div>
-                  <label className="block text-[10px] font-bold text-[#152238] mb-1">Código (Ex: F010)</label>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block text-[10px] font-bold text-[#152238]">Código da Franquia</label>
+                    <span className="text-[9px] text-[#69778c]">Auto se vazio</span>
+                  </div>
                   <input
                     type="text"
-                    placeholder="F010"
+                    placeholder={`Ex: F${String(franchiseList.length + 1).padStart(3, "0")}`}
                     value={newFranchise.code}
                     onChange={(e) => setNewFranchise({ ...newFranchise, code: e.target.value })}
-                    className="w-full rounded-lg border border-[#c4cdd9] bg-white px-2.5 py-1.5 text-xs font-bold"
+                    className="w-full rounded-lg border border-[#c4cdd9] bg-white px-2.5 py-2 text-xs font-bold text-[#152238] focus:border-[#3c63da] focus:outline-none"
                   />
                 </div>
+
                 <div>
-                  <label className="block text-[10px] font-bold text-[#152238] mb-1">Responsável / Franqueado</label>
+                  <label className="block text-[10px] font-bold text-[#152238] mb-1">
+                    Responsável (Nome do Franqueado)
+                  </label>
                   <input
                     type="text"
-                    placeholder="Nome do franqueado"
+                    placeholder="Nome do franqueado responsável"
                     value={newFranchise.resp}
                     onChange={(e) => setNewFranchise({ ...newFranchise, resp: e.target.value })}
-                    className="w-full rounded-lg border border-[#c4cdd9] bg-white px-2.5 py-1.5 text-xs font-bold"
+                    className="w-full rounded-lg border border-[#c4cdd9] bg-white px-2.5 py-2 text-xs font-bold text-[#152238] focus:border-[#3c63da] focus:outline-none"
                   />
                 </div>
+
                 <div>
                   <label className="block text-[10px] font-bold text-[#152238] mb-1">Cidade - UF</label>
                   <input
                     type="text"
-                    placeholder="São Paulo - SP"
+                    placeholder="Ex: São Paulo - SP"
                     value={newFranchise.city}
                     onChange={(e) => setNewFranchise({ ...newFranchise, city: e.target.value })}
-                    className="w-full rounded-lg border border-[#c4cdd9] bg-white px-2.5 py-1.5 text-xs font-bold"
+                    className="w-full rounded-lg border border-[#c4cdd9] bg-white px-2.5 py-2 text-xs font-bold text-[#152238] focus:border-[#3c63da] focus:outline-none"
                   />
                 </div>
+
                 <div>
                   <label className="block text-[10px] font-bold text-[#152238] mb-1">Faturamento Médio Mensal (R$)</label>
                   <input
                     type="number"
                     value={newFranchise.faturamento}
                     onChange={(e) => setNewFranchise({ ...newFranchise, faturamento: Number(e.target.value) })}
-                    className="w-full rounded-lg border border-[#c4cdd9] bg-white px-2.5 py-1.5 text-xs font-bold"
+                    className="w-full rounded-lg border border-[#c4cdd9] bg-white px-2.5 py-2 text-xs font-bold text-[#152238] focus:border-[#3c63da] focus:outline-none"
                   />
                 </div>
               </div>
 
-              <div className="flex justify-end gap-2 pt-2">
+              <div className="flex justify-end gap-2 pt-3 border-t border-[#3c63da]/20">
                 <button
-                  onClick={() => setIsAddingFranchise(false)}
-                  className="rounded-lg border border-[#c4cdd9] px-3 py-1.5 text-xs font-bold text-[#69778c]"
+                  type="button"
+                  onClick={() => {
+                    setIsAddingFranchise(false);
+                    setFranchiseFormError("");
+                  }}
+                  className="rounded-lg border border-[#c4cdd9] px-3.5 py-2 text-xs font-bold text-[#69778c] hover:bg-white cursor-pointer"
                 >
                   Cancelar
                 </button>
                 <button
+                  type="button"
+                  id="btn-submit-add-franqueado"
                   onClick={handleAddFranchise}
-                  className="rounded-lg bg-[#3c63da] text-white px-4 py-1.5 text-xs font-bold hover:bg-[#2f52c0]"
+                  disabled={isSubmittingFranchise}
+                  className="rounded-lg bg-[#3c63da] text-white px-5 py-2 text-xs font-bold hover:bg-[#2f52c0] shadow-sm disabled:opacity-50 flex items-center gap-1.5 cursor-pointer"
                 >
-                  Salvar Franquia na Nuvem
+                  <Plus className="h-3.5 w-3.5" />
+                  <span>{isSubmittingFranchise ? "Cadastrando..." : "Cadastrar Novo Franqueado"}</span>
                 </button>
               </div>
             </div>

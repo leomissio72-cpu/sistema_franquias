@@ -259,6 +259,10 @@ export async function saveFranchises(franchises: FranchiseUnit[], userName: stri
   return syncStateSection("franchises", franchises, userName);
 }
 
+export async function saveBusinesses(businesses: Business[], userName: string): Promise<CloudState> {
+  return syncStateSection("businesses", businesses, userName);
+}
+
 export async function saveSystemSettings(settings: SystemSettings, userName: string, userId?: string): Promise<CloudState> {
   return syncStateSection("systemSettings", settings, userName);
 }
