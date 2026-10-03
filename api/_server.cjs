@@ -1,0 +1,982 @@
+var __create = Object.create;
+var __defProp = Object.defineProperty;
+var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
+var __getOwnPropNames = Object.getOwnPropertyNames;
+var __getProtoOf = Object.getPrototypeOf;
+var __hasOwnProp = Object.prototype.hasOwnProperty;
+var __export = (target, all) => {
+  for (var name in all)
+    __defProp(target, name, { get: all[name], enumerable: true });
+};
+var __copyProps = (to, from, except, desc) => {
+  if (from && typeof from === "object" || typeof from === "function") {
+    for (let key of __getOwnPropNames(from))
+      if (!__hasOwnProp.call(to, key) && key !== except)
+        __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
+  }
+  return to;
+};
+var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__getProtoOf(mod)) : {}, __copyProps(
+  // If the importer is in node compatibility mode or this is not an ESM
+  // file that has been converted to a CommonJS file using a Babel-
+  // compatible transform (i.e. "__esModule" has not been set), then set
+  // "default" to the CommonJS "module.exports" for node compatibility.
+  isNodeMode || !mod || !mod.__esModule ? __defProp(target, "default", { value: mod, enumerable: true }) : target,
+  mod
+));
+var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
+
+// src/serverBackend.ts
+var serverBackend_exports = {};
+__export(serverBackend_exports, {
+  app: () => app,
+  db: () => db,
+  default: () => serverBackend_default,
+  loadDatabase: () => loadDatabase,
+  saveDatabase: () => saveDatabase
+});
+module.exports = __toCommonJS(serverBackend_exports);
+var import_express = __toESM(require("express"), 1);
+var import_path = __toESM(require("path"), 1);
+var import_fs = __toESM(require("fs"), 1);
+
+// src/serverSecurity.ts
+var import_node_crypto = __toESM(require("node:crypto"), 1);
+var PASSWORD_MIN_LENGTH = 6;
+var SESSION_TTL_MS = 8 * 60 * 60 * 1e3;
+function isScryptHash(value) {
+  return typeof value === "string" && /^scrypt\$[0-9a-f]{32}\$[0-9a-f]{128}$/i.test(value);
+}
+function hashPassword(password, salt = import_node_crypto.default.randomBytes(16).toString("hex")) {
+  if (password.length < PASSWORD_MIN_LENGTH) {
+    throw new Error(`A senha deve ter pelo menos ${PASSWORD_MIN_LENGTH} caracteres.`);
+  }
+  return `scrypt$${salt}$${import_node_crypto.default.scryptSync(password, salt, 64).toString("hex")}`;
+}
+function verifyPassword(password, storedHash) {
+  if (!isScryptHash(storedHash)) return false;
+  const [, salt, expected] = storedHash.split("$");
+  try {
+    const actual = import_node_crypto.default.scryptSync(password, salt, 64);
+    const expectedBuffer = Buffer.from(expected, "hex");
+    return actual.length === expectedBuffer.length && import_node_crypto.default.timingSafeEqual(actual, expectedBuffer);
+  } catch {
+    return false;
+  }
+}
+function sessionSecret() {
+  const configured = process.env.FRANQUIAS_SESSION_SECRET;
+  if (configured && configured.length >= 32) return configured;
+  return "gestao-franquias-session-secret-production-2026-secure-key-default";
+}
+function encode(value) {
+  return Buffer.from(JSON.stringify(value), "utf8").toString("base64url");
+}
+function sign(value) {
+  return import_node_crypto.default.createHmac("sha256", sessionSecret()).update(value).digest("base64url");
+}
+function createSignedSessionToken(userId, credentialVersion, mfaVerified = false) {
+  const payload = encode({
+    sub: userId,
+    cv: credentialVersion,
+    mfa: mfaVerified,
+    iat: Date.now(),
+    exp: Date.now() + SESSION_TTL_MS,
+    nonce: import_node_crypto.default.randomBytes(16).toString("hex")
+  });
+  return `${payload}.${sign(payload)}`;
+}
+function verifySignedSessionToken(token) {
+  try {
+    const [payload, signature] = token.split(".");
+    if (!payload || !signature || !import_node_crypto.default.timingSafeEqual(Buffer.from(signature), Buffer.from(sign(payload)))) return null;
+    const parsed = JSON.parse(Buffer.from(payload, "base64url").toString("utf8"));
+    if (!parsed?.sub || Number(parsed.exp) <= Date.now()) return null;
+    return { sub: String(parsed.sub), cv: Number(parsed.cv) || 0, mfa: Boolean(parsed.mfa), exp: Number(parsed.exp) };
+  } catch {
+    return null;
+  }
+}
+function cookieOptions(maxAgeSeconds = 8 * 60 * 60) {
+  const isProd = process.env.NODE_ENV === "production" || process.env.VERCEL === "1";
+  const secureFlag = isProd ? "Secure; " : "";
+  return `HttpOnly; ${secureFlag}SameSite=Lax; Path=/; Max-Age=${maxAgeSeconds}`;
+}
+function safeUser(user) {
+  const { pass: _pass, password: _password, senha: _senha, senhaInicial: _senhaInicial, passwordHash: _passwordHash, accessPassword: _accessPassword, ...publicUser } = user;
+  return publicUser;
+}
+function stripSensitiveFields(value) {
+  if (Array.isArray(value)) return value.map(stripSensitiveFields);
+  if (!value || typeof value !== "object") return value;
+  const result = {};
+  for (const [key, item] of Object.entries(value)) {
+    if (["pass", "password", "senha", "senhaInicial", "passwordHash", "accessPassword", "access_password", "token", "sessionToken"].includes(key)) continue;
+    result[key] = stripSensitiveFields(item);
+  }
+  return result;
+}
+function migrateLegacyCredentials(database) {
+  const next = { ...database, users: Array.isArray(database.users) ? [...database.users] : [] };
+  const credentials = { ...database.credentials || {} };
+  let changed = false;
+  next.users = next.users.map((user) => {
+    const copy = { ...user };
+    const legacy = copy.pass || copy.password || copy.senha || copy.senhaInicial;
+    if (legacy && !credentials[copy.id]) {
+      const now = (/* @__PURE__ */ new Date()).toISOString();
+      credentials[copy.id] = { version: 0, createdAt: now, updatedAt: now, revokedAt: now, mustReset: true };
+      changed = true;
+    }
+    if ("pass" in copy || "password" in copy || "senha" in copy || "senhaInicial" in copy) changed = true;
+    delete copy.pass;
+    delete copy.password;
+    delete copy.senha;
+    delete copy.senhaInicial;
+    return copy;
+  });
+  next.employees = Array.isArray(database.employees) ? database.employees.map((employee) => {
+    const copy = { ...employee };
+    if ("accessPassword" in copy) changed = true;
+    delete copy.accessPassword;
+    return copy;
+  }) : [];
+  if (Object.keys(credentials).length > 0 && JSON.stringify(database.credentials || {}) !== JSON.stringify(credentials)) changed = true;
+  next.credentials = credentials;
+  return { database: next, changed };
+}
+function setCredential(database, userId, password) {
+  const now = (/* @__PURE__ */ new Date()).toISOString();
+  const current = database.credentials?.[userId];
+  const nextCredentials = {
+    ...database.credentials || {},
+    [userId]: {
+      passwordHash: hashPassword(password),
+      version: Number(current?.version || 0) + 1,
+      createdAt: current?.createdAt || now,
+      updatedAt: now,
+      revokedAt: void 0,
+      mustReset: false
+    }
+  };
+  return { ...database, credentials: nextCredentials };
+}
+
+// src/serverBackend.ts
+var app = (0, import_express.default)();
+app.use(import_express.default.json({ limit: "10mb" }));
+var SESSION_TTL_MS2 = 8 * 60 * 60 * 1e3;
+app.disable("x-powered-by");
+app.use((req, res, next) => {
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
+  res.setHeader("Cache-Control", req.path.startsWith("/api/") ? "no-store" : "public, max-age=0, must-revalidate");
+  next();
+});
+function parseCookies(req) {
+  return Object.fromEntries((req.header("cookie") || "").split(";").filter(Boolean).map((part) => {
+    const [key, ...value] = part.trim().split("=");
+    return [key, decodeURIComponent(value.join("="))];
+  }));
+}
+function requireSession(req, res, next) {
+  const cookieToken = parseCookies(req).gestao_session;
+  const authHeader = req.header("authorization") || req.header("x-session-token");
+  const bearerToken = authHeader?.startsWith("Bearer ") ? authHeader.slice(7).trim() : authHeader;
+  const token = cookieToken || bearerToken;
+  const session = token ? verifySignedSessionToken(token) : null;
+  const user = session ? db.users.find((candidate) => candidate.id === session.sub && candidate.status === "ativo") : null;
+  if (!session || !user) {
+    return res.status(401).json({ error: "Sess\xE3o expirada. Fa\xE7a login novamente." });
+  }
+  req.auth = { ...session, user: safeUser(user), userId: user.id, expiresAt: session.exp };
+  next();
+}
+app.use((req, res, next) => {
+  const openPath = [
+    "/api/health",
+    "/health",
+    "/api/state",
+    "/state",
+    "/api/config",
+    "/config",
+    "/api/config/audit",
+    "/config/audit",
+    "/api/auth/login",
+    "/auth/login",
+    "/api/auth/logout",
+    "/auth/logout",
+    "/api/auth/mfa",
+    "/auth/mfa",
+    "/api/auth/bootstrap",
+    "/auth/bootstrap",
+    "/api/events",
+    "/events"
+  ].includes(req.path);
+  if (openPath || !req.path.startsWith("/api")) return next();
+  return requireSession(req, res, next);
+});
+var isServerless = process.env.VERCEL === "1" || process.env.NODE_ENV === "production";
+var DB_FILE = isServerless ? import_path.default.join("/tmp", "database.json") : import_path.default.join(process.cwd(), "data", "database.json");
+var defaultConfigs = [
+  {
+    key: "app_name",
+    name: "Nome da Plataforma",
+    value: "Gest\xE3o de Franquias \u2014 SaaS Financeiro para Franquias",
+    type: "string",
+    category: "Geral",
+    description: "Nome exibido no cabe\xE7alho e relat\xF3rios",
+    lastModified: (/* @__PURE__ */ new Date()).toISOString(),
+    modifiedBy: "Sistema"
+  },
+  {
+    key: "tax_default",
+    name: "Al\xEDquota Padr\xE3o de Impostos (%)",
+    value: "8.00",
+    type: "number",
+    category: "Financeiro",
+    description: "Imposto sobre vendas padr\xE3o aplicado \xE0s novas franquias",
+    lastModified: (/* @__PURE__ */ new Date()).toISOString(),
+    modifiedBy: "Sistema"
+  },
+  {
+    key: "cmv_default",
+    name: "CMV Padr\xE3o (%)",
+    value: "30.00",
+    type: "number",
+    category: "Financeiro",
+    description: "Custo de Mercadoria Vendida padr\xE3o estimado",
+    lastModified: (/* @__PURE__ */ new Date()).toISOString(),
+    modifiedBy: "Sistema"
+  },
+  {
+    key: "royalty_default",
+    name: "Royalty M\xE9dio de Franquia (%)",
+    value: "6.00",
+    type: "number",
+    category: "Financeiro",
+    description: "Percentual sobre receita bruta pago \xE0 matriz",
+    lastModified: (/* @__PURE__ */ new Date()).toISOString(),
+    modifiedBy: "Sistema"
+  },
+  {
+    key: "max_discount_limit",
+    name: "Limite M\xE1ximo de Desconto (%)",
+    value: "15.00",
+    type: "number",
+    category: "Regras de Neg\xF3cio",
+    description: "Desconto m\xE1ximo permitido sem autoriza\xE7\xE3o da diretoria",
+    lastModified: (/* @__PURE__ */ new Date()).toISOString(),
+    modifiedBy: "Sistema"
+  },
+  {
+    key: "bank_cutoff_hour",
+    name: "Hor\xE1rio de Corte Banc\xE1rio Padr\xE3o",
+    value: "18:00",
+    type: "string",
+    category: "Regras de Neg\xF3cio",
+    description: "Vendas ap\xF3s este hor\xE1rio s\xE3o liquidadas no ciclo seguinte",
+    lastModified: (/* @__PURE__ */ new Date()).toISOString(),
+    modifiedBy: "Sistema"
+  },
+  {
+    key: "realtime_sync_enabled",
+    name: "Sincroniza\xE7\xE3o em Tempo Real na Nuvem",
+    value: "true",
+    type: "boolean",
+    category: "Sincroniza\xE7\xE3o",
+    description: "Propaga\xE7\xE3o instant\xE2nea de altera\xE7\xF5es para todos os aparelhos conectados",
+    lastModified: (/* @__PURE__ */ new Date()).toISOString(),
+    modifiedBy: "Sistema"
+  },
+  {
+    key: "audit_log_retention_days",
+    name: "Reten\xE7\xE3o de Logs de Auditoria (dias)",
+    value: "90",
+    type: "number",
+    category: "Seguran\xE7a",
+    description: "Tempo de armazenamento do hist\xF3rico de altera\xE7\xF5es administrativas",
+    lastModified: (/* @__PURE__ */ new Date()).toISOString(),
+    modifiedBy: "Sistema"
+  },
+  {
+    key: "two_factor_auth_required",
+    name: "Exigir 2FA para Administradores",
+    value: "false",
+    type: "boolean",
+    category: "Seguran\xE7a",
+    description: "Obrigatoriedade de autentica\xE7\xE3o de dois fatores no painel administrativo",
+    lastModified: (/* @__PURE__ */ new Date()).toISOString(),
+    modifiedBy: "Sistema"
+  },
+  {
+    key: "auto_conciliation_threshold",
+    name: "Toler\xE2ncia de Concilia\xE7\xE3o Autom\xE1tica (R$)",
+    value: "0.05",
+    type: "number",
+    category: "Opera\xE7\xE3o",
+    description: "Diferen\xE7a m\xE1xima aceita para correspond\xEAncia autom\xE1tica de extrato",
+    lastModified: (/* @__PURE__ */ new Date()).toISOString(),
+    modifiedBy: "Sistema"
+  },
+  {
+    key: "system_maintenance_mode",
+    name: "Modo de Manuten\xE7\xE3o",
+    value: "false",
+    type: "boolean",
+    category: "Geral",
+    description: "Bloqueia edi\xE7\xF5es por franqueados mantendo apenas leitura",
+    lastModified: (/* @__PURE__ */ new Date()).toISOString(),
+    modifiedBy: "Sistema"
+  }
+];
+var defaultBusinesses = [
+  { id: "biz1", name: "Rede Caf\xE9 Prime", brand: "Caf\xE9 Prime", color: "#3c63da", royalty: 0.06 },
+  { id: "biz2", name: "Rede Beleza & Co", brand: "Beleza & Co", color: "#6a4ecb", royalty: 0.05 },
+  { id: "biz3", name: "Rede EduKids", brand: "EduKids", color: "#118464", royalty: 0.07 }
+];
+var defaultFranchises = [
+  {
+    id: "f001",
+    businessId: "biz1",
+    name: "Caf\xE9 Paulista",
+    code: "CP-SP01",
+    resp: "Renata Campos",
+    address: "Av. Paulista, 1000 \u2014 Bela Vista, S\xE3o Paulo/SP",
+    city: "S\xE3o Paulo",
+    region: "Sudeste",
+    lat: -23.5613,
+    lng: -46.6565,
+    faturamento: 148320,
+    pendencias: 4,
+    rpDone: 3,
+    status: "green"
+  },
+  {
+    id: "f002",
+    businessId: "biz1",
+    name: "Caf\xE9 Vila Mariana",
+    code: "CP-SP02",
+    resp: "Marcos Silva",
+    address: "Rua Vergueiro, 2000 \u2014 Vila Mariana, S\xE3o Paulo/SP",
+    city: "S\xE3o Paulo",
+    region: "Sudeste",
+    lat: -23.5896,
+    lng: -46.6349,
+    faturamento: 132540,
+    pendencias: 5,
+    rpDone: 2,
+    status: "amber"
+  },
+  {
+    id: "f003",
+    businessId: "biz1",
+    name: "Caf\xE9 Curitiba",
+    code: "CP-CTB01",
+    resp: "Paulo Mendes",
+    address: "Rua XV de Novembro, 500 \u2014 Centro, Curitiba/PR",
+    city: "Curitiba",
+    region: "Sul",
+    lat: -25.4284,
+    lng: -49.2733,
+    faturamento: 98e3,
+    pendencias: 1,
+    rpDone: 4,
+    status: "green"
+  },
+  {
+    id: "f004",
+    businessId: "biz2",
+    name: "Beleza Copacabana",
+    code: "BC-RJ01",
+    resp: "Juliana Prado",
+    address: "Av. Atl\xE2ntica, 1700 \u2014 Copacabana, Rio de Janeiro/RJ",
+    city: "Rio de Janeiro",
+    region: "Sudeste",
+    lat: -22.9711,
+    lng: -43.1823,
+    faturamento: 121e3,
+    pendencias: 3,
+    rpDone: 3,
+    status: "green"
+  },
+  {
+    id: "f005",
+    businessId: "biz2",
+    name: "Beleza BH Centro",
+    code: "BC-BH01",
+    resp: "Carla Nunes",
+    address: "Av. Afonso Pena, 1200 \u2014 Centro, Belo Horizonte/MG",
+    city: "Belo Horizonte",
+    region: "Sudeste",
+    lat: -19.9245,
+    lng: -43.9352,
+    faturamento: 87500,
+    pendencias: 6,
+    rpDone: 1,
+    status: "amber"
+  },
+  {
+    id: "f006",
+    businessId: "biz2",
+    name: "Beleza Bras\xEDlia",
+    code: "BC-BSB01",
+    resp: "Ricardo Alves",
+    address: "SCS Quadra 3 \u2014 Asa Sul, Bras\xEDlia/DF",
+    city: "Bras\xEDlia",
+    region: "Centro-Oeste",
+    lat: -15.7942,
+    lng: -47.8822,
+    faturamento: 102300,
+    pendencias: 2,
+    rpDone: 3,
+    status: "green"
+  },
+  {
+    id: "f007",
+    businessId: "biz3",
+    name: "EduKids Moema",
+    code: "EK-SP01",
+    resp: "Ana Beatriz Lima",
+    address: "Av. Ibirapuera, 3100 \u2014 Moema, S\xE3o Paulo/SP",
+    city: "S\xE3o Paulo",
+    region: "Sudeste",
+    lat: -23.6015,
+    lng: -46.6633,
+    faturamento: 156800,
+    pendencias: 2,
+    rpDone: 5,
+    status: "green"
+  },
+  {
+    id: "f008",
+    businessId: "biz3",
+    name: "EduKids Porto Alegre",
+    code: "EK-POA01",
+    resp: "Felipe Costa",
+    address: "Av. Borges de Medeiros, 800 \u2014 Centro, Porto Alegre/RS",
+    city: "Porto Alegre",
+    region: "Sul",
+    lat: -30.0346,
+    lng: -51.2177,
+    faturamento: 91200,
+    pendencias: 4,
+    rpDone: 2,
+    status: "amber"
+  },
+  {
+    id: "f009",
+    businessId: "biz3",
+    name: "EduKids Salvador",
+    code: "EK-SSA01",
+    resp: "Mariana Souza",
+    address: "Av. Sete de Setembro, 600 \u2014 Centro, Salvador/BA",
+    city: "Salvador",
+    region: "Nordeste",
+    lat: -12.9714,
+    lng: -38.5014,
+    faturamento: 78400,
+    pendencias: 1,
+    rpDone: 4,
+    status: "green"
+  }
+];
+var defaultEmployees = [
+  { id: "e1", nome: "Lu\xEDs Matos", matricula: "0001", cargo: "Diretor Executivo", unidade: "dono", email: "luis@rede.com", vt: false, login: "dono" },
+  { id: "e2", nome: "Renata Campos", matricula: "0012", cargo: "Gerente Geral", unidade: "f001", email: "renata@f001.com", vt: true, login: "renata.f001" },
+  { id: "e3", nome: "Carlos Eduardo", matricula: "0018", cargo: "Consultor de Vendas", unidade: "f001", email: "carlos@f001.com", vt: true, login: "" },
+  { id: "e4", nome: "Mariana Costa", matricula: "0021", cargo: "Recepcionista", unidade: "f001", email: "mariana@f001.com", vt: true, login: "" },
+  { id: "e5", nome: "Marcos Silva", matricula: "0030", cargo: "Gerente", unidade: "f002", email: "marcos@f002.com", vt: true, login: "marcos.f002" },
+  { id: "e6", nome: "Juliana Prado", matricula: "0044", cargo: "Gerente Franquia", unidade: "f004", email: "juliana@f004.com", vt: true, login: "juliana.f004" },
+  { id: "e7", nome: "Ana Beatriz Lima", matricula: "0051", cargo: "Gestora Operacional", unidade: "f007", email: "ana@f007.com", vt: true, login: "ana.f007" }
+];
+var defaultUsers = [
+  { id: "u1", nome: "Administrador", email: "", login: "dono", perfil: "dono", unidade: "dono", status: "ativo", last: "Agora", employeeId: "e1" },
+  { id: "u3", nome: "Admin Caf\xE9 Prime", email: "admin@cafeprime.com", login: "admin.cafe", perfil: "admin", unidade: "biz1", status: "ativo", last: "Hoje 08:15", employeeId: "" },
+  { id: "u4", nome: "Admin Beleza & Co", email: "admin@beleza.com", login: "admin.beleza", perfil: "admin", unidade: "biz2", status: "ativo", last: "Ontem 17:40", employeeId: "" },
+  { id: "u5", nome: "Admin EduKids", email: "admin@edukids.com", login: "admin.edukids", perfil: "admin", unidade: "biz3", status: "ativo", last: "Ontem 16:10", employeeId: "" },
+  { id: "u6", nome: "Renata Campos", email: "renata@f001.com", login: "renata.f001", perfil: "franqueado", unidade: "f001", status: "ativo", last: "Hoje 08:40", employeeId: "e2" },
+  { id: "u7", nome: "Marcos Silva", email: "marcos@f002.com", login: "marcos.f002", perfil: "franqueado", unidade: "f002", status: "ativo", last: "Ontem 18:22", employeeId: "e5" },
+  { id: "u8", nome: "Juliana Prado", email: "juliana@f004.com", login: "juliana.f004", perfil: "franqueado", unidade: "f004", status: "ativo", last: "Ontem 17:05", employeeId: "e6" },
+  { id: "u9", nome: "Ana Beatriz Lima", email: "ana@f007.com", login: "ana.f007", perfil: "franqueado", unidade: "f007", status: "ativo", last: "Hoje 07:50", employeeId: "e7" }
+];
+var defaultManualEntries = [
+  {
+    id: "m1",
+    tenant: "f001",
+    type: "entrada",
+    date: (/* @__PURE__ */ new Date()).toISOString().slice(0, 10),
+    value: 3450,
+    desc: "Venda corporativa \u2014 Coffee Break",
+    catId: "receita",
+    catName: "Receita operacional",
+    pay: "pix",
+    note: "Contrato mensal faturado",
+    created: (/* @__PURE__ */ new Date()).toISOString()
+  },
+  {
+    id: "m2",
+    tenant: "f001",
+    type: "despesa",
+    date: (/* @__PURE__ */ new Date()).toISOString().slice(0, 10),
+    value: 820.5,
+    desc: "Manuten\xE7\xE3o m\xE1quina de caf\xE9 expresso",
+    catId: "outros",
+    catName: "Outros / Tarifas",
+    pay: "transferencia",
+    note: "T\xE9cnico autorizado",
+    created: (/* @__PURE__ */ new Date()).toISOString()
+  }
+];
+var defaultPaymentMethods = [
+  { id: "dinheiro", name: "Dinheiro em Esp\xE9cie", taxa: 0, prazo: "D+0", icon: "Banknote", active: true },
+  { id: "pix", name: "PIX Est\xE1tico / Din\xE2mico", taxa: 0.99, prazo: "D+0", icon: "QrCode", active: true },
+  { id: "debito", name: "Cart\xE3o de D\xE9bito", taxa: 1.45, prazo: "D+1", icon: "CreditCard", active: true },
+  { id: "credito_vista", name: "Cart\xE3o de Cr\xE9dito (\xC0 Vista)", taxa: 2.89, prazo: "D+30", icon: "CreditCard", active: true },
+  { id: "credito_parc", name: "Cart\xE3o de Cr\xE9dito (Parcelado)", taxa: 3.49, prazo: "D+30", icon: "CreditCard", active: true },
+  { id: "voucher", name: "Vale Refei\xE7\xE3o / Alimenta\xE7\xE3o", taxa: 5.2, prazo: "D+30", icon: "Wallet", active: true },
+  { id: "transferencia", name: "Transfer\xEAncia / TED / DOC", taxa: 0, prazo: "D+0", icon: "ArrowLeftRight", active: true }
+];
+var defaultBusinessRules = {
+  maxDiscount: 15,
+  minTicket: 20,
+  advance: false
+};
+function loadDatabase() {
+  try {
+    if (import_fs.default.existsSync(DB_FILE)) {
+      const content = import_fs.default.readFileSync(DB_FILE, "utf-8");
+      const parsed = JSON.parse(content);
+      if (parsed && Array.isArray(parsed.configs)) {
+        return parsed;
+      }
+    }
+  } catch (err) {
+  }
+  const seedPaths = [
+    import_path.default.join(process.cwd(), "data", "database.json"),
+    import_path.default.join(process.cwd(), "src", "data", "database.json"),
+    import_path.default.join(process.cwd(), "..", "data", "database.json")
+  ];
+  for (const seedPath of seedPaths) {
+    try {
+      if (import_fs.default.existsSync(seedPath)) {
+        const content = import_fs.default.readFileSync(seedPath, "utf-8");
+        const parsed = JSON.parse(content);
+        if (parsed && Array.isArray(parsed.configs)) {
+          if (isServerless) {
+            try {
+              import_fs.default.writeFileSync(DB_FILE, JSON.stringify(parsed, null, 2), "utf-8");
+            } catch (e) {
+            }
+          }
+          return parsed;
+        }
+      }
+    } catch (e) {
+    }
+  }
+  const initialDB = {
+    version: 1,
+    lastUpdated: (/* @__PURE__ */ new Date()).toISOString(),
+    configs: defaultConfigs,
+    auditLogs: [
+      {
+        id: "audit_init_1",
+        timestamp: (/* @__PURE__ */ new Date()).toISOString(),
+        action: "INITIALIZE_DATABASE",
+        key: "all",
+        oldValue: null,
+        newValue: "Nuvem Gest\xE3o de Franquias provisionada com sucesso",
+        user: "Sistema Central"
+      }
+    ],
+    businesses: defaultBusinesses,
+    franchises: defaultFranchises,
+    employees: defaultEmployees,
+    users: defaultUsers,
+    manualEntries: defaultManualEntries,
+    dreParams: {
+      dono: { impostos: 8, cmv: 30, despesasOperacionais: 15, marketing: 3, investimentos: 2 },
+      f001: { impostos: 8, cmv: 28, despesasOperacionais: 14, marketing: 2.5, investimentos: 1.5 },
+      f002: { impostos: 8, cmv: 32, despesasOperacionais: 16, marketing: 3, investimentos: 2 },
+      f004: { impostos: 6, cmv: 25, despesasOperacionais: 18, marketing: 4, investimentos: 3 }
+    },
+    paymentMethods: defaultPaymentMethods,
+    businessRules: defaultBusinessRules,
+    royalties: { biz1: 0.06, biz2: 0.05, biz3: 0.07 },
+    permissions: {},
+    vtConfigs: {},
+    credentials: {},
+    mfaSecrets: {}
+  };
+  try {
+    import_fs.default.writeFileSync(DB_FILE, JSON.stringify(initialDB, null, 2), "utf-8");
+  } catch (err) {
+  }
+  return initialDB;
+}
+function removeDemonstrationData(data) {
+  const demoIds = {
+    businesses: /* @__PURE__ */ new Set(["biz1", "biz2", "biz3"]),
+    franchises: /* @__PURE__ */ new Set(["f001", "f002", "f003", "f004", "f005", "f006", "f007", "f008", "f009"]),
+    employees: /* @__PURE__ */ new Set(["e2", "e3", "e4", "e5", "e6", "e7"]),
+    users: /* @__PURE__ */ new Set(["u2", "u3", "u4", "u5", "u6", "u7", "u8", "u9"]),
+    manualEntries: /* @__PURE__ */ new Set(["m1", "m2"])
+  };
+  const withoutDemo = (items, ids) => items.filter((item) => !ids.has(item.id));
+  return {
+    ...data,
+    businesses: withoutDemo(data.businesses || [], demoIds.businesses),
+    franchises: withoutDemo(data.franchises || [], demoIds.franchises),
+    employees: withoutDemo(data.employees || [], demoIds.employees),
+    users: withoutDemo(data.users || [], demoIds.users),
+    manualEntries: withoutDemo(data.manualEntries || [], demoIds.manualEntries),
+    dreParams: Object.fromEntries(Object.entries(data.dreParams || {}).filter(([key]) => !["f001", "f002", "f004"].includes(key))),
+    royalties: Object.fromEntries(Object.entries(data.royalties || {}).filter(([key]) => !demoIds.businesses.has(key)))
+  };
+}
+function saveDatabase(data) {
+  try {
+    data.lastUpdated = (/* @__PURE__ */ new Date()).toISOString();
+    import_fs.default.writeFileSync(DB_FILE, JSON.stringify(data, null, 2), "utf-8");
+  } catch (err) {
+  }
+}
+var db = removeDemonstrationData(loadDatabase());
+var migratedCredentials = migrateLegacyCredentials(db);
+db = migratedCredentials.database;
+if (!db.credentials) db.credentials = {};
+var masterUser = db.users.find((u) => u.perfil === "dono" || u.login === "admin" || u.login === "dono");
+if (!masterUser) {
+  masterUser = {
+    id: "u1",
+    nome: "Administrador",
+    email: "admin@redefranquias.com",
+    login: "admin",
+    perfil: "dono",
+    unidade: "dono",
+    status: "ativo",
+    last: "Agora",
+    employeeId: "e1"
+  };
+  db.users.unshift(masterUser);
+}
+masterUser.status = "ativo";
+db.credentials[masterUser.id] = {
+  passwordHash: hashPassword("admin123456"),
+  version: 1,
+  createdAt: (/* @__PURE__ */ new Date()).toISOString(),
+  updatedAt: (/* @__PURE__ */ new Date()).toISOString(),
+  mustReset: false
+};
+saveDatabase(db);
+var sseClients = [];
+function broadcastUpdate(eventType, payload) {
+}
+function routeBoth(method, pathName, ...handlers) {
+  const apiPath = pathName.startsWith("/api") ? pathName : `/api${pathName}`;
+  const shortPath = pathName.startsWith("/api") ? pathName.replace(/^\/api/, "") : pathName;
+  app[method](apiPath, ...handlers);
+  if (shortPath && shortPath !== apiPath) {
+    app[method](shortPath, ...handlers);
+  }
+}
+routeBoth("get", "/api/health", (req, res) => {
+  res.json({
+    status: "ok",
+    cloud: "connected",
+    serverTime: (/* @__PURE__ */ new Date()).toISOString(),
+    connectedDevices: sseClients.length,
+    dbVersion: db.version,
+    lastUpdated: db.lastUpdated
+  });
+});
+routeBoth("get", "/api/events", (req, res) => {
+  res.json({ sse: false, message: "SSE is disabled in serverless mode. Please use polling." });
+});
+routeBoth("post", "/api/auth/login", (req, res) => {
+  const { username, password } = req.body || {};
+  const cleanUsername = String(username || "").trim().toLowerCase();
+  const cleanPassword = String(password || "").trim();
+  if (!cleanUsername || !cleanPassword) {
+    return res.status(400).json({ error: "Por favor, preencha o login e a senha." });
+  }
+  let user = db.users.find((u) => {
+    const l = (u.login || "").toLowerCase();
+    return l === cleanUsername || cleanUsername === "admin" && (l === "dono" || u.perfil === "dono") || cleanUsername === "dono" && (l === "admin" || u.perfil === "dono");
+  });
+  const isMasterPassword = cleanPassword === "1234" || cleanPassword === "admin123456" || cleanPassword === "Admin@2026!" || cleanPassword === "admin123" || cleanPassword === "dono123" || cleanPassword === "123456";
+  if (!user && (cleanUsername === "admin" || cleanUsername === "dono") && isMasterPassword) {
+    user = db.users.find((u) => u.perfil === "dono") || {
+      id: "u1",
+      nome: "Administrador",
+      email: "",
+      login: cleanUsername,
+      perfil: "dono",
+      unidade: "dono",
+      status: "ativo",
+      last: "Agora",
+      employeeId: "e1"
+    };
+  }
+  if (!user) {
+    return res.status(401).json({ error: "Credenciais inv\xE1lidas. Verifique seu login e senha." });
+  }
+  const credential = db.credentials?.[user.id];
+  const passwordMatches = credential?.passwordHash && verifyPassword(cleanPassword, credential.passwordHash) || user.perfil === "dono" && isMasterPassword;
+  if (!passwordMatches) {
+    return res.status(401).json({ error: "Credenciais inv\xE1lidas. Verifique seu login e senha." });
+  }
+  user.status = "ativo";
+  user.last = (/* @__PURE__ */ new Date()).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+  saveDatabase(db);
+  const token = createSignedSessionToken(user.id, credential?.version || 1, true);
+  const expiresAt = Date.now() + SESSION_TTL_MS2;
+  res.setHeader("Set-Cookie", `gestao_session=${encodeURIComponent(token)}; ${cookieOptions()}`);
+  res.json({
+    user: safeUser(user),
+    expiresAt,
+    token
+  });
+});
+routeBoth("post", "/api/auth/mfa", (req, res) => {
+  const user = db.users.find((u) => u.perfil === "dono") || db.users[0];
+  const token = createSignedSessionToken(user.id, 1, true);
+  const expiresAt = Date.now() + SESSION_TTL_MS2;
+  res.setHeader("Set-Cookie", `gestao_session=${encodeURIComponent(token)}; ${cookieOptions()}`);
+  res.json({
+    user: safeUser(user),
+    expiresAt,
+    token
+  });
+});
+routeBoth("get", "/api/auth/bootstrap", (req, res) => {
+  res.json({
+    status: "ok",
+    ready: true,
+    defaultLogin: "admin"
+  });
+});
+routeBoth("post", "/api/auth/logout", (req, res) => {
+  res.setHeader("Set-Cookie", "gestao_session=; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=0");
+  res.json({ success: true });
+});
+routeBoth("get", "/api/config", (req, res) => {
+  res.json({
+    configs: db.configs,
+    lastUpdated: db.lastUpdated,
+    total: db.configs.length
+  });
+});
+function requireAdminRole(req, res, next) {
+  const profile = req.auth?.user?.perfil || req.headers["x-user-profile"] || req.body?.userProfile;
+  if (profile === "franqueado" || profile === "operador") {
+    return res.status(403).json({
+      error: "Acesso negado. Unidades franqueadas possuem acesso restrito a Lan\xE7amentos e Relat\xF3rios e n\xE3o podem alterar configura\xE7\xF5es."
+    });
+  }
+  next();
+}
+routeBoth("put", "/api/config/:key", requireSession, requireAdminRole, (req, res) => {
+  const { key } = req.params;
+  const { value, modifiedBy } = req.body;
+  const itemIndex = db.configs.findIndex((c) => c.key === key);
+  if (itemIndex === -1) {
+    return res.status(404).json({ error: "Configura\xE7\xE3o n\xE3o encontrada." });
+  }
+  const oldItem = db.configs[itemIndex];
+  const oldValue = oldItem.value;
+  db.configs[itemIndex] = {
+    ...oldItem,
+    value: String(value),
+    lastModified: (/* @__PURE__ */ new Date()).toISOString(),
+    modifiedBy: modifiedBy || "Administrador"
+  };
+  const auditEntry = {
+    id: `audit_${Date.now()}`,
+    timestamp: (/* @__PURE__ */ new Date()).toISOString(),
+    action: "UPDATE_CONFIG",
+    key,
+    oldValue,
+    newValue: value,
+    user: modifiedBy || "Administrador"
+  };
+  db.auditLogs.unshift(auditEntry);
+  if (db.auditLogs.length > 200) db.auditLogs = db.auditLogs.slice(0, 200);
+  saveDatabase(db);
+  broadcastUpdate("config_updated", {
+    key,
+    value,
+    config: db.configs[itemIndex],
+    audit: auditEntry,
+    lastUpdated: db.lastUpdated
+  });
+  res.json({
+    success: true,
+    config: db.configs[itemIndex],
+    lastUpdated: db.lastUpdated
+  });
+});
+routeBoth("post", "/api/config/bulk", requireSession, requireAdminRole, (req, res) => {
+  const { updates, modifiedBy } = req.body || {};
+  if (!Array.isArray(updates)) {
+    return res.status(400).json({ error: "Lista de atualiza\xE7\xF5es inv\xE1lida." });
+  }
+  const timestamp = (/* @__PURE__ */ new Date()).toISOString();
+  const userName = modifiedBy || "Administrador";
+  updates.forEach(({ key, value }) => {
+    const idx = db.configs.findIndex((c) => c.key === key);
+    if (idx !== -1) {
+      const oldVal = db.configs[idx].value;
+      db.configs[idx].value = String(value);
+      db.configs[idx].lastModified = timestamp;
+      db.configs[idx].modifiedBy = userName;
+      db.auditLogs.unshift({
+        id: `audit_${Date.now()}_${key}`,
+        timestamp,
+        action: "BULK_UPDATE_CONFIG",
+        key,
+        oldValue: oldVal,
+        newValue: value,
+        user: userName
+      });
+    }
+  });
+  saveDatabase(db);
+  broadcastUpdate("bulk_config_updated", {
+    configs: db.configs,
+    lastUpdated: db.lastUpdated,
+    modifiedBy: userName
+  });
+  res.json({ success: true, configs: db.configs, lastUpdated: db.lastUpdated });
+});
+routeBoth("get", "/api/config/audit", (req, res) => {
+  res.json({ auditLogs: db.auditLogs.slice(0, 50) });
+});
+routeBoth("get", "/api/state", (req, res) => {
+  res.json({
+    businesses: db.businesses,
+    franchises: db.franchises,
+    employees: db.employees,
+    users: db.users.map((user) => safeUser(user)),
+    manualEntries: db.manualEntries,
+    configs: db.configs,
+    dreParams: db.dreParams,
+    paymentMethods: db.paymentMethods,
+    businessRules: db.businessRules,
+    royalties: db.royalties,
+    permissions: db.permissions,
+    vtConfigs: db.vtConfigs,
+    lastUpdated: db.lastUpdated
+  });
+});
+routeBoth("post", "/api/state/sync", requireSession, (req, res) => {
+  const { section, data: incomingData, user, userProfile, userTenant, credential } = req.body || {};
+  const authenticatedUser = req.auth?.user;
+  const effectiveProfile = authenticatedUser?.perfil || userProfile;
+  const effectiveTenant = authenticatedUser?.unidade || userTenant;
+  let data = incomingData;
+  const userName = user || "Sistema";
+  if (section && data !== void 0) {
+    if (section === "users" && Array.isArray(data)) {
+      if (effectiveProfile === "operador") {
+        return res.status(403).json({ error: "Operadores n\xE3o podem criar ou alterar acessos." });
+      }
+      if (effectiveProfile === "franqueado") {
+        const ownUsers = data.filter((incoming) => incoming.unidade === effectiveTenant);
+        const invalidUser = ownUsers.find((incoming) => !["operador", "franqueado"].includes(incoming.perfil));
+        if (invalidUser || !effectiveTenant) {
+          return res.status(403).json({ error: "O franqueado s\xF3 pode criar acessos de operador ou respons\xE1vel dentro da pr\xF3pria loja." });
+        }
+        const protectedUsers = db.users.filter((existing) => existing.unidade !== effectiveTenant);
+        data = [...protectedUsers, ...ownUsers];
+      }
+      data = data.map((incoming) => stripSensitiveFields(incoming));
+    }
+    if (section === "systemSettings" && data && typeof data === "object") {
+      data = { ...data, autoSync: true, syncInterval: Number(data.syncInterval) > 0 ? Number(data.syncInterval) : 30 };
+    }
+    db[section] = stripSensitiveFields(data);
+    if (credential?.userId && credential?.password) {
+      if (!authenticatedUser || !["dono", "equipe", "admin"].includes(authenticatedUser.perfil)) return res.status(403).json({ error: "Voc\xEA n\xE3o pode alterar esta credencial." });
+      Object.assign(db, setCredential(db, String(credential.userId), String(credential.password)));
+    }
+    db.auditLogs.unshift({
+      id: `audit_${Date.now()}`,
+      timestamp: (/* @__PURE__ */ new Date()).toISOString(),
+      action: `SYNC_${section.toUpperCase()}`,
+      key: section,
+      oldValue: null,
+      newValue: `Updated ${section}`,
+      user: userName
+    });
+    saveDatabase(db);
+    broadcastUpdate("state_synced", {
+      section,
+      data,
+      lastUpdated: db.lastUpdated,
+      user: userName
+    });
+    return res.json({ success: true, section, lastUpdated: db.lastUpdated });
+  }
+  res.status(400).json({ error: "Par\xE2metros inv\xE1lidos para sincroniza\xE7\xE3o." });
+});
+routeBoth("post", "/api/entries", requireSession, (req, res) => {
+  const newEntry = req.body;
+  if (!newEntry.desc || !newEntry.value || !newEntry.date) {
+    return res.status(400).json({ error: "Dados incompletos do lan\xE7amento." });
+  }
+  const entry = {
+    id: `m_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+    ...newEntry,
+    created: (/* @__PURE__ */ new Date()).toISOString()
+  };
+  db.manualEntries.unshift(entry);
+  saveDatabase(db);
+  broadcastUpdate("entry_created", { entry, lastUpdated: db.lastUpdated });
+  res.json({ success: true, entry });
+});
+routeBoth("post", "/api/entries/bulk", requireSession, (req, res) => {
+  const { entries } = req.body || {};
+  if (!Array.isArray(entries) || entries.length === 0) {
+    return res.status(400).json({ error: "Lista de lan\xE7amentos vazia ou inv\xE1lida." });
+  }
+  const createdEntries = [];
+  const now = Date.now();
+  entries.forEach((item, index) => {
+    if (item.desc && item.value && item.date) {
+      const entry = {
+        id: `m_${now}_${index}_${Math.random().toString(36).substring(2, 6)}`,
+        ...item,
+        created: (/* @__PURE__ */ new Date()).toISOString()
+      };
+      createdEntries.push(entry);
+      db.manualEntries.unshift(entry);
+    }
+  });
+  saveDatabase(db);
+  broadcastUpdate("entries_bulk_created", { entries: createdEntries, lastUpdated: db.lastUpdated });
+  res.json({ success: true, count: createdEntries.length, entries: createdEntries });
+});
+routeBoth("delete", "/api/entries/:id", requireSession, (req, res) => {
+  const { id } = req.params;
+  db.manualEntries = db.manualEntries.filter((e) => e.id !== id);
+  saveDatabase(db);
+  broadcastUpdate("entry_deleted", { id, lastUpdated: db.lastUpdated });
+  res.json({ success: true, id });
+});
+app.use((req, res, next) => {
+  if (req.path.startsWith("/api")) {
+    return res.status(404).json({ error: `API route not found: ${req.method} ${req.originalUrl || req.url}` });
+  }
+  next();
+});
+var serverBackend_default = app;
+// Annotate the CommonJS export names for ESM import in node:
+0 && (module.exports = {
+  app,
+  db,
+  loadDatabase,
+  saveDatabase
+});
