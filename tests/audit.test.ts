@@ -1,4 +1,4 @@
-import test from "node:test";
+import test, { after } from "node:test";
 import assert from "node:assert/strict";
 import http from "node:http";
 import { app, db, saveDatabase } from "../src/serverBackend";
@@ -81,7 +81,7 @@ test("AUDITORIA 1: Health check endpoint responde 200 OK com status e cloud cone
 
 test("AUDITORIA 2: Usuários públicos nunca expõem senhas ou credenciais hash", async () => {
   // Garantir usuário dono configurado
-  const donoUser = db.users.find((u: any) => u.login === "dono");
+  const donoUser = db.users.find((u: any) => u.login === "dono" || u.perfil === "dono");
   assert.ok(donoUser, "Usuário dono deve existir no banco");
   assert.equal("pass" in donoUser, false, "Campo pass não pode existir no objeto do usuário");
   assert.equal("passwordHash" in donoUser, false, "Campo passwordHash não pode existir no objeto do usuário");
@@ -266,4 +266,16 @@ test("AUDITORIA 7: Lançamentos manuais são criados e deletados com segurança"
 
   assert.equal(resDelete.status, 200);
   assert.equal(resDelete.body.success, true);
+});
+
+after(() => {
+  // Limpar resíduos de testes para manter a base limpa
+  db.auditLogs = [];
+  db.franchises = (db.franchises || []).filter((f: any) => !f.id?.startsWith("f_auditoria"));
+  db.businesses = (db.businesses || []).filter((b: any) => b.id !== "biz_test");
+  if (db.credentials) {
+    delete db.credentials["u_op_test"];
+  }
+  db.users = (db.users || []).filter((u: any) => u.id !== "u_op_test");
+  saveDatabase(db);
 });
