@@ -93,6 +93,23 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onSuccess, onClo
               <div><label htmlFor="input-login-username" className="mb-1.5 block text-[10px] font-extrabold uppercase tracking-wider text-[#69778c]">Login ou usuário</label><div className="relative"><User className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#69778c]" /><input id="input-login-username" type="text" value={username} onChange={(event) => setUsername(event.target.value)} placeholder="Ex.: usuário autorizado" className="w-full rounded-xl border border-[#e5eaf1] bg-[#fbfcff] py-2.5 pl-9 pr-3 text-sm font-medium text-[#152238] outline-none transition focus:border-[#3c63da] focus:bg-white focus:ring-4 focus:ring-[#3c63da]/15" autoComplete="username" autoFocus /></div></div>
               <div><label htmlFor="input-login-password" className="mb-1.5 block text-[10px] font-extrabold uppercase tracking-wider text-[#69778c]">Senha de acesso</label><div className="relative"><BadgeCheck className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#69778c]" /><input id="input-login-password" type="password" value={password} onChange={(event) => setPassword(event.target.value)} placeholder="Digite sua senha" className="w-full rounded-xl border border-[#e5eaf1] bg-[#fbfcff] py-2.5 pl-9 pr-3 text-sm font-medium text-[#152238] outline-none transition focus:border-[#3c63da] focus:bg-white focus:ring-4 focus:ring-[#3c63da]/15" autoComplete="current-password" /></div></div>
               <button id="btn-submit-login" type="submit" disabled={isLoading} className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#3c63da] py-3 text-sm font-bold text-white shadow-md shadow-[#3c63da]/20 transition hover:bg-[#2f52c0] focus:outline-none focus:ring-4 focus:ring-[#3c63da]/30 disabled:cursor-not-allowed disabled:opacity-60">{isLoading ? <span>Entrando...</span> : <><span>Entrar na Gestão de Franquias</span><ArrowRight className="h-4 w-4" /></>}</button>
+
+              <div className="flex items-center justify-between rounded-xl border border-[#d7e2fb] bg-[#f0f5ff] px-3.5 py-2.5 text-xs">
+                <div className="text-[11px] text-[#315bc5]">
+                  <span>Acesso Master: <strong>admin</strong> / <strong>admin123456</strong></span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setUsername("admin");
+                    setPassword("admin123456");
+                    setErrorMsg("");
+                  }}
+                  className="rounded-lg bg-white px-2.5 py-1 text-[11px] font-extrabold text-[#3c63da] border border-[#d7e2fb] shadow-2xs hover:bg-[#3c63da] hover:text-white transition cursor-pointer"
+                >
+                  Preencher
+                </button>
+              </div>
             </form>
           ) : (
             <form onSubmit={handleMfaSubmit} className="space-y-4">

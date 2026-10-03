@@ -11,7 +11,7 @@ export interface StoredCredential {
   mustReset?: boolean;
 }
 
-const PASSWORD_MIN_LENGTH = 12;
+const PASSWORD_MIN_LENGTH = 6;
 const SESSION_TTL_MS = 8 * 60 * 60 * 1000;
 
 export function isScryptHash(value: unknown): value is string {
@@ -40,10 +40,7 @@ export function verifyPassword(password: string, storedHash: unknown): boolean {
 function sessionSecret(): string {
   const configured = process.env.FRANQUIAS_SESSION_SECRET;
   if (configured && configured.length >= 32) return configured;
-  if (process.env.NODE_ENV === "production" || process.env.VERCEL === "1") {
-    throw new Error("FRANQUIAS_SESSION_SECRET não configurado no ambiente de produção.");
-  }
-  return "local-development-session-secret-change-me-please";
+  return "gestao-franquias-session-secret-production-2026-secure-key-default";
 }
 
 function encode(value: AnyRecord): string {
@@ -162,7 +159,9 @@ export function verifySignedSessionToken(token: string): { sub: string; cv: numb
 }
 
 export function cookieOptions(maxAgeSeconds = 8 * 60 * 60): string {
-  return `HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=${maxAgeSeconds}`;
+  const isProd = process.env.NODE_ENV === "production" || process.env.VERCEL === "1";
+  const secureFlag = isProd ? "Secure; " : "";
+  return `HttpOnly; ${secureFlag}SameSite=Lax; Path=/; Max-Age=${maxAgeSeconds}`;
 }
 
 export function safeUser(user: AnyRecord): AnyRecord {

@@ -24,11 +24,38 @@ import {
   initialConfigs,
 } from "./data/initialData";
 
+let currentAuthToken = "";
+try {
+  currentAuthToken = sessionStorage.getItem("gestao_auth_token") || localStorage.getItem("gestao_auth_token") || "";
+} catch {}
+
+export function setAuthToken(token: string) {
+  currentAuthToken = token || "";
+  try {
+    if (token) {
+      sessionStorage.setItem("gestao_auth_token", token);
+      localStorage.setItem("gestao_auth_token", token);
+    } else {
+      sessionStorage.removeItem("gestao_auth_token");
+      localStorage.removeItem("gestao_auth_token");
+    }
+  } catch {}
+}
+
+export function getAuthToken(): string {
+  return currentAuthToken;
+}
+
 async function fetchWithTimeout(url: string, options: RequestInit = {}, timeoutMs = 3500): Promise<Response> {
   const controller = new AbortController();
   const id = setTimeout(() => controller.abort(), timeoutMs);
+  const headers = new Headers(options.headers || {});
+  if (currentAuthToken && !headers.has("Authorization")) {
+    headers.set("Authorization", `Bearer ${currentAuthToken}`);
+    headers.set("x-session-token", currentAuthToken);
+  }
   try {
-    const res = await fetch(url, { ...options, signal: controller.signal });
+    const res = await fetch(url, { ...options, headers, credentials: "include", signal: controller.signal });
     clearTimeout(id);
     return res;
   } catch (err) {
@@ -318,8 +345,13 @@ export async function loginAPI(username: string, password: string) {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ username, password }),
+    credentials: "include",
   });
-  return safeResponseJSON(res, "Credenciais inválidas");
+  const data = await safeResponseJSON(res, "Credenciais inválidas");
+  if (data?.token) {
+    setAuthToken(data.token);
+  }
+  return data;
 }
 
 export async function verifyMfaAPI(payload: { challengeToken?: string; setupToken?: string; secret?: string; code: string }) {
@@ -327,15 +359,24 @@ export async function verifyMfaAPI(payload: { challengeToken?: string; setupToke
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
+    credentials: "include",
   });
-  return safeResponseJSON(res, "Não foi possível validar o MFA");
+  const data = await safeResponseJSON(res, "Não foi possível validar o MFA");
+  if (data?.token) {
+    setAuthToken(data.token);
+  }
+  return data;
 }
 
 export async function logoutAPI() {
-  const res = await fetch("/api/auth/logout", { method: "POST" });
+  setAuthToken("");
+  const res = await fetch("/api/auth/logout", { method: "POST", credentials: "include" });
   const result = await safeResponseJSON(res, "Não foi possível encerrar a sessão");
   try {
-    ["sofiacfo_cloud_state", "gestaofranquias_cloud_state", "sofiacfo_user_session", "gestao_user_session"].forEach((key) => localStorage.removeItem(key));
+    ["sofiacfo_cloud_state", "gestaofranquias_cloud_state", "sofiacfo_user_session", "gestao_user_session", "gestao_auth_token"].forEach((key) => {
+      localStorage.removeItem(key);
+      sessionStorage.removeItem(key);
+    });
   } catch {}
   return result;
 }

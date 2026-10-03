@@ -147,10 +147,16 @@ export const App: React.FC = () => {
       if (logsRes.auditLogs) {
         setAuditLogs(logsRes.auditLogs);
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error("Failed to load initial server state:", err);
       setIsCloudConnected(false);
-      setLoadError("Não foi possível carregar os dados desta conta na nuvem. Nenhum dado antigo foi exibido.");
+      const isAuthError = err?.message?.includes("Sessão expirada") || err?.message?.includes("401");
+      if (isAuthError) {
+        setUserSession(null);
+        setIsLoginOpen(true);
+      } else {
+        setLoadError("Não foi possível carregar os dados desta conta na nuvem. Verifique a conexão.");
+      }
     } finally {
       setIsLoading(false);
     }
