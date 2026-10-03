@@ -202,12 +202,12 @@ export async function fetchServerState(): Promise<CloudState> {
 }
 
 export async function fetchConfigs(): Promise<{ configs: ConfigItem[]; lastUpdated: string }> {
-  const res = await fetch("/api/config");
+  const res = await fetchWithTimeout("/api/config");
   return safeResponseJSON(res, "Failed to fetch configs");
 }
 
 export async function updateSingleConfig(key: string, value: any, modifiedBy?: string, userId?: string) {
-  const res = await fetch(`/api/config/${encodeURIComponent(key)}`, {
+  const res = await fetchWithTimeout(`/api/config/${encodeURIComponent(key)}`, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ value, modifiedBy, userId }),
@@ -228,7 +228,7 @@ export async function saveCloudConfig(
 }
 
 export async function updateBulkConfig(updates: Array<{ key: string; value: any }>, modifiedBy?: string, userId?: string) {
-  const res = await fetch("/api/config/bulk", {
+  const res = await fetchWithTimeout("/api/config/bulk", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ updates, modifiedBy, userId }),
@@ -246,12 +246,15 @@ export async function fetchAuditLogs(): Promise<{ auditLogs: AuditLog[] }> {
 }
 
 export async function syncStateSection(section: string, data: any, user?: string, actor?: { profile?: string; tenant?: string; login?: string }, credential?: { userId: string; password: string }): Promise<CloudState> {
-  const res = await fetch("/api/state/sync", {
+  const res = await fetchWithTimeout("/api/state/sync", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ section, data, user, userProfile: actor?.profile, userTenant: actor?.tenant, userLogin: actor?.login, credential }),
   });
-  if (!res.ok) throw new Error("Failed to sync state section");
+  if (!res.ok) {
+    const err = await safeResponseJSON(res, "Failed to sync state section").catch((e) => e);
+    throw new Error(err?.message || err?.error || "Failed to sync state section");
+  }
   return fetchServerState();
 }
 
@@ -295,13 +298,17 @@ export async function saveSystemSettings(settings: SystemSettings, userName: str
 }
 
 export async function resetDatabase(): Promise<CloudState> {
-  const res = await fetch("/api/state/reset", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ confirm: "RESETAR_BASE" }) });
+  const res = await fetchWithTimeout("/api/state/reset", { 
+    method: "POST", 
+    headers: { "Content-Type": "application/json" }, 
+    body: JSON.stringify({ confirm: "RESETAR_BASE" }) 
+  });
   if (!res.ok) throw new Error("Failed to reset database");
   return fetchServerState();
 }
 
 export async function createManualEntryAPI(entry: Partial<ManualEntry>) {
-  const res = await fetch("/api/entries", {
+  const res = await fetchWithTimeout("/api/entries", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(entry),
@@ -310,7 +317,7 @@ export async function createManualEntryAPI(entry: Partial<ManualEntry>) {
 }
 
 export async function createManualEntriesBulkAPI(entries: Array<Partial<ManualEntry>>) {
-  const res = await fetch("/api/entries/bulk", {
+  const res = await fetchWithTimeout("/api/entries/bulk", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ entries }),
@@ -329,7 +336,7 @@ export async function createManualEntriesBulk(entries: Array<Partial<ManualEntry
 }
 
 export async function deleteManualEntryAPI(id: string) {
-  const res = await fetch(`/api/entries/${encodeURIComponent(id)}`, {
+  const res = await fetchWithTimeout(`/api/entries/${encodeURIComponent(id)}`, {
     method: "DELETE",
   });
   return safeResponseJSON(res, "Failed to delete entry");
