@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "lastUpdated": "2026-10-03T21:27:45.400Z",
+  "lastUpdated": "2026-10-03T21:41:06.157Z",
   "configs": [
     {
       "key": "app_name",
@@ -113,26 +113,7 @@
       "modifiedBy": "Sistema"
     }
   ],
-  "auditLogs": [
-    {
-      "id": "audit_1791062865400",
-      "timestamp": "2026-10-03T21:27:45.400Z",
-      "action": "SYNC_FRANCHISES",
-      "key": "franchises",
-      "oldValue": null,
-      "newValue": "Updated franchises",
-      "user": "Leo Missio"
-    },
-    {
-      "id": "audit_1791062865383",
-      "timestamp": "2026-10-03T21:27:45.383Z",
-      "action": "SYNC_FRANCHISES",
-      "key": "franchises",
-      "oldValue": null,
-      "newValue": "Updated franchises",
-      "user": "Leo Missio"
-    }
-  ],
+  "auditLogs": [],
   "businesses": [],
   "franchises": [],
   "employees": [],
@@ -145,16 +126,16 @@
       "perfil": "dono",
       "unidade": "dono",
       "status": "ativo",
-      "last": "21:27",
+      "last": "21:37",
       "employeeId": "e1"
     }
   ],
   "credentials": {
     "u1": {
-      "passwordHash": "scrypt$e970bdaec50d636f8a85ff25754292f9$998feb4dfe50bf44e0523154999f250798a6143b3c89b4d2b48bbe1620be7edb92547240bff77cbc7ecaa1c4cdf9a571539e4c9782bf04eed592d8311e546fcc",
-      "version": 1,
-      "createdAt": "2026-10-03T21:27:38.959Z",
-      "updatedAt": "2026-10-03T21:27:38.959Z",
+      "passwordHash": "scrypt$e62dd832c1f9557f7d5a131be0c6f653$0af40c131094e9cd4479d7aa5f5cd5d34beb523c73c3bb27e6e19a6690ab62ce6ab48e33059f848cb86005362f334d33592b3a38e34ac1cf309e4bbac2212777",
+      "version": 2,
+      "createdAt": "2026-10-03T21:41:05.957Z",
+      "updatedAt": "2026-10-03T21:41:06.008Z",
       "mustReset": false
     }
   },

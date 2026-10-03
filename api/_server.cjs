@@ -337,203 +337,8 @@ var defaultConfigs = [
     modifiedBy: "Sistema"
   }
 ];
-var defaultBusinesses = [
-  { id: "biz1", name: "Rede Caf\xE9 Prime", brand: "Caf\xE9 Prime", color: "#3c63da", royalty: 0.06 },
-  { id: "biz2", name: "Rede Beleza & Co", brand: "Beleza & Co", color: "#6a4ecb", royalty: 0.05 },
-  { id: "biz3", name: "Rede EduKids", brand: "EduKids", color: "#118464", royalty: 0.07 }
-];
-var defaultFranchises = [
-  {
-    id: "f001",
-    businessId: "biz1",
-    name: "Caf\xE9 Paulista",
-    code: "CP-SP01",
-    resp: "Renata Campos",
-    address: "Av. Paulista, 1000 \u2014 Bela Vista, S\xE3o Paulo/SP",
-    city: "S\xE3o Paulo",
-    region: "Sudeste",
-    lat: -23.5613,
-    lng: -46.6565,
-    faturamento: 148320,
-    pendencias: 4,
-    rpDone: 3,
-    status: "green"
-  },
-  {
-    id: "f002",
-    businessId: "biz1",
-    name: "Caf\xE9 Vila Mariana",
-    code: "CP-SP02",
-    resp: "Marcos Silva",
-    address: "Rua Vergueiro, 2000 \u2014 Vila Mariana, S\xE3o Paulo/SP",
-    city: "S\xE3o Paulo",
-    region: "Sudeste",
-    lat: -23.5896,
-    lng: -46.6349,
-    faturamento: 132540,
-    pendencias: 5,
-    rpDone: 2,
-    status: "amber"
-  },
-  {
-    id: "f003",
-    businessId: "biz1",
-    name: "Caf\xE9 Curitiba",
-    code: "CP-CTB01",
-    resp: "Paulo Mendes",
-    address: "Rua XV de Novembro, 500 \u2014 Centro, Curitiba/PR",
-    city: "Curitiba",
-    region: "Sul",
-    lat: -25.4284,
-    lng: -49.2733,
-    faturamento: 98e3,
-    pendencias: 1,
-    rpDone: 4,
-    status: "green"
-  },
-  {
-    id: "f004",
-    businessId: "biz2",
-    name: "Beleza Copacabana",
-    code: "BC-RJ01",
-    resp: "Juliana Prado",
-    address: "Av. Atl\xE2ntica, 1700 \u2014 Copacabana, Rio de Janeiro/RJ",
-    city: "Rio de Janeiro",
-    region: "Sudeste",
-    lat: -22.9711,
-    lng: -43.1823,
-    faturamento: 121e3,
-    pendencias: 3,
-    rpDone: 3,
-    status: "green"
-  },
-  {
-    id: "f005",
-    businessId: "biz2",
-    name: "Beleza BH Centro",
-    code: "BC-BH01",
-    resp: "Carla Nunes",
-    address: "Av. Afonso Pena, 1200 \u2014 Centro, Belo Horizonte/MG",
-    city: "Belo Horizonte",
-    region: "Sudeste",
-    lat: -19.9245,
-    lng: -43.9352,
-    faturamento: 87500,
-    pendencias: 6,
-    rpDone: 1,
-    status: "amber"
-  },
-  {
-    id: "f006",
-    businessId: "biz2",
-    name: "Beleza Bras\xEDlia",
-    code: "BC-BSB01",
-    resp: "Ricardo Alves",
-    address: "SCS Quadra 3 \u2014 Asa Sul, Bras\xEDlia/DF",
-    city: "Bras\xEDlia",
-    region: "Centro-Oeste",
-    lat: -15.7942,
-    lng: -47.8822,
-    faturamento: 102300,
-    pendencias: 2,
-    rpDone: 3,
-    status: "green"
-  },
-  {
-    id: "f007",
-    businessId: "biz3",
-    name: "EduKids Moema",
-    code: "EK-SP01",
-    resp: "Ana Beatriz Lima",
-    address: "Av. Ibirapuera, 3100 \u2014 Moema, S\xE3o Paulo/SP",
-    city: "S\xE3o Paulo",
-    region: "Sudeste",
-    lat: -23.6015,
-    lng: -46.6633,
-    faturamento: 156800,
-    pendencias: 2,
-    rpDone: 5,
-    status: "green"
-  },
-  {
-    id: "f008",
-    businessId: "biz3",
-    name: "EduKids Porto Alegre",
-    code: "EK-POA01",
-    resp: "Felipe Costa",
-    address: "Av. Borges de Medeiros, 800 \u2014 Centro, Porto Alegre/RS",
-    city: "Porto Alegre",
-    region: "Sul",
-    lat: -30.0346,
-    lng: -51.2177,
-    faturamento: 91200,
-    pendencias: 4,
-    rpDone: 2,
-    status: "amber"
-  },
-  {
-    id: "f009",
-    businessId: "biz3",
-    name: "EduKids Salvador",
-    code: "EK-SSA01",
-    resp: "Mariana Souza",
-    address: "Av. Sete de Setembro, 600 \u2014 Centro, Salvador/BA",
-    city: "Salvador",
-    region: "Nordeste",
-    lat: -12.9714,
-    lng: -38.5014,
-    faturamento: 78400,
-    pendencias: 1,
-    rpDone: 4,
-    status: "green"
-  }
-];
-var defaultEmployees = [
-  { id: "e1", nome: "Lu\xEDs Matos", matricula: "0001", cargo: "Diretor Executivo", unidade: "dono", email: "luis@rede.com", vt: false, login: "dono" },
-  { id: "e2", nome: "Renata Campos", matricula: "0012", cargo: "Gerente Geral", unidade: "f001", email: "renata@f001.com", vt: true, login: "renata.f001" },
-  { id: "e3", nome: "Carlos Eduardo", matricula: "0018", cargo: "Consultor de Vendas", unidade: "f001", email: "carlos@f001.com", vt: true, login: "" },
-  { id: "e4", nome: "Mariana Costa", matricula: "0021", cargo: "Recepcionista", unidade: "f001", email: "mariana@f001.com", vt: true, login: "" },
-  { id: "e5", nome: "Marcos Silva", matricula: "0030", cargo: "Gerente", unidade: "f002", email: "marcos@f002.com", vt: true, login: "marcos.f002" },
-  { id: "e6", nome: "Juliana Prado", matricula: "0044", cargo: "Gerente Franquia", unidade: "f004", email: "juliana@f004.com", vt: true, login: "juliana.f004" },
-  { id: "e7", nome: "Ana Beatriz Lima", matricula: "0051", cargo: "Gestora Operacional", unidade: "f007", email: "ana@f007.com", vt: true, login: "ana.f007" }
-];
 var defaultUsers = [
-  { id: "u1", nome: "Administrador", email: "", login: "dono", perfil: "dono", unidade: "dono", status: "ativo", last: "Agora", employeeId: "e1" },
-  { id: "u3", nome: "Admin Caf\xE9 Prime", email: "admin@cafeprime.com", login: "admin.cafe", perfil: "admin", unidade: "biz1", status: "ativo", last: "Hoje 08:15", employeeId: "" },
-  { id: "u4", nome: "Admin Beleza & Co", email: "admin@beleza.com", login: "admin.beleza", perfil: "admin", unidade: "biz2", status: "ativo", last: "Ontem 17:40", employeeId: "" },
-  { id: "u5", nome: "Admin EduKids", email: "admin@edukids.com", login: "admin.edukids", perfil: "admin", unidade: "biz3", status: "ativo", last: "Ontem 16:10", employeeId: "" },
-  { id: "u6", nome: "Renata Campos", email: "renata@f001.com", login: "renata.f001", perfil: "franqueado", unidade: "f001", status: "ativo", last: "Hoje 08:40", employeeId: "e2" },
-  { id: "u7", nome: "Marcos Silva", email: "marcos@f002.com", login: "marcos.f002", perfil: "franqueado", unidade: "f002", status: "ativo", last: "Ontem 18:22", employeeId: "e5" },
-  { id: "u8", nome: "Juliana Prado", email: "juliana@f004.com", login: "juliana.f004", perfil: "franqueado", unidade: "f004", status: "ativo", last: "Ontem 17:05", employeeId: "e6" },
-  { id: "u9", nome: "Ana Beatriz Lima", email: "ana@f007.com", login: "ana.f007", perfil: "franqueado", unidade: "f007", status: "ativo", last: "Hoje 07:50", employeeId: "e7" }
-];
-var defaultManualEntries = [
-  {
-    id: "m1",
-    tenant: "f001",
-    type: "entrada",
-    date: (/* @__PURE__ */ new Date()).toISOString().slice(0, 10),
-    value: 3450,
-    desc: "Venda corporativa \u2014 Coffee Break",
-    catId: "receita",
-    catName: "Receita operacional",
-    pay: "pix",
-    note: "Contrato mensal faturado",
-    created: (/* @__PURE__ */ new Date()).toISOString()
-  },
-  {
-    id: "m2",
-    tenant: "f001",
-    type: "despesa",
-    date: (/* @__PURE__ */ new Date()).toISOString().slice(0, 10),
-    value: 820.5,
-    desc: "Manuten\xE7\xE3o m\xE1quina de caf\xE9 expresso",
-    catId: "outros",
-    catName: "Outros / Tarifas",
-    pay: "transferencia",
-    note: "T\xE9cnico autorizado",
-    created: (/* @__PURE__ */ new Date()).toISOString()
-  }
+  { id: "u1", nome: "Administrador", email: "leomissio72@gmail.com", login: "admin", perfil: "dono", unidade: "dono", status: "ativo", last: "Agora", employeeId: "e1" }
 ];
 var defaultPaymentMethods = [
   { id: "dinheiro", name: "Dinheiro em Esp\xE9cie", taxa: 0, prazo: "D+0", icon: "Banknote", active: true },
@@ -587,31 +392,16 @@ function loadDatabase() {
     version: 1,
     lastUpdated: (/* @__PURE__ */ new Date()).toISOString(),
     configs: defaultConfigs,
-    auditLogs: [
-      {
-        id: "audit_init_1",
-        timestamp: (/* @__PURE__ */ new Date()).toISOString(),
-        action: "INITIALIZE_DATABASE",
-        key: "all",
-        oldValue: null,
-        newValue: "Nuvem Gest\xE3o de Franquias provisionada com sucesso",
-        user: "Sistema Central"
-      }
-    ],
-    businesses: defaultBusinesses,
-    franchises: defaultFranchises,
-    employees: defaultEmployees,
+    auditLogs: [],
+    businesses: [],
+    franchises: [],
+    employees: [],
     users: defaultUsers,
-    manualEntries: defaultManualEntries,
-    dreParams: {
-      dono: { impostos: 8, cmv: 30, despesasOperacionais: 15, marketing: 3, investimentos: 2 },
-      f001: { impostos: 8, cmv: 28, despesasOperacionais: 14, marketing: 2.5, investimentos: 1.5 },
-      f002: { impostos: 8, cmv: 32, despesasOperacionais: 16, marketing: 3, investimentos: 2 },
-      f004: { impostos: 6, cmv: 25, despesasOperacionais: 18, marketing: 4, investimentos: 3 }
-    },
+    manualEntries: [],
+    dreParams: {},
     paymentMethods: defaultPaymentMethods,
     businessRules: defaultBusinessRules,
-    royalties: { biz1: 0.06, biz2: 0.05, biz3: 0.07 },
+    royalties: {},
     permissions: {},
     vtConfigs: {},
     credentials: {},

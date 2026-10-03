@@ -67,9 +67,7 @@ export const defaultBusinessRules: BusinessRule = {
   advance: false
 };
 
-export const initialEmployees: Employee[] = [
-  { id: "e1", nome: "Luís Matos", matricula: "0001", cargo: "Administrador", unidade: "dono", email: "", vt: false, login: "dono" }
-];
+export const initialEmployees: Employee[] = [];
 
 export const initialUsers: UserAccount[] = [
   { id: "u1", nome: "Administrador", email: "", login: "dono", perfil: "dono", unidade: "dono", status: "ativo", last: "Agora", employeeId: "e1" }
