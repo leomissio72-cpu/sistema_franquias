@@ -94,6 +94,22 @@ function rowToItem(row: Record<string, unknown>, index: number): ConciliationIte
   return { date, desc: description || `Linha importada ${index + 1}`, value: numericValue.toLocaleString("pt-BR", { style: "currency", currency: "BRL" }), numericValue, categoria: "Importado", match: "Aguardando classificação", status: "review", label: "Importado", tone: "amber", toDre: numericValue < 0 };
 }
 
+async function readBankText(file: File): Promise<string> {
+  const bytes = new Uint8Array(await file.arrayBuffer());
+  if (bytes[0] === 0xff && bytes[1] === 0xfe) return new TextDecoder("utf-16le").decode(bytes.slice(2));
+  if (bytes[0] === 0xfe && bytes[1] === 0xff) return new TextDecoder("utf-16be").decode(bytes.slice(2));
+  const header = new TextDecoder("ascii").decode(bytes.slice(0, 512));
+  if (/CHARSET\s*:\s*1252|ENCODING\s*:\s*USASCII/i.test(header)) {
+    try { return new TextDecoder("windows-1252").decode(bytes); } catch { /* fallback UTF-8 */ }
+  }
+  return new TextDecoder("utf-8").decode(bytes);
+}
+
+function getOfxTag(block: string, tag: string): string {
+  const match = block.match(new RegExp(`<${tag}[^>]*>\\s*([\\s\\S]*?)(?=<[A-Z][A-Z0-9_:-]*\\b|$)`, "i"));
+  return (match?.[1] || "").replace(/<!\[CDATA\[|\]\]>/g, "").replace(/<[^>]+>/g, "").trim();
+}
+
 function entryToItem(entry: ManualEntry): ConciliationItem {
   const numericValue = entry.type === "despesa" ? -Math.abs(Number(entry.value)) : Math.abs(Number(entry.value));
   const matched = entry.conciliationStatus === "matched";
@@ -115,17 +131,17 @@ function entryToItem(entry: ManualEntry): ConciliationItem {
 async function readImportFile(file: File): Promise<ConciliationItem[]> {
   if (file.size > 15 * 1024 * 1024) throw new Error("O arquivo excede o limite de 15 MB.");
   if (/\.(ofx|qif|txt)$/i.test(file.name)) {
-    const text = await file.text();
-    const transactions = Array.from(text.matchAll(/<STMTTRN>([\s\S]*?)(?:<\/STMTTRN>|<\/STMTTRN>)/gi));
+    const text = await readBankText(file);
+    const transactions = Array.from(text.matchAll(/<STMTTRN\b[^>]*>([\s\S]*?)(?=<\/?STMTTRN\b|<\/?BANKTRANLIST\b|<\/?OFX\b|$)/gi));
     if (!transactions.length) {
       const lines = text.split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
       return lines.slice(0, 5000).map((line, index) => rowToItem({ Descrição: line, Valor: (line.match(/-?\d+(?:[.,]\d{2})/g) || [""]).pop() }, index));
     }
     return transactions.map((match, index) => {
       const block = match[1];
-      const getTag = (tag: string) => block.match(new RegExp(`<${tag}>([^<\\r\\n]+)`, "i"))?.[1]?.trim() || "";
-      const amount = parseAmount(getTag("TRNAMT"));
-      return rowToItem({ Data: getTag("DTPOSTED").slice(0, 8), Descrição: getTag("NAME") || getTag("MEMO") || `Transação OFX ${index + 1}`, Valor: amount }, index);
+      const amount = parseAmount(getOfxTag(block, "TRNAMT"));
+      const posted = getOfxTag(block, "DTPOSTED");
+      return rowToItem({ Data: posted.slice(0, 8), Descrição: getOfxTag(block, "NAME") || getOfxTag(block, "MEMO") || `Transação OFX ${index + 1}`, Valor: amount }, index);
     });
   }
   if (file.name.toLowerCase().endsWith(".pdf")) {
