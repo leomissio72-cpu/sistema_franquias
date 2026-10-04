@@ -257,10 +257,25 @@ async function hydrateDatabaseFromBlob() {
       const raw = await new Response(result.stream).text();
       const parsed = JSON.parse(raw);
       if (parsed && Array.isArray(parsed.configs)) {
-        db = parsed;
+        const localState = db;
+        const countRecords = (state) => (state.businesses?.length || 0) + (state.franchises?.length || 0) + (state.employees?.length || 0) + (state.manualEntries?.length || 0) + Math.max(0, (state.users?.length || 0) - 1);
+        const cloudRecords = countRecords(parsed);
+        const localRecords = countRecords(localState);
+        if (parsed.durableInitialized || cloudRecords > 0 || localRecords === 0) {
+          db = { ...parsed, durableInitialized: true };
+        } else {
+          db = { ...localState, durableInitialized: true };
+          await persistDatabaseToBlob(db);
+        }
         db = migrateLegacyCredentials(db).database;
       }
     } catch (error) {
+      try {
+        db = { ...db, durableInitialized: true };
+        await persistDatabaseToBlob(db);
+      } catch (persistError) {
+        console.error("Falha ao inicializar o estado dur\xE1vel do Blob", persistError);
+      }
       console.error("Falha ao hidratar o estado dur\xE1vel do Blob", error);
     }
   })();
@@ -492,6 +507,7 @@ function loadDatabase() {
 }
 async function saveDatabase(data) {
   data.lastUpdated = (/* @__PURE__ */ new Date()).toISOString();
+  data.durableInitialized = true;
   try {
     const localBackup = import_path.default.join(process.cwd(), "data", "database.json");
     const dir = import_path.default.dirname(localBackup);
@@ -574,6 +590,7 @@ routeBoth("get", "/api/health", (req, res) => {
   res.json({
     status: "ok",
     cloud: "connected",
+    storage: HAS_DURABLE_BLOB ? "durable" : "ephemeral-fallback",
     serverTime: (/* @__PURE__ */ new Date()).toISOString(),
     connectedDevices: sseClients.length,
     dbVersion: db.version,

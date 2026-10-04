@@ -97,11 +97,35 @@ async function hydrateDatabaseFromBlob() {
       const raw = await new Response(result.stream).text();
       const parsed = JSON.parse(raw);
       if (parsed && Array.isArray(parsed.configs)) {
-        db = parsed as DatabaseState;
+        const localState = db;
+        const countRecords = (state: DatabaseState) =>
+          (state.businesses?.length || 0) +
+          (state.franchises?.length || 0) +
+          (state.employees?.length || 0) +
+          (state.manualEntries?.length || 0) +
+          Math.max(0, (state.users?.length || 0) - 1);
+        const cloudRecords = countRecords(parsed as DatabaseState);
+        const localRecords = countRecords(localState);
+
+        // Um Blob antigo e vazio não pode apagar o estado não vazio já existente.
+        // Após esta migração, o marcador permite que uma exclusão intencional para
+        // zero seja respeitada nas próximas inicializações.
+        if (parsed.durableInitialized || cloudRecords > 0 || localRecords === 0) {
+          db = { ...(parsed as DatabaseState), durableInitialized: true };
+        } else {
+          db = { ...localState, durableInitialized: true };
+          await persistDatabaseToBlob(db);
+        }
         db = migrateLegacyCredentials(db).database as DatabaseState;
       }
     } catch (error) {
-      // Blob inexistente no primeiro uso é tratado como estado inicial.
+      // No primeiro uso, cria o estado canônico a partir do banco atual.
+      try {
+        db = { ...db, durableInitialized: true };
+        await persistDatabaseToBlob(db);
+      } catch (persistError) {
+        console.error("Falha ao inicializar o estado durável do Blob", persistError);
+      }
       console.error("Falha ao hidratar o estado durável do Blob", error);
     }
   })();
@@ -281,6 +305,7 @@ interface DatabaseState {
   mfaSecrets?: Record<string, string>;
   whatsappConfig?: any;
   whatsappHistory?: any[];
+  durableInitialized?: boolean;
 }
 
 function loadDatabase(): DatabaseState {
@@ -370,6 +395,7 @@ function loadDatabase(): DatabaseState {
 
 async function saveDatabase(data: DatabaseState) {
   data.lastUpdated = new Date().toISOString();
+  data.durableInitialized = true;
   try {
     const localBackup = path.join(process.cwd(), "data", "database.json");
     const dir = path.dirname(localBackup);
@@ -466,6 +492,7 @@ routeBoth("get", "/api/health", (req: Request, res: ExpressResponse) => {
   res.json({
     status: "ok",
     cloud: "connected",
+    storage: HAS_DURABLE_BLOB ? "durable" : "ephemeral-fallback",
     serverTime: new Date().toISOString(),
     connectedDevices: sseClients.length,
     dbVersion: db.version,
