@@ -97,7 +97,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
   // Extract state/UF helper from address field or unit.state
   const getUnitState = (unit: FranchiseUnit): string => {
     if (unit.state) return unit.state;
-    const match = unit.address.match(/\/([A-Z]{2})$/);
+    const match = (unit.address || unit.city || "").match(/\/([A-Z]{2})$/);
     return match ? match[1] : "SP";
   };
 

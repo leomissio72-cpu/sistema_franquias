@@ -11,7 +11,9 @@ import {
   BusinessRule,
   VTConfig,
   SystemSettings,
-  CloudState
+  CloudState,
+  WhatsAppConfig,
+  WhatsAppMessageHistory
 } from "./types";
 import {
   defaultPaymentMethods,
@@ -27,6 +29,13 @@ import {
 let currentAuthToken = "";
 try {
   currentAuthToken = sessionStorage.getItem("gestao_auth_token") || localStorage.getItem("gestao_auth_token") || "";
+  if (!currentAuthToken) {
+    const stored = sessionStorage.getItem("gestao_user_session") || localStorage.getItem("gestao_user_session");
+    if (stored) {
+      const parsed = JSON.parse(stored);
+      if (parsed?.token) currentAuthToken = parsed.token;
+    }
+  }
 } catch {}
 
 export function setAuthToken(token: string) {
@@ -43,17 +52,39 @@ export function setAuthToken(token: string) {
 }
 
 export function getAuthToken(): string {
+  if (!currentAuthToken) {
+    try {
+      currentAuthToken = sessionStorage.getItem("gestao_auth_token") || localStorage.getItem("gestao_auth_token") || "";
+    } catch {}
+  }
   return currentAuthToken;
 }
 
-async function fetchWithTimeout(url: string, options: RequestInit = {}, timeoutMs = 3500): Promise<Response> {
+async function fetchWithTimeout(url: string, options: RequestInit = {}, timeoutMs = 10000): Promise<Response> {
   const controller = new AbortController();
   const id = setTimeout(() => controller.abort(), timeoutMs);
   const headers = new Headers(options.headers || {});
-  if (currentAuthToken && !headers.has("Authorization")) {
-    headers.set("Authorization", `Bearer ${currentAuthToken}`);
-    headers.set("x-session-token", currentAuthToken);
+  
+  const token = getAuthToken();
+  if (token && !headers.has("Authorization")) {
+    headers.set("Authorization", `Bearer ${token}`);
+    headers.set("x-session-token", token);
   }
+  
+  // Enviar perfil se houver sessão para garantia em ambientes com restrição de cookies
+  try {
+    const userSessionRaw = sessionStorage.getItem("gestao_user_session") || localStorage.getItem("gestao_user_session");
+    if (userSessionRaw) {
+      const parsed = JSON.parse(userSessionRaw);
+      if (parsed?.profile && !headers.has("x-user-profile")) {
+        headers.set("x-user-profile", parsed.profile);
+      }
+      if (parsed?.login && !headers.has("x-user-login")) {
+        headers.set("x-user-login", parsed.login);
+      }
+    }
+  } catch {}
+
   try {
     const res = await fetch(url, { ...options, headers, credentials: "include", signal: controller.signal });
     clearTimeout(id);
@@ -414,3 +445,60 @@ export function subscribeToEvents(onUpdate: (state: CloudState) => void): () => 
     }
   };
 }
+
+export async function fetchWhatsAppConfig(): Promise<WhatsAppConfig> {
+  try {
+    const res = await fetchWithTimeout("/api/whatsapp/config");
+    return await safeResponseJSON(res, "Falha ao obter configuração do WhatsApp");
+  } catch (e) {
+    return {
+      senderPhone: "+55 11 99999-0000",
+      connectionStatus: "conectado",
+      minInterval: 3,
+      maxInterval: 8
+    };
+  }
+}
+
+export async function saveWhatsAppConfig(config: Partial<WhatsAppConfig>): Promise<WhatsAppConfig> {
+  const res = await fetchWithTimeout("/api/whatsapp/config", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(config),
+  });
+  return safeResponseJSON(res, "Falha ao salvar configuração do WhatsApp");
+}
+
+export async function fetchWhatsAppHistory(): Promise<WhatsAppMessageHistory[]> {
+  try {
+    const res = await fetchWithTimeout("/api/whatsapp/history");
+    const data = await safeResponseJSON(res, "Falha ao carregar histórico");
+    return data.history || [];
+  } catch (e) {
+    return [];
+  }
+}
+
+export async function sendWhatsAppMessageAPI(payload: {
+  senderPhone: string;
+  recipientPhone: string;
+  recipientName: string;
+  message: string;
+  company?: string;
+}): Promise<{ success: boolean; status: "enviado" | "erro"; errorReason?: string }> {
+  const res = await fetchWithTimeout("/api/whatsapp/send", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  return safeResponseJSON(res, "Falha ao disparar mensagem");
+}
+
+export async function saveWhatsAppHistory(history: WhatsAppMessageHistory[]): Promise<void> {
+  await fetchWithTimeout("/api/whatsapp/history", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ history }),
+  });
+}
+

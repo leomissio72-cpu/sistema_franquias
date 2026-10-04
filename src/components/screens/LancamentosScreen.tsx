@@ -91,17 +91,17 @@ export const LancamentosScreen: React.FC<LancamentosScreenProps> = ({
   const currentCategories = entryType === "entrada" ? entradaCategories : despesaCategories;
 
   const visibleEntries = manualEntries.filter((e) => {
-    if (!isRede && e.tenant !== currentTenantId) return false;
+    if (!isRede && e.tenant && e.tenant !== currentTenantId && e.tenant !== "dono") return false;
     if (filterType === "all") return true;
     return e.type === filterType;
   });
 
   const totalEntradas = manualEntries
-    .filter((e) => (isRede || e.tenant === currentTenantId) && e.type === "entrada")
+    .filter((e) => (isRede || e.tenant === currentTenantId || e.tenant === "dono") && e.type === "entrada")
     .reduce((s, e) => s + e.value, 0);
 
   const totalDespesas = manualEntries
-    .filter((e) => (isRede || e.tenant === currentTenantId) && e.type === "despesa")
+    .filter((e) => (isRede || e.tenant === currentTenantId || e.tenant === "dono") && e.type === "despesa")
     .reduce((s, e) => s + e.value, 0);
 
   const saldoManual = totalEntradas - totalDespesas;
@@ -119,7 +119,7 @@ export const LancamentosScreen: React.FC<LancamentosScreenProps> = ({
 
     setIsSubmitting(true);
     try {
-      const targetTenant = currentTenantId === "dono" ? "f001" : currentTenantId;
+      const targetTenant = currentTenantId === "dono" ? (franchises[0]?.id || "dono") : currentTenantId;
 
       if (numMonths > 1) {
         // Build recurring entries for 3, 6 or 12 months

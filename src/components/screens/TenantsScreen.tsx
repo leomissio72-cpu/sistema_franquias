@@ -117,7 +117,27 @@ export const TenantsScreen: React.FC<TenantsScreenProps> = ({
 
     const autoCode = `F${String(franchises.length + 1).padStart(3, "0")}`;
     const cleanCode = (form.code || "").trim().toUpperCase() || autoCode;
-    const effectiveBizId = form.businessId || businesses[0]?.id || "biz_padrao";
+    
+    let currentBizList = [...businesses];
+    let effectiveBizId = form.businessId;
+    if (!effectiveBizId || !currentBizList.some((b) => b.id === effectiveBizId)) {
+      if (currentBizList.length === 0) {
+        const defaultBiz: Business = {
+          id: "biz_principal",
+          name: "Rede Principal",
+          brand: "Rede Principal",
+          color: "#3c63da",
+          royalty: 0.06,
+        };
+        currentBizList = [defaultBiz];
+        effectiveBizId = "biz_principal";
+        if (onSaveBusinesses) {
+          void onSaveBusinesses(currentBizList);
+        }
+      } else {
+        effectiveBizId = currentBizList[0].id;
+      }
+    }
 
     const newUnit: FranchiseUnit = {
       id: `f_${Date.now()}`,

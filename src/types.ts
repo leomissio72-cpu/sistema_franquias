@@ -17,6 +17,7 @@ export type ScreenType =
   | "tenants"
   | "employees"
   | "users"
+  | "whatsapp"
   | "configuracao"
   | "settings"
   | "produtos"
@@ -300,6 +301,36 @@ export interface ConciliationItem {
   previsao?: string;
 }
 
+export interface WhatsAppRecipient {
+  id: string;
+  name: string;
+  phone: string;
+  company?: string;
+  valid: boolean;
+  error?: string;
+}
+
+export interface WhatsAppMessageHistory {
+  id: string;
+  senderPhone: string;
+  recipientPhone: string;
+  recipientName: string;
+  date: string;
+  time: string;
+  message: string;
+  status: "enviado" | "pendente" | "erro" | "nao_enviado";
+  errorReason?: string;
+  timestamp: string;
+}
+
+export interface WhatsAppConfig {
+  senderPhone: string;
+  connectionStatus: "conectado" | "conectando" | "desconectado";
+  minInterval: number;
+  maxInterval: number;
+  activeSessionId?: string;
+}
+
 export interface CloudState {
   version?: number;
   businesses: Business[];
@@ -319,5 +350,7 @@ export interface CloudState {
   systemSettings: SystemSettings;
   products?: HomologatedProduct[];
   suppliers?: RegisteredSupplier[];
+  whatsappConfig?: WhatsAppConfig;
+  whatsappHistory?: WhatsAppMessageHistory[];
   lastUpdated: string;
 }

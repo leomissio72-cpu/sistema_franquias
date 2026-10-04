@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "lastUpdated": "2026-10-03T21:41:06.157Z",
+  "lastUpdated": "2026-10-03T23:21:23.344Z",
   "configs": [
     {
       "key": "app_name",
@@ -9,7 +9,7 @@
       "type": "string",
       "category": "Geral",
       "description": "Nome exibido no cabeçalho e relatórios",
-      "lastModified": "2026-10-03T21:20:19.965Z",
+      "lastModified": "2026-10-03T23:20:09.229Z",
       "modifiedBy": "Sistema"
     },
     {
@@ -19,7 +19,7 @@
       "type": "number",
       "category": "Financeiro",
       "description": "Imposto sobre vendas padrão aplicado às novas franquias",
-      "lastModified": "2026-10-03T21:20:19.965Z",
+      "lastModified": "2026-10-03T23:20:09.229Z",
       "modifiedBy": "Sistema"
     },
     {
@@ -29,7 +29,7 @@
       "type": "number",
       "category": "Financeiro",
       "description": "Custo de Mercadoria Vendida padrão estimado",
-      "lastModified": "2026-10-03T21:20:19.965Z",
+      "lastModified": "2026-10-03T23:20:09.229Z",
       "modifiedBy": "Sistema"
     },
     {
@@ -39,7 +39,7 @@
       "type": "number",
       "category": "Financeiro",
       "description": "Percentual sobre receita bruta pago à matriz",
-      "lastModified": "2026-10-03T21:20:19.965Z",
+      "lastModified": "2026-10-03T23:20:09.229Z",
       "modifiedBy": "Sistema"
     },
     {
@@ -49,7 +49,7 @@
       "type": "number",
       "category": "Regras de Negócio",
       "description": "Desconto máximo permitido sem autorização da diretoria",
-      "lastModified": "2026-10-03T21:20:19.965Z",
+      "lastModified": "2026-10-03T23:20:09.229Z",
       "modifiedBy": "Sistema"
     },
     {
@@ -59,7 +59,7 @@
       "type": "string",
       "category": "Regras de Negócio",
       "description": "Vendas após este horário são liquidadas no ciclo seguinte",
-      "lastModified": "2026-10-03T21:20:19.965Z",
+      "lastModified": "2026-10-03T23:20:09.229Z",
       "modifiedBy": "Sistema"
     },
     {
@@ -69,7 +69,7 @@
       "type": "boolean",
       "category": "Sincronização",
       "description": "Propagação instantânea de alterações para todos os aparelhos conectados",
-      "lastModified": "2026-10-03T21:20:19.965Z",
+      "lastModified": "2026-10-03T23:20:09.229Z",
       "modifiedBy": "Sistema"
     },
     {
@@ -79,7 +79,7 @@
       "type": "number",
       "category": "Segurança",
       "description": "Tempo de armazenamento do histórico de alterações administrativas",
-      "lastModified": "2026-10-03T21:20:19.965Z",
+      "lastModified": "2026-10-03T23:20:09.229Z",
       "modifiedBy": "Sistema"
     },
     {
@@ -89,7 +89,7 @@
       "type": "boolean",
       "category": "Segurança",
       "description": "Obrigatoriedade de autenticação de dois fatores no painel administrativo",
-      "lastModified": "2026-10-03T21:20:19.965Z",
+      "lastModified": "2026-10-03T23:20:09.229Z",
       "modifiedBy": "Sistema"
     },
     {
@@ -99,7 +99,7 @@
       "type": "number",
       "category": "Operação",
       "description": "Diferença máxima aceita para correspondência automática de extrato",
-      "lastModified": "2026-10-03T21:20:19.965Z",
+      "lastModified": "2026-10-03T23:20:09.229Z",
       "modifiedBy": "Sistema"
     },
     {
@@ -109,7 +109,7 @@
       "type": "boolean",
       "category": "Geral",
       "description": "Bloqueia edições por franqueados mantendo apenas leitura",
-      "lastModified": "2026-10-03T21:20:19.965Z",
+      "lastModified": "2026-10-03T23:20:09.229Z",
       "modifiedBy": "Sistema"
     }
   ],
@@ -120,92 +120,128 @@
   "users": [
     {
       "id": "u1",
-      "nome": "Leo Missio (Administrador)",
+      "nome": "Administrador",
       "email": "leomissio72@gmail.com",
       "login": "admin",
       "perfil": "dono",
       "unidade": "dono",
       "status": "ativo",
-      "last": "21:37",
+      "last": "23:21",
       "employeeId": "e1"
     }
   ],
-  "credentials": {
-    "u1": {
-      "passwordHash": "scrypt$e62dd832c1f9557f7d5a131be0c6f653$0af40c131094e9cd4479d7aa5f5cd5d34beb523c73c3bb27e6e19a6690ab62ce6ab48e33059f848cb86005362f334d33592b3a38e34ac1cf309e4bbac2212777",
-      "version": 2,
-      "createdAt": "2026-10-03T21:41:05.957Z",
-      "updatedAt": "2026-10-03T21:41:06.008Z",
-      "mustReset": false
-    }
-  },
   "manualEntries": [],
   "dreParams": {},
   "paymentMethods": [
     {
       "id": "dinheiro",
-      "name": "Dinheiro em Espécie",
-      "taxa": 0,
-      "prazo": "D+0",
-      "icon": "Banknote",
-      "active": true
+      "name": "Dinheiro",
+      "icon": "💵",
+      "fee": 0,
+      "prazoDias": 0,
+      "cutoffHour": 23,
+      "parcelas": false,
+      "bandeira": null
     },
     {
       "id": "pix",
-      "name": "PIX Estático / Dinâmico",
-      "taxa": 0.99,
-      "prazo": "D+0",
-      "icon": "QrCode",
-      "active": true
+      "name": "PIX",
+      "icon": "⚡",
+      "fee": 0.005,
+      "prazoDias": 0,
+      "cutoffHour": 23,
+      "parcelas": false,
+      "bandeira": null
     },
     {
       "id": "debito",
       "name": "Cartão de Débito",
-      "taxa": 1.45,
-      "prazo": "D+1",
-      "icon": "CreditCard",
-      "active": true
+      "icon": "💳",
+      "fee": 0.012,
+      "prazoDias": 1,
+      "cutoffHour": 18,
+      "parcelas": false,
+      "bandeira": "Visa/Master"
     },
     {
-      "id": "credito_vista",
-      "name": "Cartão de Crédito (À Vista)",
-      "taxa": 2.89,
-      "prazo": "D+30",
-      "icon": "CreditCard",
-      "active": true
+      "id": "credito",
+      "name": "Cartão de Crédito",
+      "icon": "💳",
+      "fee": 0.03,
+      "prazoDias": 30,
+      "cutoffHour": 18,
+      "parcelas": true,
+      "bandeira": "Visa/Master"
     },
     {
-      "id": "credito_parc",
-      "name": "Cartão de Crédito (Parcelado)",
-      "taxa": 3.49,
-      "prazo": "D+30",
-      "icon": "CreditCard",
-      "active": true
+      "id": "credito2",
+      "name": "Crédito 2-6x",
+      "icon": "🪙",
+      "fee": 0.038,
+      "prazoDias": 30,
+      "cutoffHour": 18,
+      "parcelas": true,
+      "bandeira": "Visa/Master"
+    },
+    {
+      "id": "credito12",
+      "name": "Crédito 7-12x",
+      "icon": "🪙",
+      "fee": 0.045,
+      "prazoDias": 30,
+      "cutoffHour": 18,
+      "parcelas": true,
+      "bandeira": "Visa/Master"
+    },
+    {
+      "id": "boleto",
+      "name": "Boleto Bancário",
+      "icon": "📄",
+      "fee": 0.015,
+      "prazoDias": 2,
+      "cutoffHour": 14,
+      "parcelas": false,
+      "bandeira": null
     },
     {
       "id": "voucher",
-      "name": "Vale Refeição / Alimentação",
-      "taxa": 5.2,
-      "prazo": "D+30",
-      "icon": "Wallet",
-      "active": true
-    },
-    {
-      "id": "transferencia",
-      "name": "Transferência / TED / DOC",
-      "taxa": 0,
-      "prazo": "D+0",
-      "icon": "ArrowLeftRight",
-      "active": true
+      "name": "Vale / Voucher",
+      "icon": "🎟️",
+      "fee": 0.035,
+      "prazoDias": 15,
+      "cutoffHour": 18,
+      "parcelas": false,
+      "bandeira": "Alelo/VR"
     }
   ],
-  "businessRules": {},
+  "businessRules": {
+    "maxDiscount": 10,
+    "minTicket": 20,
+    "advance": false
+  },
   "royalties": {},
   "permissions": {},
   "vtConfigs": {},
   "systemSettings": {
     "appName": "Gestão de Franquias",
-    "companyName": "Gestão de Franquias",
-    "cnpjMatriz": ""
-  }
+    "companyName": "Gestão de Franquias S.A.",
+    "cnpjMatriz": "12.345.678/0001-90"
+  },
+  "credentials": {
+    "u1": {
+      "passwordHash": "scrypt$129eb43af43041006856d75cf9367cbb$406154b8705e4fb75c3e0a94dafc91f2217f8c1a64212dbdc15aa880d605218fc6c072474992c70741311f60794dc9ead9ed364bd40ad19cde92f8b6124d945a",
+      "version": 2,
+      "createdAt": "2026-10-03T23:21:23.156Z",
+      "updatedAt": "2026-10-03T23:21:23.202Z",
+      "mustReset": false
+    }
+  },
+  "mfaSecrets": {},
+  "whatsappConfig": {
+    "senderPhone": "+55 (11) 98888-0000",
+    "connectionStatus": "conectado",
+    "minInterval": 3,
+    "maxInterval": 8
+  },
+  "whatsappHistory": []
 }

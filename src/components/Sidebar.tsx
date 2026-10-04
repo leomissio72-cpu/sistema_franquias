@@ -28,7 +28,8 @@ import {
   PackageCheck,
   Building2,
   MapPin,
-  SlidersHorizontal
+  SlidersHorizontal,
+  MessageSquare
 } from "lucide-react";
 
 interface SidebarProps {
@@ -80,7 +81,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const canAccessScreen = (screen: ScreenType): boolean => {
     // Unidades franqueadas têm acesso estritamente a Início, Analítico, Lançamentos e Taxas (consulta)
     if (isFranchisee) {
-      return ["home", "dashboard", "fees", "pagamentos_despesas", "lancamentos", "import_base", "produtos", "employees", "users"].includes(screen);
+      return ["home", "dashboard", "fees", "pagamentos_despesas", "lancamentos", "import_base", "produtos", "employees", "users", "whatsapp"].includes(screen);
     }
     if (screen === "home") return true;
     if (userProfile === "dono" || userProfile === "equipe") return true;
@@ -147,13 +148,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
         { id: "fees", label: "Taxas e Recebimentos", icon: <Percent className="h-4 w-4" /> },
       ];
 
-  // 3. Gestão & Sistema (Relatórios de gestão removidos conforme solicitado)
+  // 3. Gestão & Sistema
   const managementNav: NavItem[] = isFranchisee
     ? [
+        { id: "whatsapp", label: "Disparo WhatsApp", icon: <MessageSquare className="h-4 w-4 text-emerald-500" /> },
         { id: "employees", label: "Funcionários", icon: <Users className="h-4 w-4" /> },
         { id: "users", label: "Acessos e Logins", icon: <KeyRound className="h-4 w-4" /> },
       ]
     : [
+        { id: "whatsapp", label: "Disparo WhatsApp", icon: <MessageSquare className="h-4 w-4 text-emerald-500" /> },
         { id: "configuracao", label: "Configurações", icon: <Settings className="h-4 w-4" /> },
         { id: "employees", label: "Funcionários", icon: <Users className="h-4 w-4" /> },
         { id: "users", label: "Acessos e Logins", icon: <KeyRound className="h-4 w-4" /> },
@@ -338,8 +341,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 onChange={(e) => onSelectTenant(e.target.value)}
                 className="w-full rounded-lg bg-white border border-[#cbd5e1] px-2.5 py-1.5 text-xs font-semibold text-[#0f172a] focus:outline-none focus:border-[#2563eb] cursor-pointer truncate"
               >
-                {isOwner && currentBusinessId === "all" && (
-                  <option value="dono">Todas as unidades</option>
+                {isOwner && (
+                  <option value="dono">Todas as unidades (Consolidado)</option>
                 )}
                 {businesses
                   .filter((b) => currentBusinessId === "all" || b.id === currentBusinessId)

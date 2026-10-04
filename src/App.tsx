@@ -36,6 +36,7 @@ import {
   resetDatabase,
   syncStateSection,
   logoutAPI,
+  setAuthToken,
 } from "./api";
 import { Header } from "./components/Header";
 import { Sidebar } from "./components/Sidebar";
@@ -57,6 +58,7 @@ import { PermissoesScreen } from "./components/screens/PermissoesScreen";
 import { TenantsScreen } from "./components/screens/TenantsScreen";
 import { EmployeesScreen } from "./components/screens/EmployeesScreen";
 import { UsersScreen } from "./components/screens/UsersScreen";
+import { WhatsAppScreen } from "./components/screens/WhatsAppScreen";
 import { SettingsScreen } from "./components/screens/SettingsScreen";
 import { ProdutosHomologadosScreen } from "./components/screens/ProdutosHomologadosScreen";
 import { PagamentosDespesasScreen, PagamentoSubTab } from "./components/screens/PagamentosDespesasScreen";
@@ -101,9 +103,30 @@ export const App: React.FC = () => {
   // User & Tenant State
   const [currentBusinessId, setCurrentBusinessId] = useState<string>("all");
   const [currentTenantId, setCurrentTenantId] = useState<string>("dono");
-  // Sessão deliberadamente não persistida: cada abertura exige login novamente.
-  const [userSession, setUserSession] = useState<UserSession | null>(null);
-  const [isLoginOpen, setIsLoginOpen] = useState(true);
+  const [userSession, setUserSession] = useState<UserSession | null>(() => {
+    try {
+      const stored = sessionStorage.getItem("gestao_user_session") || localStorage.getItem("gestao_user_session");
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (parsed && (!parsed.expiresAt || parsed.expiresAt > Date.now())) {
+          return parsed;
+        }
+      }
+    } catch {}
+    return null;
+  });
+  const [isLoginOpen, setIsLoginOpen] = useState(() => {
+    try {
+      const stored = sessionStorage.getItem("gestao_user_session") || localStorage.getItem("gestao_user_session");
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (parsed && (!parsed.expiresAt || parsed.expiresAt > Date.now())) {
+          return false;
+        }
+      }
+    } catch {}
+    return true;
+  });
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(() => localStorage.getItem("franquias-theme") === "dark");
@@ -243,7 +266,8 @@ export const App: React.FC = () => {
     setIsSavingConfig(true);
     setServerState((prev) => (prev ? { ...prev, franchises: newFranchises } : prev));
     try {
-      const updatedState = await saveFranchises(newFranchises, userSession?.name || "Admin");
+      const actor = { profile: userSession?.profile || "dono", tenant: userSession?.tenant || "dono", login: userSession?.login || "admin" };
+      const updatedState = await syncStateSection("franchises", newFranchises, userSession?.name || "Admin", actor);
       setServerState(updatedState);
       const logsRes = await fetchAuditLogs();
       if (logsRes.auditLogs) setAuditLogs(logsRes.auditLogs);
@@ -258,7 +282,8 @@ export const App: React.FC = () => {
     setIsSavingConfig(true);
     setServerState((prev) => (prev ? { ...prev, businesses: newBusinesses } : prev));
     try {
-      const updatedState = await saveBusinesses(newBusinesses, userSession?.name || "Admin");
+      const actor = { profile: userSession?.profile || "dono", tenant: userSession?.tenant || "dono", login: userSession?.login || "admin" };
+      const updatedState = await syncStateSection("businesses", newBusinesses, userSession?.name || "Admin", actor);
       setServerState(updatedState);
       const logsRes = await fetchAuditLogs();
       if (logsRes.auditLogs) setAuditLogs(logsRes.auditLogs);
@@ -364,7 +389,7 @@ export const App: React.FC = () => {
   // Unidades franqueadas têm acesso SOMENTE a lançamentos e relatórios (+ início)
   useEffect(() => {
     if (isFranchisee) {
-      const allowedScreens: ScreenType[] = ["home", "dashboard", "fees", "pagamentos_despesas", "lancamentos", "import_base", "produtos", "employees", "users"];
+      const allowedScreens: ScreenType[] = ["home", "dashboard", "fees", "pagamentos_despesas", "lancamentos", "import_base", "produtos", "employees", "users", "whatsapp"];
       if (!allowedScreens.includes(currentScreen)) {
         setCurrentScreen("home");
       }
@@ -372,7 +397,19 @@ export const App: React.FC = () => {
   }, [isFranchisee, currentScreen]);
 
   const handleLoginSuccess = (session: UserSession) => {
-    setUserSession({ ...session, expiresAt: session.expiresAt || Date.now() + 8 * 60 * 60 * 1000 });
+    const fullSession = { ...session, expiresAt: session.expiresAt || Date.now() + 8 * 60 * 60 * 1000 };
+    setUserSession(fullSession);
+    if ((session as any).token) {
+      setAuthToken((session as any).token);
+    }
+    try {
+      sessionStorage.setItem("gestao_user_session", JSON.stringify(fullSession));
+      localStorage.setItem("gestao_user_session", JSON.stringify(fullSession));
+      if ((session as any).token) {
+        sessionStorage.setItem("gestao_auth_token", (session as any).token);
+        localStorage.setItem("gestao_auth_token", (session as any).token);
+      }
+    } catch {}
     setIsLoginOpen(false);
     if (session.profile === "franqueado" || session.profile === "operador") {
       setCurrentTenantId(session.tenant);
@@ -385,6 +422,10 @@ export const App: React.FC = () => {
   const handleLogout = () => {
     void logoutAPI().catch(() => undefined);
     try {
+      sessionStorage.removeItem("gestao_user_session");
+      localStorage.removeItem("gestao_user_session");
+      sessionStorage.removeItem("gestao_auth_token");
+      localStorage.removeItem("gestao_auth_token");
       localStorage.removeItem("sofiacfo_user_session");
     } catch (e) {}
     setUserSession(null);
@@ -712,6 +753,10 @@ export const App: React.FC = () => {
               onSaveUsers={(users) => handleSaveUsers(users)}
               onNavigate={setCurrentScreen}
             />
+          )}
+
+          {currentScreen === "whatsapp" && (
+            <WhatsAppScreen onNavigate={setCurrentScreen} />
           )}
         </main>
       </div>
