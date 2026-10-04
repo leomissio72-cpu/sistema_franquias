@@ -1,7 +1,8 @@
-import express, { Request, Response } from "express";
+import express, { Request, Response as ExpressResponse } from "express";
 import path from "path";
 import fs from "fs";
 import crypto from "crypto";
+import { get, put } from "@vercel/blob";
 import { cookieOptions, createSignedSessionToken, getCredential, hashPassword, migrateLegacyCredentials, safeUser, setCredential, stripSensitiveFields, verifyPassword, verifySignedSessionToken } from "./serverSecurity";
 
 const app = express();
@@ -22,7 +23,7 @@ app.use((req, res, next) => {
 function parseCookies(req: Request) {
   return Object.fromEntries((req.header("cookie") || "").split(";").filter(Boolean).map((part) => { const [key, ...value] = part.trim().split("="); return [key, decodeURIComponent(value.join("="))]; }));
 }
-function requireSession(req: Request, res: Response, next: any) {
+function requireSession(req: Request, res: ExpressResponse, next: any) {
   const cookieToken = parseCookies(req).gestao_session;
   const authHeader = req.header("authorization") || req.header("x-session-token");
   const bearerToken = authHeader?.startsWith("Bearer ") ? authHeader.slice(7).trim() : authHeader;
@@ -54,6 +55,11 @@ function requireSession(req: Request, res: Response, next: any) {
   next();
 }
 
+app.use(async (req, res, next) => {
+  await hydrateDatabaseFromBlob();
+  next();
+});
+
 app.use((req, res, next) => {
   const openPath = [
     "/api/health", "/health",
@@ -76,6 +82,44 @@ app.use((req, res, next) => {
 // Serverless / Read-only filesystem auto-detection and setup
 const isServerless = process.env.VERCEL === "1" || process.env.NODE_ENV === "production";
 const DB_FILE = isServerless ? path.join("/tmp", "database.json") : path.join(process.cwd(), "data", "database.json");
+const BLOB_STATE_PATH = process.env.FRANQUIAS_BLOB_PATH || "database/gestao-franquias-state.json";
+const HAS_DURABLE_BLOB = Boolean(process.env.BLOB_READ_WRITE_TOKEN);
+let durableHydrationPromise: Promise<void> | null = null;
+let durableWritePromise: Promise<void> = Promise.resolve();
+
+async function hydrateDatabaseFromBlob() {
+  if (!HAS_DURABLE_BLOB) return;
+  if (durableHydrationPromise) return durableHydrationPromise;
+  durableHydrationPromise = (async () => {
+    try {
+      const result = await get(BLOB_STATE_PATH, { access: "private", useCache: false });
+      if (!result || result.statusCode !== 200 || !result.stream) return;
+      const raw = await new Response(result.stream).text();
+      const parsed = JSON.parse(raw);
+      if (parsed && Array.isArray(parsed.configs)) {
+        db = parsed as DatabaseState;
+        db = migrateLegacyCredentials(db).database as DatabaseState;
+      }
+    } catch (error) {
+      // Blob inexistente no primeiro uso é tratado como estado inicial.
+      console.error("Falha ao hidratar o estado durável do Blob", error);
+    }
+  })();
+  return durableHydrationPromise;
+}
+
+async function persistDatabaseToBlob(data: DatabaseState) {
+  if (!HAS_DURABLE_BLOB) return;
+  durableWritePromise = durableWritePromise.then(async () => {
+    await put(BLOB_STATE_PATH, JSON.stringify(data), {
+      access: "private",
+      addRandomSuffix: false,
+      contentType: "application/json",
+      cacheControlMaxAge: 0,
+    });
+  });
+  return durableWritePromise;
+}
 
 
 // Initial default configuration items with metadata
@@ -324,21 +368,18 @@ function loadDatabase(): DatabaseState {
   return initialDB;
 }
 
-function saveDatabase(data: DatabaseState) {
+async function saveDatabase(data: DatabaseState) {
+  data.lastUpdated = new Date().toISOString();
   try {
-    data.lastUpdated = new Date().toISOString();
-    try {
-      const localBackup = path.join(process.cwd(), "data", "database.json");
-      const dir = path.dirname(localBackup);
-      if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-      fs.writeFileSync(localBackup, JSON.stringify(data, null, 2), "utf-8");
-    } catch (e) {}
-    try {
-      fs.writeFileSync(path.join("/tmp", "database.json"), JSON.stringify(data, null, 2), "utf-8");
-    } catch (e) {}
+    const localBackup = path.join(process.cwd(), "data", "database.json");
+    const dir = path.dirname(localBackup);
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    fs.writeFileSync(localBackup, JSON.stringify(data, null, 2), "utf-8");
+    fs.writeFileSync(path.join("/tmp", "database.json"), JSON.stringify(data, null, 2), "utf-8");
   } catch (err) {
-    console.error("Erro ao salvar banco de dados:", err);
+    console.error("Erro ao salvar cache local do banco de dados:", err);
   }
+  await persistDatabaseToBlob(data);
 }
 
 function getFullState(database: DatabaseState) {
@@ -400,9 +441,8 @@ db.credentials[masterUser.id] = {
   updatedAt: new Date().toISOString(),
   mustReset: false,
 };
-saveDatabase(db);
 
-type SSEClient = { id: string; res: Response };
+type SSEClient = { id: string; res: ExpressResponse };
 let sseClients: SSEClient[] = [];
 
 function broadcastUpdate(eventType: string, payload: any) {
@@ -422,7 +462,7 @@ function routeBoth(method: "get" | "post" | "put" | "delete", pathName: string, 
 }
 
 // 1. Health check
-routeBoth("get", "/api/health", (req: Request, res: Response) => {
+routeBoth("get", "/api/health", (req: Request, res: ExpressResponse) => {
   res.json({
     status: "ok",
     cloud: "connected",
@@ -434,12 +474,12 @@ routeBoth("get", "/api/health", (req: Request, res: Response) => {
 });
 
 // 2. SSE Events (Disabled and converted to polling for serverless stability)
-routeBoth("get", "/api/events", (req: Request, res: Response) => {
+routeBoth("get", "/api/events", (req: Request, res: ExpressResponse) => {
   res.json({ sse: false, message: "SSE is disabled in serverless mode. Please use polling." });
 });
 
 // 3. Auth
-routeBoth("post", "/api/auth/login", (req: Request, res: Response) => {
+routeBoth("post", "/api/auth/login", async (req: Request, res: ExpressResponse) => {
   const { username, password } = req.body || {};
   const cleanUsername = String(username || "").trim().toLowerCase();
   const cleanPassword = String(password || "").trim();
@@ -501,7 +541,7 @@ routeBoth("post", "/api/auth/login", (req: Request, res: Response) => {
 
   user.status = "ativo";
   user.last = new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
-  saveDatabase(db);
+  await saveDatabase(db);
 
   const token = createSignedSessionToken(user.id, credential?.version || 1, true);
   const expiresAt = Date.now() + SESSION_TTL_MS;
@@ -513,7 +553,7 @@ routeBoth("post", "/api/auth/login", (req: Request, res: Response) => {
   });
 });
 
-routeBoth("post", "/api/auth/mfa", (req: Request, res: Response) => {
+routeBoth("post", "/api/auth/mfa", (req: Request, res: ExpressResponse) => {
   const user = db.users.find((u: any) => u.perfil === "dono") || db.users[0];
   const token = createSignedSessionToken(user.id, 1, true);
   const expiresAt = Date.now() + SESSION_TTL_MS;
@@ -525,7 +565,7 @@ routeBoth("post", "/api/auth/mfa", (req: Request, res: Response) => {
   });
 });
 
-routeBoth("get", "/api/auth/bootstrap", (req: Request, res: Response) => {
+routeBoth("get", "/api/auth/bootstrap", (req: Request, res: ExpressResponse) => {
   res.json({
     status: "ok",
     ready: true,
@@ -533,13 +573,13 @@ routeBoth("get", "/api/auth/bootstrap", (req: Request, res: Response) => {
   });
 });
 
-routeBoth("post", "/api/auth/logout", (req: Request, res: Response) => {
+routeBoth("post", "/api/auth/logout", (req: Request, res: ExpressResponse) => {
   res.setHeader("Set-Cookie", "gestao_session=; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=0");
   res.json({ success: true });
 });
 
 // 4. Configs
-routeBoth("get", "/api/config", (req: Request, res: Response) => {
+routeBoth("get", "/api/config", (req: Request, res: ExpressResponse) => {
   res.json({
     configs: db.configs,
     lastUpdated: db.lastUpdated,
@@ -547,7 +587,7 @@ routeBoth("get", "/api/config", (req: Request, res: Response) => {
   });
 });
 
-function requireAdminRole(req: Request, res: Response, next: any) {
+function requireAdminRole(req: Request, res: ExpressResponse, next: any) {
   const profile = (req as any).auth?.user?.perfil || (req.headers["x-user-profile"] as string) || req.body?.userProfile;
   if (profile === "franqueado" || profile === "operador") {
     return res.status(403).json({
@@ -557,7 +597,7 @@ function requireAdminRole(req: Request, res: Response, next: any) {
   next();
 }
 
-routeBoth("put", "/api/config/:key", requireSession, requireAdminRole, (req: Request, res: Response) => {
+routeBoth("put", "/api/config/:key", requireSession, requireAdminRole, async (req: Request, res: ExpressResponse) => {
   const { key } = req.params;
   const { value, modifiedBy } = req.body;
 
@@ -588,7 +628,7 @@ routeBoth("put", "/api/config/:key", requireSession, requireAdminRole, (req: Req
   db.auditLogs.unshift(auditEntry);
   if (db.auditLogs.length > 200) db.auditLogs = db.auditLogs.slice(0, 200);
 
-  saveDatabase(db);
+  await saveDatabase(db);
 
   broadcastUpdate("config_updated", {
     key,
@@ -605,7 +645,7 @@ routeBoth("put", "/api/config/:key", requireSession, requireAdminRole, (req: Req
   });
 });
 
-routeBoth("post", "/api/config/bulk", requireSession, requireAdminRole, (req: Request, res: Response) => {
+routeBoth("post", "/api/config/bulk", requireSession, requireAdminRole, async (req: Request, res: ExpressResponse) => {
   const { updates, modifiedBy } = req.body || {};
   if (!Array.isArray(updates)) {
     return res.status(400).json({ error: "Lista de atualizações inválida." });
@@ -634,7 +674,7 @@ routeBoth("post", "/api/config/bulk", requireSession, requireAdminRole, (req: Re
     }
   });
 
-  saveDatabase(db);
+  await saveDatabase(db);
 
   broadcastUpdate("bulk_config_updated", {
     configs: db.configs,
@@ -645,16 +685,16 @@ routeBoth("post", "/api/config/bulk", requireSession, requireAdminRole, (req: Re
   res.json({ success: true, configs: db.configs, lastUpdated: db.lastUpdated });
 });
 
-routeBoth("get", "/api/config/audit", (req: Request, res: Response) => {
+routeBoth("get", "/api/config/audit", (req: Request, res: ExpressResponse) => {
   res.json({ auditLogs: db.auditLogs.slice(0, 50) });
 });
 
 // 5. Central State
-routeBoth("get", "/api/state", (req: Request, res: Response) => {
+routeBoth("get", "/api/state", (req: Request, res: ExpressResponse) => {
   res.json(getFullState(db));
 });
 
-routeBoth("post", "/api/state/sync", requireSession, (req: Request, res: Response) => {
+routeBoth("post", "/api/state/sync", requireSession, async (req: Request, res: ExpressResponse) => {
   const { section, data: incomingData, batch, user, userProfile, userTenant, credential } = req.body || {};
   const authenticatedUser = (req as any).auth?.user;
   const effectiveProfile = authenticatedUser?.perfil || userProfile;
@@ -676,7 +716,7 @@ routeBoth("post", "/api/state/sync", requireSession, (req: Request, res: Respons
       newValue: `Updated ${Object.keys(batch).join(", ")}`,
       user: userName,
     });
-    saveDatabase(db);
+    await saveDatabase(db);
     return res.json({ success: true, batch: Object.keys(batch), lastUpdated: db.lastUpdated, state: getFullState(db) });
   }
 
@@ -714,7 +754,7 @@ routeBoth("post", "/api/state/sync", requireSession, (req: Request, res: Respons
       newValue: `Updated ${section}`,
       user: userName,
     });
-    saveDatabase(db);
+    await saveDatabase(db);
 
     broadcastUpdate("state_synced", {
       section,
@@ -730,7 +770,7 @@ routeBoth("post", "/api/state/sync", requireSession, (req: Request, res: Respons
 });
 
 // 6. Manual Entries
-routeBoth("post", "/api/entries", requireSession, (req: Request, res: Response) => {
+routeBoth("post", "/api/entries", requireSession, async (req: Request, res: ExpressResponse) => {
   const newEntry = req.body;
   if (!newEntry.desc || !newEntry.value || !newEntry.date) {
     return res.status(400).json({ error: "Dados incompletos do lançamento." });
@@ -743,13 +783,13 @@ routeBoth("post", "/api/entries", requireSession, (req: Request, res: Response) 
   };
 
   db.manualEntries.unshift(entry);
-  saveDatabase(db);
+  await saveDatabase(db);
 
   broadcastUpdate("entry_created", { entry, lastUpdated: db.lastUpdated });
   res.json({ success: true, entry });
 });
 
-routeBoth("post", "/api/entries/bulk", requireSession, (req: Request, res: Response) => {
+routeBoth("post", "/api/entries/bulk", requireSession, async (req: Request, res: ExpressResponse) => {
   const { entries } = req.body || {};
   if (!Array.isArray(entries) || entries.length === 0) {
     return res.status(400).json({ error: "Lista de lançamentos vazia ou inválida." });
@@ -770,23 +810,23 @@ routeBoth("post", "/api/entries/bulk", requireSession, (req: Request, res: Respo
     }
   });
 
-  saveDatabase(db);
+  await saveDatabase(db);
 
   broadcastUpdate("entries_bulk_created", { entries: createdEntries, lastUpdated: db.lastUpdated });
   res.json({ success: true, count: createdEntries.length, entries: createdEntries });
 });
 
-routeBoth("delete", "/api/entries/:id", requireSession, (req: Request, res: Response) => {
+routeBoth("delete", "/api/entries/:id", requireSession, async (req: Request, res: ExpressResponse) => {
   const { id } = req.params;
   db.manualEntries = db.manualEntries.filter((e) => e.id !== id);
-  saveDatabase(db);
+  await saveDatabase(db);
 
   broadcastUpdate("entry_deleted", { id, lastUpdated: db.lastUpdated });
   res.json({ success: true, id });
 });
 
 // 7. WhatsApp Messaging Dispatch Module
-routeBoth("get", "/api/whatsapp/config", (req: Request, res: Response) => {
+routeBoth("get", "/api/whatsapp/config", (req: Request, res: ExpressResponse) => {
   res.json(db.whatsappConfig || {
     senderPhone: "+55 (11) 98888-0000",
     connectionStatus: "conectado",
@@ -795,7 +835,7 @@ routeBoth("get", "/api/whatsapp/config", (req: Request, res: Response) => {
   });
 });
 
-routeBoth("post", "/api/whatsapp/config", (req: Request, res: Response) => {
+routeBoth("post", "/api/whatsapp/config", async (req: Request, res: ExpressResponse) => {
   const updates = req.body || {};
   db.whatsappConfig = {
     ...(db.whatsappConfig || {
@@ -806,24 +846,24 @@ routeBoth("post", "/api/whatsapp/config", (req: Request, res: Response) => {
     }),
     ...updates,
   };
-  saveDatabase(db);
+  await saveDatabase(db);
   res.json({ success: true, config: db.whatsappConfig });
 });
 
-routeBoth("get", "/api/whatsapp/history", (req: Request, res: Response) => {
+routeBoth("get", "/api/whatsapp/history", (req: Request, res: ExpressResponse) => {
   res.json({ history: db.whatsappHistory || [] });
 });
 
-routeBoth("post", "/api/whatsapp/history", (req: Request, res: Response) => {
+routeBoth("post", "/api/whatsapp/history", async (req: Request, res: ExpressResponse) => {
   const { history } = req.body || {};
   if (Array.isArray(history)) {
     db.whatsappHistory = history;
-    saveDatabase(db);
+    await saveDatabase(db);
   }
   res.json({ success: true, count: (db.whatsappHistory || []).length });
 });
 
-routeBoth("post", "/api/whatsapp/send", (req: Request, res: Response) => {
+routeBoth("post", "/api/whatsapp/send", async (req: Request, res: ExpressResponse) => {
   const { senderPhone, recipientPhone, recipientName, message, company } = req.body || {};
   if (!recipientPhone || !message) {
     return res.status(400).json({ success: false, error: "Destinatário e mensagem são obrigatórios." });
@@ -852,7 +892,7 @@ routeBoth("post", "/api/whatsapp/send", (req: Request, res: Response) => {
     };
     if (!db.whatsappHistory) db.whatsappHistory = [];
     db.whatsappHistory.unshift(errorHistoryItem);
-    saveDatabase(db);
+    await saveDatabase(db);
     return res.status(200).json({ success: false, status: "erro", errorReason: "Número inválido" });
   }
 
@@ -872,7 +912,7 @@ routeBoth("post", "/api/whatsapp/send", (req: Request, res: Response) => {
   if (!db.whatsappHistory) db.whatsappHistory = [];
   db.whatsappHistory.unshift(historyItem);
   if (db.whatsappHistory.length > 500) db.whatsappHistory = db.whatsappHistory.slice(0, 500);
-  saveDatabase(db);
+  await saveDatabase(db);
 
   res.json({ success: true, status: "enviado", id: historyItem.id });
 });

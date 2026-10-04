@@ -39,6 +39,7 @@ module.exports = __toCommonJS(serverBackend_exports);
 var import_express = __toESM(require("express"), 1);
 var import_path = __toESM(require("path"), 1);
 var import_fs = __toESM(require("fs"), 1);
+var import_blob = require("@vercel/blob");
 
 // src/serverSecurity.ts
 var import_node_crypto = __toESM(require("node:crypto"), 1);
@@ -206,6 +207,10 @@ function requireSession(req, res, next) {
   req.auth = { ...session, user: safeUserData, userId: user?.id || "u1", expiresAt: session?.exp || Date.now() + 8 * 60 * 60 * 1e3 };
   next();
 }
+app.use(async (req, res, next) => {
+  await hydrateDatabaseFromBlob();
+  next();
+});
 app.use((req, res, next) => {
   const openPath = [
     "/api/health",
@@ -238,6 +243,41 @@ app.use((req, res, next) => {
 });
 var isServerless = process.env.VERCEL === "1" || process.env.NODE_ENV === "production";
 var DB_FILE = isServerless ? import_path.default.join("/tmp", "database.json") : import_path.default.join(process.cwd(), "data", "database.json");
+var BLOB_STATE_PATH = process.env.FRANQUIAS_BLOB_PATH || "database/gestao-franquias-state.json";
+var HAS_DURABLE_BLOB = Boolean(process.env.BLOB_READ_WRITE_TOKEN);
+var durableHydrationPromise = null;
+var durableWritePromise = Promise.resolve();
+async function hydrateDatabaseFromBlob() {
+  if (!HAS_DURABLE_BLOB) return;
+  if (durableHydrationPromise) return durableHydrationPromise;
+  durableHydrationPromise = (async () => {
+    try {
+      const result = await (0, import_blob.get)(BLOB_STATE_PATH, { access: "private", useCache: false });
+      if (!result || result.statusCode !== 200 || !result.stream) return;
+      const raw = await new Response(result.stream).text();
+      const parsed = JSON.parse(raw);
+      if (parsed && Array.isArray(parsed.configs)) {
+        db = parsed;
+        db = migrateLegacyCredentials(db).database;
+      }
+    } catch (error) {
+      console.error("Falha ao hidratar o estado dur\xE1vel do Blob", error);
+    }
+  })();
+  return durableHydrationPromise;
+}
+async function persistDatabaseToBlob(data) {
+  if (!HAS_DURABLE_BLOB) return;
+  durableWritePromise = durableWritePromise.then(async () => {
+    await (0, import_blob.put)(BLOB_STATE_PATH, JSON.stringify(data), {
+      access: "private",
+      addRandomSuffix: false,
+      contentType: "application/json",
+      cacheControlMaxAge: 0
+    });
+  });
+  return durableWritePromise;
+}
 var defaultConfigs = [
   {
     key: "app_name",
@@ -450,23 +490,18 @@ function loadDatabase() {
   }
   return initialDB;
 }
-function saveDatabase(data) {
+async function saveDatabase(data) {
+  data.lastUpdated = (/* @__PURE__ */ new Date()).toISOString();
   try {
-    data.lastUpdated = (/* @__PURE__ */ new Date()).toISOString();
-    try {
-      const localBackup = import_path.default.join(process.cwd(), "data", "database.json");
-      const dir = import_path.default.dirname(localBackup);
-      if (!import_fs.default.existsSync(dir)) import_fs.default.mkdirSync(dir, { recursive: true });
-      import_fs.default.writeFileSync(localBackup, JSON.stringify(data, null, 2), "utf-8");
-    } catch (e) {
-    }
-    try {
-      import_fs.default.writeFileSync(import_path.default.join("/tmp", "database.json"), JSON.stringify(data, null, 2), "utf-8");
-    } catch (e) {
-    }
+    const localBackup = import_path.default.join(process.cwd(), "data", "database.json");
+    const dir = import_path.default.dirname(localBackup);
+    if (!import_fs.default.existsSync(dir)) import_fs.default.mkdirSync(dir, { recursive: true });
+    import_fs.default.writeFileSync(localBackup, JSON.stringify(data, null, 2), "utf-8");
+    import_fs.default.writeFileSync(import_path.default.join("/tmp", "database.json"), JSON.stringify(data, null, 2), "utf-8");
   } catch (err) {
-    console.error("Erro ao salvar banco de dados:", err);
+    console.error("Erro ao salvar cache local do banco de dados:", err);
   }
+  await persistDatabaseToBlob(data);
 }
 function getFullState(database) {
   return {
@@ -524,7 +559,6 @@ db.credentials[masterUser.id] = {
   updatedAt: (/* @__PURE__ */ new Date()).toISOString(),
   mustReset: false
 };
-saveDatabase(db);
 var sseClients = [];
 function broadcastUpdate(eventType, payload) {
 }
@@ -549,7 +583,7 @@ routeBoth("get", "/api/health", (req, res) => {
 routeBoth("get", "/api/events", (req, res) => {
   res.json({ sse: false, message: "SSE is disabled in serverless mode. Please use polling." });
 });
-routeBoth("post", "/api/auth/login", (req, res) => {
+routeBoth("post", "/api/auth/login", async (req, res) => {
   const { username, password } = req.body || {};
   const cleanUsername = String(username || "").trim().toLowerCase();
   const cleanPassword = String(password || "").trim();
@@ -588,7 +622,7 @@ routeBoth("post", "/api/auth/login", (req, res) => {
   }
   user.status = "ativo";
   user.last = (/* @__PURE__ */ new Date()).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
-  saveDatabase(db);
+  await saveDatabase(db);
   const token = createSignedSessionToken(user.id, credential?.version || 1, true);
   const expiresAt = Date.now() + SESSION_TTL_MS2;
   res.setHeader("Set-Cookie", `gestao_session=${encodeURIComponent(token)}; ${cookieOptions()}`);
@@ -636,7 +670,7 @@ function requireAdminRole(req, res, next) {
   }
   next();
 }
-routeBoth("put", "/api/config/:key", requireSession, requireAdminRole, (req, res) => {
+routeBoth("put", "/api/config/:key", requireSession, requireAdminRole, async (req, res) => {
   const { key } = req.params;
   const { value, modifiedBy } = req.body;
   const itemIndex = db.configs.findIndex((c) => c.key === key);
@@ -662,7 +696,7 @@ routeBoth("put", "/api/config/:key", requireSession, requireAdminRole, (req, res
   };
   db.auditLogs.unshift(auditEntry);
   if (db.auditLogs.length > 200) db.auditLogs = db.auditLogs.slice(0, 200);
-  saveDatabase(db);
+  await saveDatabase(db);
   broadcastUpdate("config_updated", {
     key,
     value,
@@ -676,7 +710,7 @@ routeBoth("put", "/api/config/:key", requireSession, requireAdminRole, (req, res
     lastUpdated: db.lastUpdated
   });
 });
-routeBoth("post", "/api/config/bulk", requireSession, requireAdminRole, (req, res) => {
+routeBoth("post", "/api/config/bulk", requireSession, requireAdminRole, async (req, res) => {
   const { updates, modifiedBy } = req.body || {};
   if (!Array.isArray(updates)) {
     return res.status(400).json({ error: "Lista de atualiza\xE7\xF5es inv\xE1lida." });
@@ -701,7 +735,7 @@ routeBoth("post", "/api/config/bulk", requireSession, requireAdminRole, (req, re
       });
     }
   });
-  saveDatabase(db);
+  await saveDatabase(db);
   broadcastUpdate("bulk_config_updated", {
     configs: db.configs,
     lastUpdated: db.lastUpdated,
@@ -715,7 +749,7 @@ routeBoth("get", "/api/config/audit", (req, res) => {
 routeBoth("get", "/api/state", (req, res) => {
   res.json(getFullState(db));
 });
-routeBoth("post", "/api/state/sync", requireSession, (req, res) => {
+routeBoth("post", "/api/state/sync", requireSession, async (req, res) => {
   const { section, data: incomingData, batch, user, userProfile, userTenant, credential } = req.body || {};
   const authenticatedUser = req.auth?.user;
   const effectiveProfile = authenticatedUser?.perfil || userProfile;
@@ -736,7 +770,7 @@ routeBoth("post", "/api/state/sync", requireSession, (req, res) => {
       newValue: `Updated ${Object.keys(batch).join(", ")}`,
       user: userName
     });
-    saveDatabase(db);
+    await saveDatabase(db);
     return res.json({ success: true, batch: Object.keys(batch), lastUpdated: db.lastUpdated, state: getFullState(db) });
   }
   let data = incomingData;
@@ -773,7 +807,7 @@ routeBoth("post", "/api/state/sync", requireSession, (req, res) => {
       newValue: `Updated ${section}`,
       user: userName
     });
-    saveDatabase(db);
+    await saveDatabase(db);
     broadcastUpdate("state_synced", {
       section,
       data,
@@ -784,7 +818,7 @@ routeBoth("post", "/api/state/sync", requireSession, (req, res) => {
   }
   res.status(400).json({ error: "Par\xE2metros inv\xE1lidos para sincroniza\xE7\xE3o." });
 });
-routeBoth("post", "/api/entries", requireSession, (req, res) => {
+routeBoth("post", "/api/entries", requireSession, async (req, res) => {
   const newEntry = req.body;
   if (!newEntry.desc || !newEntry.value || !newEntry.date) {
     return res.status(400).json({ error: "Dados incompletos do lan\xE7amento." });
@@ -795,11 +829,11 @@ routeBoth("post", "/api/entries", requireSession, (req, res) => {
     created: (/* @__PURE__ */ new Date()).toISOString()
   };
   db.manualEntries.unshift(entry);
-  saveDatabase(db);
+  await saveDatabase(db);
   broadcastUpdate("entry_created", { entry, lastUpdated: db.lastUpdated });
   res.json({ success: true, entry });
 });
-routeBoth("post", "/api/entries/bulk", requireSession, (req, res) => {
+routeBoth("post", "/api/entries/bulk", requireSession, async (req, res) => {
   const { entries } = req.body || {};
   if (!Array.isArray(entries) || entries.length === 0) {
     return res.status(400).json({ error: "Lista de lan\xE7amentos vazia ou inv\xE1lida." });
@@ -817,14 +851,14 @@ routeBoth("post", "/api/entries/bulk", requireSession, (req, res) => {
       db.manualEntries.unshift(entry);
     }
   });
-  saveDatabase(db);
+  await saveDatabase(db);
   broadcastUpdate("entries_bulk_created", { entries: createdEntries, lastUpdated: db.lastUpdated });
   res.json({ success: true, count: createdEntries.length, entries: createdEntries });
 });
-routeBoth("delete", "/api/entries/:id", requireSession, (req, res) => {
+routeBoth("delete", "/api/entries/:id", requireSession, async (req, res) => {
   const { id } = req.params;
   db.manualEntries = db.manualEntries.filter((e) => e.id !== id);
-  saveDatabase(db);
+  await saveDatabase(db);
   broadcastUpdate("entry_deleted", { id, lastUpdated: db.lastUpdated });
   res.json({ success: true, id });
 });
@@ -836,7 +870,7 @@ routeBoth("get", "/api/whatsapp/config", (req, res) => {
     maxInterval: 8
   });
 });
-routeBoth("post", "/api/whatsapp/config", (req, res) => {
+routeBoth("post", "/api/whatsapp/config", async (req, res) => {
   const updates = req.body || {};
   db.whatsappConfig = {
     ...db.whatsappConfig || {
@@ -847,21 +881,21 @@ routeBoth("post", "/api/whatsapp/config", (req, res) => {
     },
     ...updates
   };
-  saveDatabase(db);
+  await saveDatabase(db);
   res.json({ success: true, config: db.whatsappConfig });
 });
 routeBoth("get", "/api/whatsapp/history", (req, res) => {
   res.json({ history: db.whatsappHistory || [] });
 });
-routeBoth("post", "/api/whatsapp/history", (req, res) => {
+routeBoth("post", "/api/whatsapp/history", async (req, res) => {
   const { history } = req.body || {};
   if (Array.isArray(history)) {
     db.whatsappHistory = history;
-    saveDatabase(db);
+    await saveDatabase(db);
   }
   res.json({ success: true, count: (db.whatsappHistory || []).length });
 });
-routeBoth("post", "/api/whatsapp/send", (req, res) => {
+routeBoth("post", "/api/whatsapp/send", async (req, res) => {
   const { senderPhone, recipientPhone, recipientName, message, company } = req.body || {};
   if (!recipientPhone || !message) {
     return res.status(400).json({ success: false, error: "Destinat\xE1rio e mensagem s\xE3o obrigat\xF3rios." });
@@ -886,7 +920,7 @@ routeBoth("post", "/api/whatsapp/send", (req, res) => {
     };
     if (!db.whatsappHistory) db.whatsappHistory = [];
     db.whatsappHistory.unshift(errorHistoryItem);
-    saveDatabase(db);
+    await saveDatabase(db);
     return res.status(200).json({ success: false, status: "erro", errorReason: "N\xFAmero inv\xE1lido" });
   }
   const historyItem = {
@@ -903,7 +937,7 @@ routeBoth("post", "/api/whatsapp/send", (req, res) => {
   if (!db.whatsappHistory) db.whatsappHistory = [];
   db.whatsappHistory.unshift(historyItem);
   if (db.whatsappHistory.length > 500) db.whatsappHistory = db.whatsappHistory.slice(0, 500);
-  saveDatabase(db);
+  await saveDatabase(db);
   res.json({ success: true, status: "enviado", id: historyItem.id });
 });
 app.use((req, res, next) => {
