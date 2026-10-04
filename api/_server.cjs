@@ -368,18 +368,10 @@ var defaultBusinessRules = {
   advance: false
 };
 function loadDatabase() {
-  try {
-    if (import_fs.default.existsSync(DB_FILE)) {
-      const content = import_fs.default.readFileSync(DB_FILE, "utf-8");
-      const parsed = JSON.parse(content);
-      if (parsed && Array.isArray(parsed.configs)) {
-        return parsed;
-      }
-    }
-  } catch (err) {
-  }
+  let loadedState = null;
   const seedPaths = [
     import_path.default.join(process.cwd(), "data", "database.json"),
+    import_path.default.join("/tmp", "database.json"),
     import_path.default.join(process.cwd(), "src", "data", "database.json"),
     import_path.default.join(process.cwd(), "..", "data", "database.json")
   ];
@@ -389,17 +381,35 @@ function loadDatabase() {
         const content = import_fs.default.readFileSync(seedPath, "utf-8");
         const parsed = JSON.parse(content);
         if (parsed && Array.isArray(parsed.configs)) {
-          if (isServerless) {
-            try {
-              import_fs.default.writeFileSync(DB_FILE, JSON.stringify(parsed, null, 2), "utf-8");
-            } catch (e) {
+          if (!loadedState) {
+            loadedState = parsed;
+          } else {
+            const curDataPoints = (loadedState.franchises?.length || 0) + (loadedState.businesses?.length || 0) + (loadedState.employees?.length || 0);
+            const candDataPoints = (parsed.franchises?.length || 0) + (parsed.businesses?.length || 0) + (parsed.employees?.length || 0);
+            const curTime = new Date(loadedState.lastUpdated || 0).getTime();
+            const candTime = new Date(parsed.lastUpdated || 0).getTime();
+            if (candDataPoints > curDataPoints || candDataPoints === curDataPoints && candTime > curTime) {
+              loadedState = parsed;
             }
           }
-          return parsed;
         }
       }
     } catch (e) {
     }
+  }
+  if (loadedState) {
+    try {
+      const localBackup = import_path.default.join(process.cwd(), "data", "database.json");
+      const dir = import_path.default.dirname(localBackup);
+      if (!import_fs.default.existsSync(dir)) import_fs.default.mkdirSync(dir, { recursive: true });
+      import_fs.default.writeFileSync(localBackup, JSON.stringify(loadedState, null, 2), "utf-8");
+    } catch (e) {
+    }
+    try {
+      import_fs.default.writeFileSync(import_path.default.join("/tmp", "database.json"), JSON.stringify(loadedState, null, 2), "utf-8");
+    } catch (e) {
+    }
+    return loadedState;
   }
   const initialDB = {
     version: 1,
@@ -428,7 +438,14 @@ function loadDatabase() {
     whatsappHistory: []
   };
   try {
-    import_fs.default.writeFileSync(DB_FILE, JSON.stringify(initialDB, null, 2), "utf-8");
+    const localBackup = import_path.default.join(process.cwd(), "data", "database.json");
+    const dir = import_path.default.dirname(localBackup);
+    if (!import_fs.default.existsSync(dir)) import_fs.default.mkdirSync(dir, { recursive: true });
+    import_fs.default.writeFileSync(localBackup, JSON.stringify(initialDB, null, 2), "utf-8");
+  } catch (err) {
+  }
+  try {
+    import_fs.default.writeFileSync(import_path.default.join("/tmp", "database.json"), JSON.stringify(initialDB, null, 2), "utf-8");
   } catch (err) {
   }
   return initialDB;
@@ -436,17 +453,49 @@ function loadDatabase() {
 function saveDatabase(data) {
   try {
     data.lastUpdated = (/* @__PURE__ */ new Date()).toISOString();
-    import_fs.default.writeFileSync(DB_FILE, JSON.stringify(data, null, 2), "utf-8");
-    const localBackup = import_path.default.join(process.cwd(), "data", "database.json");
-    if (DB_FILE !== localBackup) {
-      try {
-        import_fs.default.writeFileSync(localBackup, JSON.stringify(data, null, 2), "utf-8");
-      } catch (e) {
-      }
+    try {
+      const localBackup = import_path.default.join(process.cwd(), "data", "database.json");
+      const dir = import_path.default.dirname(localBackup);
+      if (!import_fs.default.existsSync(dir)) import_fs.default.mkdirSync(dir, { recursive: true });
+      import_fs.default.writeFileSync(localBackup, JSON.stringify(data, null, 2), "utf-8");
+    } catch (e) {
+    }
+    try {
+      import_fs.default.writeFileSync(import_path.default.join("/tmp", "database.json"), JSON.stringify(data, null, 2), "utf-8");
+    } catch (e) {
     }
   } catch (err) {
     console.error("Erro ao salvar banco de dados:", err);
   }
+}
+function getFullState(database) {
+  return {
+    businesses: database.businesses || [],
+    franchises: database.franchises || [],
+    employees: database.employees || [],
+    users: (database.users || []).map((user) => safeUser(user)),
+    manualEntries: database.manualEntries || [],
+    configs: database.configs || [],
+    dreParams: database.dreParams || {},
+    paymentMethods: database.paymentMethods || [],
+    businessRules: database.businessRules || {},
+    royalties: database.royalties || {},
+    permissions: database.permissions || {},
+    vtConfigs: database.vtConfigs || {},
+    whatsappConfig: database.whatsappConfig || {
+      senderPhone: "+55 (11) 98888-0000",
+      connectionStatus: "conectado",
+      minInterval: 3,
+      maxInterval: 8
+    },
+    whatsappHistory: database.whatsappHistory || [],
+    systemSettings: database.systemSettings || {
+      appName: "Gest\xE3o de Franquias",
+      companyName: "Gest\xE3o de Franquias S.A.",
+      cnpjMatriz: "12.345.678/0001-90"
+    },
+    lastUpdated: database.lastUpdated
+  };
 }
 var db = loadDatabase();
 var migratedCredentials = migrateLegacyCredentials(db);
@@ -664,36 +713,33 @@ routeBoth("get", "/api/config/audit", (req, res) => {
   res.json({ auditLogs: db.auditLogs.slice(0, 50) });
 });
 routeBoth("get", "/api/state", (req, res) => {
-  res.json({
-    businesses: db.businesses,
-    franchises: db.franchises,
-    employees: db.employees,
-    users: db.users.map((user) => safeUser(user)),
-    manualEntries: db.manualEntries,
-    configs: db.configs,
-    dreParams: db.dreParams,
-    paymentMethods: db.paymentMethods,
-    businessRules: db.businessRules,
-    royalties: db.royalties,
-    permissions: db.permissions,
-    vtConfigs: db.vtConfigs,
-    whatsappConfig: db.whatsappConfig || {
-      senderPhone: "+55 (11) 98888-0000",
-      connectionStatus: "conectado",
-      minInterval: 3,
-      maxInterval: 8
-    },
-    whatsappHistory: db.whatsappHistory || [],
-    lastUpdated: db.lastUpdated
-  });
+  res.json(getFullState(db));
 });
 routeBoth("post", "/api/state/sync", requireSession, (req, res) => {
-  const { section, data: incomingData, user, userProfile, userTenant, credential } = req.body || {};
+  const { section, data: incomingData, batch, user, userProfile, userTenant, credential } = req.body || {};
   const authenticatedUser = req.auth?.user;
   const effectiveProfile = authenticatedUser?.perfil || userProfile;
   const effectiveTenant = authenticatedUser?.unidade || userTenant;
-  let data = incomingData;
   const userName = user || "Sistema";
+  if (batch && typeof batch === "object") {
+    for (const [sec, secData] of Object.entries(batch)) {
+      if (secData !== void 0) {
+        db[sec] = stripSensitiveFields(secData);
+      }
+    }
+    db.auditLogs.unshift({
+      id: `audit_${Date.now()}`,
+      timestamp: (/* @__PURE__ */ new Date()).toISOString(),
+      action: "SYNC_BATCH",
+      key: Object.keys(batch).join(","),
+      oldValue: null,
+      newValue: `Updated ${Object.keys(batch).join(", ")}`,
+      user: userName
+    });
+    saveDatabase(db);
+    return res.json({ success: true, batch: Object.keys(batch), lastUpdated: db.lastUpdated, state: getFullState(db) });
+  }
+  let data = incomingData;
   if (section && data !== void 0) {
     if (section === "users" && Array.isArray(data)) {
       if (effectiveProfile === "operador") {
@@ -734,7 +780,7 @@ routeBoth("post", "/api/state/sync", requireSession, (req, res) => {
       lastUpdated: db.lastUpdated,
       user: userName
     });
-    return res.json({ success: true, section, lastUpdated: db.lastUpdated });
+    return res.json({ success: true, section, lastUpdated: db.lastUpdated, state: getFullState(db) });
   }
   res.status(400).json({ error: "Par\xE2metros inv\xE1lidos para sincroniza\xE7\xE3o." });
 });

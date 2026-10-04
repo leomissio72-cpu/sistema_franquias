@@ -120,6 +120,8 @@ export const TenantsScreen: React.FC<TenantsScreenProps> = ({
     
     let currentBizList = [...businesses];
     let effectiveBizId = form.businessId;
+    let needSaveBiz = false;
+
     if (!effectiveBizId || !currentBizList.some((b) => b.id === effectiveBizId)) {
       if (currentBizList.length === 0) {
         const defaultBiz: Business = {
@@ -131,9 +133,7 @@ export const TenantsScreen: React.FC<TenantsScreenProps> = ({
         };
         currentBizList = [defaultBiz];
         effectiveBizId = "biz_principal";
-        if (onSaveBusinesses) {
-          void onSaveBusinesses(currentBizList);
-        }
+        needSaveBiz = true;
       } else {
         effectiveBizId = currentBizList[0].id;
       }
@@ -165,13 +165,16 @@ export const TenantsScreen: React.FC<TenantsScreenProps> = ({
     setSuccessMsg(`Novo franqueado "${newUnit.name}" (${newUnit.code}) cadastrado com sucesso!`);
     setTimeout(() => setSuccessMsg(""), 4500);
 
-    // 2. Background cloud persistence
-    if (onSaveFranchises) {
-      try {
-        await onSaveFranchises(updatedList);
-      } catch (err: any) {
-        console.error("Falha ao sincronizar franquia:", err);
+    // 2. Sequential reliable cloud persistence
+    try {
+      if (needSaveBiz && onSaveBusinesses) {
+        await onSaveBusinesses(currentBizList);
       }
+      if (onSaveFranchises) {
+        await onSaveFranchises(updatedList);
+      }
+    } catch (err: any) {
+      console.error("Falha ao sincronizar franquia:", err);
     }
   };
 

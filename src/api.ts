@@ -153,13 +153,41 @@ export async function fetchHealth() {
   }
 }
 
+function formatCloudState(data: any): CloudState {
+  const rawMethods = Array.isArray(data.paymentMethods)
+    ? data.paymentMethods
+    : data.paymentMethods?.["dono"];
+  const safePaymentMethods =
+    Array.isArray(rawMethods) && rawMethods.length > 0
+      ? rawMethods
+      : defaultPaymentMethods;
+
+  const rawRules = data.businessRules?.["dono"] || data.businessRules;
+  const safeRules =
+    rawRules && typeof rawRules.maxDiscount === "number"
+      ? rawRules
+      : defaultBusinessRules;
+
+  return {
+    ...data,
+    cloudConfigs: data.configs || [],
+    paymentMethods: safePaymentMethods,
+    businessRules: safeRules,
+    systemSettings: data.systemSettings || {
+      appName: "Gestão de Franquias",
+      companyName: "Gestão de Franquias S.A.",
+      cnpjMatriz: "12.345.678/0001-90",
+    },
+  };
+}
+
 function getLocalFallbackState(): CloudState {
   try {
-    const cached = localStorage.getItem("sofiacfo_cloud_state");
+    const cached = localStorage.getItem("gestaofranquias_cloud_state") || localStorage.getItem("sofiacfo_cloud_state");
     if (cached) {
       const parsed = sanitizeClientValue(JSON.parse(cached));
-      if (parsed && parsed.businesses && parsed.businesses.length > 0) {
-        return parsed;
+      if (parsed && Array.isArray(parsed.businesses)) {
+        return formatCloudState(parsed);
       }
     }
   } catch (e) {}
@@ -193,32 +221,7 @@ export async function fetchServerState(): Promise<CloudState> {
   try {
     const res = await fetchWithTimeout("/api/state", {}, 3500);
     const data = await safeResponseJSON(res, "Failed to load server state");
-
-    const rawMethods = Array.isArray(data.paymentMethods)
-      ? data.paymentMethods
-      : data.paymentMethods?.["dono"];
-    const safePaymentMethods =
-      Array.isArray(rawMethods) && rawMethods.length > 0
-        ? rawMethods
-        : defaultPaymentMethods;
-
-    const rawRules = data.businessRules?.["dono"] || data.businessRules;
-    const safeRules =
-      rawRules && typeof rawRules.maxDiscount === "number"
-        ? rawRules
-        : defaultBusinessRules;
-
-    const state: CloudState = {
-      ...data,
-      cloudConfigs: data.configs || [],
-      paymentMethods: safePaymentMethods,
-      businessRules: safeRules,
-      systemSettings: data.systemSettings || {
-        appName: "Gestão de Franquias",
-        companyName: "Gestão de Franquias S.A.",
-        cnpjMatriz: "12.345.678/0001-90",
-      },
-    };
+    const state = formatCloudState(data);
 
     try {
       localStorage.setItem("gestaofranquias_cloud_state", JSON.stringify(sanitizeClientValue(state)));
@@ -227,7 +230,13 @@ export async function fetchServerState(): Promise<CloudState> {
 
     return state;
   } catch (err) {
-    console.warn("Could not reach /api/state; refusing to display stale account data:", err);
+    try {
+      const fallback = getLocalFallbackState();
+      if (fallback && ((fallback.franchises && fallback.franchises.length > 0) || (fallback.businesses && fallback.businesses.length > 0))) {
+        return fallback;
+      }
+    } catch {}
+    console.warn("Could not reach /api/state:", err);
     throw err;
   }
 }
@@ -285,6 +294,14 @@ export async function syncStateSection(section: string, data: any, user?: string
   if (!res.ok) {
     const err = await safeResponseJSON(res, "Failed to sync state section").catch((e) => e);
     throw new Error(err?.message || err?.error || "Failed to sync state section");
+  }
+  const result = await safeResponseJSON(res, "Failed to parse sync response");
+  if (result?.state) {
+    const state = formatCloudState(result.state);
+    try {
+      localStorage.setItem("gestaofranquias_cloud_state", JSON.stringify(sanitizeClientValue(state)));
+    } catch (e) {}
+    return state;
   }
   return fetchServerState();
 }

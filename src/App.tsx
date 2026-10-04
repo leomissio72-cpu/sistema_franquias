@@ -202,7 +202,21 @@ export const App: React.FC = () => {
 
     // Subscribe only while the current authenticated account is active.
     const unsubscribe = subscribeToEvents((newState: CloudState) => {
-      setServerState(newState);
+      setServerState((prevState) => {
+        if (!prevState) return newState;
+        const safeBusinesses = (newState.businesses && newState.businesses.length > 0)
+          ? newState.businesses
+          : (prevState.businesses || []);
+        const safeFranchises = (newState.franchises && newState.franchises.length > 0)
+          ? newState.franchises
+          : (prevState.franchises || []);
+
+        return {
+          ...newState,
+          businesses: safeBusinesses,
+          franchises: safeFranchises,
+        };
+      });
       setLastSyncTime(new Date(newState.lastUpdated || Date.now()).toLocaleTimeString("pt-BR"));
       setIsCloudConnected(true);
 
@@ -268,7 +282,11 @@ export const App: React.FC = () => {
     try {
       const actor = { profile: userSession?.profile || "dono", tenant: userSession?.tenant || "dono", login: userSession?.login || "admin" };
       const updatedState = await syncStateSection("franchises", newFranchises, userSession?.name || "Admin", actor);
-      setServerState(updatedState);
+      setServerState((prev) => ({
+        ...updatedState,
+        businesses: (updatedState.businesses && updatedState.businesses.length > 0) ? updatedState.businesses : (prev?.businesses || []),
+        franchises: newFranchises,
+      }));
       const logsRes = await fetchAuditLogs();
       if (logsRes.auditLogs) setAuditLogs(logsRes.auditLogs);
     } catch (e) {
@@ -284,7 +302,11 @@ export const App: React.FC = () => {
     try {
       const actor = { profile: userSession?.profile || "dono", tenant: userSession?.tenant || "dono", login: userSession?.login || "admin" };
       const updatedState = await syncStateSection("businesses", newBusinesses, userSession?.name || "Admin", actor);
-      setServerState(updatedState);
+      setServerState((prev) => ({
+        ...updatedState,
+        businesses: newBusinesses,
+        franchises: (updatedState.franchises && updatedState.franchises.length > 0) ? updatedState.franchises : (prev?.franchises || []),
+      }));
       const logsRes = await fetchAuditLogs();
       if (logsRes.auditLogs) setAuditLogs(logsRes.auditLogs);
     } catch (e) {

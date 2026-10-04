@@ -240,22 +240,10 @@ interface DatabaseState {
 }
 
 function loadDatabase(): DatabaseState {
-  // 1. Try to load from current DB_FILE location (e.g. /tmp/database.json or data/database.json)
-  try {
-    if (fs.existsSync(DB_FILE)) {
-      const content = fs.readFileSync(DB_FILE, "utf-8");
-      const parsed = JSON.parse(content);
-      if (parsed && Array.isArray(parsed.configs)) {
-        return parsed;
-      }
-    }
-  } catch (err) {
-    // try fallbacks next
-  }
-
-  // 2. Fallbacks: Try multiple possible locations to find the seed database.json
+  let loadedState: DatabaseState | null = null;
   const seedPaths = [
     path.join(process.cwd(), "data", "database.json"),
+    path.join("/tmp", "database.json"),
     path.join(process.cwd(), "src", "data", "database.json"),
     path.join(process.cwd(), "..", "data", "database.json")
   ];
@@ -266,18 +254,34 @@ function loadDatabase(): DatabaseState {
         const content = fs.readFileSync(seedPath, "utf-8");
         const parsed = JSON.parse(content);
         if (parsed && Array.isArray(parsed.configs)) {
-          // If we loaded from a seed path, and we are in serverless mode, write it to DB_FILE (/tmp/database.json)
-          if (isServerless) {
-            try {
-              fs.writeFileSync(DB_FILE, JSON.stringify(parsed, null, 2), "utf-8");
-            } catch (e) {}
+          if (!loadedState) {
+            loadedState = parsed;
+          } else {
+            const curDataPoints = (loadedState.franchises?.length || 0) + (loadedState.businesses?.length || 0) + (loadedState.employees?.length || 0);
+            const candDataPoints = (parsed.franchises?.length || 0) + (parsed.businesses?.length || 0) + (parsed.employees?.length || 0);
+            const curTime = new Date(loadedState.lastUpdated || 0).getTime();
+            const candTime = new Date(parsed.lastUpdated || 0).getTime();
+
+            if (candDataPoints > curDataPoints || (candDataPoints === curDataPoints && candTime > curTime)) {
+              loadedState = parsed;
+            }
           }
-          return parsed;
         }
       }
-    } catch (e) {
-      // try next path
-    }
+    } catch (e) {}
+  }
+
+  if (loadedState) {
+    try {
+      const localBackup = path.join(process.cwd(), "data", "database.json");
+      const dir = path.dirname(localBackup);
+      if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+      fs.writeFileSync(localBackup, JSON.stringify(loadedState, null, 2), "utf-8");
+    } catch (e) {}
+    try {
+      fs.writeFileSync(path.join("/tmp", "database.json"), JSON.stringify(loadedState, null, 2), "utf-8");
+    } catch (e) {}
+    return loadedState;
   }
 
   const initialDB: DatabaseState = {
@@ -308,26 +312,63 @@ function loadDatabase(): DatabaseState {
   };
 
   try {
-    fs.writeFileSync(DB_FILE, JSON.stringify(initialDB, null, 2), "utf-8");
-  } catch (err) {
-    // ignore write error on fallback
-  }
+    const localBackup = path.join(process.cwd(), "data", "database.json");
+    const dir = path.dirname(localBackup);
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+    fs.writeFileSync(localBackup, JSON.stringify(initialDB, null, 2), "utf-8");
+  } catch (err) {}
+  try {
+    fs.writeFileSync(path.join("/tmp", "database.json"), JSON.stringify(initialDB, null, 2), "utf-8");
+  } catch (err) {}
+
   return initialDB;
 }
 
 function saveDatabase(data: DatabaseState) {
   try {
     data.lastUpdated = new Date().toISOString();
-    fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2), "utf-8");
-    const localBackup = path.join(process.cwd(), "data", "database.json");
-    if (DB_FILE !== localBackup) {
-      try {
-        fs.writeFileSync(localBackup, JSON.stringify(data, null, 2), "utf-8");
-      } catch (e) {}
-    }
+    try {
+      const localBackup = path.join(process.cwd(), "data", "database.json");
+      const dir = path.dirname(localBackup);
+      if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+      fs.writeFileSync(localBackup, JSON.stringify(data, null, 2), "utf-8");
+    } catch (e) {}
+    try {
+      fs.writeFileSync(path.join("/tmp", "database.json"), JSON.stringify(data, null, 2), "utf-8");
+    } catch (e) {}
   } catch (err) {
     console.error("Erro ao salvar banco de dados:", err);
   }
+}
+
+function getFullState(database: DatabaseState) {
+  return {
+    businesses: database.businesses || [],
+    franchises: database.franchises || [],
+    employees: database.employees || [],
+    users: (database.users || []).map((user: any) => safeUser(user)),
+    manualEntries: database.manualEntries || [],
+    configs: database.configs || [],
+    dreParams: database.dreParams || {},
+    paymentMethods: database.paymentMethods || [],
+    businessRules: database.businessRules || {},
+    royalties: database.royalties || {},
+    permissions: database.permissions || {},
+    vtConfigs: database.vtConfigs || {},
+    whatsappConfig: database.whatsappConfig || {
+      senderPhone: "+55 (11) 98888-0000",
+      connectionStatus: "conectado",
+      minInterval: 3,
+      maxInterval: 8
+    },
+    whatsappHistory: database.whatsappHistory || [],
+    systemSettings: database.systemSettings || {
+      appName: "Gestão de Franquias",
+      companyName: "Gestão de Franquias S.A.",
+      cnpjMatriz: "12.345.678/0001-90",
+    },
+    lastUpdated: database.lastUpdated,
+  };
 }
 
 let db = loadDatabase();
@@ -610,38 +651,36 @@ routeBoth("get", "/api/config/audit", (req: Request, res: Response) => {
 
 // 5. Central State
 routeBoth("get", "/api/state", (req: Request, res: Response) => {
-  res.json({
-    businesses: db.businesses,
-    franchises: db.franchises,
-    employees: db.employees,
-    users: db.users.map((user: any) => safeUser(user)),
-    manualEntries: db.manualEntries,
-    configs: db.configs,
-    dreParams: db.dreParams,
-    paymentMethods: db.paymentMethods,
-    businessRules: db.businessRules,
-    royalties: db.royalties,
-    permissions: db.permissions,
-    vtConfigs: db.vtConfigs,
-    whatsappConfig: db.whatsappConfig || {
-      senderPhone: "+55 (11) 98888-0000",
-      connectionStatus: "conectado",
-      minInterval: 3,
-      maxInterval: 8
-    },
-    whatsappHistory: db.whatsappHistory || [],
-    lastUpdated: db.lastUpdated,
-  });
+  res.json(getFullState(db));
 });
 
 routeBoth("post", "/api/state/sync", requireSession, (req: Request, res: Response) => {
-  const { section, data: incomingData, user, userProfile, userTenant, credential } = req.body || {};
+  const { section, data: incomingData, batch, user, userProfile, userTenant, credential } = req.body || {};
   const authenticatedUser = (req as any).auth?.user;
   const effectiveProfile = authenticatedUser?.perfil || userProfile;
   const effectiveTenant = authenticatedUser?.unidade || userTenant;
-  let data = incomingData;
   const userName = user || "Sistema";
 
+  if (batch && typeof batch === "object") {
+    for (const [sec, secData] of Object.entries(batch)) {
+      if (secData !== undefined) {
+        (db as any)[sec] = stripSensitiveFields(secData);
+      }
+    }
+    db.auditLogs.unshift({
+      id: `audit_${Date.now()}`,
+      timestamp: new Date().toISOString(),
+      action: "SYNC_BATCH",
+      key: Object.keys(batch).join(","),
+      oldValue: null,
+      newValue: `Updated ${Object.keys(batch).join(", ")}`,
+      user: userName,
+    });
+    saveDatabase(db);
+    return res.json({ success: true, batch: Object.keys(batch), lastUpdated: db.lastUpdated, state: getFullState(db) });
+  }
+
+  let data = incomingData;
   if (section && data !== undefined) {
     if (section === "users" && Array.isArray(data)) {
       if (effectiveProfile === "operador") {
@@ -684,7 +723,7 @@ routeBoth("post", "/api/state/sync", requireSession, (req: Request, res: Respons
       user: userName,
     });
 
-    return res.json({ success: true, section, lastUpdated: db.lastUpdated });
+    return res.json({ success: true, section, lastUpdated: db.lastUpdated, state: getFullState(db) });
   }
 
   res.status(400).json({ error: "Parâmetros inválidos para sincronização." });

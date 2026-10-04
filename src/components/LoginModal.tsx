@@ -24,7 +24,14 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onSuccess, onClo
 
   const finishLogin = (data: any) => {
     const user = data.user;
-    onSuccess({ login: user.login, name: user.nome, tenant: user.unidade, profile: user.perfil, expiresAt: data.expiresAt });
+    onSuccess({
+      login: user.login,
+      name: user.nome,
+      tenant: user.unidade,
+      profile: user.perfil,
+      expiresAt: data.expiresAt,
+      token: data.token,
+    });
     onClose?.();
   };
 

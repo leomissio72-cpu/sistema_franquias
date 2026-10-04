@@ -476,7 +476,10 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
     const cleanCode = (newFranchise.code || "").trim().toUpperCase() || autoCode;
 
     let effectiveBusinessId = newFranchise.businessId;
-    if (businessList.length === 0) {
+    let needSaveBiz = false;
+    let currentBizList = [...businessList];
+
+    if (currentBizList.length === 0) {
       const defaultBiz: Business = {
         id: "biz_matriz",
         name: "Franquia Matriz",
@@ -484,13 +487,12 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
         color: "#3c63da",
         royalty: 0.06,
       };
-      setBusinessList([defaultBiz]);
-      if (onSaveBusinesses) {
-        onSaveBusinesses([defaultBiz]).catch(() => undefined);
-      }
+      currentBizList = [defaultBiz];
+      setBusinessList(currentBizList);
       effectiveBusinessId = defaultBiz.id;
-    } else if (!effectiveBusinessId || !businessList.some((b) => b.id === effectiveBusinessId)) {
-      effectiveBusinessId = businessList[0]?.id || "biz_matriz";
+      needSaveBiz = true;
+    } else if (!effectiveBusinessId || !currentBizList.some((b) => b.id === effectiveBusinessId)) {
+      effectiveBusinessId = currentBizList[0]?.id || "biz_matriz";
     }
 
     const created: FranchiseUnit = {
@@ -517,7 +519,7 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
     setFranchiseList(updated);
     setIsAddingFranchise(false);
     setNewFranchise({
-      businessId: businessList[0]?.id || effectiveBusinessId,
+      businessId: currentBizList[0]?.id || effectiveBusinessId,
       name: "",
       code: "",
       resp: "",
@@ -529,6 +531,9 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
     });
 
     try {
+      if (needSaveBiz && onSaveBusinesses) {
+        await onSaveBusinesses(currentBizList);
+      }
       if (onSaveFranchises) {
         await onSaveFranchises(updated);
       }
