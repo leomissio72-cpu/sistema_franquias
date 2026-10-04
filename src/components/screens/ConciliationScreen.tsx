@@ -44,6 +44,45 @@ const parseDate = (value: unknown) => {
 
 const keyText = (value: unknown) => String(value ?? "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]/g, "");
 
+function parseDelimitedText(text: string): Record<string, unknown>[] {
+  const cleanText = text.replace(/^\uFEFF/, "").replace(/\r\n/g, "\n").replace(/\r/g, "\n").trim();
+  if (!cleanText) return [];
+  const firstLine = cleanText.split("\n", 1)[0] || "";
+  const separators = [";", ",", "\t"];
+  const separator = separators
+    .map((candidate) => ({ candidate, count: (firstLine.match(new RegExp(`\\${candidate}`, "g")) || []).length }))
+    .sort((a, b) => b.count - a.count)[0]?.candidate || ";";
+  const rows: string[][] = [];
+  let row: string[] = [];
+  let field = "";
+  let quoted = false;
+  for (let index = 0; index < cleanText.length; index += 1) {
+    const char = cleanText[index];
+    const next = cleanText[index + 1];
+    if (char === '"' && quoted && next === '"') {
+      field += '"';
+      index += 1;
+    } else if (char === '"') {
+      quoted = !quoted;
+    } else if (char === separator && !quoted) {
+      row.push(field.trim());
+      field = "";
+    } else if (char === "\n" && !quoted) {
+      row.push(field.trim());
+      if (row.some(Boolean)) rows.push(row);
+      row = [];
+      field = "";
+    } else {
+      field += char;
+    }
+  }
+  row.push(field.trim());
+  if (row.some(Boolean)) rows.push(row);
+  if (rows.length < 2) return [];
+  const headers = rows[0].map((value, index) => value || `Coluna ${index + 1}`);
+  return rows.slice(1).map((values) => Object.fromEntries(headers.map((header, index) => [header, values[index] || ""])));
+}
+
 function rowToItem(row: Record<string, unknown>, index: number): ConciliationItem {
   const entries = Object.entries(row);
   const find = (keys: string[]) => entries.find(([key]) => keys.some(candidate => keyText(key).includes(candidate)))?.[1] ?? "";
@@ -99,6 +138,10 @@ async function readImportFile(file: File): Promise<ConciliationItem[]> {
       text.split(/\s{2,}|\n/).filter(Boolean).forEach((line, index) => rows.push(rowToItem({ Data: "", Descrição: line, Valor: (line.match(/-?\d+(?:[.,]\d{2})/g) || [""]).pop() }, index)));
     }
     return rows;
+  }
+  if (/\.(csv|tsv)$/i.test(file.name)) {
+    const rows = parseDelimitedText(await file.text());
+    return rows.slice(0, 5000).map(rowToItem);
   }
   const workbook = new ExcelJS.Workbook();
   await workbook.xlsx.load(await file.arrayBuffer());
