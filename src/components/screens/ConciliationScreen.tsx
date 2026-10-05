@@ -230,11 +230,15 @@ export const ConciliationScreen: React.FC<ConciliationScreenProps> = ({
   const [importError, setImportError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!isReadingFile && !isImporting) {
+    // A leitura do arquivo é uma prévia local. Não reidrate a tabela quando
+    // isReadingFile muda para false, pois isso apagava as linhas recém-lidas.
+    // Após uma importação concluída, isImporting permite sincronizar a tabela
+    // novamente com os lançamentos persistidos.
+    if (!isImporting) {
       setItems(manualEntries.filter((entry) => entry.tenant === currentTenantId).map(entryToItem));
       setSelectedIds([]);
     }
-  }, [currentTenantId, manualEntries, isImporting, isReadingFile]);
+  }, [currentTenantId, manualEntries, isImporting]);
 
   const filteredItems = items.filter((item) => {
     if (filter === "all") return true;
