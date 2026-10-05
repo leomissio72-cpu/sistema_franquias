@@ -5,7 +5,7 @@ import { getFirestore } from "firebase/firestore";
 // Firebase Web configuration is public by design. Security is enforced by
 // Firebase Authentication and Firestore rules, never by hiding this object.
 export const firebaseConfig = {
-  apiKey: "AIzaSyDDx2A4irYyhWhkPrhQwx64UBGRkoqMiA7",
+  apiKey: "AIzaSyDDx2A4irYyhWhkPrhQwx64UBGRkoqMi7A",
   authDomain: "gestao-de-franquias.firebaseapp.com",
   projectId: "gestao-de-franquias",
   storageBucket: "gestao-de-franquias.firebasestorage.app",
