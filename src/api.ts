@@ -15,6 +15,7 @@ import {
   WhatsAppConfig,
   WhatsAppMessageHistory
 } from "./types";
+import { readFirebaseMirror, writeFirebaseMirror } from "./firebaseState";
 import {
   defaultPaymentMethods,
   defaultBusinessRules,
@@ -223,6 +224,10 @@ export async function fetchServerState(): Promise<CloudState> {
     const data = await safeResponseJSON(res, "Failed to load server state");
     const state = formatCloudState(data);
 
+    // Keep the Firebase project supplied by the user as a sanitized cloud
+    // mirror, while the authenticated API remains the source of truth.
+    void writeFirebaseMirror(state);
+
     try {
       localStorage.setItem("gestaofranquias_cloud_state", JSON.stringify(sanitizeClientValue(state)));
       localStorage.removeItem("sofiacfo_cloud_state");
@@ -230,6 +235,18 @@ export async function fetchServerState(): Promise<CloudState> {
 
     return state;
   } catch (err) {
+    try {
+      const firebaseState = await readFirebaseMirror();
+      if (firebaseState && Array.isArray(firebaseState.businesses) && Array.isArray(firebaseState.franchises)) {
+        const recovered = formatCloudState(firebaseState);
+        try {
+          localStorage.setItem("gestaofranquias_cloud_state", JSON.stringify(sanitizeClientValue(recovered)));
+        } catch (e) {}
+        return recovered;
+      }
+    } catch (firebaseError) {
+      console.warn("Could not recover state from Firebase mirror:", firebaseError);
+    }
     try {
       const fallback = getLocalFallbackState();
       if (fallback && ((fallback.franchises && fallback.franchises.length > 0) || (fallback.businesses && fallback.businesses.length > 0))) {
@@ -252,7 +269,9 @@ export async function updateSingleConfig(key: string, value: any, modifiedBy?: s
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ value, modifiedBy, userId }),
   });
-  return safeResponseJSON(res, "Failed to update configuration");
+  const result = await safeResponseJSON(res, "Failed to update configuration");
+  if (result?.state) void writeFirebaseMirror(formatCloudState(result.state));
+  return result;
 }
 
 export async function saveCloudConfig(
@@ -273,7 +292,9 @@ export async function updateBulkConfig(updates: Array<{ key: string; value: any 
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ updates, modifiedBy, userId }),
   });
-  return safeResponseJSON(res, "Failed to bulk update configurations");
+  const result = await safeResponseJSON(res, "Failed to bulk update configurations");
+  if (result?.state) void writeFirebaseMirror(formatCloudState(result.state));
+  return result;
 }
 
 export async function fetchAuditLogs(): Promise<{ auditLogs: AuditLog[] }> {
@@ -296,9 +317,10 @@ export async function syncStateSection(section: string, data: any, user?: string
     throw new Error(err?.message || err?.error || "Failed to sync state section");
   }
   const result = await safeResponseJSON(res, "Failed to parse sync response");
-  if (result?.state) {
-    const state = formatCloudState(result.state);
-    try {
+    if (result?.state) {
+      const state = formatCloudState(result.state);
+      void writeFirebaseMirror(state);
+      try {
       localStorage.setItem("gestaofranquias_cloud_state", JSON.stringify(sanitizeClientValue(state)));
     } catch (e) {}
     return state;
@@ -518,4 +540,3 @@ export async function saveWhatsAppHistory(history: WhatsAppMessageHistory[]): Pr
     body: JSON.stringify({ history }),
   });
 }
-
