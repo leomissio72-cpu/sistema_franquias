@@ -220,13 +220,22 @@ function getLocalFallbackState(): CloudState {
 
 export async function fetchServerState(): Promise<CloudState> {
   try {
+    const mirroredState = await readFirebaseMirror();
+    if (mirroredState && Array.isArray(mirroredState.businesses) && Array.isArray(mirroredState.franchises)) {
+      const state = formatCloudState(mirroredState);
+      try {
+        localStorage.setItem("gestaofranquias_cloud_state", JSON.stringify(sanitizeClientValue(state)));
+      } catch (e) {}
+      return state;
+    }
+
     const res = await fetchWithTimeout("/api/state", {}, 3500);
     const data = await safeResponseJSON(res, "Failed to load server state");
     const state = formatCloudState(data);
 
-    // Keep the Firebase project supplied by the user as a sanitized cloud
-    // mirror, while the authenticated API remains the source of truth.
-    void writeFirebaseMirror(state);
+    // Seed Firebase when the mirror is empty. Later loads use this durable
+    // state instead of a new serverless instance's ephemeral /tmp file.
+    await writeFirebaseMirror(state);
 
     try {
       localStorage.setItem("gestaofranquias_cloud_state", JSON.stringify(sanitizeClientValue(state)));
@@ -270,7 +279,7 @@ export async function updateSingleConfig(key: string, value: any, modifiedBy?: s
     body: JSON.stringify({ value, modifiedBy, userId }),
   });
   const result = await safeResponseJSON(res, "Failed to update configuration");
-  if (result?.state) void writeFirebaseMirror(formatCloudState(result.state));
+  if (result?.state) await writeFirebaseMirror(formatCloudState(result.state));
   return result;
 }
 
@@ -293,7 +302,7 @@ export async function updateBulkConfig(updates: Array<{ key: string; value: any 
     body: JSON.stringify({ updates, modifiedBy, userId }),
   });
   const result = await safeResponseJSON(res, "Failed to bulk update configurations");
-  if (result?.state) void writeFirebaseMirror(formatCloudState(result.state));
+  if (result?.state) await writeFirebaseMirror(formatCloudState(result.state));
   return result;
 }
 
@@ -319,7 +328,7 @@ export async function syncStateSection(section: string, data: any, user?: string
   const result = await safeResponseJSON(res, "Failed to parse sync response");
     if (result?.state) {
       const state = formatCloudState(result.state);
-      void writeFirebaseMirror(state);
+      await writeFirebaseMirror(state);
       try {
       localStorage.setItem("gestaofranquias_cloud_state", JSON.stringify(sanitizeClientValue(state)));
     } catch (e) {}
