@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { ConciliationItem, ManualEntry, ScreenType } from "../../types";
 import ExcelJS from "exceljs";
+import mammoth from "mammoth";
 import * as pdfjsLib from "pdfjs-dist/legacy/build/pdf.mjs";
 // O worker precisa ser apontado para um arquivo servido pelo próprio bundle Vite.
 pdfjsLib.GlobalWorkerOptions.workerSrc = new URL("pdfjs-dist/legacy/build/pdf.worker.mjs", import.meta.url).toString();
@@ -105,6 +106,20 @@ async function readBankText(file: File): Promise<string> {
   return new TextDecoder("utf-8").decode(bytes);
 }
 
+async function readWordText(file: File): Promise<string> {
+  const result = await mammoth.extractRawText({ arrayBuffer: await file.arrayBuffer() });
+  return result.value || "";
+}
+
+function decodeMarkup(text: string): string {
+  return text
+    .replace(/&lt;/gi, "<")
+    .replace(/&gt;/gi, ">")
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;|&apos;/gi, "'")
+    .replace(/&amp;/gi, "&");
+}
+
 function getOfxTag(block: string, tag: string): string {
   const match = block.match(new RegExp(`<${tag}[^>]*>\\s*([\\s\\S]*?)(?=<[A-Z][A-Z0-9_:-]*\\b|$)`, "i"));
   return (match?.[1] || "").replace(/<!\[CDATA\[|\]\]>/g, "").replace(/<[^>]+>/g, "").trim();
@@ -128,21 +143,36 @@ function entryToItem(entry: ManualEntry): ConciliationItem {
   };
 }
 
+function parseOfxText(rawText: string): ConciliationItem[] {
+  const text = decodeMarkup(rawText).replace(/\u0000/g, "");
+  const transactions = Array.from(text.matchAll(/<STMTTRN\b[^>]*>([\s\S]*?)(?=<\/?STMTTRN\b|<\/?BANKTRANLIST\b|<\/?OFX\b|$)/gi));
+  return transactions.map((match, index) => {
+    const block = match[1];
+    const amount = parseAmount(getOfxTag(block, "TRNAMT"));
+    const posted = getOfxTag(block, "DTPOSTED");
+    return rowToItem({ Data: posted.slice(0, 8), Descrição: getOfxTag(block, "NAME") || getOfxTag(block, "MEMO") || `Transação OFX ${index + 1}`, Valor: amount }, index);
+  });
+}
+
 async function readImportFile(file: File): Promise<ConciliationItem[]> {
   if (file.size > 15 * 1024 * 1024) throw new Error("O arquivo excede o limite de 15 MB.");
+  if (/\.docx$/i.test(file.name)) {
+    const text = await readWordText(file);
+    const transactions = parseOfxText(text);
+    if (!transactions.length) throw new Error("O arquivo Word não contém transações OFX reconhecíveis. Cole o conteúdo OFX completo dentro do documento e tente novamente.");
+    return transactions;
+  }
+  if (/\.doc$/i.test(file.name)) {
+    throw new Error("Formato .doc antigo não pode ser lido com segurança no navegador. Salve o documento como .docx ou envie o arquivo OFX original.");
+  }
   if (/\.(ofx|qif|txt)$/i.test(file.name)) {
     const text = await readBankText(file);
-    const transactions = Array.from(text.matchAll(/<STMTTRN\b[^>]*>([\s\S]*?)(?=<\/?STMTTRN\b|<\/?BANKTRANLIST\b|<\/?OFX\b|$)/gi));
+    const transactions = parseOfxText(text);
     if (!transactions.length) {
       const lines = text.split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
       return lines.slice(0, 5000).map((line, index) => rowToItem({ Descrição: line, Valor: (line.match(/-?\d+(?:[.,]\d{2})/g) || [""]).pop() }, index));
     }
-    return transactions.map((match, index) => {
-      const block = match[1];
-      const amount = parseAmount(getOfxTag(block, "TRNAMT"));
-      const posted = getOfxTag(block, "DTPOSTED");
-      return rowToItem({ Data: posted.slice(0, 8), Descrição: getOfxTag(block, "NAME") || getOfxTag(block, "MEMO") || `Transação OFX ${index + 1}`, Valor: amount }, index);
-    });
+    return transactions;
   }
   if (file.name.toLowerCase().endsWith(".pdf")) {
     const pdf = await pdfjsLib.getDocument({ data: new Uint8Array(await file.arrayBuffer()) }).promise;
@@ -370,7 +400,7 @@ export const ConciliationScreen: React.FC<ConciliationScreenProps> = ({
           Arraste seu arquivo de extrato ou selecione no dispositivo
         </h3>
         <p className="text-xs text-[#69778c] mt-1 max-w-md mx-auto">
-            Formatos compatíveis: <b>Excel</b> (.xlsx/.xls), <b>CSV</b>, <b>PDF</b>, OFX e TXT. A leitura ocorre no navegador e a gravação só acontece após sua confirmação.
+            Formatos compatíveis: <b>Excel</b> (.xlsx/.xls), <b>Word</b> (.docx com OFX), <b>CSV</b>, <b>PDF</b>, OFX e TXT. Para Word antigo (.doc), salve como .docx. A leitura ocorre no navegador e a gravação só acontece após sua confirmação.
         </p>
 
         <div className="mt-4 flex items-center justify-center gap-3">
@@ -378,7 +408,7 @@ export const ConciliationScreen: React.FC<ConciliationScreenProps> = ({
             {isReadingFile ? "Lendo arquivo..." : "Selecionar base"}
             <input
               type="file"
-              accept=".xlsx,.xls,.csv,.ofx,.txt,.pdf"
+              accept=".xlsx,.xls,.csv,.ofx,.txt,.pdf,.docx,.doc"
               className="hidden"
               onChange={(e) => {
                 if (e.target.files?.[0]) handleFileUpload(e.target.files[0]);
