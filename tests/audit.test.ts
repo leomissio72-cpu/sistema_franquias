@@ -268,6 +268,58 @@ test("AUDITORIA 7: Lançamentos manuais são criados e deletados com segurança"
   assert.equal(resDelete.body.success, true);
 });
 
+test("AUDITORIA 8: Importação ignora duplicidades e operador não exclui conciliação", async () => {
+  const dono = db.users.find((u: any) => u.perfil === "dono")!;
+  const donoCredential = getCredential(db, dono.id)!;
+  const donoToken = createSignedSessionToken(dono.id, donoCredential.version, true);
+  const duplicateEntry = {
+    tenant: "dono",
+    desc: "Conciliação idempotente teste",
+    value: 321.45,
+    type: "entrada",
+    date: "2026-10-06",
+    sourceFile: "extrato-a.ofx",
+  };
+
+  const resBulk = await appRequest(
+    "POST",
+    "/api/entries/bulk",
+    { Cookie: `gestao_session=${encodeURIComponent(donoToken)}` },
+    { entries: [duplicateEntry, { ...duplicateEntry, sourceFile: "extrato-b.ofx" }] },
+  );
+
+  assert.equal(resBulk.status, 200);
+  assert.equal(resBulk.body.count, 1);
+  assert.equal(resBulk.body.duplicateCount, 1);
+  const importedId = resBulk.body.entries[0].id;
+  assert.ok(importedId);
+
+  const operador = {
+    id: "u_op_conciliation_test",
+    nome: "Operador Conciliação",
+    email: "operador-conciliacao@teste.com",
+    login: "op_conciliation_test",
+    perfil: "operador",
+    unidade: "dono",
+    status: "ativo",
+  };
+  db.users.push(operador);
+  Object.assign(db, setCredential(db, operador.id, "SenhaOperadorForte2026!"));
+  const operatorCredential = getCredential(db, operador.id)!;
+  const operatorToken = createSignedSessionToken(operador.id, operatorCredential.version, false);
+  const resDelete = await appRequest(
+    "DELETE",
+    `/api/entries/${encodeURIComponent(importedId)}`,
+    { Cookie: `gestao_session=${encodeURIComponent(operatorToken)}` },
+  );
+  assert.equal(resDelete.status, 403);
+
+  db.manualEntries = db.manualEntries.filter((entry: any) => entry.id !== importedId);
+  db.users = db.users.filter((user: any) => user.id !== operador.id);
+  if (db.credentials) delete db.credentials[operador.id];
+  saveDatabase(db);
+});
+
 after(() => {
   // Limpar resíduos de testes para manter a base limpa
   db.auditLogs = [];

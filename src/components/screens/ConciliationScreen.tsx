@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { ConciliationItem, ManualEntry, ScreenType } from "../../types";
+import { ConciliationItem, ManualEntry, ScreenType, UserSession } from "../../types";
 import ExcelJS from "exceljs";
 import mammoth from "mammoth";
 import * as pdfjsLib from "pdfjs-dist/legacy/build/pdf.mjs";
@@ -14,15 +14,18 @@ import {
   FileSpreadsheet,
   Layers,
   Sparkles,
-  Zap
+  Zap,
+  Trash2,
 } from "lucide-react";
 
 interface ConciliationScreenProps {
   currentTenantId: string;
   manualEntries: ManualEntry[];
+  userSession: UserSession;
   onNavigate: (screen: ScreenType) => void;
   onImportEntries: (entries: Array<Partial<ManualEntry>>) => Promise<void>;
   onUpdateEntry: (id: string, patch: Partial<ManualEntry>) => Promise<void>;
+  onDeleteEntry: (id: string) => Promise<void>;
 }
 
 const parseAmount = (value: unknown) => {
@@ -130,6 +133,7 @@ function entryToItem(entry: ManualEntry): ConciliationItem {
   const matched = entry.conciliationStatus === "matched";
   return {
     entryId: entry.id,
+    sourceFile: entry.sourceFile,
     date: entry.date,
     desc: entry.desc,
     value: numericValue.toLocaleString("pt-BR", { style: "currency", currency: "BRL" }),
@@ -141,6 +145,25 @@ function entryToItem(entry: ManualEntry): ConciliationItem {
     tone: matched ? "green" : "amber",
     toDre: numericValue < 0,
   };
+}
+
+function reconciliationIdentity(item: Pick<ConciliationItem, "date" | "desc" | "numericValue">, tenantId: string): string {
+  return [
+    keyText(tenantId),
+    String(item.date || "").slice(0, 10),
+    Number(item.numericValue || 0).toFixed(2),
+    keyText(item.desc),
+  ].join("|");
+}
+
+function removeDuplicateItems(items: ConciliationItem[], tenantId: string): ConciliationItem[] {
+  const seen = new Set<string>();
+  return items.filter((item) => {
+    const identity = reconciliationIdentity(item, tenantId);
+    if (seen.has(identity)) return false;
+    seen.add(identity);
+    return true;
+  });
 }
 
 function parseOfxText(rawText: string): ConciliationItem[] {
@@ -215,11 +238,18 @@ async function readImportFile(file: File): Promise<ConciliationItem[]> {
 export const ConciliationScreen: React.FC<ConciliationScreenProps> = ({
   currentTenantId,
   manualEntries,
+  userSession,
   onNavigate,
   onImportEntries,
   onUpdateEntry,
+  onDeleteEntry,
 }) => {
-  const [items, setItems] = useState<ConciliationItem[]>(() => manualEntries.filter((entry) => entry.tenant === currentTenantId).map(entryToItem));
+  const scopedEntries = () => removeDuplicateItems(
+    manualEntries.filter((entry) => entry.tenant === currentTenantId).map(entryToItem),
+    currentTenantId,
+  );
+  const canDeleteEntries = ["dono", "equipe", "admin", "franqueado"].includes(userSession.profile);
+  const [items, setItems] = useState<ConciliationItem[]>(() => scopedEntries());
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [filter, setFilter] = useState<"all" | "match" | "review">("all");
   const [uploadedFileName, setUploadedFileName] = useState<string | null>("Extrato_Setembro_2026.ofx");
@@ -240,12 +270,12 @@ export const ConciliationScreen: React.FC<ConciliationScreenProps> = ({
     previousTenantRef.current = currentTenantId;
     if (tenantChanged) {
       setHasPendingImport(false);
-      setItems(manualEntries.filter((entry) => entry.tenant === currentTenantId).map(entryToItem));
+      setItems(scopedEntries());
       setSelectedIds([]);
       return;
     }
     if (!isImporting && !hasPendingImport) {
-      setItems(manualEntries.filter((entry) => entry.tenant === currentTenantId).map(entryToItem));
+      setItems(scopedEntries());
       setSelectedIds([]);
     }
   }, [currentTenantId, manualEntries, isImporting, hasPendingImport]);
@@ -292,10 +322,12 @@ export const ConciliationScreen: React.FC<ConciliationScreenProps> = ({
     try {
       const imported = await readImportFile(file);
       if (!imported.length) throw new Error("Não encontrei linhas de dados no arquivo.");
-      setItems(imported.map((item) => ({ ...item, isImportPreview: true })));
+      const uniqueImported = removeDuplicateItems(imported, currentTenantId);
+      setItems(uniqueImported.map((item) => ({ ...item, isImportPreview: true })));
       setHasPendingImport(true);
       setUploadedFileName(file.name);
-      setToastMsg(`${imported.length} linha(s) lida(s). Revise e confirme a importação.`);
+      const ignored = imported.length - uniqueImported.length;
+      setToastMsg(`${uniqueImported.length} linha(s) lida(s)${ignored ? `; ${ignored} duplicata(s) ignorada(s)` : ""}. Revise e confirme a importação.`);
       setTimeout(() => setToastMsg(null), 3500);
     } catch (error: any) {
       setImportError(error?.message || "Não foi possível ler o arquivo.");
@@ -323,11 +355,23 @@ export const ConciliationScreen: React.FC<ConciliationScreenProps> = ({
   const handleDiscardImport = () => {
     setHasPendingImport(false);
     setSelectedIds([]);
-    setItems(manualEntries.filter((entry) => entry.tenant === currentTenantId).map(entryToItem));
+    setItems(scopedEntries());
     setUploadedFileName(null);
     setImportError(null);
     setToastMsg("Prévia descartada. Nenhum lançamento foi alterado.");
     setTimeout(() => setToastMsg(null), 3500);
+  };
+
+  const handleDeleteItem = async (item: ConciliationItem) => {
+    if (!item.entryId || !canDeleteEntries) return;
+    try {
+      await onDeleteEntry(item.entryId);
+      setItems((previous) => previous.filter((candidate) => candidate.entryId !== item.entryId));
+      setToastMsg("Lançamento excluído da conciliação com sucesso.");
+      setTimeout(() => setToastMsg(null), 3500);
+    } catch (error: any) {
+      setImportError(error?.message || "Não foi possível excluir este lançamento.");
+    }
   };
 
   const matchCount = items.filter((i) => i.status === "match").length;
@@ -512,6 +556,7 @@ export const ConciliationScreen: React.FC<ConciliationScreenProps> = ({
                 <th className="p-3">Categoria DRE</th>
                 <th className="p-3">Correspondência</th>
                 <th className="p-3 text-right">Status</th>
+                <th className="p-3 text-right">Ações</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[#e5eaf1]">
@@ -536,6 +581,7 @@ export const ConciliationScreen: React.FC<ConciliationScreenProps> = ({
                     <td className="p-3">
                       <b className="text-[#152238] block">{item.desc}</b>
                       <span className="text-[10px] text-[#69778c]">{item.date}</span>
+                      {item.sourceFile && <span className="block max-w-[240px] truncate text-[10px] text-[#3c63da]" title={item.sourceFile}>Arquivo: {item.sourceFile}</span>}
                     </td>
                     <td
                       className={`p-3 font-mono font-bold whitespace-nowrap ${
@@ -566,6 +612,22 @@ export const ConciliationScreen: React.FC<ConciliationScreenProps> = ({
                       >
                         {item.label}
                       </span>
+                    </td>
+                    <td className="p-3 text-right">
+                      {item.entryId ? (
+                        <button
+                          type="button"
+                          onClick={() => void handleDeleteItem(item)}
+                          disabled={!canDeleteEntries}
+                          title={canDeleteEntries ? "Excluir lançamento" : "Seu perfil não pode excluir lançamentos"}
+                          aria-label={canDeleteEntries ? `Excluir ${item.desc}` : "Exclusão não autorizada"}
+                          className="rounded-lg p-1.5 text-rose-600 transition hover:bg-rose-50 hover:text-rose-800 disabled:cursor-not-allowed disabled:opacity-35"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
+                        </button>
+                      ) : (
+                        <span className="text-[10px] text-[#9aa7b8]">Prévia</span>
+                      )}
                     </td>
                   </tr>
                 );

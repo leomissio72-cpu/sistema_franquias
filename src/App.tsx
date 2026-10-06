@@ -747,6 +747,7 @@ export const App: React.FC = () => {
           {["pagamentos_despesas", "lancamentos", "conciliation", "import_base", "vt", "rp"].includes(currentScreen) && (
             <PagamentosDespesasScreen
               currentTenantId={currentTenantId}
+              userSession={userSession}
               franchises={franchises}
               manualEntries={manualEntries}
               bills={bills}

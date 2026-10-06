@@ -453,12 +453,24 @@ export async function createManualEntriesBulkAPI(entries: Array<Partial<ManualEn
 }
 
 export async function createManualEntry(entry: Partial<ManualEntry>, userName?: string, userId?: string): Promise<CloudState> {
-  await createManualEntryAPI(entry);
+  const result = await createManualEntryAPI(entry);
+  if (result?.state) {
+    const state = formatCloudState(result.state);
+    await writeFirebaseMirror(state);
+    try { localStorage.setItem("gestaofranquias_cloud_state", JSON.stringify(sanitizeClientValue(state))); } catch {}
+    return state;
+  }
   return fetchServerState();
 }
 
 export async function createManualEntriesBulk(entries: Array<Partial<ManualEntry>>, userName?: string, userId?: string): Promise<CloudState> {
-  await createManualEntriesBulkAPI(entries);
+  const result = await createManualEntriesBulkAPI(entries);
+  if (result?.state) {
+    const state = formatCloudState(result.state);
+    await writeFirebaseMirror(state);
+    try { localStorage.setItem("gestaofranquias_cloud_state", JSON.stringify(sanitizeClientValue(state))); } catch {}
+    return state;
+  }
   return fetchServerState();
 }
 
@@ -470,7 +482,13 @@ export async function deleteManualEntryAPI(id: string) {
 }
 
 export async function deleteManualEntry(id: string, userName?: string, userId?: string): Promise<CloudState> {
-  await deleteManualEntryAPI(id);
+  const result = await deleteManualEntryAPI(id);
+  if (result?.state) {
+    const state = formatCloudState(result.state);
+    await writeFirebaseMirror(state);
+    try { localStorage.setItem("gestaofranquias_cloud_state", JSON.stringify(sanitizeClientValue(state))); } catch {}
+    return state;
+  }
   return fetchServerState();
 }
 

@@ -5,6 +5,7 @@ import {
   ManualEntry,
   VTConfig,
   BillItem,
+  UserSession,
 } from "../../types";
 import { RpScreen } from "./RpScreen";
 import { ConciliationScreen } from "./ConciliationScreen";
@@ -26,6 +27,7 @@ export type PagamentoSubTab = "rp" | "conciliation" | "lancamentos" | "vt";
 
 interface PagamentosDespesasScreenProps {
   currentTenantId: string;
+  userSession: UserSession;
   franchises: FranchiseUnit[];
   manualEntries: ManualEntry[];
   bills: BillItem[];
@@ -42,6 +44,7 @@ interface PagamentosDespesasScreenProps {
 
 export const PagamentosDespesasScreen: React.FC<PagamentosDespesasScreenProps> = ({
   currentTenantId,
+  userSession,
   franchises,
   manualEntries,
   bills,
@@ -185,9 +188,11 @@ export const PagamentosDespesasScreen: React.FC<PagamentosDespesasScreenProps> =
           <ConciliationScreen
             currentTenantId={currentTenantId}
             manualEntries={manualEntries}
+            userSession={userSession}
             onNavigate={onNavigate}
             onImportEntries={onCreateEntriesBulk}
             onUpdateEntry={onUpdateEntry}
+            onDeleteEntry={onDeleteEntry}
           />
         )}
 

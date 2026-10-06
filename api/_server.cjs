@@ -974,49 +974,119 @@ routeBoth("post", "/api/state/sync", requireSession, async (req, res) => {
   }
   res.status(400).json({ error: "Par\xE2metros inv\xE1lidos para sincroniza\xE7\xE3o." });
 });
+function normalizeEntryText(value) {
+  return String(value ?? "").trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, " ");
+}
+function manualEntryIdentity(entry) {
+  const numericValue = Number(entry?.value);
+  const valueKey = Number.isFinite(numericValue) ? numericValue.toFixed(2) : normalizeEntryText(entry?.value);
+  return [
+    normalizeEntryText(entry?.tenant || "dono"),
+    String(entry?.date || "").slice(0, 10),
+    valueKey,
+    normalizeEntryText(entry?.desc)
+  ].join("|");
+}
+function canUserAccessEntryTenant(user, tenantId) {
+  const profile = String(user?.perfil || "").toLowerCase();
+  const tenant = String(tenantId || "").trim();
+  if (["dono", "equipe"].includes(profile)) return true;
+  if (!tenant) return false;
+  const userTenant = String(user?.unidade || "").trim();
+  if (profile === "admin") {
+    if (!userTenant || userTenant === "dono" || userTenant === "equipe") return true;
+    if (userTenant.toLowerCase().startsWith("biz")) {
+      const unit = db.franchises.find((franchise) => franchise.id === tenant);
+      return tenant === userTenant || unit?.businessId === userTenant;
+    }
+    return tenant === userTenant;
+  }
+  const allowedTenants = userTenant.split(",").map((value) => value.trim()).filter(Boolean);
+  return ["franqueado", "operador"].includes(profile) && allowedTenants.includes(tenant);
+}
+function canUserDeleteEntry(user, entry) {
+  const profile = String(user?.perfil || "").toLowerCase();
+  if (profile === "operador") return false;
+  return ["dono", "equipe", "admin", "franqueado"].includes(profile) && canUserAccessEntryTenant(user, String(entry?.tenant || ""));
+}
 routeBoth("post", "/api/entries", requireSession, async (req, res) => {
   const newEntry = req.body;
   if (!newEntry.desc || !newEntry.value || !newEntry.date) {
     return res.status(400).json({ error: "Dados incompletos do lan\xE7amento." });
   }
+  const authenticatedUser = req.auth?.user;
+  const entryTenant = String(newEntry.tenant || "dono");
+  if (!canUserAccessEntryTenant(authenticatedUser, entryTenant)) {
+    return res.status(403).json({ error: "Voc\xEA n\xE3o pode lan\xE7ar dados nesta unidade." });
+  }
+  const duplicate = db.manualEntries.find((entry2) => manualEntryIdentity(entry2) === manualEntryIdentity({ ...newEntry, tenant: entryTenant }));
+  if (duplicate) {
+    return res.json({ success: true, duplicate: true, entry: duplicate, state: getFullState(db) });
+  }
   const entry = {
     id: `m_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
     ...newEntry,
+    tenant: entryTenant,
     created: (/* @__PURE__ */ new Date()).toISOString()
   };
   db.manualEntries.unshift(entry);
   await saveDatabase(db);
   broadcastUpdate("entry_created", { entry, lastUpdated: db.lastUpdated });
-  res.json({ success: true, entry });
+  res.json({ success: true, entry, state: getFullState(db) });
 });
 routeBoth("post", "/api/entries/bulk", requireSession, async (req, res) => {
   const { entries } = req.body || {};
   if (!Array.isArray(entries) || entries.length === 0) {
     return res.status(400).json({ error: "Lista de lan\xE7amentos vazia ou inv\xE1lida." });
   }
+  const authenticatedUser = req.auth?.user;
+  const unauthorizedEntry = entries.find((item) => !canUserAccessEntryTenant(authenticatedUser, String(item?.tenant || "dono")));
+  if (unauthorizedEntry) {
+    return res.status(403).json({ error: "Voc\xEA n\xE3o pode importar dados para uma unidade n\xE3o autorizada." });
+  }
   const createdEntries = [];
+  const duplicateEntries = [];
+  const knownKeys = new Set(db.manualEntries.map((entry) => manualEntryIdentity(entry)));
   const now = Date.now();
   entries.forEach((item, index) => {
-    if (item.desc && item.value && item.date) {
+    if (item.desc && item.value !== void 0 && item.value !== null && item.value !== "" && item.date) {
+      const candidate = { ...item, tenant: item.tenant || "dono" };
+      const identity = manualEntryIdentity(candidate);
+      if (knownKeys.has(identity)) {
+        duplicateEntries.push(item);
+        return;
+      }
       const entry = {
         id: `m_${now}_${index}_${Math.random().toString(36).substring(2, 6)}`,
-        ...item,
+        ...candidate,
         created: (/* @__PURE__ */ new Date()).toISOString()
       };
       createdEntries.push(entry);
+      knownKeys.add(identity);
       db.manualEntries.unshift(entry);
     }
   });
-  await saveDatabase(db);
+  if (createdEntries.length) await saveDatabase(db);
   broadcastUpdate("entries_bulk_created", { entries: createdEntries, lastUpdated: db.lastUpdated });
-  res.json({ success: true, count: createdEntries.length, entries: createdEntries });
+  res.json({
+    success: true,
+    count: createdEntries.length,
+    duplicateCount: duplicateEntries.length,
+    entries: createdEntries,
+    state: getFullState(db)
+  });
 });
 routeBoth("delete", "/api/entries/:id", requireSession, async (req, res) => {
   const { id } = req.params;
+  const entry = db.manualEntries.find((candidate) => candidate.id === id);
+  if (!entry) return res.status(404).json({ error: "Lan\xE7amento n\xE3o encontrado." });
+  if (!canUserDeleteEntry(req.auth?.user, entry)) {
+    return res.status(403).json({ error: "Seu n\xEDvel de acesso n\xE3o permite excluir este lan\xE7amento." });
+  }
   db.manualEntries = db.manualEntries.filter((e) => e.id !== id);
   await saveDatabase(db);
   broadcastUpdate("entry_deleted", { id, lastUpdated: db.lastUpdated });
-  res.json({ success: true, id });
+  res.json({ success: true, id, state: getFullState(db) });
 });
 routeBoth("get", "/api/whatsapp/config", (req, res) => {
   res.json(db.whatsappConfig || {
