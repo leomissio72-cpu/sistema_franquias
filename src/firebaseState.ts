@@ -33,6 +33,11 @@ const STATE_KEYS: Array<keyof CloudState> = [
   "permissions",
   "vtConfigs",
   "systemSettings",
+  "bills",
+  "products",
+  "suppliers",
+  "whatsappConfig",
+  "whatsappHistory",
 ];
 
 function stripSensitive(value: any): any {

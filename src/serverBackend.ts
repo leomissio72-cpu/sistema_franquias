@@ -307,6 +307,8 @@ interface DatabaseState {
   mfaSecrets?: Record<string, string>;
   whatsappConfig?: any;
   whatsappHistory?: any[];
+  products?: any[];
+  suppliers?: any[];
   durableInitialized?: boolean;
 }
 
@@ -380,7 +382,9 @@ function loadDatabase(): DatabaseState {
       minInterval: 3,
       maxInterval: 8
     },
-    whatsappHistory: []
+    whatsappHistory: [],
+    products: [],
+    suppliers: [],
   };
 
   try {
@@ -433,6 +437,8 @@ function getFullState(database: DatabaseState) {
       maxInterval: 8
     },
     whatsappHistory: database.whatsappHistory || [],
+    products: database.products || [],
+    suppliers: database.suppliers || [],
     systemSettings: database.systemSettings || {
       appName: "Gestão de Franquias",
       companyName: "Gestão de Franquias S.A.",
@@ -866,7 +872,7 @@ routeBoth("get", "/api/whatsapp/config", (req: Request, res: ExpressResponse) =>
   });
 });
 
-routeBoth("post", "/api/whatsapp/config", async (req: Request, res: ExpressResponse) => {
+routeBoth("post", "/api/whatsapp/config", requireSession, async (req: Request, res: ExpressResponse) => {
   const updates = req.body || {};
   db.whatsappConfig = {
     ...(db.whatsappConfig || {
@@ -885,7 +891,7 @@ routeBoth("get", "/api/whatsapp/history", (req: Request, res: ExpressResponse) =
   res.json({ history: db.whatsappHistory || [] });
 });
 
-routeBoth("post", "/api/whatsapp/history", async (req: Request, res: ExpressResponse) => {
+routeBoth("post", "/api/whatsapp/history", requireSession, async (req: Request, res: ExpressResponse) => {
   const { history } = req.body || {};
   if (Array.isArray(history)) {
     db.whatsappHistory = history;
@@ -894,7 +900,7 @@ routeBoth("post", "/api/whatsapp/history", async (req: Request, res: ExpressResp
   res.json({ success: true, count: (db.whatsappHistory || []).length });
 });
 
-routeBoth("post", "/api/whatsapp/send", async (req: Request, res: ExpressResponse) => {
+routeBoth("post", "/api/whatsapp/send", requireSession, async (req: Request, res: ExpressResponse) => {
   const { senderPhone, recipientPhone, recipientName, message, company } = req.body || {};
   if (!recipientPhone || !message) {
     return res.status(400).json({ success: false, error: "Destinatário e mensagem são obrigatórios." });

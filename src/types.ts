@@ -279,6 +279,8 @@ export interface RegisteredSupplier {
   document?: string;
   contact?: string;
   city?: string;
+  businessId?: string;
+  tenantId?: string;
   categories?: string[];
   status: "ativo" | "inativo" | "pendente" | string;
 }

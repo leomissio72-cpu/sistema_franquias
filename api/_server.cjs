@@ -612,7 +612,9 @@ function loadDatabase() {
       minInterval: 3,
       maxInterval: 8
     },
-    whatsappHistory: []
+    whatsappHistory: [],
+    products: [],
+    suppliers: []
   };
   try {
     const localBackup = import_path.default.join(process.cwd(), "data", "database.json");
@@ -663,6 +665,8 @@ function getFullState(database) {
       maxInterval: 8
     },
     whatsappHistory: database.whatsappHistory || [],
+    products: database.products || [],
+    suppliers: database.suppliers || [],
     systemSettings: database.systemSettings || {
       appName: "Gest\xE3o de Franquias",
       companyName: "Gest\xE3o de Franquias S.A.",
@@ -1010,7 +1014,7 @@ routeBoth("get", "/api/whatsapp/config", (req, res) => {
     maxInterval: 8
   });
 });
-routeBoth("post", "/api/whatsapp/config", async (req, res) => {
+routeBoth("post", "/api/whatsapp/config", requireSession, async (req, res) => {
   const updates = req.body || {};
   db.whatsappConfig = {
     ...db.whatsappConfig || {
@@ -1027,7 +1031,7 @@ routeBoth("post", "/api/whatsapp/config", async (req, res) => {
 routeBoth("get", "/api/whatsapp/history", (req, res) => {
   res.json({ history: db.whatsappHistory || [] });
 });
-routeBoth("post", "/api/whatsapp/history", async (req, res) => {
+routeBoth("post", "/api/whatsapp/history", requireSession, async (req, res) => {
   const { history } = req.body || {};
   if (Array.isArray(history)) {
     db.whatsappHistory = history;
@@ -1035,7 +1039,7 @@ routeBoth("post", "/api/whatsapp/history", async (req, res) => {
   }
   res.json({ success: true, count: (db.whatsappHistory || []).length });
 });
-routeBoth("post", "/api/whatsapp/send", async (req, res) => {
+routeBoth("post", "/api/whatsapp/send", requireSession, async (req, res) => {
   const { senderPhone, recipientPhone, recipientName, message, company } = req.body || {};
   if (!recipientPhone || !message) {
     return res.status(400).json({ success: false, error: "Destinat\xE1rio e mensagem s\xE3o obrigat\xF3rios." });

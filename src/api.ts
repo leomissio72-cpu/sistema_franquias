@@ -13,7 +13,8 @@ import {
   SystemSettings,
   CloudState,
   WhatsAppConfig,
-  WhatsAppMessageHistory
+  WhatsAppMessageHistory,
+  RegisteredSupplier
 } from "./types";
 import { readFirebaseMirror, writeFirebaseMirror } from "./firebaseState";
 import {
@@ -184,12 +185,36 @@ function formatCloudState(data: any): CloudState {
   };
 }
 
+function mergeNonEmptyCollections(primary: CloudState, mirror: CloudState | null, preserveSection?: string): CloudState {
+  if (!mirror) return primary;
+  const merged: any = { ...mirror, ...primary };
+  const collectionKeys = [
+    "businesses", "franchises", "employees", "users", "manualEntries", "bills",
+    "configs", "products", "suppliers", "whatsappHistory",
+  ];
+  for (const key of collectionKeys) {
+    if (key === preserveSection) continue;
+    const current = (primary as any)[key];
+    const previous = (mirror as any)[key];
+    if (Array.isArray(current) && current.length === 0 && Array.isArray(previous) && previous.length > 0) {
+      merged[key] = previous;
+    }
+  }
+  return formatCloudState(merged);
+}
+
 function getLocalFallbackState(): CloudState {
   try {
     const cached = localStorage.getItem("gestaofranquias_cloud_state") || localStorage.getItem("sofiacfo_cloud_state");
     if (cached) {
       const parsed = sanitizeClientValue(JSON.parse(cached));
-      if (parsed && Array.isArray(parsed.businesses)) {
+      const hasRecoverableData = parsed && (
+        (Array.isArray(parsed.businesses) && parsed.businesses.length > 0) ||
+        (Array.isArray(parsed.franchises) && parsed.franchises.length > 0) ||
+        (Array.isArray(parsed.manualEntries) && parsed.manualEntries.length > 0) ||
+        (Array.isArray(parsed.employees) && parsed.employees.length > 0)
+      );
+      if (hasRecoverableData && Array.isArray(parsed.businesses)) {
         return formatCloudState(parsed);
       }
     }
@@ -224,7 +249,16 @@ function getLocalFallbackState(): CloudState {
 export async function fetchServerState(): Promise<CloudState> {
   try {
     const mirroredState = await readFirebaseMirror();
-    if (mirroredState && Array.isArray(mirroredState.businesses) && Array.isArray(mirroredState.franchises)) {
+    const mirrorHasCurrentSections = mirroredState && [
+      "businesses",
+      "franchises",
+      "bills",
+      "products",
+      "suppliers",
+      "whatsappConfig",
+      "whatsappHistory",
+    ].every((key) => Object.prototype.hasOwnProperty.call(mirroredState, key));
+    if (mirrorHasCurrentSections && Array.isArray(mirroredState.businesses) && Array.isArray(mirroredState.franchises)) {
       const state = formatCloudState(mirroredState);
       try {
         localStorage.setItem("gestaofranquias_cloud_state", JSON.stringify(sanitizeClientValue(state)));
@@ -234,7 +268,13 @@ export async function fetchServerState(): Promise<CloudState> {
 
     const res = await fetchWithTimeout("/api/state", {}, 3500);
     const data = await safeResponseJSON(res, "Failed to load server state");
-    const state = formatCloudState(data);
+    let state = mergeNonEmptyCollections(formatCloudState(data), mirroredState);
+    // During the migration, an old mirror or a fresh serverless instance can
+    // legitimately return empty core collections. Preserve the last local
+    // snapshot/default seed only until the mirror receives the complete shape.
+    if (!mirrorHasCurrentSections) {
+      state = mergeNonEmptyCollections(state, getLocalFallbackState());
+    }
 
     // Seed Firebase when the mirror is empty. Later loads use this durable
     // state instead of a new serverless instance's ephemeral /tmp file.
@@ -330,7 +370,8 @@ export async function syncStateSection(section: string, data: any, user?: string
   }
   const result = await safeResponseJSON(res, "Failed to parse sync response");
     if (result?.state) {
-      const state = formatCloudState(result.state);
+      const mirror = await readFirebaseMirror();
+      const state = mergeNonEmptyCollections(formatCloudState(result.state), mirror, section);
       await writeFirebaseMirror(state);
       try {
       localStorage.setItem("gestaofranquias_cloud_state", JSON.stringify(sanitizeClientValue(state)));
@@ -373,6 +414,10 @@ export async function saveFranchises(franchises: FranchiseUnit[], userName: stri
 
 export async function saveBusinesses(businesses: Business[], userName: string): Promise<CloudState> {
   return syncStateSection("businesses", businesses, userName);
+}
+
+export async function saveSuppliers(suppliers: RegisteredSupplier[], userName: string): Promise<CloudState> {
+  return syncStateSection("suppliers", suppliers, userName);
 }
 
 export async function saveSystemSettings(settings: SystemSettings, userName: string, userId?: string): Promise<CloudState> {

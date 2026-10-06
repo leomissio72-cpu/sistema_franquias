@@ -16,7 +16,8 @@ import {
   CloudState,
   UserAccount,
   Employee,
-  BillItem
+  BillItem,
+  RegisteredSupplier
 } from "./types";
 import {
   fetchServerState,
@@ -30,6 +31,7 @@ import {
   saveRoyalties,
   saveFranchises,
   saveBusinesses,
+  saveSuppliers,
   createManualEntry,
   createManualEntriesBulk,
   deleteManualEntry,
@@ -292,6 +294,7 @@ export const App: React.FC = () => {
       if (logsRes.auditLogs) setAuditLogs(logsRes.auditLogs);
     } catch (e) {
       console.error("Erro ao salvar franquias:", e);
+      throw e;
     } finally {
       setIsSavingConfig(false);
     }
@@ -312,9 +315,20 @@ export const App: React.FC = () => {
       if (logsRes.auditLogs) setAuditLogs(logsRes.auditLogs);
     } catch (e) {
       console.error("Erro ao salvar marcas:", e);
+      throw e;
     } finally {
       setIsSavingConfig(false);
     }
+  };
+
+  const handleSaveSuppliers = async (newSuppliers: RegisteredSupplier[]) => {
+    const updatedState = await saveSuppliers(newSuppliers, userSession?.name || "Admin");
+    setServerState((prev) => ({
+      ...updatedState,
+      suppliers: newSuppliers,
+      businesses: updatedState.businesses?.length ? updatedState.businesses : (prev?.businesses || []),
+      franchises: updatedState.franchises?.length ? updatedState.franchises : (prev?.franchises || []),
+    }));
   };
 
   const handleCreateManualEntry = async (entry: Partial<ManualEntry>) => {
@@ -613,6 +627,7 @@ export const App: React.FC = () => {
               permissions={permissions}
               settings={systemSettings}
               users={serverState.users}
+              suppliers={suppliers}
               initialTab="configs"
               onUpdateConfig={handleUpdateConfig}
               onBulkUpdate={handleBulkUpdateConfig}
@@ -621,6 +636,7 @@ export const App: React.FC = () => {
               onSaveBusinesses={handleSaveBusinesses}
               onSaveSettings={handleSaveSettings}
               onSaveUsers={handleSaveUsers}
+              onSaveSuppliers={handleSaveSuppliers}
               onResetDatabase={handleResetDatabase}
               onRefresh={loadState}
               isSaving={isSavingConfig}
@@ -720,6 +736,11 @@ export const App: React.FC = () => {
               products={products}
               suppliers={suppliers}
               userSession={userSession}
+              businesses={businesses}
+              franchises={franchises}
+              currentBusinessId={currentBusinessId}
+              currentTenantId={currentTenantId}
+              onSaveSuppliers={handleSaveSuppliers}
             />
           )}
 

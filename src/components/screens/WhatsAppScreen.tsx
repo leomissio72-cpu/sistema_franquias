@@ -4,6 +4,7 @@ import {
   fetchWhatsAppConfig,
   saveWhatsAppConfig,
   fetchWhatsAppHistory,
+  saveWhatsAppHistory,
   sendWhatsAppMessageAPI,
 } from "../../api";
 import {
@@ -71,6 +72,7 @@ export const WhatsAppScreen: React.FC<WhatsAppScreenProps> = ({ onNavigate }) =>
 
   // Dispatch History
   const [history, setHistory] = useState<WhatsAppMessageHistory[]>([]);
+  const historyRef = useRef<WhatsAppMessageHistory[]>([]);
   const [historySearch, setHistorySearch] = useState("");
   const [historyFilter, setHistoryFilter] = useState<"all" | "enviado" | "erro">("all");
 
@@ -94,6 +96,7 @@ export const WhatsAppScreen: React.FC<WhatsAppScreenProps> = ({ onNavigate }) =>
     fetchWhatsAppHistory().then((hist) => {
       if (mounted && hist) {
         setHistory(hist);
+        historyRef.current = hist;
       }
     }).catch(console.error);
 
@@ -250,6 +253,8 @@ export const WhatsAppScreen: React.FC<WhatsAppScreenProps> = ({ onNavigate }) =>
 
       const personalizedMessage = interpolateMessage(messageTemplate, recipient);
 
+      let sendOk = false;
+      let sendErrorReason = "Falha de rede";
       try {
         // Envio sequencial mantendo a mesma conexão sem nunca abrir janelas/abas
         const res = await sendWhatsAppMessageAPI({
@@ -261,18 +266,21 @@ export const WhatsAppScreen: React.FC<WhatsAppScreenProps> = ({ onNavigate }) =>
         });
 
         if (res.success && res.status === "enviado") {
+          sendOk = true;
           sent++;
           setSentCount(sent);
           setCurrentContactStatus("✓ Mensagem entregue com sucesso!");
         } else {
+          sendErrorReason = res.errorReason || "Falha de rede";
           errors++;
           setErrorCount(errors);
-          setCurrentContactStatus(`Erro no envio: ${res.errorReason || "Falha de rede"}`);
+          setCurrentContactStatus(`Erro no envio: ${sendErrorReason}`);
         }
       } catch (err: any) {
+        sendErrorReason = err?.message || "Conexão instável";
         errors++;
         setErrorCount(errors);
-        setCurrentContactStatus(`Erro ao enviar: ${err?.message || "Conexão instável"}`);
+        setCurrentContactStatus(`Erro ao enviar: ${sendErrorReason}`);
       }
 
       // Atualiza histórico localmente
@@ -285,10 +293,19 @@ export const WhatsAppScreen: React.FC<WhatsAppScreenProps> = ({ onNavigate }) =>
         date: now.toLocaleDateString("pt-BR"),
         time: now.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", second: "2-digit" }),
         message: personalizedMessage,
-        status: errors > errorCount ? "erro" : "enviado",
+        status: sendOk ? "enviado" : "erro",
+        errorReason: sendOk ? undefined : sendErrorReason,
         timestamp: now.toISOString(),
       };
-      setHistory((prev) => [newHistoryItem, ...prev]);
+      const nextHistory = [newHistoryItem, ...historyRef.current].slice(0, 500);
+      historyRef.current = nextHistory;
+      setHistory(nextHistory);
+      try {
+        await saveWhatsAppHistory(nextHistory);
+      } catch (historyError) {
+        console.error("Falha ao persistir histórico do disparo:", historyError);
+        setCurrentContactStatus("Mensagem processada, mas o histórico não foi salvo na nuvem.");
+      }
 
       // Intervalo variável configurável (ex: 3 a 8 segundos)
       if (i < validRecipients.length - 1 && !isStoppedRef.current) {
@@ -300,7 +317,7 @@ export const WhatsAppScreen: React.FC<WhatsAppScreenProps> = ({ onNavigate }) =>
 
     setIsDispatching(false);
     isDispatchingRef.current = false;
-    setCurrentContactStatus("Disparo sequencial concluído com sucesso!");
+    setCurrentContactStatus(isStoppedRef.current ? "Disparo interrompido pelo usuário." : "Disparo sequencial concluído com sucesso!");
   };
 
   const handlePause = () => {
@@ -327,7 +344,10 @@ export const WhatsAppScreen: React.FC<WhatsAppScreenProps> = ({ onNavigate }) =>
     setConnectionStatus("conectando");
     setTimeout(() => {
       setConnectionStatus("conectado");
-      void saveWhatsAppConfig({ connectionStatus: "conectado", senderPhone });
+      void saveWhatsAppConfig({ connectionStatus: "conectado", senderPhone }).catch((error) => {
+        setConnectionStatus("desconectado");
+        setCurrentContactStatus(error instanceof Error ? error.message : "Não foi possível salvar a conexão.");
+      });
     }, 1200);
   };
 

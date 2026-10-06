@@ -6,9 +6,11 @@ import {
   Business,
   FranchiseUnit,
   SystemSettings,
-  UserAccount
+  UserAccount,
+  RegisteredSupplier
 } from "../../types";
 import AccessManagementPanel from "../AccessManagementPanel";
+import SupplierManager from "../SupplierManager";
 import { formatBrl, formatPct } from "../../utils/calculations";
 import { geocodeAddress } from "../../utils/geocoding";
 import {
@@ -38,6 +40,7 @@ import {
   RotateCcw,
   Cloud,
   Sliders
+  ,Truck
 } from "lucide-react";
 
 interface ConfiguracaoScreenProps {
@@ -50,6 +53,7 @@ interface ConfiguracaoScreenProps {
   permissions?: Record<string, Record<string, boolean>>;
   settings?: SystemSettings;
   users?: UserAccount[];
+  suppliers?: RegisteredSupplier[];
   initialTab?: ConfigTab;
   onUpdateConfig: (key: string, value: any) => Promise<void>;
   onBulkUpdate: (updates: Array<{ key: string; value: any }>) => Promise<void>;
@@ -58,12 +62,13 @@ interface ConfiguracaoScreenProps {
   onSaveBusinesses?: (businesses: Business[]) => Promise<void>;
   onSaveSettings?: (settings: SystemSettings) => Promise<void>;
   onSaveUsers?: (users: UserAccount[]) => Promise<void>;
+  onSaveSuppliers?: (suppliers: RegisteredSupplier[]) => Promise<void>;
   onResetDatabase?: () => Promise<void>;
   onRefresh: () => void;
   isSaving: boolean;
 }
 
-export type ConfigTab = "preferencias" | "marcas" | "configs" | "permissoes" | "royalties" | "franqueados" | "audit" | "deploy";
+export type ConfigTab = "preferencias" | "marcas" | "configs" | "permissoes" | "royalties" | "fornecedores" | "franqueados" | "audit" | "deploy";
 
 export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
   configs,
@@ -83,7 +88,9 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
   onSaveSettings,
   onResetDatabase,
   users = [],
+  suppliers = [],
   onSaveUsers,
+  onSaveSuppliers,
   onRefresh,
   isSaving,
 }) => {
@@ -665,6 +672,18 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
         >
           <Building2 className="h-3.5 w-3.5" />
           <span>Royalties por Marca</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab("fornecedores")}
+          className={`flex items-center gap-1.5 rounded-lg px-3.5 py-2 text-xs font-bold transition-all cursor-pointer ${
+            activeTab === "fornecedores"
+              ? "bg-[#3c63da] text-white shadow-xs"
+              : "text-[#69778c] hover:bg-[#f4f7fb] hover:text-[#152238]"
+          }`}
+        >
+          <Truck className="h-3.5 w-3.5" />
+          <span>Fornecedores</span>
         </button>
 
         <button
@@ -1583,6 +1602,16 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
             )}
           </div>
         </div>
+      )}
+
+      {activeTab === "fornecedores" && (
+        <SupplierManager
+          suppliers={suppliers}
+          businesses={businessList}
+          franchises={franchiseList}
+          userSession={userSession}
+          onSaveSuppliers={onSaveSuppliers || (async () => undefined)}
+        />
       )}
 
       {/* ------------------------------------------------------------- */}

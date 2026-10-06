@@ -10,11 +10,18 @@ import {
   X,
 } from "lucide-react";
 import { HomologatedProduct, RegisteredSupplier, UserSession } from "../../types";
+import SupplierManager from "../SupplierManager";
+import { Business, FranchiseUnit } from "../../types";
 
 interface ProdutosHomologadosScreenProps {
   products?: HomologatedProduct[];
   suppliers?: RegisteredSupplier[];
   userSession?: UserSession | null;
+  businesses?: Business[];
+  franchises?: FranchiseUnit[];
+  currentBusinessId?: string;
+  currentTenantId?: string;
+  onSaveSuppliers?: (suppliers: RegisteredSupplier[]) => Promise<void>;
 }
 
 type CatalogTab = "produtos" | "fornecedores";
@@ -23,6 +30,11 @@ export const ProdutosHomologadosScreen: React.FC<ProdutosHomologadosScreenProps>
   products = [],
   suppliers = [],
   userSession,
+  businesses = [],
+  franchises = [],
+  currentBusinessId = "all",
+  currentTenantId = "dono",
+  onSaveSuppliers,
 }) => {
   const [activeTab, setActiveTab] = useState<CatalogTab>("produtos");
   const [search, setSearch] = useState("");
@@ -138,7 +150,11 @@ export const ProdutosHomologadosScreen: React.FC<ProdutosHomologadosScreenProps>
           </span>
         </div>
 
-        {!hasData ? (
+        {activeTab === "fornecedores" && onSaveSuppliers ? (
+          <div className="mt-4">
+            <SupplierManager suppliers={suppliers} businesses={businesses} franchises={franchises} currentBusinessId={currentBusinessId} currentTenantId={currentTenantId} userSession={userSession} onSaveSuppliers={onSaveSuppliers} compact />
+          </div>
+        ) : !hasData ? (
           <EmptyCatalog type={activeTab} />
         ) : !hasFilteredData ? (
           <div className="py-14 text-center">
