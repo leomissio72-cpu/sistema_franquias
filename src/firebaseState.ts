@@ -86,6 +86,16 @@ export async function writeFirebaseMirror(state: CloudState): Promise<boolean> {
   if (!isFirebaseConfigured() || !state) return false;
   try {
     if (!(await ensureFirebaseSession())) return false;
+    const existing = await readFirebaseMirror();
+    const operationalKeys: Array<keyof CloudState> = [
+      "businesses", "franchises", "employees", "manualEntries", "bills", "products", "suppliers", "whatsappHistory",
+    ];
+    const incomingIsGloballyEmpty = operationalKeys.every((key) => Array.isArray(state[key]) && state[key].length === 0);
+    const existingHasRecords = Boolean(existing && operationalKeys.some((key) => Array.isArray(existing[key]) && existing[key].length > 0));
+    if (incomingIsGloballyEmpty && existingHasRecords) {
+      console.warn("Ignorando espelho vazio para preservar dados existentes no Firestore.");
+      return false;
+    }
     const updatedAt = new Date().toISOString();
     await Promise.all(
       STATE_KEYS.filter((key) => state[key] !== undefined).map((key) =>
