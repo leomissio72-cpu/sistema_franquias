@@ -405,6 +405,25 @@ export const App: React.FC = () => {
       }
     }
     setCurrentTenantId(tenantId);
+    if (tenantId === "dono" || tenantId === "equipe") {
+      setCurrentBusinessId("all");
+      return;
+    }
+    const selectedBusiness = (serverState?.businesses || []).find((business) => business.id === tenantId);
+    const selectedUnit = (serverState?.franchises || []).find((franchise) => franchise.id === tenantId);
+    if (selectedBusiness) {
+      setCurrentBusinessId(selectedBusiness.id);
+    } else if (selectedUnit) {
+      setCurrentBusinessId(selectedUnit.businessId);
+    }
+  };
+
+  const handleSelectBusiness = (businessId: string) => {
+    if (isFranchisee) return;
+    const restrictedBusiness = userSession?.tenant?.toLowerCase().startsWith("biz") ? userSession.tenant : null;
+    if (userSession?.profile === "admin" && restrictedBusiness && businessId !== restrictedBusiness) return;
+    setCurrentBusinessId(businessId);
+    setCurrentTenantId(businessId === "all" ? "dono" : businessId);
   };
 
   // Restrição estrita de telas para unidades:
@@ -454,6 +473,7 @@ export const App: React.FC = () => {
     setServerState(null);
     setLastSyncTime("");
     setAuditLogs([]);
+    setCurrentBusinessId("all");
     setCurrentTenantId("dono");
     setIsLoginOpen(true);
   };
@@ -524,8 +544,8 @@ export const App: React.FC = () => {
         franchises={franchises}
         currentBusinessId={currentBusinessId}
         currentTenantId={currentTenantId}
-        onSelectBusiness={setCurrentBusinessId}
-        onSelectTenant={setCurrentTenantId}
+        onSelectBusiness={handleSelectBusiness}
+        onSelectTenant={handleSelectTenant}
         userSession={userSession}
         permissions={permissions || {}}
         isOpenMobile={isMobileMenuOpen}
@@ -565,8 +585,8 @@ export const App: React.FC = () => {
               franchises={franchises}
               businesses={businesses}
               currentBusinessId={currentBusinessId}
-              onSelectTenant={setCurrentTenantId}
-              onSelectBusiness={setCurrentBusinessId}
+              onSelectTenant={handleSelectTenant}
+              onSelectBusiness={handleSelectBusiness}
               userSession={userSession}
               onNavigate={setCurrentScreen}
               dreParams={dreParams}
@@ -637,6 +657,7 @@ export const App: React.FC = () => {
             <DashboardScreen
               franchises={franchises}
               businesses={businesses}
+              currentBusinessId={currentBusinessId}
               currentTenantId={currentTenantId}
               onSelectTenant={handleSelectTenant}
               onNavigate={setCurrentScreen}
@@ -659,7 +680,7 @@ export const App: React.FC = () => {
               onSaveParams={handleSaveDreParams}
               userSession={userSession}
               currentBusinessId={currentBusinessId}
-              onSelectBusiness={setCurrentBusinessId}
+              onSelectBusiness={handleSelectBusiness}
             />
           )}
 
@@ -725,6 +746,7 @@ export const App: React.FC = () => {
             <DashboardScreen
               franchises={franchises}
               businesses={businesses}
+              currentBusinessId={currentBusinessId}
               currentTenantId={currentTenantId}
               onSelectTenant={handleSelectTenant}
               onNavigate={setCurrentScreen}
@@ -749,7 +771,7 @@ export const App: React.FC = () => {
             <TenantsScreen
               franchises={franchises}
               businesses={businesses}
-              onSelectTenant={setCurrentTenantId}
+              onSelectTenant={handleSelectTenant}
               onNavigate={setCurrentScreen}
               onSaveFranchises={handleSaveFranchises}
               onSaveBusinesses={handleSaveBusinesses}

@@ -55,6 +55,7 @@ import {
 interface DashboardScreenProps {
   franchises: FranchiseUnit[];
   businesses: Business[];
+  currentBusinessId?: string;
   currentTenantId: string;
   onSelectTenant: (tenantId: string) => void;
   onNavigate: (screen: ScreenType) => void;
@@ -70,6 +71,7 @@ type ActiveChartType = "all" | "unidades" | "mensal" | "empilhado" | "royalties"
 export const DashboardScreen: React.FC<DashboardScreenProps> = ({
   franchises,
   businesses,
+  currentBusinessId = "all",
   currentTenantId,
   onSelectTenant,
   onNavigate,
@@ -108,7 +110,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
 
   // View mode: consolidated network or individual unit KPIs
   const [viewMode, setViewMode] = useState<"consolidated" | "unit" | string>(() => {
-    if (isFranchisee || (currentTenantId && currentTenantId.startsWith("f"))) {
+    if (isFranchisee || franchises.some((franchise) => franchise.id === currentTenantId)) {
       return "unit";
     }
     return "consolidated";
@@ -125,7 +127,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
     if (isFranchisee) {
       return allowedUnits[0]?.id || "f1";
     }
-    if (currentTenantId && currentTenantId.startsWith("f")) {
+    if (franchises.some((franchise) => franchise.id === currentTenantId)) {
       return currentTenantId;
     }
     return "all";
@@ -181,13 +183,17 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
     return `${yrText} · ${moText} · ${dayText}`;
   };
 
-  // Sync selected franchise with currentTenantId if it is a single unit
+  // Sincroniza o escopo global escolhido na barra lateral com os filtros do Analítico.
   useEffect(() => {
-    if (currentTenantId && currentTenantId.startsWith("f") && isUnitOwnedByUser(currentTenantId)) {
+    setSelectedBusiness(currentBusinessId || "all");
+    if (franchises.some((franchise) => franchise.id === currentTenantId) && isUnitOwnedByUser(currentTenantId)) {
       setSelectedFranchise(currentTenantId);
       setViewMode("unit");
+    } else {
+      setSelectedFranchise("all");
+      setViewMode("consolidated");
     }
-  }, [currentTenantId]);
+  }, [currentBusinessId, currentTenantId, franchises]);
 
   // Ensure franchisee is always in unit view and has an allowed unit selected
   useEffect(() => {
@@ -278,7 +284,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
   const activeUnitId =
     selectedFranchise !== "all" && isUnitOwnedByUser(selectedFranchise)
       ? selectedFranchise
-      : currentTenantId.startsWith("f") && isUnitOwnedByUser(currentTenantId)
+      : franchises.some((franchise) => franchise.id === currentTenantId) && isUnitOwnedByUser(currentTenantId)
       ? currentTenantId
       : allowedUnits[0]?.id || franchises[0]?.id;
 

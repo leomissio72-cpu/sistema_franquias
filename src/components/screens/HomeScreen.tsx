@@ -121,14 +121,18 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
     return `${yrText} · ${moText} · ${dayText}`;
   };
 
-  // Sync selectedFranchiseFilter whenever currentTenantId changes
+  // Os filtros do cabeçalho e da barra lateral representam o mesmo escopo.
+  // Sincronize os dois sentidos para que uma seleção feita no menu lateral
+  // atualize imediatamente os indicadores e a lista da tela inicial.
   useEffect(() => {
-    if (currentTenantId && currentTenantId.startsWith("f")) {
+    setSelectedBusiness(currentBusinessId || "all");
+    const isKnownUnit = franchises.some((franchise) => franchise.id === currentTenantId);
+    if (isKnownUnit) {
       setSelectedFranchiseFilter(currentTenantId);
     } else {
       setSelectedFranchiseFilter("all");
     }
-  }, [currentTenantId]);
+  }, [currentBusinessId, currentTenantId, franchises]);
 
   // Regra fundamental: uma unidade não pode ver outra, a menos que pertença comprovadamente ao mesmo dono
   const isUnitOwnedByUser = (f: FranchiseUnit): boolean => {

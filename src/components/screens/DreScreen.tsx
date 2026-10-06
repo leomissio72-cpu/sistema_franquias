@@ -85,7 +85,7 @@ export const DreScreen: React.FC<DreScreenProps> = ({
   // Business & Franchise Filters
   const [selectedBusiness, setSelectedBusiness] = useState<string>(currentBusinessId || "all");
   const [selectedFranchise, setSelectedFranchise] = useState<string>(
-    currentTenantId && currentTenantId.startsWith("f") ? currentTenantId : "all"
+    franchises.some((franchise) => franchise.id === currentTenantId) ? currentTenantId : "all"
   );
 
   // Power BI Interactive Features
@@ -105,10 +105,12 @@ export const DreScreen: React.FC<DreScreenProps> = ({
 
   // Sync selectedFranchise whenever currentTenantId changes
   useEffect(() => {
-    if (currentTenantId && currentTenantId.startsWith("f")) {
+    if (franchises.some((franchise) => franchise.id === currentTenantId)) {
       setSelectedFranchise(currentTenantId);
+    } else {
+      setSelectedFranchise("all");
     }
-  }, [currentTenantId]);
+  }, [currentTenantId, franchises]);
 
   // Sync selectedBusiness whenever currentBusinessId changes
   useEffect(() => {
