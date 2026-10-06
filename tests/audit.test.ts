@@ -314,6 +314,14 @@ test("AUDITORIA 8: Importação ignora duplicidades e operador não exclui conci
   );
   assert.equal(resDelete.status, 403);
 
+  const resSyncDelete = await appRequest(
+    "POST",
+    "/api/state/sync",
+    { Cookie: `gestao_session=${encodeURIComponent(operatorToken)}` },
+    { section: "manualEntries", data: db.manualEntries.filter((entry: any) => entry.id !== importedId) },
+  );
+  assert.equal(resSyncDelete.status, 403);
+
   db.manualEntries = db.manualEntries.filter((entry: any) => entry.id !== importedId);
   db.users = db.users.filter((user: any) => user.id !== operador.id);
   if (db.credentials) delete db.credentials[operador.id];

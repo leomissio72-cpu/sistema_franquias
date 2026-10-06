@@ -914,6 +914,12 @@ routeBoth("post", "/api/state/sync", requireSession, async (req, res) => {
   if (batch && typeof batch === "object") {
     for (const [sec, secData] of Object.entries(batch)) {
       if (secData !== void 0) {
+        if (sec === "manualEntries" && Array.isArray(secData)) {
+          const validation = validateManualEntriesSync(secData, authenticatedUser);
+          if (!validation.ok) return res.status(403).json({ error: validation.error });
+          db[sec] = validation.entries;
+          continue;
+        }
         db[sec] = stripSensitiveFields(secData);
       }
     }
@@ -931,6 +937,11 @@ routeBoth("post", "/api/state/sync", requireSession, async (req, res) => {
   }
   let data = incomingData;
   if (section && data !== void 0) {
+    if (section === "manualEntries" && Array.isArray(data)) {
+      const validation = validateManualEntriesSync(data, authenticatedUser);
+      if (!validation.ok) return res.status(403).json({ error: validation.error });
+      data = validation.entries;
+    }
     if (section === "users" && Array.isArray(data)) {
       if (effectiveProfile === "operador") {
         return res.status(403).json({ error: "Operadores n\xE3o podem criar ou alterar acessos." });
@@ -1008,6 +1019,24 @@ function canUserDeleteEntry(user, entry) {
   const profile = String(user?.perfil || "").toLowerCase();
   if (profile === "operador") return false;
   return ["dono", "equipe", "admin", "franqueado"].includes(profile) && canUserAccessEntryTenant(user, String(entry?.tenant || ""));
+}
+function validateManualEntriesSync(incomingEntries, user) {
+  const entries = incomingEntries.map((entry) => stripSensitiveFields(entry));
+  const unauthorizedEntry = entries.find((entry) => !canUserAccessEntryTenant(user, String(entry?.tenant || "dono")));
+  if (unauthorizedEntry) return { ok: false, error: "Voc\xEA n\xE3o pode alterar lan\xE7amentos de uma unidade n\xE3o autorizada." };
+  const incomingIds = new Set(entries.map((entry) => String(entry?.id || "")));
+  const deletedEntry = db.manualEntries.find((entry) => entry?.id && !incomingIds.has(String(entry.id)));
+  if (deletedEntry && !canUserDeleteEntry(user, deletedEntry)) {
+    return { ok: false, error: "Seu n\xEDvel de acesso n\xE3o permite excluir este lan\xE7amento." };
+  }
+  const seen = /* @__PURE__ */ new Set();
+  const uniqueEntries = entries.filter((entry) => {
+    const identity = manualEntryIdentity(entry);
+    if (seen.has(identity)) return false;
+    seen.add(identity);
+    return true;
+  });
+  return { ok: true, entries: uniqueEntries };
 }
 routeBoth("post", "/api/entries", requireSession, async (req, res) => {
   const newEntry = req.body;

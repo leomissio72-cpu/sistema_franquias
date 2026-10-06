@@ -754,6 +754,12 @@ routeBoth("post", "/api/state/sync", requireSession, async (req: Request, res: E
   if (batch && typeof batch === "object") {
     for (const [sec, secData] of Object.entries(batch)) {
       if (secData !== undefined) {
+        if (sec === "manualEntries" && Array.isArray(secData)) {
+          const validation = validateManualEntriesSync(secData, authenticatedUser);
+          if (!validation.ok) return res.status(403).json({ error: validation.error });
+          (db as any)[sec] = validation.entries;
+          continue;
+        }
         (db as any)[sec] = stripSensitiveFields(secData);
       }
     }
@@ -772,6 +778,11 @@ routeBoth("post", "/api/state/sync", requireSession, async (req: Request, res: E
 
   let data = incomingData;
   if (section && data !== undefined) {
+    if (section === "manualEntries" && Array.isArray(data)) {
+      const validation = validateManualEntriesSync(data, authenticatedUser);
+      if (!validation.ok) return res.status(403).json({ error: validation.error });
+      data = validation.entries;
+    }
     if (section === "users" && Array.isArray(data)) {
       if (effectiveProfile === "operador") {
         return res.status(403).json({ error: "Operadores não podem criar ou alterar acessos." });
@@ -863,6 +874,27 @@ function canUserDeleteEntry(user: any, entry: any): boolean {
   if (profile === "operador") return false;
   return ["dono", "equipe", "admin", "franqueado"].includes(profile)
     && canUserAccessEntryTenant(user, String(entry?.tenant || ""));
+}
+
+function validateManualEntriesSync(incomingEntries: any[], user: any): { ok: true; entries: any[] } | { ok: false; error: string } {
+  const entries = incomingEntries.map((entry) => stripSensitiveFields(entry));
+  const unauthorizedEntry = entries.find((entry: any) => !canUserAccessEntryTenant(user, String(entry?.tenant || "dono")));
+  if (unauthorizedEntry) return { ok: false, error: "Você não pode alterar lançamentos de uma unidade não autorizada." };
+
+  const incomingIds = new Set(entries.map((entry: any) => String(entry?.id || "")));
+  const deletedEntry = db.manualEntries.find((entry: any) => entry?.id && !incomingIds.has(String(entry.id)));
+  if (deletedEntry && !canUserDeleteEntry(user, deletedEntry)) {
+    return { ok: false, error: "Seu nível de acesso não permite excluir este lançamento." };
+  }
+
+  const seen = new Set<string>();
+  const uniqueEntries = entries.filter((entry: any) => {
+    const identity = manualEntryIdentity(entry);
+    if (seen.has(identity)) return false;
+    seen.add(identity);
+    return true;
+  });
+  return { ok: true, entries: uniqueEntries };
 }
 
 routeBoth("post", "/api/entries", requireSession, async (req: Request, res: ExpressResponse) => {
