@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { FranchiseUnit, Business, ScreenType } from "../../types";
 import { formatBrl, formatPct, calculateDre } from "../../utils/calculations";
 import {
@@ -10,8 +10,11 @@ import {
   AlertCircle,
   CheckCircle2,
   Layers,
-  Plus
+  Plus,
+  Eye,
+  Check
 } from "lucide-react";
+import L from "leaflet";
 
 interface NetworkScreenProps {
   franchises: FranchiseUnit[];
@@ -22,6 +25,7 @@ interface NetworkScreenProps {
   dreParams: Record<string, any>;
   royalties: Record<string, number>;
   onRefreshData?: () => void;
+  initialFocus?: "map" | "overview";
 }
 
 export const NetworkScreen: React.FC<NetworkScreenProps> = ({
@@ -33,12 +37,31 @@ export const NetworkScreen: React.FC<NetworkScreenProps> = ({
   dreParams,
   royalties,
   onRefreshData,
+  initialFocus = "overview",
 }) => {
+  const mapSectionRef = useRef<HTMLDivElement>(null);
+  const mapContainerRef = useRef<HTMLDivElement>(null);
+  const mapInstanceRef = useRef<L.Map | null>(null);
+  const markersGroupRef = useRef<L.LayerGroup | null>(null);
+
+  const [mapFilter, setMapFilter] = useState<"all" | "green" | "amber">("all");
+  const [selectedPinUnitId, setSelectedPinUnitId] = useState<string | null>(null);
+
   const visibleUnits = franchises.filter((f) => {
     if (currentTenantId === "dono" || currentTenantId === "equipe") return true;
     if (currentTenantId.startsWith("biz")) return f.businessId === currentTenantId;
     return f.id === currentTenantId;
   });
+
+  const filteredMapUnits = visibleUnits.filter((f) => {
+    if (mapFilter === "all") return true;
+    return f.status === mapFilter;
+  });
+
+  const mappedUnits = filteredMapUnits.filter(
+    (unit): unit is FranchiseUnit & { lat: number; lng: number } =>
+      Number.isFinite(unit.lat) && Number.isFinite(unit.lng) && unit.coordinatesVerified !== false
+  );
 
   const totalFat = visibleUnits.reduce((s, f) => s + f.faturamento, 0);
   let totalLucro = 0;
@@ -54,9 +77,101 @@ export const NetworkScreen: React.FC<NetworkScreenProps> = ({
   const warnCount = visibleUnits.filter((f) => f.status !== "green").length;
   const maxFat = Math.max(...visibleUnits.map((f) => f.faturamento), 1);
   const healthRate = visibleUnits.length ? Math.round((healthyCount / visibleUnits.length) * 100) : 0;
+  const citiesCount = new Set(mappedUnits.map((f) => f.city)).size;
 
   const getBusinessBrand = (bizId: string) => {
     return businesses.find((b) => b.id === bizId)?.brand || bizId;
+  };
+
+  useEffect(() => {
+    if (initialFocus === "map" && mapSectionRef.current) {
+      setTimeout(() => {
+        mapSectionRef.current?.scrollIntoView({ behavior: "smooth" });
+      }, 300);
+    }
+  }, [initialFocus]);
+
+  useEffect(() => {
+    if (!mapContainerRef.current) return;
+
+    if (!mapInstanceRef.current) {
+      const map = L.map(mapContainerRef.current, {
+        zoomControl: true,
+        scrollWheelZoom: true,
+      }).setView([-15.5, -48.0], 4);
+
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        maxZoom: 18,
+        attribution: "&copy; OpenStreetMap",
+      }).addTo(map);
+
+      const markersGroup = L.layerGroup().addTo(map);
+      mapInstanceRef.current = map;
+      markersGroupRef.current = markersGroup;
+    }
+
+    const map = mapInstanceRef.current;
+    const markersGroup = markersGroupRef.current;
+
+    if (markersGroup) {
+      markersGroup.clearLayers();
+
+      const markers: L.Marker[] = [];
+
+      mappedUnits.forEach((f) => {
+        const biz = businesses.find((b) => b.id === f.businessId);
+        const pinColor = f.status === "green" ? "#118464" : "#a86a08";
+        const calc = calculateDre(f.faturamento, dreParams[f.id] || dreParams["dono"], royalties[f.businessId]);
+
+        const customIcon = L.divIcon({
+          className: "",
+          html: `<div style="background:${pinColor};width:32px;height:32px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);border:2.5px solid #fff;box-shadow:0 4px 12px rgba(0,0,0,0.3);display:grid;place-items:center;">
+            <span style="transform:rotate(45deg);color:#fff;font-size:12px;font-weight:900;">📍</span>
+          </div>`,
+          iconSize: [32, 32],
+          iconAnchor: [16, 32],
+          popupAnchor: [0, -32],
+        });
+
+        const marker = L.marker([f.lat, f.lng], { icon: customIcon }).addTo(markersGroup);
+
+        const popupContent = document.createElement("div");
+        popupContent.className = "p-1 font-sans";
+        popupContent.innerHTML = `
+          <div style="font-size:9px;font-weight:800;color:${biz?.color || "#3c63da"};margin-bottom:2px;">${biz?.name || ""}</div>
+          <div style="font-weight:800;font-size:13px;color:#152238;">${f.name}</div>
+          <div style="font-size:10px;color:#69778c;margin-bottom:8px;line-height:1.4;">${f.address}</div>
+          <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px;"><span>Faturamento:</span><b>${formatBrl(f.faturamento)}</b></div>
+          <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px;"><span>Lucro Líquido:</span><b style="color:#118464">${formatBrl(calc.lucroLiquido)}</b></div>
+          <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:8px;"><span>Margem:</span><b>${formatPct(calc.margemLiquida)}</b></div>
+        `;
+
+        const btn = document.createElement("button");
+        btn.innerText = "Ver DRE da Unidade";
+        btn.className = "w-full rounded bg-[#3c63da] text-white py-1.5 text-xs font-bold hover:bg-[#2f52c0] cursor-pointer";
+        btn.onclick = () => {
+          onSelectTenant(f.id);
+          onNavigate("dre");
+        };
+        popupContent.appendChild(btn);
+
+        marker.bindPopup(popupContent);
+        markers.push(marker);
+      });
+
+      if (mappedUnits.length > 0) {
+        const bounds = L.latLngBounds(mappedUnits.map((f) => [f.lat, f.lng]));
+        map.fitBounds(bounds, { padding: [40, 40], maxZoom: 13 });
+      }
+    }
+
+    setTimeout(() => {
+      map?.invalidateSize();
+    }, 200);
+  }, [mappedUnits, businesses, dreParams, royalties]);
+
+  const scrollToMap = () => {
+    mapSectionRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
   return (
@@ -86,11 +201,11 @@ export const NetworkScreen: React.FC<NetworkScreenProps> = ({
             <span>Cadastrar Novo Franqueado</span>
           </button>
           <button
-            onClick={() => onNavigate("map")}
-            className="flex items-center gap-1.5 rounded-lg border border-[#e5eaf1] bg-white px-3 py-2 text-xs font-bold text-[#152238] hover:bg-[#f4f7fb] transition-all cursor-pointer"
+            onClick={scrollToMap}
+            className="flex items-center gap-1.5 rounded-lg border border-[#e5eaf1] bg-white px-3 py-2 text-xs font-bold text-[#152238] hover:bg-[#f4f7fb] transition-all cursor-pointer shadow-2xs"
           >
             <MapPin className="h-3.5 w-3.5 text-[#3c63da]" />
-            <span>Ver no Mapa</span>
+            <span>Ver Mapa na Página</span>
           </button>
           {onRefreshData && (
             <button
@@ -152,6 +267,77 @@ export const NetworkScreen: React.FC<NetworkScreenProps> = ({
           <small className="text-[11px] text-[#69778c] block mt-0.5">
             Lucro líquido ÷ receita
           </small>
+        </div>
+      </div>
+
+      {/* ------------------------------------------------------------- */}
+      {/* MAPA DAS UNIDADES & REDE INTEGRADOS NA MESMA PÁGINA           */}
+      {/* ------------------------------------------------------------- */}
+      <div ref={mapSectionRef} className="rounded-2xl border border-[#e5eaf1] bg-white p-4 sm:p-5 shadow-xs space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[#e5eaf1]">
+          <div>
+            <div className="flex items-center gap-2">
+              <div className="h-7 w-7 rounded-lg bg-[#3c63da]/10 text-[#3c63da] flex items-center justify-center">
+                <MapPin className="h-4 w-4" />
+              </div>
+              <h3 className="text-sm font-extrabold text-[#152238]">
+                Mapa Georreferenciado das Unidades (Presença Nacional)
+              </h3>
+              <span className="text-[11px] font-bold text-[#3c63da] bg-[#3c63da]/10 px-2 py-0.5 rounded-full">
+                {mappedUnits.length} geolocalizadas · {citiesCount} cidades
+              </span>
+            </div>
+            <p className="text-xs text-[#69778c] mt-1">
+              Visualize a distribuição geográfica de todas as unidades da franquia no mapa interativo em tempo real. Clique nos pins para abrir indicadores e DRE.
+            </p>
+          </div>
+
+          {/* Filtros do Mapa */}
+          <div className="flex items-center gap-1.5 bg-[#f8fafc] p-1 rounded-xl border border-[#e5eaf1] self-start sm:self-auto">
+            <button
+              type="button"
+              onClick={() => setMapFilter("all")}
+              className={`px-2.5 py-1 text-xs font-bold rounded-lg transition-all cursor-pointer ${
+                mapFilter === "all" ? "bg-[#3c63da] text-white shadow-xs" : "text-[#69778c] hover:text-[#152238]"
+              }`}
+            >
+              Todas ({visibleUnits.length})
+            </button>
+            <button
+              type="button"
+              onClick={() => setMapFilter("green")}
+              className={`px-2.5 py-1 text-xs font-bold rounded-lg transition-all cursor-pointer flex items-center gap-1 ${
+                mapFilter === "green" ? "bg-emerald-600 text-white shadow-xs" : "text-[#69778c] hover:text-[#152238]"
+              }`}
+            >
+              <span className="h-2 w-2 rounded-full bg-emerald-400" />
+              <span>Saudáveis ({healthyCount})</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setMapFilter("amber")}
+              className={`px-2.5 py-1 text-xs font-bold rounded-lg transition-all cursor-pointer flex items-center gap-1 ${
+                mapFilter === "amber" ? "bg-amber-600 text-white shadow-xs" : "text-[#69778c] hover:text-[#152238]"
+              }`}
+            >
+              <span className="h-2 w-2 rounded-full bg-amber-400" />
+              <span>Atenção ({warnCount})</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Container do Mapa Leaflet */}
+        <div className="relative w-full h-[360px] sm:h-[420px] rounded-xl overflow-hidden border border-[#dbe4ef] shadow-inner bg-[#f1f5f9]">
+          <div ref={mapContainerRef} className="w-full h-full" style={{ minHeight: "360px" }} />
+          {mappedUnits.length === 0 && (
+            <div className="absolute inset-0 flex items-center justify-center bg-white/80 backdrop-blur-2xs p-4 text-center">
+              <div>
+                <MapPin className="h-8 w-8 text-[#9aa9bf] mx-auto mb-2" />
+                <p className="text-xs font-bold text-[#152238]">Nenhuma unidade com coordenadas geográficas nesta seleção.</p>
+                <p className="text-[11px] text-[#69778c] mt-0.5">Cadastre ou edite as franquias informando endereço ou latitude/longitude.</p>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 

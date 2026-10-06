@@ -148,7 +148,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         { id: "fees", label: "Taxas e Recebimentos", icon: <Percent className="h-4 w-4" /> },
       ];
 
-  // 3. Gestão & Sistema
+  // 3. Configurações & Gestão
   const managementNav: NavItem[] = isFranchisee
     ? [
         { id: "whatsapp", label: "Disparo WhatsApp", icon: <MessageSquare className="h-4 w-4 text-emerald-500" /> },
@@ -156,28 +156,25 @@ export const Sidebar: React.FC<SidebarProps> = ({
         { id: "users", label: "Acessos e Logins", icon: <KeyRound className="h-4 w-4" /> },
       ]
     : [
-        { id: "whatsapp", label: "Disparo WhatsApp", icon: <MessageSquare className="h-4 w-4 text-emerald-500" /> },
         { id: "configuracao", label: "Configurações", icon: <Settings className="h-4 w-4" /> },
+        { id: "whatsapp", label: "Disparo WhatsApp", icon: <MessageSquare className="h-4 w-4 text-emerald-500" /> },
         { id: "employees", label: "Funcionários", icon: <Users className="h-4 w-4" /> },
         { id: "users", label: "Acessos e Logins", icon: <KeyRound className="h-4 w-4" /> },
       ];
 
   // Todas as áreas continuam visíveis para o dono/equipe mesmo quando o banco está vazio.
   const networkNav: NavItem[] = [
-    { id: "network", label: "Rede e Unidades", icon: <Building2 className="h-4 w-4" /> },
+    { id: "network", label: "Rede e Unidades (com Mapa)", icon: <Building2 className="h-4 w-4" /> },
     { id: "map", label: "Mapa das Unidades", icon: <MapPin className="h-4 w-4" /> },
     { id: "reports", label: "Relatórios", icon: <FileBarChart className="h-4 w-4" /> },
-    { id: "permissoes", label: "Permissões e Royalties", icon: <KeyRound className="h-4 w-4" /> },
-    { id: "tenants", label: "Cadastro de Franqueados", icon: <Store className="h-4 w-4" /> },
   ];
 
   const operationsNav: NavItem[] = [
-    { id: "dreparams", label: "Parâmetros do DRE", icon: <SlidersHorizontal className="h-4 w-4" /> },
     { id: "lancamentos", label: "Lançamentos Manuais", icon: <FilePenLine className="h-4 w-4" /> },
     { id: "conciliation", label: "Conciliação Bancária", icon: <ArrowLeftRight className="h-4 w-4" /> },
     { id: "vt", label: "Vale-Transporte", icon: <FileSpreadsheet className="h-4 w-4" /> },
     { id: "rp", label: "Rotinas / RP", icon: <ArrowLeftRight className="h-4 w-4" /> },
-    { id: "produtos", label: "Produtos Homologados", icon: <PackageCheck className="h-4 w-4" /> },
+    { id: "produtos", label: "Fornecedores e Produtos Homologados", icon: <PackageCheck className="h-4 w-4" /> },
   ];
 
   const handleNavClick = (screen: ScreenType) => {
@@ -398,7 +395,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         {renderNavGroup("Financeiro", financialNav)}
         {renderNavGroup("Rede", networkNav)}
         {renderNavGroup("Operação", operationsNav)}
-        {renderNavGroup("Gestão & Sistema", managementNav)}
+        {renderNavGroup("Configurações & Gestão", managementNav)}
       </div>
 
       <div className="mt-auto" aria-hidden="true" />

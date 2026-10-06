@@ -132,10 +132,67 @@ html.theme-dark .ring-\[\#3c63da\]\/20 {
   --tw-ring-color: rgb(91 141 255 / 0.28) !important;
 }
 
-/* Scrollbars */
+/* Universal & Custom Screen Scrollbars */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 #f1f5f9;
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 9999px;
+  border: 2px solid #f1f5f9;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Screen Scroller Utility */
+.custom-screen-scroller {
+  overflow-y: auto;
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+}
+
+.custom-screen-scroller::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.custom-screen-scroller::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 9999px;
+}
+
+.custom-screen-scroller::-webkit-scrollbar-thumb {
+  background: #94a3b8;
+  border-radius: 9999px;
+  border: 1px solid #f1f5f9;
+}
+
+.custom-screen-scroller::-webkit-scrollbar-thumb:hover {
+  background: #3c63da;
+}
+
+/* Dark mode scrollbars */
+html.theme-dark * {
+  scrollbar-color: #2b4161 #0b1220;
+}
+
 html.theme-dark ::-webkit-scrollbar {
-  width: 10px;
-  height: 10px;
+  width: 8px;
+  height: 8px;
 }
 
 html.theme-dark ::-webkit-scrollbar-track {
@@ -145,10 +202,24 @@ html.theme-dark ::-webkit-scrollbar-track {
 html.theme-dark ::-webkit-scrollbar-thumb {
   background: #2b4161;
   border-radius: 999px;
+  border: 1px solid #0b1220;
 }
 
 html.theme-dark ::-webkit-scrollbar-thumb:hover {
   background: #41618e;
+}
+
+html.theme-dark .custom-screen-scroller::-webkit-scrollbar-track {
+  background: #111b2d;
+}
+
+html.theme-dark .custom-screen-scroller::-webkit-scrollbar-thumb {
+  background: #3b5278;
+  border-color: #111b2d;
+}
+
+html.theme-dark .custom-screen-scroller::-webkit-scrollbar-thumb:hover {
+  background: #5b7fb5;
 }
 
 
@@ -199,4 +270,38 @@ html.theme-dark ::-webkit-scrollbar-thumb:hover {
   main .fixed.inset-0 { padding: .75rem; }
   main .fixed.inset-0 form { max-height: calc(100dvh - 1.5rem); }
   .leaflet-container { min-height: 280px !important; }
+}
+
+/* Print Styles: Clean DRE Table Export */
+@media print {
+  aside, #main-topbar, nav, button, .custom-screen-scroller::-webkit-scrollbar {
+    display: none !important;
+  }
+  body, html, #root, main, .app-shell {
+    background: #fff !important;
+    color: #000 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    overflow: visible !important;
+    width: 100% !important;
+  }
+  main {
+    max-width: 100% !important;
+  }
+  table {
+    display: table !important;
+    width: 100% !important;
+    border-collapse: collapse !important;
+    page-break-inside: auto;
+  }
+  tr {
+    page-break-inside: avoid;
+    page-break-after: auto;
+  }
+  thead {
+    display: table-header-group !important;
+  }
+  .overflow-x-auto {
+    overflow: visible !important;
+  }
 }

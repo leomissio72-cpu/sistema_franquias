@@ -88,7 +88,7 @@ export const ProdutosHomologadosScreen: React.FC<ProdutosHomologadosScreenProps>
           </div>
           <h2 className="flex items-center gap-2 text-2xl font-extrabold tracking-tight text-[#152238]">
             <PackageCheck className="h-6 w-6 text-[#2563eb]" />
-            Produtos homologados
+            Fornecedores e Produtos Homologados
           </h2>
           <p className="mt-1 max-w-2xl text-xs leading-relaxed text-[#69778c]">
             Consulte os produtos aprovados pela franqueadora e os fornecedores cadastrados para compras padronizadas.

@@ -1,0 +1,102 @@
+{
+  "entities": {
+    "Business": {
+      "title": "Business",
+      "description": "Modelo de negócio ou marca da rede franqueadora",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Identificador único da marca" },
+        "name": { "type": "string", "description": "Nome empresarial da marca" },
+        "brand": { "type": "string", "description": "Nome fantasia da marca" },
+        "color": { "type": "string", "description": "Cor hexadecimal representativa" },
+        "royalty": { "type": "number", "description": "Taxa percentual de royalties da franqueadora" }
+      },
+      "required": ["id", "name", "brand"]
+    },
+    "FranchiseUnit": {
+      "title": "FranchiseUnit",
+      "description": "Unidade franqueada da rede",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Identificador único da unidade" },
+        "businessId": { "type": "string", "description": "Identificador da marca correspondente" },
+        "name": { "type": "string", "description": "Nome da unidade ou razão social" },
+        "code": { "type": "string", "description": "Código da unidade (ex: F001)" },
+        "resp": { "type": "string", "description": "Nome do franqueado ou responsável" },
+        "address": { "type": "string", "description": "Endereço comercial" },
+        "city": { "type": "string", "description": "Cidade e estado" },
+        "region": { "type": "string", "description": "Região geográfica" },
+        "lat": { "type": "number", "description": "Latitude para geolocalização no mapa" },
+        "lng": { "type": "number", "description": "Longitude para geolocalização no mapa" },
+        "faturamento": { "type": "number", "description": "Faturamento mensal estimado ou realizado" },
+        "pendencias": { "type": "number", "description": "Quantidade de pendências operacionais" },
+        "rpDone": { "type": "number", "description": "Rotinas de processos concluídas" },
+        "status": { "type": "string", "description": "Status operacional da unidade" },
+        "email": { "type": "string", "description": "E-mail de contato da unidade" },
+        "phone": { "type": "string", "description": "Telefone de contato da unidade" }
+      },
+      "required": ["id", "businessId", "name", "code"]
+    },
+    "ConfigItem": {
+      "title": "ConfigItem",
+      "description": "Item de configuração administrativa global da plataforma",
+      "type": "object",
+      "properties": {
+        "key": { "type": "string", "description": "Chave da configuração" },
+        "name": { "type": "string", "description": "Nome descritivo" },
+        "value": { "type": "string", "description": "Valor configurado" },
+        "type": { "type": "string", "description": "Tipo de dado" },
+        "category": { "type": "string", "description": "Categoria da configuração" },
+        "description": { "type": "string", "description": "Explicação detalhada" },
+        "lastModified": { "type": "string", "description": "Data e hora da última modificação" },
+        "modifiedBy": { "type": "string", "description": "Usuário responsável pela alteração" }
+      },
+      "required": ["key", "name", "value"]
+    },
+    "AuditLog": {
+      "title": "AuditLog",
+      "description": "Registro de auditoria de alterações administrativas e operacionais",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Identificador do log" },
+        "timestamp": { "type": "string", "description": "Carimbo de data e hora ISO" },
+        "action": { "type": "string", "description": "Tipo de ação executada" },
+        "key": { "type": "string", "description": "Chave ou entidade afetada" },
+        "user": { "type": "string", "description": "Identificação do usuário autor" }
+      },
+      "required": ["id", "timestamp", "action", "user"]
+    },
+    "CentralState": {
+      "title": "CentralState",
+      "description": "Snapshot central sincronizado do estado da rede de franquias",
+      "type": "object",
+      "properties": {
+        "version": { "type": "number", "description": "Versão do esquema" },
+        "lastUpdated": { "type": "string", "description": "Data da última sincronização ISO" }
+      },
+      "required": ["version", "lastUpdated"]
+    }
+  },
+  "firestore": {
+    "/businesses/{businessId}": {
+      "schema": { "$ref": "#/entities/Business" },
+      "description": "Coleção de modelos de negócio e marcas da franqueadora"
+    },
+    "/franchises/{franchiseId}": {
+      "schema": { "$ref": "#/entities/FranchiseUnit" },
+      "description": "Coleção de unidades franqueadas cadastradas"
+    },
+    "/configs/{configKey}": {
+      "schema": { "$ref": "#/entities/ConfigItem" },
+      "description": "Coleção de parâmetros globais e configurações do sistema"
+    },
+    "/auditLogs/{logId}": {
+      "schema": { "$ref": "#/entities/AuditLog" },
+      "description": "Trilha de auditoria e governança"
+    },
+    "/system/{stateId}": {
+      "schema": { "$ref": "#/entities/CentralState" },
+      "description": "Estado consolidado e metadados de sincronização"
+    }
+  }
+}

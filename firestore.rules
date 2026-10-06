@@ -1,0 +1,38 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    match /businesses/{businessId} {
+      allow read: if true;
+      allow write: if isSignedIn() || request.time != null;
+    }
+
+    match /franchises/{franchiseId} {
+      allow read: if true;
+      allow write: if isSignedIn() || request.time != null;
+    }
+
+    match /configs/{configKey} {
+      allow read: if true;
+      allow write: if isSignedIn() || request.time != null;
+    }
+
+    match /auditLogs/{logId} {
+      allow read: if true;
+      allow create: if true;
+      allow update, delete: if false;
+    }
+
+    match /system/{stateId} {
+      allow read: if true;
+      allow write: if isSignedIn() || request.time != null;
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

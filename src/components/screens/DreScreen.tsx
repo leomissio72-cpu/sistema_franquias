@@ -33,7 +33,8 @@ import {
   Eye,
   Check,
   X,
-  Sliders
+  Sliders,
+  Download
 } from "lucide-react";
 import Chart from "chart.js/auto";
 import {
@@ -633,24 +634,221 @@ export const DreScreen: React.FC<DreScreenProps> = ({
   ]);
 
   const handleExportCsv = () => {
-    let csv = "Item;Valor Nominal (R$);Percentual (%)\n";
-    csv += `Faturamento Bruto;${dre.fatBruta.toFixed(2)};100.00%\n`;
-    csv += `Descontos / Estornos;-${dre.desconto.toFixed(2)};${((dre.desconto / (dre.fatBruta || 1)) * 100).toFixed(2)}%\n`;
-    csv += `Impostos sobre Vendas;-${dre.impostos.toFixed(2)};${((dre.impostos / (dre.receitaAjustada || 1)) * 100).toFixed(2)}%\n`;
-    csv += `Receita Liquida;${dre.receitaLiquida.toFixed(2)};100.00%\n`;
-    csv += `CMV (Custo Mercadoria);-${dre.cmv.toFixed(2)};${((dre.cmv / (dre.receitaLiquida || 1)) * 100).toFixed(2)}%\n`;
-    csv += `Taxas de Cartao / Negocio;-${dre.taxasNegocio.toFixed(2)};${((dre.taxasNegocio / (dre.receitaLiquida || 1)) * 100).toFixed(2)}%\n`;
-    csv += `Lucro Bruto;${dre.lucroBruto.toFixed(2)};${(dre.margemBruta * 100).toFixed(2)}%\n`;
-    dre.despesas.forEach((d) => {
-      csv += `${d?.name || "Despesa"};-${d.value.toFixed(2)};${((d.value / (dre.receitaLiquida || 1)) * 100).toFixed(2)}%\n`;
+    const scope = getScopeTitle();
+    const yearsStr = dateSelection.years?.length ? dateSelection.years.join(", ") : "Todos";
+    const monthsStr = dateSelection.months?.length ? dateSelection.months.map((m) => AVAILABLE_MONTHS.find((item) => item.value === m)?.short || m).join(", ") : "Todos";
+    const daysStr = dateSelection.days?.length ? `${dateSelection.days.length} dia(s)` : "Todos";
+    const period = `Ano: ${yearsStr} | Mês: ${monthsStr} | Dias: ${daysStr}`;
+    const dateStr = new Date().toLocaleDateString("pt-BR");
+
+    let csv = `DEMONSTRATIVO DO RESULTADO DO EXERCICIO (DRE)\n`;
+    csv += `Escopo: ${scope}\n`;
+    csv += `Periodo: ${period}\n`;
+    csv += `Data de Emissao: ${dateStr}\n\n`;
+
+    csv += `Codigo;Conta Contabil / Descricao;Categoria;Valor Nominal (R$);% s/ Faturamento Bruto;% s/ Receita Liquida;Classificacao\n`;
+    csv += `1.00;(=) RECEITA BRUTA OPERACIONAL;Receita Bruta;${dre.fatBruta.toFixed(2)};100.00%;${((dre.fatBruta / (dre.receitaLiquida || 1)) * 100).toFixed(2)}%;Receita\n`;
+    csv += `1.01;(-) Descontos & Cancelamentos;Deducao de Vendas;-${dre.desconto.toFixed(2)};${((dre.desconto / (dre.fatBruta || 1)) * 100).toFixed(2)}%;${((dre.desconto / (dre.receitaLiquida || 1)) * 100).toFixed(2)}%;Deducao\n`;
+    csv += `1.02;(-) Impostos sobre Vendas;Tributos;-${dre.impostos.toFixed(2)};${((dre.impostos / (dre.fatBruta || 1)) * 100).toFixed(2)}%;${((dre.impostos / (dre.receitaAjustada || 1)) * 100).toFixed(2)}%;Deducao\n`;
+    csv += `2.00;(=) RECEITA LIQUIDA OPERACIONAL;Receita Liquida;${dre.receitaLiquida.toFixed(2)};${((dre.receitaLiquida / (dre.fatBruta || 1)) * 100).toFixed(2)}%;100.00%;Subtotal\n`;
+    csv += `2.01;(-) Custo das Mercadorias Vendidas (CMV);Custo Variavel;-${dre.cmv.toFixed(2)};${((dre.cmv / (dre.fatBruta || 1)) * 100).toFixed(2)}%;${((dre.cmv / (dre.receitaLiquida || 1)) * 100).toFixed(2)}%;Custos\n`;
+    csv += `2.02;(-) Taxas de Cartao & Plataforma;Custo Variavel;-${dre.taxasNegocio.toFixed(2)};${((dre.taxasNegocio / (dre.fatBruta || 1)) * 100).toFixed(2)}%;${((dre.taxasNegocio / (dre.receitaLiquida || 1)) * 100).toFixed(2)}%;Custos\n`;
+    csv += `3.00;(=) Lucro Bruto (Margem de Contribuicao);Lucro Bruto;${dre.lucroBruto.toFixed(2)};${((dre.lucroBruto / (dre.fatBruta || 1)) * 100).toFixed(2)}%;${(dre.margemBruta * 100).toFixed(2)}%;Subtotal\n`;
+    
+    dre.despesas.forEach((d, idx) => {
+      const code = `4.${String(idx + 1).padStart(2, "0")}`;
+      csv += `${code};(-) ${d?.name || "Despesa"};Despesa Operacional;-${d.value.toFixed(2)};${((d.value / (dre.fatBruta || 1)) * 100).toFixed(2)}%;${((d.value / (dre.receitaLiquida || 1)) * 100).toFixed(2)}%;Despesa Fixa\n`;
     });
-    csv += `Lucro Liquido;${dre.lucroLiquido.toFixed(2)};${(dre.margemLiquida * 100).toFixed(2)}%\n`;
+    
+    csv += `5.00;(=) RESULTADO LIQUIDO DO PERIODO;Lucro Liquido;${dre.lucroLiquido.toFixed(2)};${((dre.lucroLiquido / (dre.fatBruta || 1)) * 100).toFixed(2)}%;${(dre.margemLiquida * 100).toFixed(2)}%;Resultado Final\n`;
+
+    if (visibleUnits.length > 1) {
+      csv += `\n\nTABELA DISCRIMINADA POR UNIDADE DA REDE\n`;
+      csv += `Codigo Loja;Nome da Unidade;Marca;Cidade/UF;Faturamento Bruto (R$);Lucro Liquido (R$);Margem Liquida (%)\n`;
+      visibleUnits.forEach((u) => {
+        const uParams = dreParams[u.id] || dreParams["dono"];
+        const uRoy = royalties[u.businessId];
+        const uCalc = calculateDre(u.faturamento, uParams, uRoy);
+        const b = businesses.find(biz => biz.id === u.businessId);
+        csv += `${u.code};${u.name};${b?.name || u.businessId};${u.city};${u.faturamento.toFixed(2)};${uCalc.lucroLiquido.toFixed(2)};${(uCalc.margemLiquida * 100).toFixed(2)}%\n`;
+      });
+    }
 
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `DRE_${targetTenantKey}_${new Date().toISOString().slice(0, 10)}.csv`;
+    a.download = `DRE_TabelaCompleta_${targetTenantKey}_${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const handleDownloadHtmlReport = () => {
+    const scope = getScopeTitle();
+    const yearsStr = dateSelection.years?.length ? dateSelection.years.join(", ") : "Todos";
+    const monthsStr = dateSelection.months?.length ? dateSelection.months.map((m) => AVAILABLE_MONTHS.find((item) => item.value === m)?.short || m).join(", ") : "Todos";
+    const daysStr = dateSelection.days?.length ? `${dateSelection.days.length} dia(s)` : "Todos";
+    const period = `Ano: ${yearsStr} · Mês: ${monthsStr} · Dias: ${daysStr}`;
+    const dateStr = new Date().toLocaleDateString("pt-BR");
+
+    let rowsHtml = `
+      <tr style="background:#f8faff;font-weight:bold;">
+        <td style="padding:10px 12px;border-bottom:1px solid #e2e8f0;">(=) RECEITA BRUTA OPERACIONAL</td>
+        <td style="padding:10px 12px;text-align:right;border-bottom:1px solid #e2e8f0;color:#118464;font-family:monospace;">${formatBrl2(dre.fatBruta)}</td>
+        <td style="padding:10px 12px;text-align:right;border-bottom:1px solid #e2e8f0;font-family:monospace;">100,00%</td>
+      </tr>
+      <tr style="color:#64748b;">
+        <td style="padding:8px 12px;padding-left:24px;border-bottom:1px solid #e2e8f0;">(-) Descontos & Cancelamentos</td>
+        <td style="padding:8px 12px;text-align:right;border-bottom:1px solid #e2e8f0;color:#b44b4b;font-family:monospace;">-${formatBrl2(dre.desconto)}</td>
+        <td style="padding:8px 12px;text-align:right;border-bottom:1px solid #e2e8f0;font-family:monospace;">${formatPct2(dre.desconto / (dre.fatBruta || 1))}</td>
+      </tr>
+      <tr style="color:#64748b;">
+        <td style="padding:8px 12px;padding-left:24px;border-bottom:1px solid #e2e8f0;">(-) Impostos sobre Vendas</td>
+        <td style="padding:8px 12px;text-align:right;border-bottom:1px solid #e2e8f0;color:#b44b4b;font-family:monospace;">-${formatBrl2(dre.impostos)}</td>
+        <td style="padding:8px 12px;text-align:right;border-bottom:1px solid #e2e8f0;font-family:monospace;">${formatPct2(dre.impostos / (dre.receitaAjustada || 1))}</td>
+      </tr>
+      <tr style="background:#f1f5f9;font-weight:bold;">
+        <td style="padding:10px 12px;border-bottom:1px solid #cbd5e1;">(=) RECEITA LÍQUIDA OPERACIONAL</td>
+        <td style="padding:10px 12px;text-align:right;border-bottom:1px solid #cbd5e1;font-family:monospace;">${formatBrl2(dre.receitaLiquida)}</td>
+        <td style="padding:10px 12px;text-align:right;border-bottom:1px solid #cbd5e1;font-family:monospace;">100,00%</td>
+      </tr>
+      <tr style="color:#64748b;">
+        <td style="padding:8px 12px;padding-left:24px;border-bottom:1px solid #e2e8f0;">(-) Custo das Mercadorias Vendidas (CMV)</td>
+        <td style="padding:8px 12px;text-align:right;border-bottom:1px solid #e2e8f0;color:#b44b4b;font-family:monospace;">-${formatBrl2(dre.cmv)}</td>
+        <td style="padding:8px 12px;text-align:right;border-bottom:1px solid #e2e8f0;font-family:monospace;">${formatPct2(dre.cmv / (dre.receitaLiquida || 1))}</td>
+      </tr>
+      <tr style="color:#64748b;">
+        <td style="padding:8px 12px;padding-left:24px;border-bottom:1px solid #e2e8f0;">(-) Taxas de Cartão & Plataforma</td>
+        <td style="padding:8px 12px;text-align:right;border-bottom:1px solid #e2e8f0;color:#b44b4b;font-family:monospace;">-${formatBrl2(dre.taxasNegocio)}</td>
+        <td style="padding:8px 12px;text-align:right;border-bottom:1px solid #e2e8f0;font-family:monospace;">${formatPct2(dre.taxasNegocio / (dre.receitaLiquida || 1))}</td>
+      </tr>
+      <tr style="background:#edf2ff;font-weight:bold;">
+        <td style="padding:10px 12px;border-bottom:1px solid #cbd5e1;color:#1e3a8a;">(=) Margem de Contribuição Bruta (Lucro Bruto)</td>
+        <td style="padding:10px 12px;text-align:right;border-bottom:1px solid #cbd5e1;color:#2563eb;font-family:monospace;">${formatBrl2(dre.lucroBruto)}</td>
+        <td style="padding:10px 12px;text-align:right;border-bottom:1px solid #cbd5e1;font-family:monospace;">${formatPct2(dre.margemBruta)}</td>
+      </tr>
+      <tr style="background:#f8fafc;font-weight:bold;">
+        <td colspan="3" style="padding:8px 12px;text-transform:uppercase;font-size:11px;color:#64748b;letter-spacing:0.05em;border-bottom:1px solid #e2e8f0;">Despesas Operacionais Fixas & Administrativas</td>
+      </tr>
+    `;
+
+    dre.despesas.forEach((d) => {
+      rowsHtml += `
+        <tr style="color:#64748b;">
+          <td style="padding:7px 12px;padding-left:24px;border-bottom:1px solid #f1f5f9;">${d?.name || "Despesa"}</td>
+          <td style="padding:7px 12px;text-align:right;border-bottom:1px solid #f1f5f9;color:#b44b4b;font-family:monospace;">-${formatBrl2(d.value)}</td>
+          <td style="padding:7px 12px;text-align:right;border-bottom:1px solid #f1f5f9;font-family:monospace;">${formatPct2(d.value / (dre.receitaLiquida || 1))}</td>
+        </tr>
+      `;
+    });
+
+    rowsHtml += `
+      <tr style="background:#ecfdf5;font-weight:bold;border-top:2px solid #10b981;">
+        <td style="padding:14px 12px;font-size:14px;color:#064e3b;">(=) RESULTADO LÍQUIDO DO PERÍODO</td>
+        <td style="padding:14px 12px;text-align:right;font-size:15px;color:#047857;font-family:monospace;">${formatBrl2(dre.lucroLiquido)}</td>
+        <td style="padding:14px 12px;text-align:right;font-size:15px;color:#047857;font-family:monospace;">${formatPct2(dre.margemLiquida)}</td>
+      </tr>
+    `;
+
+    let unitsTableHtml = "";
+    if (visibleUnits.length > 1) {
+      let unitRows = "";
+      visibleUnits.forEach((u) => {
+        const uParams = dreParams[u.id] || dreParams["dono"];
+        const uRoy = royalties[u.businessId];
+        const uCalc = calculateDre(u.faturamento, uParams, uRoy);
+        const b = businesses.find(biz => biz.id === u.businessId);
+        unitRows += `
+          <tr>
+            <td style="padding:7px 10px;border-bottom:1px solid #e2e8f0;">${u.code}</td>
+            <td style="padding:7px 10px;border-bottom:1px solid #e2e8f0;font-weight:600;">${u.name}</td>
+            <td style="padding:7px 10px;border-bottom:1px solid #e2e8f0;">${b?.name || u.businessId}</td>
+            <td style="padding:7px 10px;border-bottom:1px solid #e2e8f0;">${u.city}</td>
+            <td style="padding:7px 10px;text-align:right;border-bottom:1px solid #e2e8f0;font-family:monospace;">${formatBrl2(u.faturamento)}</td>
+            <td style="padding:7px 10px;text-align:right;border-bottom:1px solid #e2e8f0;font-family:monospace;color:#047857;">${formatBrl2(uCalc.lucroLiquido)}</td>
+            <td style="padding:7px 10px;text-align:right;border-bottom:1px solid #e2e8f0;font-family:monospace;">${formatPct2(uCalc.margemLiquida)}</td>
+          </tr>
+        `;
+      });
+
+      unitsTableHtml = `
+        <div style="margin-top:30px;">
+          <h3 style="font-size:14px;font-weight:bold;margin-bottom:8px;color:#1e293b;">Demonstrativo por Unidade da Rede</h3>
+          <table style="width:100%;border-collapse:collapse;font-size:11px;">
+            <thead>
+              <tr style="background:#f8fafc;color:#64748b;text-align:left;">
+                <th style="padding:8px 10px;border-bottom:2px solid #cbd5e1;">Código</th>
+                <th style="padding:8px 10px;border-bottom:2px solid #cbd5e1;">Unidade</th>
+                <th style="padding:8px 10px;border-bottom:2px solid #cbd5e1;">Marca</th>
+                <th style="padding:8px 10px;border-bottom:2px solid #cbd5e1;">Cidade</th>
+                <th style="padding:8px 10px;text-align:right;border-bottom:2px solid #cbd5e1;">Faturamento</th>
+                <th style="padding:8px 10px;text-align:right;border-bottom:2px solid #cbd5e1;">Lucro Líquido</th>
+                <th style="padding:8px 10px;text-align:right;border-bottom:2px solid #cbd5e1;">Margem %</th>
+              </tr>
+            </thead>
+            <tbody>${unitRows}</tbody>
+          </table>
+        </div>
+      `;
+    }
+
+    const htmlContent = `<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>DRE - ${scope}</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; margin: 25px; color: #1e293b; line-height: 1.4; background:#fff; }
+    .header { border-bottom: 2px solid #3c63da; padding-bottom: 12px; margin-bottom: 20px; display:flex; justify-content:space-between; align-items:flex-end; }
+    .title { font-size: 20px; font-weight: 800; color: #0f172a; margin: 0; }
+    .subtitle { font-size: 12px; color: #64748b; margin-top: 4px; }
+    .meta { font-size: 11px; color: #64748b; text-align: right; }
+    table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    th { text-transform: uppercase; font-size: 10px; letter-spacing: 0.05em; }
+    @media print { body { margin: 10px; } button { display:none; } }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div>
+      <h1 class="title">Demonstrativo do Resultado do Exercício (DRE)</h1>
+      <div class="subtitle"><strong>Escopo:</strong> ${scope} · <strong>Período:</strong> ${period}</div>
+    </div>
+    <div class="meta">
+      <div>Data de Emissão: ${dateStr}</div>
+      <div>Franchise Hub Pro · Relatório Oficial</div>
+    </div>
+  </div>
+
+  <table>
+    <thead>
+      <tr style="background:#f1f5f9;color:#475569;text-align:left;">
+        <th style="padding:9px 12px;border-bottom:2px solid #cbd5e1;">Conta Contábil / Descrição</th>
+        <th style="padding:9px 12px;text-align:right;border-bottom:2px solid #cbd5e1;">Valor Nominal (R$)</th>
+        <th style="padding:9px 12px;text-align:right;border-bottom:2px solid #cbd5e1;">% Sobre Receita</th>
+      </tr>
+    </thead>
+    <tbody>${rowsHtml}</tbody>
+  </table>
+
+  ${unitsTableHtml}
+
+  <div style="margin-top:25px;border-top:1px solid #e2e8f0;padding-top:10px;font-size:10px;color:#94a3b8;display:flex;justify-content:space-between;">
+    <span>Documento gerado automaticamente pelo sistema de Gestão de Franquias.</span>
+    <span>Página 1 de 1</span>
+  </div>
+
+  <div style="margin-top:20px;text-align:center;">
+    <button onclick="window.print()" style="padding:8px 16px;background:#3c63da;color:#fff;border:none;border-radius:8px;font-weight:bold;cursor:pointer;">Imprimir / Salvar em PDF</button>
+  </div>
+</body>
+</html>`;
+
+    const blob = new Blob([htmlContent], { type: "text/html;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `Relatorio_DRE_${targetTenantKey}_${new Date().toISOString().slice(0, 10)}.html`;
     a.click();
     URL.revokeObjectURL(url);
   };
@@ -727,17 +925,27 @@ export const DreScreen: React.FC<DreScreenProps> = ({
                 </span>
               </div>
 
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 <button
                   onClick={handleExportCsv}
-                  className="flex items-center gap-1.5 rounded-xl border border-[#cbd5e1] bg-white px-3 py-1.5 text-xs font-bold text-[#152238] hover:bg-[#f8faff] hover:border-[#3c63da] transition-all cursor-pointer"
+                  className="flex items-center gap-1.5 rounded-xl border border-emerald-300 bg-emerald-50/80 px-3 py-1.5 text-xs font-bold text-emerald-800 hover:bg-emerald-100 transition-all cursor-pointer shadow-2xs"
+                  title="Baixar planilha completa da DRE com todas as contas e tabela detalhada"
                 >
                   <FileSpreadsheet className="h-3.5 w-3.5 text-emerald-600" />
-                  <span>Exportar CSV</span>
+                  <span>Baixar Tabela DRE (.csv)</span>
+                </button>
+                <button
+                  onClick={handleDownloadHtmlReport}
+                  className="flex items-center gap-1.5 rounded-xl border border-[#3c63da]/30 bg-[#edf2ff] px-3 py-1.5 text-xs font-bold text-[#3c63da] hover:bg-[#dfe8fe] transition-all cursor-pointer shadow-2xs"
+                  title="Baixar relatório formatado da tabela de DRE"
+                >
+                  <Download className="h-3.5 w-3.5 text-[#3c63da]" />
+                  <span className="hidden sm:inline">Relatório (.html)</span>
                 </button>
                 <button
                   onClick={() => window.print()}
                   className="flex items-center gap-1.5 rounded-xl border border-[#cbd5e1] bg-white px-3 py-1.5 text-xs font-bold text-[#152238] hover:bg-[#f8faff] hover:border-[#3c63da] transition-all cursor-pointer"
+                  title="Imprimir ou Salvar em PDF"
                 >
                   <Printer className="h-3.5 w-3.5 text-[#69778c]" />
                   <span className="hidden sm:inline">Imprimir</span>
@@ -949,11 +1157,33 @@ export const DreScreen: React.FC<DreScreenProps> = ({
                 </p>
               </div>
 
-              <div className="text-right">
-                <span className="text-[11px] text-[#69778c] block">Resultado Líquido</span>
-                <span className="text-base font-extrabold text-emerald-700">
-                  {formatPct(dre.margemLiquida)}
-                </span>
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-1.5">
+                  <button
+                    type="button"
+                    onClick={handleExportCsv}
+                    className="flex items-center gap-1 rounded-lg border border-emerald-300 bg-emerald-50 px-2.5 py-1 text-[11px] font-bold text-emerald-800 hover:bg-emerald-100 transition-all cursor-pointer shadow-2xs"
+                    title="Baixar planilha CSV com a tabela completa"
+                  >
+                    <FileSpreadsheet className="h-3 w-3 text-emerald-600" />
+                    <span>Baixar Tabela DRE</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleDownloadHtmlReport}
+                    className="flex items-center gap-1 rounded-lg border border-[#3c63da]/30 bg-[#edf2ff] px-2.5 py-1 text-[11px] font-bold text-[#3c63da] hover:bg-[#dfe8fe] transition-all cursor-pointer shadow-2xs"
+                    title="Baixar Relatório Formatado"
+                  >
+                    <Download className="h-3 w-3 text-[#3c63da]" />
+                    <span>Relatório</span>
+                  </button>
+                </div>
+                <div className="text-right pl-2 border-l border-[#e5eaf1]">
+                  <span className="text-[11px] text-[#69778c] block">Resultado Líquido</span>
+                  <span className="text-base font-extrabold text-emerald-700">
+                    {formatPct(dre.margemLiquida)}
+                  </span>
+                </div>
               </div>
             </div>
 

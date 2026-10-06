@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { FranchiseUnit, DreParams, ScreenType } from "../../types";
 import { formatBrl, formatPct, calculateDre } from "../../utils/calculations";
 import { dreExpenseDefs, defaultDreParams } from "../../data/initialData";
-import { SlidersHorizontal, Save, RotateCcw, CheckCircle2 } from "lucide-react";
+import { SlidersHorizontal, Save, RotateCcw, CheckCircle2, Store } from "lucide-react";
 
 interface DreParamsScreenProps {
   currentTenantId: string;
@@ -19,27 +19,70 @@ export const DreParamsScreen: React.FC<DreParamsScreenProps> = ({
   onSaveParams,
   onNavigate,
 }) => {
-  const currentUnit = franchises.find((f) => f.id === currentTenantId);
-  const tenantName = currentUnit ? currentUnit.name : "Rede Consolidada / Padrão";
+  const [activeTenant, setActiveTenant] = useState<string>(currentTenantId || "dono");
 
-  const initialParams: DreParams = dreParams[currentTenantId] || defaultDreParams;
+  const currentUnit = franchises.find((f) => f.id === activeTenant);
+  const tenantName = activeTenant === "dono" ? "Padrão da Franqueadora (Rede)" : (currentUnit?.name || activeTenant);
+
+  const activeParams: DreParams = dreParams[activeTenant] || dreParams["dono"] || defaultDreParams;
 
   const [form, setForm] = useState<DreParams>({
-    impostos: initialParams.impostos,
-    cmv: initialParams.cmv,
-    fees: initialParams.fees,
-    discount: initialParams.discount,
-    despesas: { ...initialParams.despesas },
+    impostos: activeParams.impostos,
+    cmv: activeParams.cmv,
+    fees: activeParams.fees,
+    discount: activeParams.discount,
+    despesas: { ...activeParams.despesas },
+  });
+
+  const [rawGeneral, setRawGeneral] = useState<Record<string, string>>(() => ({
+    impostos: (activeParams.impostos * 100).toFixed(2),
+    cmv: (activeParams.cmv * 100).toFixed(2),
+    fees: (activeParams.fees * 100).toFixed(2),
+    discount: (activeParams.discount * 100).toFixed(2),
+  }));
+
+  const [rawExpenses, setRawExpenses] = useState<Record<string, string>>(() => {
+    const map: Record<string, string> = {};
+    dreExpenseDefs.forEach((e) => {
+      const val = activeParams.despesas?.[e.id] ?? e.pct;
+      map[e.id] = (val * 100).toFixed(2);
+    });
+    return map;
   });
 
   const [isSaved, setIsSaved] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
+  React.useEffect(() => {
+    const p = dreParams[activeTenant] || dreParams["dono"] || defaultDreParams;
+    setForm({
+      impostos: p.impostos,
+      cmv: p.cmv,
+      fees: p.fees,
+      discount: p.discount,
+      despesas: { ...p.despesas },
+    });
+    setRawGeneral({
+      impostos: (p.impostos * 100).toFixed(2),
+      cmv: (p.cmv * 100).toFixed(2),
+      fees: (p.fees * 100).toFixed(2),
+      discount: (p.discount * 100).toFixed(2),
+    });
+    const expMap: Record<string, string> = {};
+    dreExpenseDefs.forEach((e) => {
+      const val = p.despesas?.[e.id] ?? e.pct;
+      expMap[e.id] = (val * 100).toFixed(2);
+    });
+    setRawExpenses(expMap);
+  }, [activeTenant, dreParams]);
+
   const sampleFat = currentUnit ? currentUnit.faturamento : 100000;
   const previewDre = calculateDre(sampleFat, form);
 
   const handleExpenseChange = (expId: string, valueStr: string) => {
-    const val = parseFloat(valueStr || "0") / 100;
+    setRawExpenses((prev) => ({ ...prev, [expId]: valueStr }));
+    const parsed = parseFloat(valueStr.replace(",", "."));
+    const val = !isNaN(parsed) && parsed >= 0 ? parsed / 100 : 0;
     setForm((prev) => ({
       ...prev,
       despesas: {
@@ -51,7 +94,9 @@ export const DreParamsScreen: React.FC<DreParamsScreenProps> = ({
   };
 
   const handleGeneralChange = (field: keyof DreParams, valueStr: string) => {
-    const val = parseFloat(valueStr || "0") / 100;
+    setRawGeneral((prev) => ({ ...prev, [field]: valueStr }));
+    const parsed = parseFloat(valueStr.replace(",", "."));
+    const val = !isNaN(parsed) && parsed >= 0 ? parsed / 100 : 0;
     setForm((prev) => ({
       ...prev,
       [field]: val,
@@ -62,7 +107,29 @@ export const DreParamsScreen: React.FC<DreParamsScreenProps> = ({
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      await onSaveParams(currentTenantId, form);
+      const finalForm: DreParams = { ...form };
+      ["impostos", "cmv", "fees", "discount"].forEach((k) => {
+        const str = rawGeneral[k];
+        if (str !== undefined) {
+          const parsed = parseFloat(str.replace(",", "."));
+          if (!isNaN(parsed) && parsed >= 0) {
+            (finalForm as any)[k] = parsed / 100;
+          }
+        }
+      });
+      const finalDesp: Record<string, number> = { ...form.despesas };
+      dreExpenseDefs.forEach((e) => {
+        const str = rawExpenses[e.id];
+        if (str !== undefined) {
+          const parsed = parseFloat(str.replace(",", "."));
+          if (!isNaN(parsed) && parsed >= 0) {
+            finalDesp[e.id] = parsed / 100;
+          }
+        }
+      });
+      finalForm.despesas = finalDesp;
+
+      await onSaveParams(activeTenant, finalForm);
       setIsSaved(true);
       setTimeout(() => setIsSaved(false), 3000);
     } catch (e) {
@@ -74,6 +141,17 @@ export const DreParamsScreen: React.FC<DreParamsScreenProps> = ({
 
   const handleReset = () => {
     setForm(JSON.parse(JSON.stringify(defaultDreParams)));
+    setRawGeneral({
+      impostos: (defaultDreParams.impostos * 100).toFixed(2),
+      cmv: (defaultDreParams.cmv * 100).toFixed(2),
+      fees: (defaultDreParams.fees * 100).toFixed(2),
+      discount: (defaultDreParams.discount * 100).toFixed(2),
+    });
+    const expMap: Record<string, string> = {};
+    dreExpenseDefs.forEach((e) => {
+      expMap[e.id] = (e.pct * 100).toFixed(2);
+    });
+    setRawExpenses(expMap);
     setIsSaved(false);
   };
 
@@ -93,7 +171,23 @@ export const DreParamsScreen: React.FC<DreParamsScreenProps> = ({
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex items-center gap-1.5 bg-white border border-[#cbd5e1] rounded-xl px-2.5 py-1.5 shadow-2xs">
+            <Store className="h-3.5 w-3.5 text-[#3c63da]" />
+            <select
+              value={activeTenant}
+              onChange={(e) => setActiveTenant(e.target.value)}
+              className="text-xs font-bold text-[#152238] bg-transparent focus:outline-none cursor-pointer"
+            >
+              <option value="dono">Padrão da Franqueadora (Rede)</option>
+              {franchises.map((f) => (
+                <option key={f.id} value={f.id}>
+                  {f.name} ({f.code})
+                </option>
+              ))}
+            </select>
+          </div>
+
           <button
             onClick={handleReset}
             className="flex items-center gap-1.5 rounded-lg border border-[#e5eaf1] bg-white px-3 py-2 text-xs font-bold text-[#152238] hover:bg-[#f4f7fb] cursor-pointer"
@@ -129,11 +223,9 @@ export const DreParamsScreen: React.FC<DreParamsScreenProps> = ({
                 </label>
                 <div className="relative">
                   <input
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    max="100"
-                    value={(form.impostos * 100).toFixed(2)}
+                    type="text"
+                    inputMode="decimal"
+                    value={rawGeneral.impostos !== undefined ? rawGeneral.impostos : (form.impostos * 100).toFixed(2)}
                     onChange={(e) => handleGeneralChange("impostos", e.target.value)}
                     className="w-full rounded-lg border border-[#e5eaf1] px-3 py-2 text-xs font-mono font-bold text-[#152238] focus:border-[#3c63da] focus:outline-none"
                   />
@@ -147,11 +239,9 @@ export const DreParamsScreen: React.FC<DreParamsScreenProps> = ({
                 </label>
                 <div className="relative">
                   <input
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    max="100"
-                    value={(form.cmv * 100).toFixed(2)}
+                    type="text"
+                    inputMode="decimal"
+                    value={rawGeneral.cmv !== undefined ? rawGeneral.cmv : (form.cmv * 100).toFixed(2)}
                     onChange={(e) => handleGeneralChange("cmv", e.target.value)}
                     className="w-full rounded-lg border border-[#e5eaf1] px-3 py-2 text-xs font-mono font-bold text-[#152238] focus:border-[#3c63da] focus:outline-none"
                   />
@@ -165,11 +255,9 @@ export const DreParamsScreen: React.FC<DreParamsScreenProps> = ({
                 </label>
                 <div className="relative">
                   <input
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    max="100"
-                    value={(form.fees * 100).toFixed(2)}
+                    type="text"
+                    inputMode="decimal"
+                    value={rawGeneral.fees !== undefined ? rawGeneral.fees : (form.fees * 100).toFixed(2)}
                     onChange={(e) => handleGeneralChange("fees", e.target.value)}
                     className="w-full rounded-lg border border-[#e5eaf1] px-3 py-2 text-xs font-mono font-bold text-[#152238] focus:border-[#3c63da] focus:outline-none"
                   />
@@ -183,11 +271,9 @@ export const DreParamsScreen: React.FC<DreParamsScreenProps> = ({
                 </label>
                 <div className="relative">
                   <input
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    max="100"
-                    value={(form.discount * 100).toFixed(2)}
+                    type="text"
+                    inputMode="decimal"
+                    value={rawGeneral.discount !== undefined ? rawGeneral.discount : (form.discount * 100).toFixed(2)}
                     onChange={(e) => handleGeneralChange("discount", e.target.value)}
                     className="w-full rounded-lg border border-[#e5eaf1] px-3 py-2 text-xs font-mono font-bold text-[#152238] focus:border-[#3c63da] focus:outline-none"
                   />
@@ -206,6 +292,7 @@ export const DreParamsScreen: React.FC<DreParamsScreenProps> = ({
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
               {dreExpenseDefs.map((e) => {
                 const currentRate = form.despesas[e.id] ?? e.pct;
+                const strVal = rawExpenses[e.id] !== undefined ? rawExpenses[e.id] : (currentRate * 100).toFixed(2);
                 return (
                   <div key={e.id} className="rounded-lg border border-[#e5eaf1] bg-[#f8faff] p-3">
                     <div className="flex items-center justify-between text-xs font-bold text-[#152238] mb-1.5">
@@ -216,11 +303,9 @@ export const DreParamsScreen: React.FC<DreParamsScreenProps> = ({
                     </div>
                     <div className="relative">
                       <input
-                        type="number"
-                        step="0.001"
-                        min="0"
-                        max="100"
-                        value={(currentRate * 100).toFixed(3)}
+                        type="text"
+                        inputMode="decimal"
+                        value={strVal}
                         onChange={(ev) => handleExpenseChange(e.id, ev.target.value)}
                         className="w-full rounded-md border border-[#e5eaf1] bg-white px-2.5 py-1.5 text-xs font-mono font-bold text-[#152238] focus:border-[#3c63da] focus:outline-none"
                       />

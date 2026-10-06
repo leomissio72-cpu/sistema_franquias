@@ -41,7 +41,7 @@ const screenTitles: Record<ScreenType, string> = {
   whatsapp: "Disparo WhatsApp",
   configuracao: "Configurações",
   settings: "Preferências do Usuário",
-  produtos: "Produtos Homologados",
+  produtos: "Fornecedores e Produtos Homologados",
   instrucoes: "Instruções & Ajuda",
 };
 
