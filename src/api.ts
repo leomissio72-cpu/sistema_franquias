@@ -63,7 +63,7 @@ export function getAuthToken(): string {
   return currentAuthToken;
 }
 
-async function fetchWithTimeout(url: string, options: RequestInit = {}, timeoutMs = 10000): Promise<Response> {
+async function fetchWithTimeout(url: string, options: RequestInit = {}, timeoutMs = 30000): Promise<Response> {
   const controller = new AbortController();
   const id = setTimeout(() => controller.abort(), timeoutMs);
   const headers = new Headers(options.headers || {});
@@ -94,6 +94,9 @@ async function fetchWithTimeout(url: string, options: RequestInit = {}, timeoutM
     return res;
   } catch (err) {
     clearTimeout(id);
+    if (err instanceof DOMException && err.name === "AbortError") {
+      throw new Error(`A operação demorou mais de ${Math.round(timeoutMs / 1000)} segundos. Tente novamente sem recarregar a página.`);
+    }
     throw err;
   }
 }
@@ -266,7 +269,7 @@ export async function fetchServerState(): Promise<CloudState> {
       return state;
     }
 
-    const res = await fetchWithTimeout("/api/state", {}, 3500);
+    const res = await fetchWithTimeout("/api/state", {}, 15000);
     const data = await safeResponseJSON(res, "Failed to load server state");
     let state = mergeNonEmptyCollections(formatCloudState(data), mirroredState);
     // During the migration, an old mirror or a fresh serverless instance can
@@ -358,27 +361,35 @@ export async function fetchAuditLogs(): Promise<{ auditLogs: AuditLog[] }> {
   }
 }
 
+let stateSyncChain: Promise<void> = Promise.resolve();
+
 export async function syncStateSection(section: string, data: any, user?: string, actor?: { profile?: string; tenant?: string; login?: string }, credential?: { userId: string; password: string }): Promise<CloudState> {
-  const res = await fetchWithTimeout("/api/state/sync", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ section, data, user, userProfile: actor?.profile, userTenant: actor?.tenant, userLogin: actor?.login, credential }),
-  });
-  if (!res.ok) {
-    const err = await safeResponseJSON(res, "Failed to sync state section").catch((e) => e);
-    throw new Error(err?.message || err?.error || "Failed to sync state section");
-  }
-  const result = await safeResponseJSON(res, "Failed to parse sync response");
+  const operation = async (): Promise<CloudState> => {
+    const res = await fetchWithTimeout("/api/state/sync", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ section, data, user, userProfile: actor?.profile, userTenant: actor?.tenant, userLogin: actor?.login, credential }),
+    }, 45000);
+    if (!res.ok) {
+      const err = await safeResponseJSON(res, "Failed to sync state section").catch((e) => e);
+      throw new Error(err?.message || err?.error || "Failed to sync state section");
+    }
+    const result = await safeResponseJSON(res, "Failed to parse sync response");
     if (result?.state) {
       const mirror = await readFirebaseMirror();
       const state = mergeNonEmptyCollections(formatCloudState(result.state), mirror, section);
       await writeFirebaseMirror(state);
       try {
-      localStorage.setItem("gestaofranquias_cloud_state", JSON.stringify(sanitizeClientValue(state)));
-    } catch (e) {}
-    return state;
-  }
-  return fetchServerState();
+        localStorage.setItem("gestaofranquias_cloud_state", JSON.stringify(sanitizeClientValue(state)));
+      } catch (e) {}
+      return state;
+    }
+    return fetchServerState();
+  };
+
+  const queuedOperation = stateSyncChain.then(operation, operation);
+  stateSyncChain = queuedOperation.then(() => undefined, () => undefined);
+  return queuedOperation;
 }
 
 export async function saveDreParams(tenantId: string, params: DreParams, userName: string, userId?: string): Promise<CloudState> {
@@ -416,8 +427,8 @@ export async function saveBusinesses(businesses: Business[], userName: string): 
   return syncStateSection("businesses", businesses, userName);
 }
 
-export async function saveSuppliers(suppliers: RegisteredSupplier[], userName: string): Promise<CloudState> {
-  return syncStateSection("suppliers", suppliers, userName);
+export async function saveSuppliers(suppliers: RegisteredSupplier[], userName: string, actor?: { profile?: string; tenant?: string; login?: string }): Promise<CloudState> {
+  return syncStateSection("suppliers", suppliers, userName, actor);
 }
 
 export async function saveSystemSettings(settings: SystemSettings, userName: string, userId?: string): Promise<CloudState> {
@@ -537,19 +548,19 @@ export const loginApi = loginAPI;
 
 export function subscribeToEvents(onUpdate: (state: CloudState) => void): () => void {
   let pollInterval: any = null;
-
-  // Immediate fetch upon mounting to get the latest state instantly
-  fetchServerState()
-    .then(onUpdate)
-    .catch((err) => console.warn("Initial sync failed:", err));
+  let pollInFlight = false;
 
   // Regular lightweight polling every 8 seconds (real-time experience with zero persistent socket overhead)
   pollInterval = setInterval(async () => {
+    if (pollInFlight) return;
+    pollInFlight = true;
     try {
       const fresh = await fetchServerState();
       onUpdate(fresh);
     } catch (e) {
       console.warn("Periodic sync poll failed:", e);
+    } finally {
+      pollInFlight = false;
     }
   }, 8000);
 
@@ -562,8 +573,9 @@ export function subscribeToEvents(onUpdate: (state: CloudState) => void): () => 
 
 export async function fetchWhatsAppConfig(): Promise<WhatsAppConfig> {
   try {
-    const res = await fetchWithTimeout("/api/whatsapp/config");
-    return await safeResponseJSON(res, "Falha ao obter configuração do WhatsApp");
+    const state = await fetchServerState();
+    if (state.whatsappConfig) return state.whatsappConfig;
+    throw new Error("Configuração do WhatsApp não encontrada");
   } catch (e) {
     return {
       senderPhone: "+55 11 99999-0000",
@@ -575,19 +587,15 @@ export async function fetchWhatsAppConfig(): Promise<WhatsAppConfig> {
 }
 
 export async function saveWhatsAppConfig(config: Partial<WhatsAppConfig>): Promise<WhatsAppConfig> {
-  const res = await fetchWithTimeout("/api/whatsapp/config", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(config),
-  });
-  return safeResponseJSON(res, "Falha ao salvar configuração do WhatsApp");
+  const current = await fetchWhatsAppConfig();
+  const state = await syncStateSection("whatsappConfig", { ...current, ...config }, "WhatsApp");
+  return state.whatsappConfig || { ...current, ...config } as WhatsAppConfig;
 }
 
 export async function fetchWhatsAppHistory(): Promise<WhatsAppMessageHistory[]> {
   try {
-    const res = await fetchWithTimeout("/api/whatsapp/history");
-    const data = await safeResponseJSON(res, "Falha ao carregar histórico");
-    return data.history || [];
+    const state = await fetchServerState();
+    return state.whatsappHistory || [];
   } catch (e) {
     return [];
   }
@@ -609,9 +617,5 @@ export async function sendWhatsAppMessageAPI(payload: {
 }
 
 export async function saveWhatsAppHistory(history: WhatsAppMessageHistory[]): Promise<void> {
-  await fetchWithTimeout("/api/whatsapp/history", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ history }),
-  });
+  await syncStateSection("whatsappHistory", history, "WhatsApp");
 }

@@ -131,6 +131,7 @@ function getOfxTag(block: string, tag: string): string {
 function entryToItem(entry: ManualEntry): ConciliationItem {
   const numericValue = entry.type === "despesa" ? -Math.abs(Number(entry.value)) : Math.abs(Number(entry.value));
   const matched = entry.conciliationStatus === "matched";
+  const rejected = entry.conciliationStatus === "rejected";
   return {
     entryId: entry.id,
     sourceFile: entry.sourceFile,
@@ -139,10 +140,10 @@ function entryToItem(entry: ManualEntry): ConciliationItem {
     value: numericValue.toLocaleString("pt-BR", { style: "currency", currency: "BRL" }),
     numericValue,
     categoria: entry.catName || "Importado",
-    match: matched ? "Conciliação confirmada" : "Aguardando classificação",
+    match: matched ? "Conciliação confirmada" : rejected ? "Rejeitado para revisão" : "Aguardando classificação",
     status: matched ? "match" : "review",
-    label: entry.sourceFile ? "Importado" : "Lançamento salvo",
-    tone: matched ? "green" : "amber",
+    label: rejected ? "Rejeitado" : entry.sourceFile ? "Importado" : "Lançamento salvo",
+    tone: matched ? "green" : rejected ? "red" : "amber",
     toDre: numericValue < 0,
   };
 }
@@ -259,6 +260,8 @@ export const ConciliationScreen: React.FC<ConciliationScreenProps> = ({
   const [isImporting, setIsImporting] = useState(false);
   const [hasPendingImport, setHasPendingImport] = useState(false);
   const [importError, setImportError] = useState<string | null>(null);
+  const [editingItem, setEditingItem] = useState<ConciliationItem | null>(null);
+  const [editDraft, setEditDraft] = useState({ desc: "", date: "", value: "" });
   const previousTenantRef = useRef(currentTenantId);
 
   useEffect(() => {
@@ -303,7 +306,9 @@ export const ConciliationScreen: React.FC<ConciliationScreenProps> = ({
     const selectedItems = filteredItems.filter((_, index) => selectedIds.includes(index));
     if (!selectedItems.length) return;
     try {
-      await Promise.all(selectedItems.filter((item) => item.entryId).map((item) => onUpdateEntry(item.entryId as string, { conciliationStatus: "matched" })));
+      for (const item of selectedItems) {
+        if (item.entryId) await onUpdateEntry(item.entryId, { conciliationStatus: "matched" });
+      }
     } catch (error: any) {
       setImportError(error?.message || "Não foi possível salvar a conciliação.");
       return;
@@ -314,6 +319,76 @@ export const ConciliationScreen: React.FC<ConciliationScreenProps> = ({
     setToastMsg(`${selectedItems.length} movimentação(ões) aprovada(s) e conciliada(s) com sucesso.`);
     setSelectedIds([]);
     setTimeout(() => setToastMsg(null), 3500);
+  };
+
+  const handleRejectSelected = async () => {
+    const selectedItems = filteredItems.filter((_, index) => selectedIds.includes(index));
+    if (!selectedItems.length) return;
+    try {
+      for (const item of selectedItems) {
+        if (item.entryId) await onUpdateEntry(item.entryId, { conciliationStatus: "rejected" });
+      }
+    } catch (error: any) {
+      setImportError(error?.message || "Não foi possível rejeitar as linhas selecionadas.");
+      return;
+    }
+    const selectedPreviewItems = new Set(selectedItems.filter((item) => !item.entryId));
+    setItems((previous) => previous
+      .filter((item) => !selectedPreviewItems.has(item))
+      .map((item) => selectedItems.includes(item)
+        ? { ...item, label: "Rejeitado", tone: "red", match: "Rejeitado para revisão", status: "review" }
+        : item));
+    setHasPendingImport(items.some((item) => item.isImportPreview && !selectedPreviewItems.has(item)));
+    setSelectedIds([]);
+    setToastMsg(`${selectedItems.length} movimentação(ões) rejeitada(s).`);
+    setTimeout(() => setToastMsg(null), 3500);
+  };
+
+  const startEditingSelected = () => {
+    const selectedItems = filteredItems.filter((_, index) => selectedIds.includes(index));
+    if (selectedItems.length !== 1) {
+      setImportError("Selecione exatamente uma linha para editar.");
+      return;
+    }
+    const item = selectedItems[0];
+    setEditingItem(item);
+    setEditDraft({ desc: item.desc, date: item.date, value: Math.abs(item.numericValue).toFixed(2).replace(".", ",") });
+    setImportError(null);
+  };
+
+  const saveEditedItem = async () => {
+    if (!editingItem) return;
+    const desc = editDraft.desc.trim();
+    const value = parseAmount(editDraft.value);
+    if (!desc || !editDraft.date || !editDraft.value.trim() || !Number.isFinite(value)) {
+      setImportError("Informe descrição, data e valor válidos para editar a linha.");
+      return;
+    }
+    const numericValue = editingItem.numericValue < 0 ? -Math.abs(value) : Math.abs(value);
+    const updatedItem: ConciliationItem = {
+      ...editingItem,
+      desc,
+      date: editDraft.date,
+      numericValue,
+      value: numericValue.toLocaleString("pt-BR", { style: "currency", currency: "BRL" }),
+      toDre: numericValue < 0,
+    };
+    try {
+      if (editingItem.entryId) {
+        await onUpdateEntry(editingItem.entryId, {
+          desc,
+          date: editDraft.date,
+          value: Math.abs(value),
+          type: numericValue < 0 ? "despesa" : "entrada",
+        });
+      }
+      setItems((previous) => previous.map((item) => item === editingItem ? updatedItem : item));
+      setEditingItem(null);
+      setToastMsg("Linha editada e salva com sucesso.");
+      setTimeout(() => setToastMsg(null), 3500);
+    } catch (error: any) {
+      setImportError(error?.message || "Não foi possível salvar a edição.");
+    }
   };
 
   const handleFileUpload = async (file: File) => {
@@ -412,6 +487,24 @@ export const ConciliationScreen: React.FC<ConciliationScreenProps> = ({
         </div>
       )}
 
+      {editingItem && (
+        <div className="rounded-2xl border border-[#bcd1ff] bg-[#f6f9ff] p-4 shadow-xs">
+          <div className="mb-3 flex items-center justify-between gap-3">
+            <div>
+              <h3 className="text-sm font-extrabold text-[#152238]">Editar movimentação selecionada</h3>
+              <p className="text-[11px] text-[#69778c]">A alteração será salva antes de você continuar a aprovação.</p>
+            </div>
+            <button type="button" onClick={() => setEditingItem(null)} className="rounded-lg p-1.5 text-[#69778c] hover:bg-white" aria-label="Fechar edição">×</button>
+          </div>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-[minmax(0,2fr)_150px_150px_auto] sm:items-end">
+            <label className="text-[10px] font-extrabold uppercase tracking-wider text-[#69778c]">Descrição<input value={editDraft.desc} onChange={(event) => setEditDraft((draft) => ({ ...draft, desc: event.target.value }))} className="mt-1 w-full rounded-lg border border-[#dce4f0] bg-white px-3 py-2 text-xs font-semibold normal-case text-[#152238]" /></label>
+            <label className="text-[10px] font-extrabold uppercase tracking-wider text-[#69778c]">Data<input type="date" value={editDraft.date} onChange={(event) => setEditDraft((draft) => ({ ...draft, date: event.target.value }))} className="mt-1 w-full rounded-lg border border-[#dce4f0] bg-white px-3 py-2 text-xs font-semibold text-[#152238]" /></label>
+            <label className="text-[10px] font-extrabold uppercase tracking-wider text-[#69778c]">Valor<input inputMode="decimal" value={editDraft.value} onChange={(event) => setEditDraft((draft) => ({ ...draft, value: event.target.value }))} className="mt-1 w-full rounded-lg border border-[#dce4f0] bg-white px-3 py-2 text-xs font-semibold text-[#152238]" /></label>
+            <button type="button" onClick={() => void saveEditedItem()} className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-[#3c63da] px-4 py-2 text-xs font-bold text-white hover:bg-[#2f52c0]">Salvar edição</button>
+          </div>
+        </div>
+      )}
+
       {/* KPI Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <div className="rounded-xl border border-[#e5eaf1] bg-white p-4.5 shadow-xs">
@@ -495,7 +588,10 @@ export const ConciliationScreen: React.FC<ConciliationScreenProps> = ({
         {items.some(item => item.isImportPreview) && (
           <div className="mt-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-xl border border-blue-200 bg-blue-50 p-3">
             <p className="text-xs font-semibold text-blue-900">A prévia foi lida e está protegida contra a sincronização automática. Confira as linhas abaixo antes de enviar para os lançamentos da unidade.</p>
-            <div className="flex items-center gap-2 shrink-0">
+            <div className="flex flex-wrap items-center gap-2 shrink-0">
+              <button type="button" onClick={() => void handleApproveSelected()} disabled={!selectedIds.length || isImporting} className="rounded-lg bg-emerald-600 px-3 py-2 text-xs font-bold text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50">Aprovar ({selectedIds.length})</button>
+              <button type="button" onClick={() => void handleRejectSelected()} disabled={!selectedIds.length || isImporting} className="rounded-lg bg-rose-600 px-3 py-2 text-xs font-bold text-white hover:bg-rose-700 disabled:cursor-not-allowed disabled:opacity-50">Rejeitar</button>
+              <button type="button" onClick={startEditingSelected} disabled={selectedIds.length !== 1 || isImporting} className="rounded-lg border border-blue-300 bg-white px-3 py-2 text-xs font-bold text-blue-800 hover:bg-blue-100 disabled:cursor-not-allowed disabled:opacity-50">Editar</button>
               <button type="button" onClick={handleDiscardImport} disabled={isImporting} className="rounded-lg border border-blue-200 bg-white px-3 py-2 text-xs font-bold text-blue-800 hover:bg-blue-100 disabled:opacity-60">Descartar</button>
               <button type="button" onClick={() => void handleImportEntries()} disabled={isImporting} className="rounded-lg bg-[#3c63da] px-4 py-2 text-xs font-bold text-white hover:bg-[#2f52c0] disabled:opacity-60">{isImporting ? "Salvando..." : "Confirmar importação"}</button>
             </div>

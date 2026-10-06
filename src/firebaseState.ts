@@ -1,4 +1,4 @@
-import { collection, doc, getDocs, setDoc } from "firebase/firestore";
+import { collection, doc, getDocs, writeBatch } from "firebase/firestore";
 import { ensureFirebaseSession, firebaseDb } from "./firebase";
 import { CloudState } from "./types";
 
@@ -39,6 +39,8 @@ const STATE_KEYS: Array<keyof CloudState> = [
   "whatsappConfig",
   "whatsappHistory",
 ];
+
+let mirrorWriteChain: Promise<void> = Promise.resolve();
 
 function stripSensitive(value: any): any {
   if (Array.isArray(value)) return value.map(stripSensitive);
@@ -84,31 +86,39 @@ export async function readFirebaseMirror(): Promise<CloudState | null> {
  */
 export async function writeFirebaseMirror(state: CloudState): Promise<boolean> {
   if (!isFirebaseConfigured() || !state) return false;
-  try {
-    if (!(await ensureFirebaseSession())) return false;
-    const existing = await readFirebaseMirror();
-    const operationalKeys: Array<keyof CloudState> = [
-      "businesses", "franchises", "employees", "manualEntries", "bills", "products", "suppliers", "whatsappHistory",
-    ];
-    const incomingIsGloballyEmpty = operationalKeys.every((key) => Array.isArray(state[key]) && state[key].length === 0);
-    const existingHasRecords = Boolean(existing && operationalKeys.some((key) => Array.isArray(existing[key]) && existing[key].length > 0));
-    if (incomingIsGloballyEmpty && existingHasRecords) {
-      console.warn("Ignorando espelho vazio para preservar dados existentes no Firestore.");
-      return false;
-    }
-    const updatedAt = new Date().toISOString();
-    await Promise.all(
-      STATE_KEYS.filter((key) => state[key] !== undefined).map((key) =>
-        setDoc(
+
+  const writeOperation = async () => {
+    try {
+      if (!(await ensureFirebaseSession())) return false;
+      const existing = await readFirebaseMirror();
+      const operationalKeys: Array<keyof CloudState> = [
+        "businesses", "franchises", "employees", "manualEntries", "bills", "products", "suppliers", "whatsappHistory",
+      ];
+      const incomingIsGloballyEmpty = operationalKeys.every((key) => Array.isArray(state[key]) && state[key].length === 0);
+      const existingHasRecords = Boolean(existing && operationalKeys.some((key) => Array.isArray(existing[key]) && existing[key].length > 0));
+      if (incomingIsGloballyEmpty && existingHasRecords) {
+        console.warn("Ignorando espelho vazio para preservar dados existentes no Firestore.");
+        return false;
+      }
+
+      const updatedAt = new Date().toISOString();
+      const batch = writeBatch(firebaseDb);
+      STATE_KEYS.filter((key) => state[key] !== undefined).forEach((key) => {
+        batch.set(
           doc(firebaseDb, STATE_COLLECTION, String(key)),
           { value: stripSensitive(state[key]), updatedAt },
-          { merge: true }
-        )
-      )
-    );
-    return true;
-  } catch (error) {
-    console.warn("Firebase mirror write unavailable; authenticated API remains active:", error);
-    return false;
-  }
+          { merge: true },
+        );
+      });
+      await batch.commit();
+      return true;
+    } catch (error) {
+      console.warn("Firebase mirror write unavailable; authenticated API remains active:", error);
+      return false;
+    }
+  };
+
+  const queuedWrite = mirrorWriteChain.then(writeOperation, writeOperation);
+  mirrorWriteChain = queuedWrite.then(() => undefined, () => undefined);
+  return queuedWrite;
 }

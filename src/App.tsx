@@ -207,6 +207,11 @@ export const App: React.FC = () => {
     const unsubscribe = subscribeToEvents((newState: CloudState) => {
       setServerState((prevState) => {
         if (!prevState) return newState;
+        const previousUpdatedAt = new Date(prevState.lastUpdated || 0).getTime();
+        const incomingUpdatedAt = new Date(newState.lastUpdated || 0).getTime();
+        if (Number.isFinite(previousUpdatedAt) && Number.isFinite(incomingUpdatedAt) && incomingUpdatedAt < previousUpdatedAt) {
+          return prevState;
+        }
         const safeBusinesses = (newState.businesses && newState.businesses.length > 0)
           ? newState.businesses
           : (prevState.businesses || []);
@@ -322,13 +327,21 @@ export const App: React.FC = () => {
   };
 
   const handleSaveSuppliers = async (newSuppliers: RegisteredSupplier[]) => {
-    const updatedState = await saveSuppliers(newSuppliers, userSession?.name || "Admin");
-    setServerState((prev) => ({
-      ...updatedState,
-      suppliers: newSuppliers,
-      businesses: updatedState.businesses?.length ? updatedState.businesses : (prev?.businesses || []),
-      franchises: updatedState.franchises?.length ? updatedState.franchises : (prev?.franchises || []),
-    }));
+    setIsSavingConfig(true);
+    try {
+      const actor = { profile: userSession?.profile || "dono", tenant: userSession?.tenant || "dono", login: userSession?.login || "admin" };
+      const updatedState = await saveSuppliers(newSuppliers, userSession?.name || "Admin", actor);
+      setServerState((prev) => ({
+        ...updatedState,
+        suppliers: updatedState.suppliers || newSuppliers,
+        businesses: updatedState.businesses?.length ? updatedState.businesses : (prev?.businesses || []),
+        franchises: updatedState.franchises?.length ? updatedState.franchises : (prev?.franchises || []),
+      }));
+      const logsRes = await fetchAuditLogs();
+      if (logsRes.auditLogs) setAuditLogs(logsRes.auditLogs);
+    } finally {
+      setIsSavingConfig(false);
+    }
   };
 
   const handleCreateManualEntry = async (entry: Partial<ManualEntry>) => {

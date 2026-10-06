@@ -145,7 +145,7 @@ export interface ManualEntry {
   pay: string;
   note?: string;
   sourceFile?: string;
-  conciliationStatus?: "review" | "matched";
+  conciliationStatus?: "review" | "matched" | "rejected";
   created: string;
 }
 
