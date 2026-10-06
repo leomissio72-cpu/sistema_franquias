@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { FranchiseUnit, Business, ScreenType } from "../../types";
 import { formatBrl } from "../../utils/calculations";
+import { geocodeAddress } from "../../utils/geocoding";
 import {
   Store,
   Plus,
@@ -52,11 +53,13 @@ export const TenantsScreen: React.FC<TenantsScreenProps> = ({
     name: "",
     code: "",
     resp: "",
-    city: "São Paulo - SP",
-    address: "Av. Principal, 1000",
+    city: "",
+    address: "",
     faturamento: 50000,
     email: "",
-    phone: "(11) 3456-7890",
+    phone: "",
+    lat: "",
+    lng: "",
   });
 
   const openAddModal = () => {
@@ -66,11 +69,13 @@ export const TenantsScreen: React.FC<TenantsScreenProps> = ({
       name: "",
       code: autoCode,
       resp: "",
-      city: "São Paulo - SP",
-      address: "Av. Principal, 1000",
+      city: "",
+      address: "",
       faturamento: 50000,
       email: "",
-      phone: "(11) 3456-7890",
+      phone: "",
+      lat: "",
+      lng: "",
     });
     setFormError("");
     setIsAddingBrandInline(false);
@@ -107,13 +112,30 @@ export const TenantsScreen: React.FC<TenantsScreenProps> = ({
   const handleQuickAddFranchise = async (e: React.FormEvent) => {
     e.preventDefault();
     const cleanName = (form.name || "").trim();
+    const cleanCity = (form.city || "").trim();
+    const cleanAddress = (form.address || "").trim();
     if (!cleanName) {
       setFormError("Por favor, digite o nome da nova franquia / franqueado.");
+      return;
+    }
+    if (!cleanCity || !cleanAddress) {
+      setFormError("Informe a cidade/UF e o endereço completo para que a unidade possa ser localizada no mapa.");
       return;
     }
 
     setFormError("");
     setIsSubmitting(true);
+
+    const manualLat = Number(form.lat);
+    const manualLng = Number(form.lng);
+    const coordinates = Number.isFinite(manualLat) && Number.isFinite(manualLng) && manualLat >= -90 && manualLat <= 90 && manualLng >= -180 && manualLng <= 180
+      ? { lat: manualLat, lng: manualLng }
+      : await geocodeAddress(cleanAddress, cleanCity);
+    if (!coordinates) {
+      setFormError("Não foi possível localizar esse endereço. Corrija o endereço ou informe latitude e longitude válidas; nenhum ponto será aproximado.");
+      setIsSubmitting(false);
+      return;
+    }
 
     const autoCode = `F${String(franchises.length + 1).padStart(3, "0")}`;
     const cleanCode = (form.code || "").trim().toUpperCase() || autoCode;
@@ -145,17 +167,18 @@ export const TenantsScreen: React.FC<TenantsScreenProps> = ({
       name: cleanName,
       code: cleanCode,
       resp: (form.resp || "").trim() || cleanName,
-      address: (form.address || "").trim() || "Endereço comercial",
-      city: (form.city || "").trim() || "São Paulo - SP",
+      address: cleanAddress,
+      city: cleanCity,
       region: "Sudeste",
-      lat: -23.5505 + (Math.random() - 0.5) * 0.05,
-      lng: -46.6333 + (Math.random() - 0.5) * 0.05,
+      lat: coordinates.lat,
+      lng: coordinates.lng,
+      coordinatesVerified: true,
       faturamento: Number(form.faturamento) > 0 ? Number(form.faturamento) : 50000,
       pendencias: 0,
       rpDone: 5,
       status: "green",
       email: (form.email || "").trim() || `contato@${cleanCode.toLowerCase()}.com`,
-      phone: (form.phone || "").trim() || "(11) 3456-7890",
+      phone: (form.phone || "").trim(),
     };
 
     // 1. Optimistic instant addition - ZERO DELAY
@@ -201,7 +224,7 @@ export const TenantsScreen: React.FC<TenantsScreenProps> = ({
             Franqueados e Unidades ({franchises.length})
           </h2>
           <p className="text-xs text-[#69778c] mt-1">
-            Gestão completa das lojas físicas, quiosques e unidades da rede de franquias.
+                    Gestão completa das lojas físicas, quiosques e unidades da rede de franquias, com localização confirmada pelo endereço informado.
           </p>
         </div>
 
@@ -298,11 +321,11 @@ export const TenantsScreen: React.FC<TenantsScreenProps> = ({
                   </div>
                   <div className="flex items-center gap-1.5">
                     <Mail className="h-3.5 w-3.5 text-[#69778c]" />
-                    <span>{f.email || `contato@${f.code.toLowerCase()}.com`}</span>
+                    <span>{f.email || "E-mail não informado"}</span>
                   </div>
                   <div className="flex items-center gap-1.5">
                     <Phone className="h-3.5 w-3.5 text-[#69778c]" />
-                    <span>{f.phone || "(11) 3456-7890"}</span>
+                    <span>{f.phone || "Telefone não informado"}</span>
                   </div>
                 </div>
               </div>
@@ -495,14 +518,33 @@ export const TenantsScreen: React.FC<TenantsScreenProps> = ({
 
                 {/* Cidade - UF */}
                 <div>
-                  <label className="block text-xs font-bold text-[#152238] mb-1">Cidade - UF</label>
+                  <label className="block text-xs font-bold text-[#152238] mb-1">Cidade - UF *</label>
                   <input
                     type="text"
-                    placeholder="Ex: São Paulo - SP"
+                    required
+                    placeholder="Ex: Santo André - SP"
                     value={form.city}
                     onChange={(e) => setForm({ ...form, city: e.target.value })}
                     className="w-full rounded-xl border border-[#dbe4ef] bg-[#f8faff] px-3.5 py-2 text-xs font-bold text-[#152238] focus:border-[#3c63da] focus:bg-white focus:outline-none"
                   />
+                </div>
+
+                {/* Endereço real */}
+                <div className="sm:col-span-2">
+                  <label className="block text-xs font-bold text-[#152238] mb-1">Endereço completo *</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="Rua, número, bairro, cidade - UF, CEP"
+                    value={form.address}
+                    onChange={(e) => setForm({ ...form, address: e.target.value })}
+                    className="w-full rounded-xl border border-[#dbe4ef] bg-[#f8faff] px-3.5 py-2 text-xs font-bold text-[#152238] focus:border-[#3c63da] focus:bg-white focus:outline-none"
+                  />
+                  <p className="mt-1 text-[10px] text-[#69778c]">O endereço será confirmado antes de criar o pino; nenhum ponto será inventado.</p>
+                  <div className="mt-2 grid grid-cols-2 gap-2">
+                    <input type="number" step="any" placeholder="Latitude (opcional)" value={form.lat} onChange={(e) => setForm({ ...form, lat: e.target.value })} className="w-full rounded-lg border border-[#dbe4ef] bg-white px-2.5 py-2 text-[11px] text-[#152238] focus:border-[#3c63da] focus:outline-none" />
+                    <input type="number" step="any" placeholder="Longitude (opcional)" value={form.lng} onChange={(e) => setForm({ ...form, lng: e.target.value })} className="w-full rounded-lg border border-[#dbe4ef] bg-white px-2.5 py-2 text-[11px] text-[#152238] focus:border-[#3c63da] focus:outline-none" />
+                  </div>
                 </div>
 
                 {/* Faturamento */}

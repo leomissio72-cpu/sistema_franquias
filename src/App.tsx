@@ -776,6 +776,7 @@ export const App: React.FC = () => {
               franchises={franchises}
               royalties={royalties}
               onSaveRoyalties={handleSaveRoyalties}
+              onSaveBusinesses={handleSaveBusinesses}
               onNavigate={setCurrentScreen}
             />
           )}

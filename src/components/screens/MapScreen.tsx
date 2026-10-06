@@ -34,9 +34,10 @@ export const MapScreen: React.FC<MapScreenProps> = ({
     if (filter === "all") return true;
     return f.status === filter;
   });
+  const mappedUnits = visibleUnits.filter((unit): unit is FranchiseUnit & { lat: number; lng: number } => Number.isFinite(unit.lat) && Number.isFinite(unit.lng) && unit.coordinatesVerified !== false);
 
   const totalFat = visibleUnits.reduce((s, f) => s + f.faturamento, 0);
-  const citiesCount = new Set(visibleUnits.map((f) => f.city)).size;
+  const citiesCount = new Set(mappedUnits.map((f) => f.city)).size;
   const healthRate = franchises.length ? Math.round((franchises.filter((f) => f.status === "green").length / franchises.length) * 100) : 0;
 
   useEffect(() => {
@@ -66,7 +67,7 @@ export const MapScreen: React.FC<MapScreenProps> = ({
 
       const markers: L.Marker[] = [];
 
-      visibleUnits.forEach((f) => {
+      mappedUnits.forEach((f) => {
         const biz = businesses.find((b) => b.id === f.businessId);
         const pinColor = f.status === "green" ? "#118464" : "#a86a08";
         const calc = calculateDre(f.faturamento, dreParams[f.id] || dreParams["dono"], royalties[f.businessId]);
@@ -107,8 +108,8 @@ export const MapScreen: React.FC<MapScreenProps> = ({
         markers.push(marker);
       });
 
-      if (visibleUnits.length > 0) {
-        const bounds = L.latLngBounds(visibleUnits.map((f) => [f.lat, f.lng]));
+      if (mappedUnits.length > 0) {
+        const bounds = L.latLngBounds(mappedUnits.map((f) => [f.lat, f.lng]));
         map.fitBounds(bounds, { padding: [50, 50], maxZoom: 13 });
       }
     }
@@ -116,12 +117,14 @@ export const MapScreen: React.FC<MapScreenProps> = ({
     setTimeout(() => {
       map?.invalidateSize();
     }, 150);
-  }, [visibleUnits, businesses, dreParams, royalties]);
+  }, [mappedUnits, businesses, dreParams, royalties]);
 
   const handleFocusUnit = (unit: FranchiseUnit) => {
     setSelectedUnitId(unit.id);
-    if (!mapInstanceRef.current) return;
-    mapInstanceRef.current.setView([unit.lat, unit.lng], 15);
+    const lat = unit.lat;
+    const lng = unit.lng;
+    if (!mapInstanceRef.current || typeof lat !== "number" || typeof lng !== "number" || !Number.isFinite(lat) || !Number.isFinite(lng) || unit.coordinatesVerified === false) return;
+    mapInstanceRef.current.setView([lat, lng], 15);
   };
 
   return (
@@ -175,9 +178,9 @@ export const MapScreen: React.FC<MapScreenProps> = ({
             Unidades no Mapa
           </span>
           <strong className="text-2xl font-extrabold text-[#152238] block mt-1">
-            {visibleUnits.length}
+            {mappedUnits.length}
           </strong>
-          <small className="text-[11px] text-[#69778c] block mt-0.5">Com geolocalização ativa</small>
+            <small className="text-[11px] text-[#69778c] block mt-0.5">Com endereço confirmado</small>
         </div>
         <div className="rounded-xl border border-[#e5eaf1] bg-white p-4.5 shadow-xs">
           <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#69778c] block">
@@ -228,6 +231,7 @@ export const MapScreen: React.FC<MapScreenProps> = ({
               </div>
             ) : visibleUnits.map((f) => {
               const isSelected = selectedUnitId === f.id;
+              const hasMapLocation = Number.isFinite(f.lat) && Number.isFinite(f.lng) && f.coordinatesVerified !== false;
               return (
                 <div
                   key={f.id}
@@ -249,8 +253,8 @@ export const MapScreen: React.FC<MapScreenProps> = ({
                   <p className="text-[10px] text-[#69778c] mt-0.5 truncate">{f.address}</p>
                   <div className="mt-2 flex items-center justify-between text-[11px]">
                     <span className="font-mono font-bold text-[#152238]">{formatBrl(f.faturamento)}</span>
-                    <span className="text-[#3c63da] text-[10px] font-bold flex items-center gap-0.5">
-                      Focar no mapa <Eye className="h-3 w-3" />
+                    <span className={`text-[10px] font-bold flex items-center gap-0.5 ${hasMapLocation ? "text-[#3c63da]" : "text-[#b44b4b]"}`}>
+                      {hasMapLocation ? <>Focar no mapa <Eye className="h-3 w-3" /></> : "Endereço sem geolocalização"}
                     </span>
                   </div>
                 </div>

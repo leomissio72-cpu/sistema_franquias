@@ -10,6 +10,7 @@ import {
 } from "../../types";
 import AccessManagementPanel from "../AccessManagementPanel";
 import { formatBrl, formatPct } from "../../utils/calculations";
+import { geocodeAddress } from "../../utils/geocoding";
 import {
   CloudCog,
   Save,
@@ -462,14 +463,28 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
 
   const handleAddFranchise = async () => {
     const trimmedName = (newFranchise.name || "").trim();
+    const trimmedCity = (newFranchise.city || "").trim();
+    const trimmedAddress = (newFranchise.address || "").trim();
     if (!trimmedName) {
       setFranchiseFormError("Por favor, preencha o nome do franqueado / unidade.");
+      setTimeout(() => setFranchiseFormError(""), 4000);
+      return;
+    }
+    if (!trimmedCity || !trimmedAddress) {
+      setFranchiseFormError("Informe a cidade/UF e o endereço completo para a unidade aparecer no mapa.");
       setTimeout(() => setFranchiseFormError(""), 4000);
       return;
     }
 
     setFranchiseFormError("");
     setIsSubmittingFranchise(true);
+
+    const coordinates = await geocodeAddress(trimmedAddress, trimmedCity);
+    if (!coordinates) {
+      setFranchiseFormError("Não foi possível localizar esse endereço. Corrija o endereço para cadastrar a unidade no mapa.");
+      setIsSubmittingFranchise(false);
+      return;
+    }
 
     // Gera código automático se deixado em branco (ex: F002, F003) para nunca travar o usuário
     const autoCode = `F${String(franchiseList.length + 1).padStart(3, "0")}`;
@@ -501,17 +516,18 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
       name: trimmedName,
       code: cleanCode,
       resp: (newFranchise.resp || "").trim() || trimmedName,
-      address: (newFranchise.address || "").trim() || "Endereço comercial",
-      city: (newFranchise.city || "").trim() || "São Paulo - SP",
+      address: trimmedAddress,
+      city: trimmedCity,
       region: "Sudeste",
-      lat: -23.5505 + (Math.random() - 0.5) * 0.05,
-      lng: -46.6333 + (Math.random() - 0.5) * 0.05,
+      lat: coordinates.lat,
+      lng: coordinates.lng,
+      coordinatesVerified: true,
       faturamento: Number(newFranchise.faturamento) > 0 ? Number(newFranchise.faturamento) : 50000,
       pendencias: 0,
       rpDone: 5,
       status: "green",
-      email: (newFranchise.email || "").trim() || `contato@${cleanCode.toLowerCase()}.com`,
-      phone: (newFranchise.phone || "").trim() || "(11) 3456-7890",
+      email: (newFranchise.email || "").trim(),
+      phone: (newFranchise.phone || "").trim(),
     };
 
     const updated = [...franchiseList, created];
@@ -1735,14 +1751,28 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
                 </div>
 
                 <div>
-                  <label className="block text-[10px] font-bold text-[#152238] mb-1">Cidade - UF</label>
+                  <label className="block text-[10px] font-bold text-[#152238] mb-1">Cidade - UF *</label>
                   <input
                     type="text"
-                    placeholder="Ex: São Paulo - SP"
+                    required
+                    placeholder="Ex: Santo André - SP"
                     value={newFranchise.city}
                     onChange={(e) => setNewFranchise({ ...newFranchise, city: e.target.value })}
                     className="w-full rounded-lg border border-[#c4cdd9] bg-white px-2.5 py-2 text-xs font-bold text-[#152238] focus:border-[#3c63da] focus:outline-none"
                   />
+                </div>
+
+                <div className="sm:col-span-2">
+                  <label className="block text-[10px] font-bold text-[#152238] mb-1">Endereço completo *</label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="Rua, número, bairro, cidade - UF, CEP"
+                    value={newFranchise.address}
+                    onChange={(e) => setNewFranchise({ ...newFranchise, address: e.target.value })}
+                    className="w-full rounded-lg border border-[#c4cdd9] bg-white px-2.5 py-2 text-xs font-bold text-[#152238] focus:border-[#3c63da] focus:outline-none"
+                  />
+                  <p className="mt-1 text-[10px] text-[#69778c]">O endereço será confirmado antes de criar o pino no mapa.</p>
                 </div>
 
                 <div>

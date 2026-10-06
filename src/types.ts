@@ -66,8 +66,9 @@ export interface FranchiseUnit {
   city: string;
   state?: string;
   region: string;
-  lat: number;
-  lng: number;
+  lat?: number;
+  lng?: number;
+  coordinatesVerified?: boolean;
   faturamento: number;
   pendencias: number;
   rpDone: number;

@@ -168,6 +168,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
     if (selectedFranchiseFilter !== "all" && f.id !== selectedFranchiseFilter) return false;
     return true;
   });
+  const mappedFilteredUnits = filteredUnits.filter((f): f is FranchiseUnit & { lat: number; lng: number } => Number.isFinite(f.lat) && Number.isFinite(f.lng) && f.coordinatesVerified !== false);
 
   // Calculate totals for filtered scope
   const totalFat = filteredUnits.reduce((s, f) => s + f.faturamento * periodMultiplier, 0);
@@ -253,7 +254,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
     if (markersGroup) {
       markersGroup.clearLayers();
 
-      const mapUnits = filteredUnits.filter((f) => {
+      const mapUnits = mappedFilteredUnits.filter((f) => {
         if (mapStatusFilter !== "all" && f.status !== mapStatusFilter) return false;
         return true;
       });
@@ -308,7 +309,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
     }, 250);
 
     return () => clearTimeout(timer);
-  }, [filteredUnits, mapStatusFilter, periodMultiplier, businesses, dreParams, royalties, onSelectTenant]);
+  }, [mappedFilteredUnits, mapStatusFilter, periodMultiplier, businesses, dreParams, royalties, onSelectTenant]);
 
   // Franchise units for modal with advanced multi-filter & sorting
   const modalFilteredFranchises = franchises
@@ -594,7 +595,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
           <div className="rounded-xl border border-[#e5eaf1] bg-[#f8faff] p-3 max-h-[440px] overflow-y-auto space-y-2">
             <div className="flex items-center justify-between pb-2 border-b border-[#e5eaf1]">
               <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#69778c]">
-                Unidades no Mapa ({filteredUnits.length})
+                Unidades no Mapa ({mappedFilteredUnits.length})
               </span>
               <span className="text-[10px] text-[#3c63da] font-bold">Focar & Mudar Visão</span>
             </div>
@@ -609,8 +610,10 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                 <div
                   key={f.id}
                   onClick={() => {
-                    if (mapInstanceRef.current) {
-                      mapInstanceRef.current.setView([f.lat, f.lng], 14);
+                    const lat = f.lat;
+                    const lng = f.lng;
+                    if (mapInstanceRef.current && typeof lat === "number" && typeof lng === "number" && Number.isFinite(lat) && Number.isFinite(lng) && f.coordinatesVerified !== false) {
+                      mapInstanceRef.current.setView([lat, lng], 14);
                     }
                   }}
                   className={`p-3 rounded-xl border transition-all cursor-pointer ${
