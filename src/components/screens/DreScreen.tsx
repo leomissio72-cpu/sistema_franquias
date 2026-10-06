@@ -683,7 +683,7 @@ export const DreScreen: React.FC<DreScreenProps> = ({
     URL.revokeObjectURL(url);
   };
 
-  const handleDownloadHtmlReport = () => {
+  const handleGeneratePdfReport = () => {
     const scope = getScopeTitle();
     const yearsStr = dateSelection.years?.length ? dateSelection.years.join(", ") : "Todos";
     const monthsStr = dateSelection.months?.length ? dateSelection.months.map((m) => AVAILABLE_MONTHS.find((item) => item.value === m)?.short || m).join(", ") : "Todos";
@@ -799,25 +799,18 @@ export const DreScreen: React.FC<DreScreenProps> = ({
   <title>DRE - ${scope}</title>
   <style>
     body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; margin: 25px; color: #1e293b; line-height: 1.4; background:#fff; }
-    .header { border-bottom: 2px solid #3c63da; padding-bottom: 12px; margin-bottom: 20px; display:flex; justify-content:space-between; align-items:flex-end; }
+    .header { border-bottom: 2px solid #3c63da; padding-bottom: 12px; margin-bottom: 20px; }
     .title { font-size: 20px; font-weight: 800; color: #0f172a; margin: 0; }
     .subtitle { font-size: 12px; color: #64748b; margin-top: 4px; }
-    .meta { font-size: 11px; color: #64748b; text-align: right; }
     table { width: 100%; border-collapse: collapse; font-size: 12px; }
     th { text-transform: uppercase; font-size: 10px; letter-spacing: 0.05em; }
-    @media print { body { margin: 10px; } button { display:none; } }
+    @media print { button { display:none; } }
   </style>
 </head>
 <body>
   <div class="header">
-    <div>
-      <h1 class="title">Demonstrativo do Resultado do Exercício (DRE)</h1>
-      <div class="subtitle"><strong>Escopo:</strong> ${scope} · <strong>Período:</strong> ${period}</div>
-    </div>
-    <div class="meta">
-      <div>Data de Emissão: ${dateStr}</div>
-      <div>Franchise Hub Pro · Relatório Oficial</div>
-    </div>
+    <h1 class="title">Demonstrativo do Resultado do Exercício (DRE)</h1>
+    <div class="subtitle"><strong>Escopo:</strong> ${scope} · <strong>Período:</strong> ${period}</div>
   </div>
 
   <table>
@@ -833,11 +826,6 @@ export const DreScreen: React.FC<DreScreenProps> = ({
 
   ${unitsTableHtml}
 
-  <div style="margin-top:25px;border-top:1px solid #e2e8f0;padding-top:10px;font-size:10px;color:#94a3b8;display:flex;justify-content:space-between;">
-    <span>Documento gerado automaticamente pelo sistema de Gestão de Franquias.</span>
-    <span>Página 1 de 1</span>
-  </div>
-
   <div style="margin-top:20px;text-align:center;">
     <button onclick="window.print()" style="padding:8px 16px;background:#3c63da;color:#fff;border:none;border-radius:8px;font-weight:bold;cursor:pointer;">Imprimir / Salvar em PDF</button>
   </div>
@@ -845,13 +833,13 @@ export const DreScreen: React.FC<DreScreenProps> = ({
 </html>`;
 
     const blob = new Blob([htmlContent], { type: "text/html;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `Relatorio_DRE_${targetTenantKey}_${new Date().toISOString().slice(0, 10)}.html`;
-    a.click();
-    URL.revokeObjectURL(url);
+    const win = window.open("", "_blank");
+    if (win) {
+      win.document.write(htmlContent);
+      win.document.close();
+    }
   };
+
 
   const getScopeTitle = () => {
     if (targetUnit?.name) return `${targetUnit.name} (${targetUnit.code})`;
@@ -935,12 +923,12 @@ export const DreScreen: React.FC<DreScreenProps> = ({
                   <span>Baixar Tabela DRE (.csv)</span>
                 </button>
                 <button
-                  onClick={handleDownloadHtmlReport}
+                  onClick={handleGeneratePdfReport}
                   className="flex items-center gap-1.5 rounded-xl border border-[#3c63da]/30 bg-[#edf2ff] px-3 py-1.5 text-xs font-bold text-[#3c63da] hover:bg-[#dfe8fe] transition-all cursor-pointer shadow-2xs"
-                  title="Baixar relatório formatado da tabela de DRE"
+                  title="Baixar relatório formatado em PDF"
                 >
                   <Download className="h-3.5 w-3.5 text-[#3c63da]" />
-                  <span className="hidden sm:inline">Relatório (.html)</span>
+                  <span className="hidden sm:inline">Baixar PDF</span>
                 </button>
                 <button
                   onClick={() => window.print()}
@@ -1170,12 +1158,12 @@ export const DreScreen: React.FC<DreScreenProps> = ({
                   </button>
                   <button
                     type="button"
-                    onClick={handleDownloadHtmlReport}
+                    onClick={handleGeneratePdfReport}
                     className="flex items-center gap-1 rounded-lg border border-[#3c63da]/30 bg-[#edf2ff] px-2.5 py-1 text-[11px] font-bold text-[#3c63da] hover:bg-[#dfe8fe] transition-all cursor-pointer shadow-2xs"
-                    title="Baixar Relatório Formatado"
+                    title="Baixar Relatório Formatado em PDF"
                   >
                     <Download className="h-3 w-3 text-[#3c63da]" />
-                    <span>Relatório</span>
+                    <span>Baixar PDF</span>
                   </button>
                 </div>
                 <div className="text-right pl-2 border-l border-[#e5eaf1]">
