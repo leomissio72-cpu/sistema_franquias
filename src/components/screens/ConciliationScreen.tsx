@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { ConciliationItem, ManualEntry, ScreenType } from "../../types";
 import ExcelJS from "exceljs";
 import mammoth from "mammoth";
@@ -227,18 +227,28 @@ export const ConciliationScreen: React.FC<ConciliationScreenProps> = ({
   const [toastMsg, setToastMsg] = useState<string | null>(null);
   const [isReadingFile, setIsReadingFile] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
+  const [hasPendingImport, setHasPendingImport] = useState(false);
   const [importError, setImportError] = useState<string | null>(null);
+  const previousTenantRef = useRef(currentTenantId);
 
   useEffect(() => {
-    // A leitura do arquivo é uma prévia local. Não reidrate a tabela quando
-    // isReadingFile muda para false, pois isso apagava as linhas recém-lidas.
-    // Após uma importação concluída, isImporting permite sincronizar a tabela
-    // novamente com os lançamentos persistidos.
-    if (!isImporting) {
+    // A leitura do arquivo é uma prévia local. O polling da nuvem atualiza
+    // manualEntries periodicamente, mas nunca pode apagar uma prévia que o
+    // usuário ainda está revisando. Só a confirmação ou o descarte encerra
+    // esse estado pendente.
+    const tenantChanged = previousTenantRef.current !== currentTenantId;
+    previousTenantRef.current = currentTenantId;
+    if (tenantChanged) {
+      setHasPendingImport(false);
+      setItems(manualEntries.filter((entry) => entry.tenant === currentTenantId).map(entryToItem));
+      setSelectedIds([]);
+      return;
+    }
+    if (!isImporting && !hasPendingImport) {
       setItems(manualEntries.filter((entry) => entry.tenant === currentTenantId).map(entryToItem));
       setSelectedIds([]);
     }
-  }, [currentTenantId, manualEntries, isImporting]);
+  }, [currentTenantId, manualEntries, isImporting, hasPendingImport]);
 
   const filteredItems = items.filter((item) => {
     if (filter === "all") return true;
@@ -282,7 +292,8 @@ export const ConciliationScreen: React.FC<ConciliationScreenProps> = ({
     try {
       const imported = await readImportFile(file);
       if (!imported.length) throw new Error("Não encontrei linhas de dados no arquivo.");
-      setItems(imported);
+      setItems(imported.map((item) => ({ ...item, isImportPreview: true })));
+      setHasPendingImport(true);
       setUploadedFileName(file.name);
       setToastMsg(`${imported.length} linha(s) lida(s). Revise e confirme a importação.`);
       setTimeout(() => setToastMsg(null), 3500);
@@ -294,18 +305,29 @@ export const ConciliationScreen: React.FC<ConciliationScreenProps> = ({
   };
 
   const handleImportEntries = async () => {
-    const entries: Array<Partial<ManualEntry>> = items.filter(item => item.label === "Importado" && !item.entryId).map(item => ({ tenant: currentTenantId, type: item.numericValue >= 0 ? "entrada" as const : "despesa" as const, date: item.date, value: Math.abs(item.numericValue), desc: item.desc, catId: "importado", catName: item.categoria, pay: "Importação", note: `Importado de ${uploadedFileName || "arquivo"}`, sourceFile: uploadedFileName || undefined, conciliationStatus: item.status === "match" ? "matched" : "review", created: new Date().toISOString() }));
+    const entries: Array<Partial<ManualEntry>> = items.filter(item => item.isImportPreview && !item.entryId).map(item => ({ tenant: currentTenantId, type: item.numericValue >= 0 ? "entrada" as const : "despesa" as const, date: item.date, value: Math.abs(item.numericValue), desc: item.desc, catId: "importado", catName: item.categoria, pay: "Importação", note: `Importado de ${uploadedFileName || "arquivo"}`, sourceFile: uploadedFileName || undefined, conciliationStatus: item.status === "match" ? "matched" : "review", created: new Date().toISOString() }));
     if (!entries.length) return;
     setIsImporting(true);
     try {
       await onImportEntries(entries);
       setToastMsg(`${entries.length} lançamento(s) importado(s) para a unidade selecionada.`);
       setItems([]);
+      setHasPendingImport(false);
     } catch (error: any) {
       setImportError(error?.message || "Não foi possível salvar os lançamentos.");
     } finally {
       setIsImporting(false);
     }
+  };
+
+  const handleDiscardImport = () => {
+    setHasPendingImport(false);
+    setSelectedIds([]);
+    setItems(manualEntries.filter((entry) => entry.tenant === currentTenantId).map(entryToItem));
+    setUploadedFileName(null);
+    setImportError(null);
+    setToastMsg("Prévia descartada. Nenhum lançamento foi alterado.");
+    setTimeout(() => setToastMsg(null), 3500);
   };
 
   const matchCount = items.filter((i) => i.status === "match").length;
@@ -426,10 +448,13 @@ export const ConciliationScreen: React.FC<ConciliationScreenProps> = ({
           )}
         </div>
         {importError && <div className="mt-3 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs font-semibold text-red-800">{importError}</div>}
-        {items.some(item => item.label === "Importado") && (
+        {items.some(item => item.isImportPreview) && (
           <div className="mt-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-xl border border-blue-200 bg-blue-50 p-3">
-            <p className="text-xs font-semibold text-blue-900">A prévia foi lida. Confira as linhas abaixo antes de enviar para os lançamentos da unidade.</p>
-            <button type="button" onClick={() => void handleImportEntries()} disabled={isImporting} className="rounded-lg bg-[#3c63da] px-4 py-2 text-xs font-bold text-white hover:bg-[#2f52c0] disabled:opacity-60">{isImporting ? "Salvando..." : "Confirmar importação"}</button>
+            <p className="text-xs font-semibold text-blue-900">A prévia foi lida e está protegida contra a sincronização automática. Confira as linhas abaixo antes de enviar para os lançamentos da unidade.</p>
+            <div className="flex items-center gap-2 shrink-0">
+              <button type="button" onClick={handleDiscardImport} disabled={isImporting} className="rounded-lg border border-blue-200 bg-white px-3 py-2 text-xs font-bold text-blue-800 hover:bg-blue-100 disabled:opacity-60">Descartar</button>
+              <button type="button" onClick={() => void handleImportEntries()} disabled={isImporting} className="rounded-lg bg-[#3c63da] px-4 py-2 text-xs font-bold text-white hover:bg-[#2f52c0] disabled:opacity-60">{isImporting ? "Salvando..." : "Confirmar importação"}</button>
+            </div>
           </div>
         )}
       </div>

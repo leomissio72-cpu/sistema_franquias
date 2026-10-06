@@ -288,6 +288,8 @@ export interface RoutineRP {
 
 export interface ConciliationItem {
   entryId?: string;
+  /** Linha lida de um arquivo e ainda não confirmada na base. */
+  isImportPreview?: boolean;
   date: string;
   desc: string;
   value: string;
