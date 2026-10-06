@@ -38,6 +38,8 @@ import {
   AVAILABLE_DAYS,
   AVAILABLE_MONTHS,
   AVAILABLE_YEARS,
+  CURRENT_YEAR,
+  CURRENT_MONTH,
 } from "../DateMultiFilter";
 
 interface HomeScreenProps {
@@ -69,8 +71,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
   // Filters: Data / Período (Ano, Mês, Dia), Negócio, Franqueado
   // -------------------------------------------------------------
   const [dateSelection, setDateSelection] = useState<DateFilterSelection>({
-    years: [2026],
-    months: [9], // Setembro
+    years: [CURRENT_YEAR],
+    months: [CURRENT_MONTH],
     days: AVAILABLE_DAYS,
   });
   const [selectedBusiness, setSelectedBusiness] = useState<string>(currentBusinessId || "all");
@@ -469,8 +471,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
               type="button"
               onClick={() => {
                 setDateSelection({
-                  years: [2026],
-                  months: [9],
+                  years: [CURRENT_YEAR],
+                  months: [CURRENT_MONTH],
                   days: AVAILABLE_DAYS,
                 });
                 handleBusinessFilterChange("all");

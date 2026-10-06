@@ -1,11 +1,12 @@
 import React, { useEffect, useRef, useState } from "react";
-import { FranchiseUnit, Business, ScreenType, DreParams, UserSession } from "../../types";
+import { BillItem, FranchiseUnit, Business, ScreenType, DreParams, UserSession } from "../../types";
 import {
   formatBrl,
   formatBrl2,
   formatPct,
   formatPct2,
   calculateDre,
+  getBillDueStatus,
 } from "../../utils/calculations";
 import { dreExpenseDefs, defaultDreParams } from "../../data/initialData";
 import {
@@ -41,6 +42,8 @@ import {
   AVAILABLE_DAYS,
   AVAILABLE_MONTHS,
   AVAILABLE_YEARS,
+  CURRENT_YEAR,
+  CURRENT_MONTH,
 } from "../DateMultiFilter";
 
 interface DreScreenProps {
@@ -55,6 +58,7 @@ interface DreScreenProps {
   userSession?: UserSession | null;
   currentBusinessId?: string;
   onSelectBusiness?: (bizId: string) => void;
+  bills?: BillItem[];
 }
 
 export const DreScreen: React.FC<DreScreenProps> = ({
@@ -69,6 +73,7 @@ export const DreScreen: React.FC<DreScreenProps> = ({
   userSession,
   currentBusinessId = "all",
   onSelectBusiness,
+  bills = [],
 }) => {
   // Main sub-tab: demonstrativo vs parametros
   const [activeSubTab, setActiveSubTab] = useState<"demonstrativo" | "parametros">("demonstrativo");
@@ -77,8 +82,8 @@ export const DreScreen: React.FC<DreScreenProps> = ({
   // Granular Date Selection (Ano, Mês e Dia)
   // -------------------------------------------------------------
   const [dateSelection, setDateSelection] = useState<DateFilterSelection>({
-    years: [2026],
-    months: [9], // Setembro
+    years: [CURRENT_YEAR],
+    months: [CURRENT_MONTH],
     days: AVAILABLE_DAYS,
   });
 
@@ -175,6 +180,17 @@ export const DreScreen: React.FC<DreScreenProps> = ({
     : (selectedBusiness !== "all" ? (royalties[selectedBusiness] ?? targetBiz?.royalty) : undefined);
 
   const dre = calculateDre(baseFat, currentParams, unitRoyalty);
+
+  const scopedBills = bills.filter((bill) => {
+    const matchesUnit = selectedFranchise === "all" || !bill.tenantId || bill.tenantId === "dono" || bill.tenantId === selectedFranchise;
+    const matchesBusiness = selectedBusiness === "all" || !bill.businessId || bill.businessId === selectedBusiness;
+    return matchesUnit && matchesBusiness;
+  });
+  const billRisk = scopedBills.reduce((summary, bill) => {
+    const status = getBillDueStatus(bill);
+    summary[status] += Number(bill.value) || 0;
+    return summary;
+  }, { overdue: 0, today: 0, soon: 0, scheduled: 0, paid: 0 } as Record<ReturnType<typeof getBillDueStatus>, number>);
 
   // -----------------------------------------------------------------
   // Form state for unified Parâmetros do DRE
@@ -811,8 +827,8 @@ export const DreScreen: React.FC<DreScreenProps> = ({
                 type="button"
                 onClick={() => {
                   setDateSelection({
-                    years: [2026],
-                    months: [9],
+                    years: [CURRENT_YEAR],
+                    months: [CURRENT_MONTH],
                     days: AVAILABLE_DAYS,
                   });
                   setSelectedBusiness("all");
@@ -899,6 +915,22 @@ export const DreScreen: React.FC<DreScreenProps> = ({
               <span className="text-[11px] text-emerald-700 font-bold block mt-0.5">
                 Margem Líquida de {formatPct(dre.margemLiquida)}
               </span>
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-[#e5eaf1] bg-[#f8faff] p-4 sm:p-5 shadow-xs">
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+              <div>
+                <span className="text-[10px] font-extrabold uppercase tracking-widest text-[#3c63da]">Leitura gerencial</span>
+                <h3 className="text-sm font-extrabold text-[#152238] mt-1">Resultado, margem e compromisso de caixa no mesmo recorte</h3>
+                <p className="text-[11px] text-[#69778c] mt-1">Use esta faixa para entender rapidamente se o lucro do período está sendo pressionado por despesas ou vencimentos.</p>
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 min-w-0 lg:min-w-[520px]">
+                <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-2.5"><span className="block text-[9px] font-black uppercase text-emerald-800">Margem líquida</span><strong className="block mt-1 text-sm text-emerald-900">{formatPct(dre.margemLiquida)}</strong></div>
+                <div className="rounded-xl border border-[#cbd5e1] bg-white p-2.5"><span className="block text-[9px] font-black uppercase text-[#69778c]">Despesas/receita</span><strong className="block mt-1 text-sm text-[#152238]">{formatPct(dre.despRatio)}</strong></div>
+                <div className="rounded-xl border border-rose-200 bg-rose-50 p-2.5"><span className="block text-[9px] font-black uppercase text-rose-700">Vencidas</span><strong className="block mt-1 text-sm text-rose-900">{formatBrl2(billRisk.overdue)}</strong></div>
+                <div className="rounded-xl border border-amber-200 bg-amber-50 p-2.5"><span className="block text-[9px] font-black uppercase text-amber-800">Próximas</span><strong className="block mt-1 text-sm text-amber-900">{formatBrl2(billRisk.today + billRisk.soon)}</strong></div>
+              </div>
             </div>
           </div>
 

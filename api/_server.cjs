@@ -41,6 +41,127 @@ var import_path = __toESM(require("path"), 1);
 var import_fs = __toESM(require("fs"), 1);
 var import_blob = require("@vercel/blob");
 
+// src/data/initialData.ts
+var initialBills = [
+  { id: "b1", desc: "Aluguel & IPTU Sala Comercial", vencimento: "2026-10-05", value: 12500, cat: "Ocupa\xE7\xE3o", status: "open", payMethod: "boleto", tenantId: "dono" },
+  { id: "b2", desc: "Enel Energia El\xE9trica", vencimento: "2026-10-10", value: 2840, cat: "Utilidades", status: "open", payMethod: "debito", tenantId: "dono" },
+  { id: "b3", desc: "Folha Salarial 1\xAA Parcela", vencimento: "2026-10-05", value: 24500, cat: "Pessoal", status: "paid", payMethod: "pix", tenantId: "dono" },
+  { id: "b4", desc: "Royalties Franqueadora Matriz", vencimento: "2026-10-15", value: 4800, cat: "Franquia", status: "open", payMethod: "boleto", tenantId: "dono" },
+  { id: "b5", desc: "Honor\xE1rios Cont\xE1beis", vencimento: "2026-10-20", value: 1800, cat: "Operacional", status: "open", payMethod: "pix", tenantId: "dono" }
+];
+var initialConfigs = [
+  {
+    key: "app_name",
+    name: "Nome da Plataforma",
+    value: "Gest\xE3o de Franquias \u2014 SaaS Financeiro para Franquias",
+    type: "string",
+    category: "Geral",
+    description: "Nome exibido no cabe\xE7alho e relat\xF3rios",
+    lastModified: (/* @__PURE__ */ new Date()).toISOString(),
+    modifiedBy: "Sistema"
+  },
+  {
+    key: "tax_default",
+    name: "Al\xEDquota Padr\xE3o de Impostos (%)",
+    value: "8.00",
+    type: "number",
+    category: "Financeiro",
+    description: "Imposto sobre vendas padr\xE3o aplicado \xE0s franquias",
+    lastModified: (/* @__PURE__ */ new Date()).toISOString(),
+    modifiedBy: "Sistema"
+  },
+  {
+    key: "cmv_default",
+    name: "CMV Padr\xE3o (%)",
+    value: "30.00",
+    type: "number",
+    category: "Financeiro",
+    description: "Custo de Mercadoria Vendida padr\xE3o estimado",
+    lastModified: (/* @__PURE__ */ new Date()).toISOString(),
+    modifiedBy: "Sistema"
+  },
+  {
+    key: "royalty_default",
+    name: "Royalty M\xE9dio de Franquia (%)",
+    value: "6.00",
+    type: "number",
+    category: "Financeiro",
+    description: "Percentual sobre receita bruta pago \xE0 matriz",
+    lastModified: (/* @__PURE__ */ new Date()).toISOString(),
+    modifiedBy: "Sistema"
+  },
+  {
+    key: "max_discount_limit",
+    name: "Limite M\xE1ximo de Desconto (%)",
+    value: "15.00",
+    type: "number",
+    category: "Regras de Neg\xF3cio",
+    description: "Desconto m\xE1ximo permitido sem autoriza\xE7\xE3o da diretoria",
+    lastModified: (/* @__PURE__ */ new Date()).toISOString(),
+    modifiedBy: "Sistema"
+  },
+  {
+    key: "bank_cutoff_hour",
+    name: "Hor\xE1rio de Corte Banc\xE1rio Padr\xE3o",
+    value: "18:00",
+    type: "string",
+    category: "Regras de Neg\xF3cio",
+    description: "Vendas ap\xF3s este hor\xE1rio s\xE3o liquidadas no ciclo seguinte",
+    lastModified: (/* @__PURE__ */ new Date()).toISOString(),
+    modifiedBy: "Sistema"
+  },
+  {
+    key: "realtime_sync_enabled",
+    name: "Sincroniza\xE7\xE3o em Tempo Real na Nuvem",
+    value: "true",
+    type: "boolean",
+    category: "Sincroniza\xE7\xE3o",
+    description: "Propaga\xE7\xE3o instant\xE2nea de altera\xE7\xF5es para todos os aparelhos conectados",
+    lastModified: (/* @__PURE__ */ new Date()).toISOString(),
+    modifiedBy: "Sistema"
+  },
+  {
+    key: "audit_log_retention_days",
+    name: "Reten\xE7\xE3o de Logs de Auditoria (dias)",
+    value: "90",
+    type: "number",
+    category: "Seguran\xE7a",
+    description: "Tempo de armazenamento do hist\xF3rico de altera\xE7\xF5es administrativas",
+    lastModified: (/* @__PURE__ */ new Date()).toISOString(),
+    modifiedBy: "Sistema"
+  },
+  {
+    key: "two_factor_auth_required",
+    name: "Exigir 2FA para Administradores",
+    value: "false",
+    type: "boolean",
+    category: "Seguran\xE7a",
+    description: "Obrigatoriedade de autentica\xE7\xE3o de dois fatores no painel administrativo",
+    lastModified: (/* @__PURE__ */ new Date()).toISOString(),
+    modifiedBy: "Sistema"
+  },
+  {
+    key: "auto_conciliation_threshold",
+    name: "Toler\xE2ncia de Concilia\xE7\xE3o Autom\xE1tica (R$)",
+    value: "0.05",
+    type: "number",
+    category: "Opera\xE7\xE3o",
+    description: "Diferen\xE7a m\xE1xima aceita para correspond\xEAncia autom\xE1tica de extrato",
+    lastModified: (/* @__PURE__ */ new Date()).toISOString(),
+    modifiedBy: "Sistema"
+  },
+  {
+    key: "system_maintenance_mode",
+    name: "Modo de Manuten\xE7\xE3o",
+    value: "false",
+    type: "boolean",
+    category: "Geral",
+    description: "Bloqueia edi\xE7\xF5es por franqueados mantendo apenas leitura",
+    lastModified: (/* @__PURE__ */ new Date()).toISOString(),
+    modifiedBy: "Sistema"
+  }
+];
+
 // src/serverSecurity.ts
 var import_node_crypto = __toESM(require("node:crypto"), 1);
 var PASSWORD_MIN_LENGTH = 6;
@@ -476,6 +597,7 @@ function loadDatabase() {
     employees: [],
     users: defaultUsers,
     manualEntries: [],
+    bills: initialBills,
     dreParams: {},
     paymentMethods: defaultPaymentMethods,
     businessRules: defaultBusinessRules,
@@ -526,6 +648,7 @@ function getFullState(database) {
     employees: database.employees || [],
     users: (database.users || []).map((user) => safeUser(user)),
     manualEntries: database.manualEntries || [],
+    bills: database.bills || initialBills,
     configs: database.configs || [],
     dreParams: database.dreParams || {},
     paymentMethods: database.paymentMethods || [],

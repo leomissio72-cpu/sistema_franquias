@@ -22,7 +22,9 @@ interface DateMultiFilterProps {
   className?: string;
 }
 
-export const AVAILABLE_YEARS = [2026, 2025, 2024];
+export const CURRENT_YEAR = new Date().getFullYear();
+export const CURRENT_MONTH = new Date().getMonth() + 1;
+export const AVAILABLE_YEARS = [CURRENT_YEAR, CURRENT_YEAR - 1, CURRENT_YEAR - 2];
 
 export const AVAILABLE_MONTHS = [
   { value: 1, label: "Janeiro", short: "Jan" },
@@ -78,7 +80,7 @@ export const DateMultiFilter: React.FC<DateMultiFilterProps> = ({
   };
 
   const selectOnlyCurrentYear = () => {
-    onChange({ ...selection, years: [2026] });
+    onChange({ ...selection, years: [CURRENT_YEAR] });
   };
 
   // --- Month Handlers ---
@@ -101,7 +103,7 @@ export const DateMultiFilter: React.FC<DateMultiFilterProps> = ({
   };
 
   const selectCurrentMonth = () => {
-    onChange({ ...selection, months: [9] }); // Setembro (mês atual do sistema)
+    onChange({ ...selection, months: [CURRENT_MONTH] });
   };
 
   const selectQuarter = (quarter: number) => {

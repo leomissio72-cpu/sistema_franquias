@@ -3,6 +3,7 @@ import path from "path";
 import fs from "fs";
 import crypto from "crypto";
 import { get, put } from "@vercel/blob";
+import { initialBills } from "./data/initialData";
 import { cookieOptions, createSignedSessionToken, getCredential, hashPassword, migrateLegacyCredentials, safeUser, setCredential, stripSensitiveFields, verifyPassword, verifySignedSessionToken } from "./serverSecurity";
 
 const app = express();
@@ -294,6 +295,7 @@ interface DatabaseState {
   employees: any[];
   users: any[];
   manualEntries: any[];
+  bills?: any[];
   dreParams: Record<string, any>;
   paymentMethods: any[];
   businessRules: Record<string, any>;
@@ -363,6 +365,7 @@ function loadDatabase(): DatabaseState {
     employees: [],
     users: defaultUsers,
     manualEntries: [],
+    bills: initialBills,
     dreParams: {},
     paymentMethods: defaultPaymentMethods,
     businessRules: defaultBusinessRules,
@@ -415,6 +418,7 @@ function getFullState(database: DatabaseState) {
     employees: database.employees || [],
     users: (database.users || []).map((user: any) => safeUser(user)),
     manualEntries: database.manualEntries || [],
+    bills: database.bills || initialBills,
     configs: database.configs || [],
     dreParams: database.dreParams || {},
     paymentMethods: database.paymentMethods || [],

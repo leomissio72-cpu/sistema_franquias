@@ -1,5 +1,5 @@
-import React, { useEffect, useRef, useState } from "react";
-import { FranchiseUnit, Business, ScreenType, UserSession } from "../../types";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { BillItem, FranchiseUnit, Business, ScreenType, UserSession } from "../../types";
 import {
   formatBrl,
   formatBrl2,
@@ -7,6 +7,7 @@ import {
   formatPct2,
   calculateDre
 } from "../../utils/calculations";
+import { getBillDueStatus } from "../../utils/calculations";
 import {
   TrendingUp,
   BarChart3,
@@ -50,6 +51,8 @@ import {
   AVAILABLE_MONTHS,
   AVAILABLE_YEARS,
   AVAILABLE_DAYS,
+  CURRENT_YEAR,
+  CURRENT_MONTH,
 } from "../DateMultiFilter";
 
 interface DashboardScreenProps {
@@ -61,6 +64,7 @@ interface DashboardScreenProps {
   onNavigate: (screen: ScreenType) => void;
   dreParams: Record<string, any>;
   royalties: Record<string, number>;
+  bills?: BillItem[];
   initialTab?: "analytics" | "reports";
   userSession?: UserSession | null;
 }
@@ -77,6 +81,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
   onNavigate,
   dreParams,
   royalties,
+  bills = [],
   initialTab = "analytics",
   userSession,
 }) => {
@@ -105,6 +110,26 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
 
   const availableStates = Array.from(new Set(allowedUnits.map(getUnitState))).sort();
 
+  const scopedBills = useMemo(() => bills.filter((bill) => {
+    const isConsolidated = currentTenantId === "dono" || currentTenantId === "equipe";
+    const matchesUnit = isConsolidated || !bill.tenantId || bill.tenantId === "dono" || bill.tenantId === currentTenantId;
+    const matchesBusiness = currentBusinessId === "all" || !bill.businessId || bill.businessId === currentBusinessId;
+    return matchesUnit && matchesBusiness;
+  }), [bills, currentBusinessId, currentTenantId]);
+
+  const billSummary = useMemo(() => scopedBills.reduce((summary, bill) => {
+    const status = getBillDueStatus(bill);
+    summary[status].count += 1;
+    summary[status].amount += Number(bill.value) || 0;
+    return summary;
+  }, {
+    overdue: { count: 0, amount: 0 },
+    today: { count: 0, amount: 0 },
+    soon: { count: 0, amount: 0 },
+    scheduled: { count: 0, amount: 0 },
+    paid: { count: 0, amount: 0 },
+  } as Record<ReturnType<typeof getBillDueStatus>, { count: number; amount: number }>), [scopedBills]);
+
   // Navigation sub-tabs inside Analítico
   const [activeTab, setActiveTab] = useState<"analytics" | "reports">(initialTab);
 
@@ -118,8 +143,8 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
 
   // Filters
   const [dateSelection, setDateSelection] = useState<DateFilterSelection>({
-    years: [2026],
-    months: [9], // Setembro
+    years: [CURRENT_YEAR],
+    months: [CURRENT_MONTH],
     days: AVAILABLE_DAYS, // Todos os 31 dias por padrão
   });
   const [selectedBusiness, setSelectedBusiness] = useState<string>("all");
@@ -1549,8 +1574,8 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
             type="button"
             onClick={() => {
               setDateSelection({
-                years: [2026],
-                months: [9],
+                years: [CURRENT_YEAR],
+                months: [CURRENT_MONTH],
                 days: AVAILABLE_DAYS,
               });
               setSelectedBusiness("all");
@@ -1569,6 +1594,21 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
       {/* ============================================================= */}
       {activeTab === "analytics" && (
         <div className="space-y-6">
+          <div className="rounded-2xl border border-[#e5eaf1] bg-white p-4 sm:p-5 shadow-xs">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3">
+              <div>
+                <h3 className="text-sm font-extrabold text-[#152238] flex items-center gap-2"><AlertTriangle className="h-4 w-4 text-amber-600" />Pressão de caixa por vencimento</h3>
+                <p className="text-[11px] text-[#69778c] mt-1">Alertas calculados a partir dos compromissos da unidade ou rede selecionada.</p>
+              </div>
+              <button type="button" onClick={() => onNavigate("pagamentos_despesas")} className="text-[11px] font-extrabold text-[#3c63da] hover:underline">Abrir contas a pagar →</button>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div className="rounded-xl border border-rose-200 bg-rose-50/70 p-3"><div className="flex items-center justify-between"><span className="h-2.5 w-2.5 rounded-full bg-rose-600" /><span className="text-[10px] font-black uppercase tracking-wider text-rose-700">Vencidas</span></div><strong className="block mt-1 text-lg font-black text-rose-800">{formatBrl2(billSummary.overdue.amount)}</strong><span className="text-[10px] text-rose-700">{billSummary.overdue.count} compromisso(s)</span></div>
+              <div className="rounded-xl border border-amber-200 bg-amber-50/70 p-3"><div className="flex items-center justify-between"><span className="h-2.5 w-2.5 rounded-full bg-amber-500" /><span className="text-[10px] font-black uppercase tracking-wider text-amber-800">Próximos 7 dias</span></div><strong className="block mt-1 text-lg font-black text-amber-900">{formatBrl2(billSummary.today.amount + billSummary.soon.amount)}</strong><span className="text-[10px] text-amber-800">{billSummary.today.count + billSummary.soon.count} compromisso(s)</span></div>
+              <div className="rounded-xl border border-emerald-200 bg-emerald-50/70 p-3"><div className="flex items-center justify-between"><span className="h-2.5 w-2.5 rounded-full bg-emerald-600" /><span className="text-[10px] font-black uppercase tracking-wider text-emerald-800">No prazo / pagos</span></div><strong className="block mt-1 text-lg font-black text-emerald-800">{formatBrl2(billSummary.scheduled.amount + billSummary.paid.amount)}</strong><span className="text-[10px] text-emerald-700">{billSummary.scheduled.count + billSummary.paid.count} compromisso(s)</span></div>
+            </div>
+          </div>
+
           {/* ----------------------------------------------------------- */}
           {/* SELETOR DE MODO DE VISÃO: CONSOLIDADO VS UNIDADE INDIVIDUAL  */}
           {/* ----------------------------------------------------------- */}

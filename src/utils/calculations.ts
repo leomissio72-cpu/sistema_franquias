@@ -1,4 +1,4 @@
-import { DreCalculation, DreParams, PaymentMethod, DreExpenseItem } from "../types";
+import { BillItem, DreCalculation, DreParams, PaymentMethod, DreExpenseItem } from "../types";
 import { dreExpenseDefs } from "../data/initialData";
 
 export const formatBrl = (n: number | string): string => {
@@ -20,6 +20,27 @@ export const formatPct2 = (n: number | string): string => {
   const num = Number(n) || 0;
   return (num * 100).toFixed(2).replace(".", ",") + "%";
 };
+
+export type BillDueStatus = "paid" | "overdue" | "today" | "soon" | "scheduled";
+
+function dateOnly(date: Date): Date {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+}
+
+export function getBillDaysUntilDue(bill: Pick<BillItem, "vencimento">, referenceDate = new Date()): number {
+  const [year, month, day] = bill.vencimento.split("-").map(Number);
+  const dueDate = new Date(year, (month || 1) - 1, day || 1);
+  return Math.round((dateOnly(dueDate).getTime() - dateOnly(referenceDate).getTime()) / 86400000);
+}
+
+export function getBillDueStatus(bill: BillItem, referenceDate = new Date()): BillDueStatus {
+  if (bill.status === "paid") return "paid";
+  const days = getBillDaysUntilDue(bill, referenceDate);
+  if (days < 0) return "overdue";
+  if (days === 0) return "today";
+  if (days <= 7) return "soon";
+  return "scheduled";
+}
 
 export function isWeekend(date: Date): boolean {
   const wd = date.getDay();

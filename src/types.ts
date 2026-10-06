@@ -241,6 +241,10 @@ export interface BillItem {
   cat: string;
   status: "open" | "paid";
   payMethod: string;
+  /** Rede ou unidade à qual o compromisso pertence. */
+  tenantId?: string;
+  businessId?: string;
+  createdAt?: string;
 }
 
 export interface SystemSettings {
@@ -340,6 +344,8 @@ export interface CloudState {
   employees: Employee[];
   users: UserAccount[];
   manualEntries: ManualEntry[];
+  /** Compromissos de contas a pagar persistidos na nuvem. */
+  bills?: BillItem[];
   configs: ConfigItem[];
   cloudConfigs?: ConfigItem[];
   auditLogs?: AuditLog[];

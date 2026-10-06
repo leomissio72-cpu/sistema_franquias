@@ -24,6 +24,7 @@ import {
   initialEmployees,
   initialUsers,
   initialManualEntries,
+  initialBills,
   initialConfigs,
 } from "./data/initialData";
 
@@ -172,6 +173,7 @@ function formatCloudState(data: any): CloudState {
   return {
     ...data,
     cloudConfigs: data.configs || [],
+    bills: Array.isArray(data.bills) ? data.bills : initialBills,
     paymentMethods: safePaymentMethods,
     businessRules: safeRules,
     systemSettings: data.systemSettings || {
@@ -204,6 +206,7 @@ function getLocalFallbackState(): CloudState {
     employees: initialEmployees,
     users: initialUsers,
     manualEntries: initialManualEntries,
+    bills: initialBills,
     dreParams: {},
     paymentMethods: defaultPaymentMethods,
     businessRules: defaultBusinessRules,

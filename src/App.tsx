@@ -14,8 +14,9 @@ import {
   ConfigItem,
   AuditLog,
   CloudState,
-  UserAccount
-  ,Employee
+  UserAccount,
+  Employee,
+  BillItem
 } from "./types";
 import {
   fetchServerState,
@@ -333,6 +334,12 @@ export const App: React.FC = () => {
     setServerState(updatedState);
   };
 
+  const handleSaveBills = async (newBills: BillItem[]) => {
+    const actor = { profile: userSession?.profile || "dono", tenant: userSession?.tenant || "dono", login: userSession?.login || "admin" };
+    const updatedState = await syncStateSection("bills", newBills, userSession?.name || "Admin", actor);
+    setServerState(updatedState);
+  };
+
   const handleSaveSettings = async (settings: SystemSettings) => {
     const updatedState = await saveSystemSettings({ ...settings, autoSync: true, syncInterval: settings.syncInterval || 30 }, userSession?.name || "Admin");
     setServerState(updatedState);
@@ -514,6 +521,7 @@ export const App: React.FC = () => {
     vtConfigs,
     royalties,
     manualEntries,
+    bills = [],
     systemSettings,
     configs,
     permissions,
@@ -663,6 +671,7 @@ export const App: React.FC = () => {
               onNavigate={setCurrentScreen}
               dreParams={dreParams}
               royalties={royalties}
+              bills={bills}
               initialTab="analytics"
               userSession={userSession}
             />
@@ -681,6 +690,7 @@ export const App: React.FC = () => {
               userSession={userSession}
               currentBusinessId={currentBusinessId}
               onSelectBusiness={handleSelectBusiness}
+              bills={bills}
             />
           )}
 
@@ -718,6 +728,7 @@ export const App: React.FC = () => {
               currentTenantId={currentTenantId}
               franchises={franchises}
               manualEntries={manualEntries}
+              bills={bills}
               onCreateEntry={handleCreateManualEntry}
               onCreateEntriesBulk={async (entries) => {
                 const updatedState = await createManualEntriesBulk(entries);
@@ -725,6 +736,7 @@ export const App: React.FC = () => {
               }}
               onDeleteEntry={handleDeleteManualEntry}
               onUpdateEntry={handleUpdateManualEntry}
+              onSaveBills={handleSaveBills}
               vtConfigs={vtConfigs}
               onSaveVtConfig={handleSaveVtConfig}
               onNavigate={setCurrentScreen}
@@ -752,6 +764,7 @@ export const App: React.FC = () => {
               onNavigate={setCurrentScreen}
               dreParams={dreParams}
               royalties={royalties}
+              bills={bills}
               initialTab="reports"
               userSession={userSession}
             />

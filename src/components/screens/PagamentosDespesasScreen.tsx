@@ -4,6 +4,7 @@ import {
   FranchiseUnit,
   ManualEntry,
   VTConfig,
+  BillItem,
 } from "../../types";
 import { RpScreen } from "./RpScreen";
 import { ConciliationScreen } from "./ConciliationScreen";
@@ -27,10 +28,12 @@ interface PagamentosDespesasScreenProps {
   currentTenantId: string;
   franchises: FranchiseUnit[];
   manualEntries: ManualEntry[];
+  bills: BillItem[];
   onCreateEntry: (entry: Partial<ManualEntry>) => Promise<void>;
   onCreateEntriesBulk: (entries: Array<Partial<ManualEntry>>) => Promise<void>;
   onDeleteEntry: (id: string) => Promise<void>;
   onUpdateEntry: (id: string, patch: Partial<ManualEntry>) => Promise<void>;
+  onSaveBills: (bills: BillItem[]) => Promise<void>;
   vtConfigs: Record<string, VTConfig>;
   onSaveVtConfig: (tenantId: string, config: VTConfig) => Promise<void>;
   onNavigate: (screen: ScreenType) => void;
@@ -41,10 +44,12 @@ export const PagamentosDespesasScreen: React.FC<PagamentosDespesasScreenProps> =
   currentTenantId,
   franchises,
   manualEntries,
+  bills,
   onCreateEntry,
   onCreateEntriesBulk,
   onDeleteEntry,
   onUpdateEntry,
+  onSaveBills,
   vtConfigs,
   onSaveVtConfig,
   onNavigate,
@@ -170,6 +175,8 @@ export const PagamentosDespesasScreen: React.FC<PagamentosDespesasScreenProps> =
         {activeTab === "rp" && (
           <RpScreen
             currentTenantId={currentTenantId}
+            bills={bills}
+            onSaveBills={onSaveBills}
             onNavigate={onNavigate}
           />
         )}
