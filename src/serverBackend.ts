@@ -111,12 +111,22 @@ async function hydrateDatabaseFromBlob() {
         // Um Blob antigo e vazio não pode apagar o estado não vazio já existente.
         // Após esta migração, o marcador permite que uma exclusão intencional para
         // zero seja respeitada nas próximas inicializações.
-        if (parsed.durableInitialized || cloudRecords > 0 || localRecords === 0) {
-          db = { ...(parsed as DatabaseState), durableInitialized: true };
-        } else {
-          db = { ...localState, durableInitialized: true };
-          await persistDatabaseToBlob(db);
+        const explicitEmpty = new Set<string>(Array.isArray(parsed.emptySections) ? parsed.emptySections : []);
+        const collections = ["businesses", "franchises", "employees", "users", "manualEntries", "bills", "products", "suppliers", "whatsappHistory"];
+        const mergedState: DatabaseState = { ...localState, ...(parsed as DatabaseState), durableInitialized: true };
+        let mergedLegacyData = false;
+        for (const section of collections) {
+          const cloudValue = (parsed as any)[section];
+          const localValue = (localState as any)[section];
+          if (Array.isArray(cloudValue) && cloudValue.length === 0 && Array.isArray(localValue) && localValue.length > 0 && !explicitEmpty.has(section)) {
+            (mergedState as any)[section] = localValue;
+            mergedLegacyData = true;
+          }
         }
+        db = mergedState;
+        if (mergedLegacyData || !parsed.durableInitialized) await persistDatabaseToBlob(db);
+        void cloudRecords;
+        void localRecords;
         db = migrateLegacyCredentials(db).database as DatabaseState;
       }
     } catch (error) {
@@ -309,6 +319,7 @@ interface DatabaseState {
   whatsappHistory?: any[];
   products?: any[];
   suppliers?: any[];
+  emptySections?: string[];
   durableInitialized?: boolean;
 }
 
@@ -403,6 +414,8 @@ function loadDatabase(): DatabaseState {
 async function saveDatabase(data: DatabaseState) {
   data.lastUpdated = new Date().toISOString();
   data.durableInitialized = true;
+  const sections = ["businesses", "franchises", "employees", "users", "manualEntries", "bills", "products", "suppliers", "whatsappHistory"];
+  data.emptySections = sections.filter((section) => Array.isArray((data as any)[section]) && (data as any)[section].length === 0);
   try {
     const localBackup = path.join(process.cwd(), "data", "database.json");
     const dir = path.dirname(localBackup);

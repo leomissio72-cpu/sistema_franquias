@@ -382,12 +382,22 @@ async function hydrateDatabaseFromBlob() {
         const countRecords = (state) => (state.businesses?.length || 0) + (state.franchises?.length || 0) + (state.employees?.length || 0) + (state.manualEntries?.length || 0) + Math.max(0, (state.users?.length || 0) - 1);
         const cloudRecords = countRecords(parsed);
         const localRecords = countRecords(localState);
-        if (parsed.durableInitialized || cloudRecords > 0 || localRecords === 0) {
-          db = { ...parsed, durableInitialized: true };
-        } else {
-          db = { ...localState, durableInitialized: true };
-          await persistDatabaseToBlob(db);
+        const explicitEmpty = new Set(Array.isArray(parsed.emptySections) ? parsed.emptySections : []);
+        const collections = ["businesses", "franchises", "employees", "users", "manualEntries", "bills", "products", "suppliers", "whatsappHistory"];
+        const mergedState = { ...localState, ...parsed, durableInitialized: true };
+        let mergedLegacyData = false;
+        for (const section of collections) {
+          const cloudValue = parsed[section];
+          const localValue = localState[section];
+          if (Array.isArray(cloudValue) && cloudValue.length === 0 && Array.isArray(localValue) && localValue.length > 0 && !explicitEmpty.has(section)) {
+            mergedState[section] = localValue;
+            mergedLegacyData = true;
+          }
         }
+        db = mergedState;
+        if (mergedLegacyData || !parsed.durableInitialized) await persistDatabaseToBlob(db);
+        void cloudRecords;
+        void localRecords;
         db = migrateLegacyCredentials(db).database;
       }
     } catch (error) {
@@ -632,6 +642,8 @@ function loadDatabase() {
 async function saveDatabase(data) {
   data.lastUpdated = (/* @__PURE__ */ new Date()).toISOString();
   data.durableInitialized = true;
+  const sections = ["businesses", "franchises", "employees", "users", "manualEntries", "bills", "products", "suppliers", "whatsappHistory"];
+  data.emptySections = sections.filter((section) => Array.isArray(data[section]) && data[section].length === 0);
   try {
     const localBackup = import_path.default.join(process.cwd(), "data", "database.json");
     const dir = import_path.default.dirname(localBackup);
