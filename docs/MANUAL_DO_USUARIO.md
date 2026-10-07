@@ -424,6 +424,8 @@ Forneça em tabela:
 
 A regra não exclui nem apaga linhas. Ela marca `Transferência entre empresas`, mantém o arquivo de origem e grava o motivo da regra. O DRE e os totais operacionais não consideram o lançamento marcado.
 
+As regras iniciais fornecidas para esta rede foram cadastradas para: **LAVO Vila Olímpia LTDA**, **LAVO Clodomiro Amazonas LTDA**, **LAVO Brooklin LTDA**, **LAVO Morumbi LTDA** e **Santo André / Stone**, usando os respectivos CNPJs, contas e termos informados. Elas valem para toda a rede e podem ser editadas ou pausadas em Configurações.
+
 > Recomenda-se começar com modo de revisão: teste pelo menos duas linhas que devem ser marcadas e uma parecida que deve permanecer operacional antes de usar a regra em toda a rede.
 
 ---

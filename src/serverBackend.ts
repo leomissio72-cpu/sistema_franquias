@@ -169,8 +169,10 @@ async function hydrateDatabaseFromBlob() {
             mergedLegacyData = true;
           }
         }
-        db = mergedState;
-        if (mergedLegacyData || !parsed.durableInitialized) await persistDatabaseToBlob(db);
+        const seededState = seedProvidedIntercompanyRules(mergedState);
+        const seededRules = seededState.intercompanySeedVersion !== mergedState.intercompanySeedVersion;
+        db = seededState;
+        if (mergedLegacyData || seededRules || !parsed.durableInitialized) await persistDatabaseToBlob(db);
         void cloudRecords;
         void localRecords;
         db = migrateLegacyCredentials(db).database as DatabaseState;
@@ -366,8 +368,70 @@ interface DatabaseState {
   products?: any[];
   suppliers?: any[];
   intercompanyRules?: any[];
+  intercompanySeedVersion?: number;
   emptySections?: string[];
   durableInitialized?: boolean;
+}
+
+const PROVIDED_INTERCOMPANY_SEED_VERSION = 1;
+const PROVIDED_INTERCOMPANY_RULES = [
+  {
+    id: "intercompany_lavo_vila_olimpia",
+    name: "LAVO Vila Olímpia LTDA",
+    active: true,
+    scope: "rede",
+    terms: ["LAVO VILA OLIMPIA LTDA"],
+    counterpartyDocuments: ["53.374.430/0001-30"],
+    counterpartyAccounts: ["34237956-9"],
+  },
+  {
+    id: "intercompany_lavo_clodomiro_amazonas",
+    name: "LAVO Clodomiro Amazonas LTDA",
+    active: true,
+    scope: "rede",
+    terms: ["LAVO CLODOMIRO AMAZONAS LTDA"],
+    counterpartyDocuments: ["40.099.645/0001-48"],
+    counterpartyAccounts: ["9363737-3"],
+  },
+  {
+    id: "intercompany_lavo_brooklin",
+    name: "LAVO Brooklin LTDA",
+    active: true,
+    scope: "rede",
+    terms: ["LAVO BROOKLIN LTDA"],
+    counterpartyDocuments: ["45.809.375/0001-35"],
+    counterpartyAccounts: ["20082441-4"],
+  },
+  {
+    id: "intercompany_lavo_morumbi",
+    name: "LAVO Morumbi LTDA",
+    active: true,
+    scope: "rede",
+    terms: ["LAVO MORUMBI LTDA"],
+    counterpartyDocuments: ["45.606.295/0001-82"],
+    counterpartyAccounts: ["31362293-0"],
+  },
+  {
+    id: "intercompany_santo_andre_stone",
+    name: "Santo André / Stone",
+    active: true,
+    scope: "rede",
+    terms: ["STONE SANTO ANDRE", "STONE SANTO. ANDRE", "SANTO ANDRE STONE"],
+    counterpartyDocuments: ["62.248.516/0001-07"],
+    counterpartyAccounts: ["67061627-5"],
+  },
+];
+
+function seedProvidedIntercompanyRules(database: DatabaseState): DatabaseState {
+  if (Number(database.intercompanySeedVersion || 0) >= PROVIDED_INTERCOMPANY_SEED_VERSION) return database;
+  const existing = Array.isArray(database.intercompanyRules) ? database.intercompanyRules : [];
+  const existingIds = new Set(existing.map((rule: any) => rule.id));
+  const additions = PROVIDED_INTERCOMPANY_RULES.filter((rule) => !existingIds.has(rule.id));
+  return {
+    ...database,
+    intercompanyRules: [...existing, ...additions],
+    intercompanySeedVersion: PROVIDED_INTERCOMPANY_SEED_VERSION,
+  };
 }
 
 function loadDatabase(): DatabaseState {
@@ -403,6 +467,7 @@ function loadDatabase(): DatabaseState {
   }
 
   if (loadedState) {
+    loadedState = seedProvidedIntercompanyRules(loadedState);
     try {
       const localBackup = path.join(process.cwd(), "data", "database.json");
       const dir = path.dirname(localBackup);
@@ -443,7 +508,8 @@ function loadDatabase(): DatabaseState {
     whatsappHistory: [],
     products: [],
     suppliers: [],
-    intercompanyRules: [],
+    intercompanyRules: PROVIDED_INTERCOMPANY_RULES,
+    intercompanySeedVersion: PROVIDED_INTERCOMPANY_SEED_VERSION,
   };
 
   try {

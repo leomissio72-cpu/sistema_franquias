@@ -266,9 +266,11 @@ export const ConciliationScreen: React.FC<ConciliationScreenProps> = ({
   onImportEntries,
   onUpdateEntry,
   onDeleteEntry,
-}) => {
+  }) => {
   const scopedEntries = () => removeDuplicateItems(
-    manualEntries.filter((entry) => entry.tenant === currentTenantId).map(entryToItem),
+    manualEntries
+      .filter((entry) => entry.tenant === currentTenantId && entry.conciliationStatus !== "matched")
+      .map(entryToItem),
     currentTenantId,
   );
   const canDeleteEntries = ["dono", "equipe", "admin", "franqueado"].includes(userSession.profile);
@@ -324,10 +326,38 @@ export const ConciliationScreen: React.FC<ConciliationScreenProps> = ({
     );
   };
 
+  const buildEntriesFromItems = (sourceItems: ConciliationItem[]): Array<Partial<ManualEntry>> => sourceItems
+    .filter((item) => item.isImportPreview && !item.entryId)
+    .map((item) => ({
+      tenant: currentTenantId,
+      type: item.numericValue >= 0 ? "entrada" as const : "despesa" as const,
+      date: item.date,
+      value: Math.abs(item.numericValue),
+      desc: item.desc,
+      catId: item.isIntercompany ? "intercompany" : "importado",
+      catName: item.categoria,
+      pay: "Importação",
+      note: `${item.intercompanyReason ? `${item.intercompanyReason}. ` : ""}Importado de ${uploadedFileName || "arquivo"}`,
+      sourceFile: uploadedFileName || undefined,
+      // A confirmação é a etapa final: o lançamento entra na Caixa/Lançamentos
+      // como conciliado e deixa de aparecer na fila de revisão.
+      conciliationStatus: "matched",
+      isIntercompany: item.isIntercompany || undefined,
+      excludedFromDre: item.isIntercompany || undefined,
+      intercompanyRuleId: item.intercompanyRuleId,
+      intercompanyReason: item.intercompanyReason,
+      counterpartyDocument: item.counterpartyDocument,
+      sourceAccount: item.sourceAccount,
+      destinationAccount: item.destinationAccount,
+      created: new Date().toISOString(),
+    }));
+
   const handleApproveSelected = async () => {
     const selectedItems = filteredItems.filter((_, index) => selectedIds.includes(index));
     if (!selectedItems.length) return;
     try {
+      const selectedPreviewItems = buildEntriesFromItems(selectedItems);
+      if (selectedPreviewItems.length) await onImportEntries(selectedPreviewItems);
       for (const item of selectedItems) {
         if (item.entryId) await onUpdateEntry(item.entryId, { conciliationStatus: "matched" });
       }
@@ -335,10 +365,10 @@ export const ConciliationScreen: React.FC<ConciliationScreenProps> = ({
       setImportError(error?.message || "Não foi possível salvar a conciliação.");
       return;
     }
-    setItems((previous) => previous.map((item) => selectedItems.includes(item)
-      ? { ...item, status: "match", label: "Conciliado", tone: "green", match: "Conciliação confirmada" }
-      : item));
-    setToastMsg(`${selectedItems.length} movimentação(ões) aprovada(s) e conciliada(s) com sucesso.`);
+    const selectedSet = new Set(selectedItems);
+    setItems((previous) => previous.filter((item) => !selectedSet.has(item)));
+    setHasPendingImport(items.some((item) => item.isImportPreview && !selectedSet.has(item)));
+    setToastMsg(`${selectedItems.length} movimentação(ões) aprovadas e movidas para a Caixa/Lançamentos.`);
     setSelectedIds([]);
     setTimeout(() => setToastMsg(null), 3500);
   };
@@ -438,7 +468,7 @@ export const ConciliationScreen: React.FC<ConciliationScreenProps> = ({
   };
 
   const handleImportEntries = async () => {
-    const entries: Array<Partial<ManualEntry>> = items.filter(item => item.isImportPreview && !item.entryId).map(item => ({ tenant: currentTenantId, type: item.numericValue >= 0 ? "entrada" as const : "despesa" as const, date: item.date, value: Math.abs(item.numericValue), desc: item.desc, catId: item.isIntercompany ? "intercompany" : "importado", catName: item.categoria, pay: "Importação", note: `${item.intercompanyReason ? `${item.intercompanyReason}. ` : ""}Importado de ${uploadedFileName || "arquivo"}`, sourceFile: uploadedFileName || undefined, conciliationStatus: item.status === "match" ? "matched" : "review", isIntercompany: item.isIntercompany || undefined, excludedFromDre: item.isIntercompany || undefined, intercompanyRuleId: item.intercompanyRuleId, intercompanyReason: item.intercompanyReason, counterpartyDocument: item.counterpartyDocument, sourceAccount: item.sourceAccount, destinationAccount: item.destinationAccount, created: new Date().toISOString() }));
+    const entries = buildEntriesFromItems(items);
     if (!entries.length) return;
     setIsImporting(true);
     try {
@@ -613,13 +643,13 @@ export const ConciliationScreen: React.FC<ConciliationScreenProps> = ({
         {importError && <div className="mt-3 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs font-semibold text-red-800">{importError}</div>}
         {items.some(item => item.isImportPreview) && (
           <div className="mt-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-xl border border-blue-200 bg-blue-50 p-3">
-            <p className="text-xs font-semibold text-blue-900">A prévia foi lida e está protegida contra a sincronização automática. Confira as linhas abaixo antes de enviar para os lançamentos da unidade.</p>
+            <p className="text-xs font-semibold text-blue-900">A prévia foi lida e está protegida contra a sincronização automática. Rejeite o que não deve entrar, edite o necessário e finalize para enviar os itens aprovados à Caixa/Lançamentos.</p>
             <div className="flex flex-wrap items-center gap-2 shrink-0">
               <button type="button" onClick={() => void handleApproveSelected()} disabled={!selectedIds.length || isImporting} className="rounded-lg bg-emerald-600 px-3 py-2 text-xs font-bold text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50">Aprovar ({selectedIds.length})</button>
               <button type="button" onClick={() => void handleRejectSelected()} disabled={!selectedIds.length || isImporting} className="rounded-lg bg-rose-600 px-3 py-2 text-xs font-bold text-white hover:bg-rose-700 disabled:cursor-not-allowed disabled:opacity-50">Rejeitar</button>
               <button type="button" onClick={startEditingSelected} disabled={selectedIds.length !== 1 || isImporting} className="rounded-lg border border-blue-300 bg-white px-3 py-2 text-xs font-bold text-blue-800 hover:bg-blue-100 disabled:cursor-not-allowed disabled:opacity-50">Editar</button>
               <button type="button" onClick={handleDiscardImport} disabled={isImporting} className="rounded-lg border border-blue-200 bg-white px-3 py-2 text-xs font-bold text-blue-800 hover:bg-blue-100 disabled:opacity-60">Descartar</button>
-              <button type="button" onClick={() => void handleImportEntries()} disabled={isImporting} className="rounded-lg bg-[#3c63da] px-4 py-2 text-xs font-bold text-white hover:bg-[#2f52c0] disabled:opacity-60">{isImporting ? "Salvando..." : "Confirmar importação"}</button>
+              <button type="button" onClick={() => void handleImportEntries()} disabled={isImporting} className="rounded-lg bg-[#3c63da] px-4 py-2 text-xs font-bold text-white hover:bg-[#2f52c0] disabled:opacity-60">{isImporting ? "Enviando para a Caixa..." : "Finalizar e enviar à Caixa"}</button>
             </div>
           </div>
         )}

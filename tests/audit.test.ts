@@ -409,6 +409,9 @@ test("AUDITORIA 10: Regra intercompany preserva a linha e exclui o lançamento d
   const credential = getCredential(db, dono.id)!;
   const token = createSignedSessionToken(dono.id, credential.version, true);
   const previousRules = db.intercompanyRules || [];
+  assert.ok(previousRules.some((rule: any) => rule.counterpartyDocuments?.includes("53.374.430/0001-30")));
+  assert.ok(previousRules.some((rule: any) => rule.counterpartyAccounts?.includes("9363737-3")));
+  assert.ok(previousRules.some((rule: any) => rule.counterpartyAccounts?.includes("67061627-5")));
   const rule = {
     id: `rule_auditoria_${Date.now()}`,
     name: "Transferência para matriz - auditoria",
