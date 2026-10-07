@@ -82,13 +82,7 @@ export const initialManualEntries: ManualEntry[] = [
 ];
 
 /** Compromissos exibidos quando a base ainda não possui a seção de contas a pagar. */
-export const initialBills: BillItem[] = [
-  { id: "b1", desc: "Aluguel & IPTU Sala Comercial", vencimento: "2026-10-05", value: 12500, cat: "Ocupação", status: "open", payMethod: "boleto", tenantId: "dono" },
-  { id: "b2", desc: "Enel Energia Elétrica", vencimento: "2026-10-10", value: 2840, cat: "Utilidades", status: "open", payMethod: "debito", tenantId: "dono" },
-  { id: "b3", desc: "Folha Salarial 1ª Parcela", vencimento: "2026-10-05", value: 24500, cat: "Pessoal", status: "paid", payMethod: "pix", tenantId: "dono" },
-  { id: "b4", desc: "Royalties Franqueadora Matriz", vencimento: "2026-10-15", value: 4800, cat: "Franquia", status: "open", payMethod: "boleto", tenantId: "dono" },
-  { id: "b5", desc: "Honorários Contábeis", vencimento: "2026-10-20", value: 1800, cat: "Operacional", status: "open", payMethod: "pix", tenantId: "dono" },
-];
+export const initialBills: BillItem[] = [];
 
 export const rpCatalog: RoutineRP[] = [
   { id: "rp01", name: "Fechamento semanal de caixa", desc: "Consolida entradas e saídas da semana e gera prévia do resultado.", sched: "Seg 08:00", status: "done" },

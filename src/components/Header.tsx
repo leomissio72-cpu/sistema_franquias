@@ -100,10 +100,10 @@ export const Header: React.FC<HeaderProps> = ({
 
 
 
-        {/* Brand Title: Exactly "Gestão de Franquias" as requested */}
-        <div className="flex items-center gap-2 flex-shrink-0">
+        {/* Dynamic Page Title for all pages */}
+        <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0 min-w-0">
           <h1 className="text-sm sm:text-base font-extrabold text-[#152238] tracking-tight whitespace-nowrap">
-            Gestão de Franquias
+            {screenTitles[currentScreen] || "Gestão de Franquias"}
           </h1>
         </div>
       </div>

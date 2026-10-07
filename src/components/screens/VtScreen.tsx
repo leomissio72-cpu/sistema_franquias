@@ -746,20 +746,16 @@ export const VtScreen: React.FC<VtScreenProps> = ({
   };
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-150">
+    <div className="space-y-3.5 animate-in fade-in duration-150">
       {/* Top Header & Page Title */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
         <div>
-          <div className="text-[10px] font-extrabold uppercase tracking-widest text-[#3c63da] flex items-center gap-1.5">
-            <CreditCard className="h-3.5 w-3.5" />
-            <span>RH, Benefícios & Gestão de Vale-Transporte</span>
-          </div>
-          <h2 className="text-2xl font-extrabold tracking-tight text-[#152238] flex items-center gap-2 mt-1">
-            <FileSpreadsheet className="h-6 w-6 text-[#3c63da]" />
+          <h3 className="text-base font-extrabold text-[#152238] flex items-center gap-2">
+            <FileSpreadsheet className="h-4.5 w-4.5 text-[#3c63da]" />
             Vale Transporte & Mobilidade (CLT)
-          </h2>
-          <p className="text-xs text-[#69778c] mt-1">
-            Cálculo automático de dias úteis do mês, controle de pagamentos fracionados, lançamento em despesas e geração de recibos para assinatura.
+          </h3>
+          <p className="text-xs text-[#69778c]">
+            Gestão de recargas, cálculo do desconto de 6% CLT e comprovantes de entrega de benefício.
           </p>
         </div>
 

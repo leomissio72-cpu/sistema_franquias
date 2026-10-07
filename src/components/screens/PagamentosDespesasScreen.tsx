@@ -104,76 +104,51 @@ export const PagamentosDespesasScreen: React.FC<PagamentosDespesasScreenProps> =
   ];
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-150">
+    <div className="space-y-3.5 animate-in fade-in duration-150">
       {/* Top Banner & Module Header */}
-      <div className="rounded-2xl border border-[#e5eaf1] bg-white p-5 sm:p-6 shadow-xs">
-        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-          <div>
-            <div className="text-[10px] font-extrabold uppercase tracking-widest text-[#3c63da] flex items-center gap-1.5">
-              <CreditCard className="h-3.5 w-3.5" />
-              <span>Módulo Central de Pagamentos & Despesas</span>
+      <div className="rounded-2xl border border-[#e5eaf1] bg-white px-4 py-3 shadow-xs">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-2.5">
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="flex items-center gap-2">
+              <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-[#3c63da]/10 text-[#3c63da]">
+                <CreditCard className="h-4.5 w-4.5" />
+              </div>
+              <h2 className="text-lg font-extrabold tracking-tight text-[#152238]">
+                Pagamentos / Despesas
+              </h2>
             </div>
-            <h2 className="text-2xl font-extrabold tracking-tight text-[#152238] flex items-center gap-2 mt-1">
-              Pagamentos / Despesas
-            </h2>
-            <p className="text-xs text-[#69778c] mt-1">
-              Controle unificado de despesas operacionais da franquia. Alterne facilmente entre as telas abaixo:
-            </p>
+
+            {/* Inline Screen Switcher Buttons */}
+            <div className="flex flex-wrap items-center gap-1 bg-[#f8faff] p-1 rounded-xl border border-[#e5eaf1]">
+              {tabs.map((tab) => {
+                const isActive = activeTab === tab.id;
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() => {
+                      setActiveTab(tab.id);
+                      if (onNavigate) onNavigate(tab.id);
+                    }}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                      isActive
+                        ? "bg-[#3c63da] text-white shadow-xs"
+                        : "text-[#526078] hover:text-[#152238] hover:bg-white"
+                    }`}
+                    title={tab.subtitle}
+                  >
+                    {tab.icon}
+                    <span>{tab.label}</span>
+                  </button>
+                );
+              })}
+            </div>
           </div>
 
           <div className="flex items-center gap-2 self-start lg:self-auto">
             <span className="text-xs text-[#69778c] flex items-center gap-1.5 bg-[#f8faff] border border-[#e5eaf1] px-3 py-1.5 rounded-xl font-medium">
               <Building2 className="h-3.5 w-3.5 text-[#3c63da]" />
-              <span>Unidade: <strong>{currentTenantId}</strong></span>
+              <span>Unidade: <strong className="uppercase">{currentTenantId}</strong></span>
             </span>
-          </div>
-        </div>
-
-        {/* Screen Switcher Buttons */}
-        <div className="mt-5 pt-4 border-t border-[#e5eaf1]">
-          <div className="text-[10px] font-extrabold uppercase tracking-wider text-[#69778c] mb-2.5 flex items-center gap-1.5">
-            <Layers className="h-3.5 w-3.5 text-[#3c63da]" />
-            <span>Selecione a tela desejada:</span>
-          </div>
-
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-            {tabs.map((tab) => {
-              const isActive = activeTab === tab.id;
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  className={`group relative flex flex-col items-start p-3 sm:p-3.5 rounded-xl border text-left transition-all cursor-pointer ${
-                    isActive
-                      ? "bg-[#edf2ff] border-[#3c63da] text-[#3c63da] shadow-xs ring-2 ring-[#3c63da]/15"
-                      : "bg-[#f8faff] border-[#e5eaf1] text-[#152238] hover:bg-white hover:border-[#3c63da]/40"
-                  }`}
-                >
-                  <div className="flex items-center justify-between w-full">
-                    <div
-                      className={`flex h-7 w-7 items-center justify-center rounded-lg ${
-                        isActive
-                          ? "bg-[#3c63da] text-white"
-                          : "bg-white text-[#69778c] border border-[#e5eaf1] group-hover:text-[#3c63da]"
-                      }`}
-                    >
-                      {tab.icon}
-                    </div>
-                    {isActive && (
-                      <span className="text-[9px] font-extrabold uppercase tracking-wider bg-[#3c63da] text-white px-2 py-0.5 rounded-full">
-                        Ativa
-                      </span>
-                    )}
-                  </div>
-                  <div className="mt-2 font-extrabold text-xs tracking-tight">
-                    {tab.label}
-                  </div>
-                  <div className="text-[10px] text-[#69778c] line-clamp-1 mt-0.5">
-                    {tab.subtitle}
-                  </div>
-                </button>
-              );
-            })}
           </div>
         </div>
       </div>
@@ -200,6 +175,9 @@ export const PagamentosDespesasScreen: React.FC<PagamentosDespesasScreenProps> =
             onImportEntries={onCreateEntriesBulk}
             onUpdateEntry={onUpdateEntry}
             onDeleteEntry={onDeleteEntry}
+            bills={bills}
+            onSaveBills={onSaveBills}
+            onCreateEntry={onCreateEntry}
           />
         )}
 

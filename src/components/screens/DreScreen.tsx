@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { BillItem, FranchiseUnit, Business, ScreenType, DreParams, UserSession } from "../../types";
+import { BillItem, FranchiseUnit, Business, ScreenType, DreParams, UserSession, ManualEntry, IntercompanyRule } from "../../types";
 import {
   formatBrl,
   formatBrl2,
@@ -9,6 +9,7 @@ import {
   getBillDueStatus,
 } from "../../utils/calculations";
 import { dreExpenseDefs, defaultDreParams } from "../../data/initialData";
+import { isIntercompanyEntry, findIntercompanyRule } from "../../utils/intercompany";
 import {
   TrendingUp,
   FileSpreadsheet,
@@ -34,7 +35,8 @@ import {
   Check,
   X,
   Sliders,
-  Download
+  Download,
+  AlertTriangle
 } from "lucide-react";
 import Chart from "chart.js/auto";
 import {
@@ -60,6 +62,8 @@ interface DreScreenProps {
   currentBusinessId?: string;
   onSelectBusiness?: (bizId: string) => void;
   bills?: BillItem[];
+  manualEntries?: ManualEntry[];
+  intercompanyRules?: IntercompanyRule[];
 }
 
 export const DreScreen: React.FC<DreScreenProps> = ({
@@ -75,9 +79,12 @@ export const DreScreen: React.FC<DreScreenProps> = ({
   currentBusinessId = "all",
   onSelectBusiness,
   bills = [],
+  manualEntries = [],
+  intercompanyRules = [],
 }) => {
   // Main sub-tab: demonstrativo vs parametros
   const [activeSubTab, setActiveSubTab] = useState<"demonstrativo" | "parametros">("demonstrativo");
+  const [calculationMode, setCalculationMode] = useState<"real" | "projecao">("real");
 
   // -------------------------------------------------------------
   // Granular Date Selection (Ano, Mês e Dia)
@@ -180,7 +187,136 @@ export const DreScreen: React.FC<DreScreenProps> = ({
     ? (royalties[targetUnit.businessId] ?? targetBiz?.royalty ?? 0.06)
     : (selectedBusiness !== "all" ? (royalties[selectedBusiness] ?? targetBiz?.royalty) : undefined);
 
-  const dre = calculateDre(baseFat, currentParams, unitRoyalty);
+  // Filter active operational entries for DRE calculation
+  const activeEntries = React.useMemo(() => {
+    if (!manualEntries || manualEntries.length === 0) return [];
+
+    return manualEntries.filter((entry) => {
+      // 1. Check if entry is marked as intercompany or excluded
+      if (isIntercompanyEntry(entry)) return false;
+
+      // 2. Match against active intercompany rules
+      if (intercompanyRules && intercompanyRules.length > 0) {
+        const unit = franchises.find((f) => f.id === entry.tenant);
+        const context = {
+          tenantId: entry.tenant,
+          businessId: unit?.businessId,
+        };
+        const matchedRule = findIntercompanyRule(
+          { desc: entry.desc, counterpartyDocument: entry.counterpartyDocument, sourceAccount: entry.sourceAccount, destinationAccount: entry.destinationAccount },
+          intercompanyRules,
+          context
+        );
+        if (matchedRule) return false;
+      }
+
+      // 3. Unit filter
+      if (selectedFranchise !== "all" && entry.tenant !== selectedFranchise && entry.tenant !== "dono") {
+        return false;
+      }
+
+      // 4. Business filter
+      if (selectedBusiness !== "all") {
+        const unit = franchises.find((f) => f.id === entry.tenant);
+        if (unit && unit.businessId !== selectedBusiness) return false;
+      }
+
+      // 5. Date filter
+      if (entry.date) {
+        const parts = entry.date.split("-");
+        if (parts.length >= 3) {
+          const y = parseInt(parts[0], 10);
+          const m = parseInt(parts[1], 10);
+          const d = parseInt(parts[2], 10);
+          if (!isNaN(y) && !dateSelection.years.includes(y)) return false;
+          if (!isNaN(m) && !dateSelection.months.includes(m)) return false;
+          if (!isNaN(d) && !dateSelection.days.includes(d)) return false;
+        }
+      }
+
+      return true;
+    });
+  }, [manualEntries, intercompanyRules, selectedFranchise, selectedBusiness, dateSelection, franchises]);
+
+  // Real entries breakdown
+  const realEntradas = React.useMemo(() => activeEntries.filter((e) => e.type === "entrada"), [activeEntries]);
+  const realDespesas = React.useMemo(() => activeEntries.filter((e) => e.type === "despesa"), [activeEntries]);
+  const realFatBruta = React.useMemo(() => realEntradas.reduce((s, e) => s + (Number(e.value) || 0), 0), [realEntradas]);
+
+  // Main DRE calculation
+  const dre = React.useMemo(() => {
+    // If in Real Data mode and there are NO entries found (or data was deleted/cleared):
+    if (calculationMode === "real" && activeEntries.length === 0) {
+      const emptyDespesas = dreExpenseDefs.map((e) => ({
+        ...e,
+        pct: currentParams.despesas?.[e.id] ?? e.pct,
+        value: 0,
+      }));
+      return {
+        fatBruta: 0,
+        desconto: 0,
+        receitaAjustada: 0,
+        impostos: 0,
+        receitaLiquida: 0,
+        cmv: 0,
+        taxasNegocio: 0,
+        lucroBruto: 0,
+        despesas: emptyDespesas,
+        totalDesp: 0,
+        lucroLiquido: 0,
+        margemBruta: 0,
+        margemLiquida: 0,
+        despRatio: 0,
+        params: currentParams,
+      };
+    }
+
+    if (calculationMode === "real") {
+      // Real entries exist: calculate using real revenue & real expenses
+      const calc = calculateDre(realFatBruta, currentParams, unitRoyalty);
+
+      // Group real expenses by category where possible
+      const mappedDespesas = dreExpenseDefs.map((e) => {
+        const matchedItems = realDespesas.filter((de) => {
+          const cId = (de.catId || "").toLowerCase();
+          const cName = (de.catName || "").toLowerCase();
+          const eId = e.id.toLowerCase();
+          const eName = e.name.toLowerCase();
+          return cId.includes(eId) || cName.includes(eId) || cName.includes(eName) || eName.includes(cName);
+        });
+
+        if (matchedItems.length > 0) {
+          const catSum = matchedItems.reduce((s, item) => s + (Number(item.value) || 0), 0);
+          return {
+            ...e,
+            pct: realFatBruta > 0 ? catSum / realFatBruta : 0,
+            value: catSum,
+          };
+        }
+
+        const fallbackItem = calc.despesas.find((d) => d.id === e.id);
+        return {
+          ...e,
+          pct: fallbackItem?.pct || e.pct,
+          value: fallbackItem?.value || 0,
+        };
+      });
+
+      const totRealDesp = mappedDespesas.reduce((s, d) => s + d.value, 0);
+      const lucroLiq = calc.lucroBruto - totRealDesp;
+
+      return {
+        ...calc,
+        despesas: mappedDespesas,
+        totalDesp: totRealDesp,
+        lucroLiquido: lucroLiq,
+        margemLiquida: realFatBruta > 0 ? lucroLiq / realFatBruta : 0,
+      };
+    }
+
+    // Projection mode: target projection from franchise baseFat
+    return calculateDre(baseFat, currentParams, unitRoyalty);
+  }, [calculationMode, activeEntries, realEntradas, realDespesas, realFatBruta, baseFat, currentParams, unitRoyalty]);
 
   const scopedBills = bills.filter((bill) => {
     const matchesUnit = selectedFranchise === "all" || !bill.tenantId || bill.tenantId === "dono" || bill.tenantId === selectedFranchise;
@@ -900,18 +1036,7 @@ export const DreScreen: React.FC<DreScreenProps> = ({
           </p>
         </div>
 
-        {/* Botão de redirecionamento para configuração centralizada */}
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => onNavigate("configuracao")}
-            className="flex items-center gap-2 rounded-xl border border-[#cbd5e1] bg-white px-3.5 py-2 text-xs font-bold text-[#152238] hover:bg-[#f8faff] hover:border-[#3c63da] hover:text-[#3c63da] transition-all cursor-pointer shadow-xs"
-            title="Os parâmetros de alíquotas e despesas do DRE são configurados centralmente em Configurações"
-          >
-            <SlidersHorizontal className="h-3.5 w-3.5 text-[#3c63da]" />
-            <span>Configurar Parâmetros DRE</span>
-            <ArrowRight className="h-3 w-3 text-[#69778c]" />
-          </button>
-        </div>
+
       </div>
 
       {/* ------------------------------------------------------------- */}
@@ -926,9 +1051,7 @@ export const DreScreen: React.FC<DreScreenProps> = ({
                 <span className="text-xs font-bold text-[#152238] uppercase tracking-wider">
                   Filtros de Período & Escopo
                 </span>
-                <span className="text-[11px] font-bold text-[#3c63da] bg-[#3c63da]/10 px-2 py-0.5 rounded-full">
-                  {visibleUnits.length} unidade(s)
-                </span>
+
               </div>
 
               <div className="flex items-center gap-2 flex-wrap">
@@ -1024,36 +1147,64 @@ export const DreScreen: React.FC<DreScreenProps> = ({
               </div>
             </div>
 
-            {/* Resumo do Período Ativo & Multiplicador */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-2.5 rounded-xl bg-[#f8faff] border border-[#e5eaf1] text-xs">
+            {/* Seleção de Modo de Cálculo */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-end gap-3 p-3 rounded-xl bg-[#f8faff] border border-[#e5eaf1] text-xs">
               <div className="flex items-center gap-2 flex-wrap">
-                <span className="font-bold text-[#152238]">Período Ativo:</span>
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-white border border-[#cbd5e1] text-[#3c63da] font-extrabold text-[11px]">
-                  <Calendar className="h-3 w-3" />
-                  {getPeriodSummary()}
-                </span>
-                <span className="text-[11px] text-[#69778c]">
-                  Multiplicador proporcional: <strong>{periodMultiplier.toFixed(2)}x</strong>
-                </span>
-              </div>
+                <span className="text-[11px] font-extrabold text-[#152238]">Origem dos Dados:</span>
+                <div className="inline-flex items-center gap-1 bg-[#e2e8f0] p-0.5 rounded-lg">
+                  <button
+                    type="button"
+                    onClick={() => setCalculationMode("real")}
+                    className={`px-2 py-1 text-[11px] font-extrabold rounded-md transition-all cursor-pointer ${
+                      calculationMode === "real"
+                        ? "bg-[#3c63da] text-white shadow-2xs"
+                        : "text-[#64748b] hover:text-[#152238]"
+                    }`}
+                  >
+                    Lançamentos Reais ({activeEntries.length})
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setCalculationMode("projecao")}
+                    className={`px-2 py-1 text-[11px] font-extrabold rounded-md transition-all cursor-pointer ${
+                      calculationMode === "projecao"
+                        ? "bg-[#3c63da] text-white shadow-2xs"
+                        : "text-[#64748b] hover:text-[#152238]"
+                    }`}
+                  >
+                    Projeção Teórica
+                  </button>
+                </div>
 
-              <button
-                type="button"
-                onClick={() => {
-                  setDateSelection({
-                    years: [CURRENT_YEAR],
-                    months: [CURRENT_MONTH],
-                    days: AVAILABLE_DAYS,
-                  });
-                  setSelectedBusiness("all");
-                  setSelectedFranchise("all");
-                  setHighlightedMonth(null);
-                }}
-                className="text-[11px] font-bold text-[#69778c] hover:text-[#3c63da] transition-colors cursor-pointer self-end sm:self-auto"
-              >
-                Redefinir Filtros Padrão
-              </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setDateSelection({
+                      years: [CURRENT_YEAR],
+                      months: [CURRENT_MONTH],
+                      days: AVAILABLE_DAYS,
+                    });
+                  }}
+                  className="flex items-center gap-1 rounded-lg border border-[#cbd5e1] bg-white px-2 py-1 text-[11px] font-bold text-[#64748b] hover:text-[#3c63da] hover:border-[#3c63da] transition-all cursor-pointer"
+                  title="Redefinir filtros para o mês atual"
+                >
+                  <RotateCcw className="h-3 w-3" />
+                  <span>Redefinir</span>
+                </button>
+              </div>
             </div>
+
+            {calculationMode === "real" && activeEntries.length === 0 && (
+              <div className="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50/90 p-3.5 text-xs text-amber-900 shadow-2xs">
+                <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
+                <div>
+                  <span className="font-extrabold text-amber-950 block text-xs">DRE Zerado — Nenhum lançamento ativo encontrado na base</span>
+                  <span className="text-[11px]">
+                    Ao apagar ou limpar os dados operacionais, o DRE zera imediatamente refletindo R$ 0,00. Adicione novos lançamentos em <strong>Lançamentos & Extrato</strong> ou selecione outro período acima para atualizar o demonstrativo.
+                  </span>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Banner de Destaque Interativo Power BI (quando usuário clica em um mês) */}
@@ -1132,19 +1283,17 @@ export const DreScreen: React.FC<DreScreenProps> = ({
             </div>
           </div>
 
-          <div className="rounded-2xl border border-[#e5eaf1] bg-[#f8faff] p-4 sm:p-5 shadow-xs">
-            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-              <div>
-                <span className="text-[10px] font-extrabold uppercase tracking-widest text-[#3c63da]">Leitura gerencial</span>
-                <h3 className="text-sm font-extrabold text-[#152238] mt-1">Resultado, margem e compromisso de caixa no mesmo recorte</h3>
-                <p className="text-[11px] text-[#69778c] mt-1">Use esta faixa para entender rapidamente se o lucro do período está sendo pressionado por despesas ou vencimentos.</p>
-              </div>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 min-w-0 lg:min-w-[520px]">
-                <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-2.5"><span className="block text-[9px] font-black uppercase text-emerald-800">Margem líquida</span><strong className="block mt-1 text-sm text-emerald-900">{formatPct(dre.margemLiquida)}</strong></div>
-                <div className="rounded-xl border border-[#cbd5e1] bg-white p-2.5"><span className="block text-[9px] font-black uppercase text-[#69778c]">Despesas/receita</span><strong className="block mt-1 text-sm text-[#152238]">{formatPct(dre.despRatio)}</strong></div>
-                <div className="rounded-xl border border-rose-200 bg-rose-50 p-2.5"><span className="block text-[9px] font-black uppercase text-rose-700">Vencidas</span><strong className="block mt-1 text-sm text-rose-900">{formatBrl2(billRisk.overdue)}</strong></div>
-                <div className="rounded-xl border border-amber-200 bg-amber-50 p-2.5"><span className="block text-[9px] font-black uppercase text-amber-800">Próximas</span><strong className="block mt-1 text-sm text-amber-900">{formatBrl2(billRisk.today + billRisk.soon)}</strong></div>
-              </div>
+          <div className="rounded-2xl border border-[#e5eaf1] bg-[#f8faff] p-4 sm:p-5 shadow-xs space-y-4">
+            <div>
+              <span className="text-[10px] font-extrabold uppercase tracking-widest text-[#3c63da]">Leitura gerencial</span>
+              <h3 className="text-sm font-extrabold text-[#152238] mt-1">Resultado, margem e compromisso de caixa no mesmo recorte</h3>
+              <p className="text-[11px] text-[#69778c] mt-1">Use esta faixa para entender rapidamente se o lucro do período está sendo pressionado por despesas ou vencimentos.</p>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 w-full">
+              <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-3 flex flex-col justify-between"><span className="block text-[10px] font-black uppercase text-emerald-800">Margem líquida</span><strong className="block mt-2 text-base sm:text-lg text-emerald-900">{formatPct(dre.margemLiquida)}</strong></div>
+              <div className="rounded-xl border border-[#cbd5e1] bg-white p-3 flex flex-col justify-between"><span className="block text-[10px] font-black uppercase text-[#69778c]">Despesas/receita</span><strong className="block mt-2 text-base sm:text-lg text-[#152238]">{formatPct(dre.despRatio)}</strong></div>
+              <div className="rounded-xl border border-rose-200 bg-rose-50 p-3 flex flex-col justify-between"><span className="block text-[10px] font-black uppercase text-rose-700">Vencidas</span><strong className="block mt-2 text-base sm:text-lg text-rose-900">{formatBrl2(billRisk.overdue)}</strong></div>
+              <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 flex flex-col justify-between"><span className="block text-[10px] font-black uppercase text-amber-800">Próximas</span><strong className="block mt-2 text-base sm:text-lg text-amber-900">{formatBrl2(billRisk.today + billRisk.soon)}</strong></div>
             </div>
           </div>
 
@@ -1182,6 +1331,15 @@ export const DreScreen: React.FC<DreScreenProps> = ({
                   >
                     <Download className="h-3 w-3 text-[#3c63da]" />
                     <span>Baixar PDF</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => window.print()}
+                    className="flex items-center gap-1 rounded-lg border border-[#cbd5e1] bg-white px-2.5 py-1 text-[11px] font-bold text-[#152238] hover:bg-[#f8faff] hover:border-[#3c63da] transition-all cursor-pointer"
+                    title="Imprimir"
+                  >
+                    <Printer className="h-3 w-3 text-[#69778c]" />
+                    <span>Imprimir</span>
                   </button>
                 </div>
                 <div className="text-right pl-2 border-l border-[#e5eaf1]">

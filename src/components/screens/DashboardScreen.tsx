@@ -1439,30 +1439,6 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
   return (
     <div className="space-y-6 animate-in fade-in duration-150">
       {/* ------------------------------------------------------------- */}
-      {/* 1. HEADER PRINCIPAL COM TÍTULO E ABAS DO ANALÍTICO            */}
-      {/* ------------------------------------------------------------- */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2">
-            <Sparkles className="h-3 w-3" style={{ color: "#000000" }} />
-            <span className="text-[10px] font-extrabold uppercase tracking-widest" style={{ color: "#030303" }}>
-              Módulo de Inteligência Financeira
-            </span>
-            <span className="px-2 py-0.5 rounded-full bg-[#edf2ff] text-[#3c63da] text-[10px] font-bold border border-[#3c63da]/20">
-              Analítico Integrado
-            </span>
-          </div>
-          <h1 className="text-2xl font-extrabold tracking-tight text-[#152238] flex items-center gap-2 mt-1">
-            <TrendingUp className="h-6 w-6" style={{ color: "#010101" }} />
-            Analítico
-          </h1>
-          <p className="text-xs text-[#69778c] mt-1">
-            Painel analítico completo: faturamento por unidade e mês, gráficos de colunas empilhadas, valor dos royalties e visão consolidada.
-          </p>
-        </div>
-      </div>
-
-      {/* ------------------------------------------------------------- */}
       {/* 2. BARRA DE FILTROS COMPLETOS (ANO, MÊS, DIA, REDE, UNIDADE, STATUS) */}
       {/* ------------------------------------------------------------- */}
       <div className="rounded-2xl border border-[#e5eaf1] bg-white p-4.5 shadow-xs space-y-4">
@@ -1599,19 +1575,8 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
           </div>
         </div>
 
-        {/* Barra de Resumo do Período Selecionado */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-2.5 rounded-xl bg-[#f8faff] border border-[#e5eaf1] text-xs">
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className="font-bold text-[#152238]">Período Ativo:</span>
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-white border border-[#cbd5e1] text-[#3c63da] font-extrabold text-[11px]">
-              <Calendar className="h-3 w-3" />
-              {getPeriodSummary()}
-            </span>
-            <span className="text-[11px] text-[#69778c]">
-              Multiplicador proporcional: <strong>{periodMultiplier.toFixed(2)}x</strong> ({daysInPeriod} dias analisados)
-            </span>
-          </div>
-
+        {/* Botão de Redefinir Filtros */}
+        <div className="flex justify-end pt-1">
           <button
             type="button"
             onClick={() => {
@@ -1624,7 +1589,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
               setSelectedFranchise(isFranchisee ? allowedUnits[0]?.id || "f1" : "all");
               setStatusFilter("all");
             }}
-            className="text-[11px] font-bold text-[#69778c] hover:text-[#3c63da] transition-colors cursor-pointer self-end sm:self-auto"
+            className="text-[11px] font-bold text-[#69778c] hover:text-[#3c63da] transition-colors cursor-pointer"
           >
             Redefinir Filtros Padrão
           </button>

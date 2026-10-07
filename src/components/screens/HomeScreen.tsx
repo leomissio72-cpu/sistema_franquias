@@ -29,7 +29,8 @@ import {
   BarChart3,
   SlidersHorizontal,
   Table as TableIcon,
-  ArrowUpRight
+  ArrowUpRight,
+  RotateCcw
 } from "lucide-react";
 import L from "leaflet";
 import {
@@ -366,35 +367,49 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
       {/* 1. TOP BAR: FILTROS UNIFICADOS (DATA, NEGÓCIO, FRANQUEADO)     */}
       {/* ------------------------------------------------------------- */}
       <div className="rounded-2xl border border-[#e5eaf1] bg-white p-4 sm:p-5 shadow-xs">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            <div className="flex items-center gap-2 mb-1">
-              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md bg-[#edf2ff] text-[#3c63da] text-[11px] font-extrabold uppercase tracking-wide">
-                <Building2 className="h-3 w-3" />
-                {currentTenantId === "dono" ? "Rede Consolidada" : currentUnit?.name || currentTenantId}
-              </span>
-            </div>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             <h1 className="text-xl sm:text-2xl font-black text-[#152238] tracking-tight">
               Gestão de Franquias
             </h1>
-            <p className="text-xs text-[#69778c] mt-0.5">
-              Acompanhamento da operação da rede em um só lugar.
-            </p>
+
+            {/* Quick Button to open Franqueados Directory next to Gestão de Franquias */}
+            <button
+              type="button"
+              id="btn-open-franqueados-modal"
+              onClick={() => setIsFranchiseesModalOpen(true)}
+              className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-white border border-[#cbd5e1] hover:border-[#3c63da] hover:text-[#3c63da] px-3 py-1.5 text-xs font-extrabold text-[#152238] transition-all shadow-2xs hover:shadow-xs cursor-pointer"
+            >
+              <Store className="h-3.5 w-3.5 text-[#3c63da]" />
+              <span>{isFranchisee ? "Minha(s) Unidade(s)" : "Ver Franqueados"}</span>
+              <span className="rounded-full bg-[#3c63da] text-white px-1.5 py-0.2 text-[10px] font-bold">
+                {isFranchisee ? filteredUnits.length : franchises.length}
+              </span>
+            </button>
+
+            <button
+              type="button"
+              id="btn-quick-reset-filters"
+              onClick={() => {
+                setDateSelection({
+                  years: [CURRENT_YEAR],
+                  months: [CURRENT_MONTH],
+                  days: AVAILABLE_DAYS,
+                });
+                handleBusinessFilterChange("all");
+                handleFranchiseFilterChange("all");
+              }}
+              className="inline-flex items-center gap-1 rounded-xl border border-[#cbd5e1] bg-white px-2.5 py-1.5 text-xs font-bold text-[#69778c] hover:text-[#3c63da] hover:border-[#3c63da] transition-all cursor-pointer shadow-2xs"
+              title="Redefinir filtros para o padrão"
+            >
+              <RotateCcw className="h-3.5 w-3.5" />
+              <span>Resetar Filtros</span>
+            </button>
           </div>
 
-          {/* Quick Button to open Franqueados Directory inside Home */}
-          <button
-            type="button"
-            id="btn-open-franqueados-modal"
-            onClick={() => setIsFranchiseesModalOpen(true)}
-            className="inline-flex items-center justify-center gap-2 rounded-xl bg-white border border-[#cbd5e1] hover:border-[#3c63da] hover:text-[#3c63da] px-4 py-2.5 text-xs font-extrabold text-[#152238] transition-all shadow-2xs hover:shadow-xs cursor-pointer flex-shrink-0"
-          >
-            <Store className="h-4 w-4 text-[#3c63da]" />
-            <span>{isFranchisee ? "Minha(s) Unidade(s)" : "Ver Franqueados & Unidades"}</span>
-            <span className="rounded-full bg-[#3c63da] text-white px-2 py-0.5 text-[10px] font-bold">
-              {isFranchisee ? filteredUnits.length : franchises.length}
-            </span>
-          </button>
+          <p className="text-xs text-[#69778c] sm:text-right hidden sm:block">
+            Acompanhamento da operação da rede em um só lugar.
+          </p>
         </div>
 
         {/* Filters Controls */}
@@ -453,36 +468,6 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                 ))}
               </select>
             </div>
-          </div>
-
-          {/* Resumo do Período Ativo */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-2.5 rounded-xl bg-[#f8faff] border border-[#e5eaf1] text-xs">
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="font-bold text-[#152238]">Período Ativo:</span>
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-white border border-[#cbd5e1] text-[#3c63da] font-extrabold text-[11px]">
-                <Calendar className="h-3 w-3" />
-                {getPeriodSummary()}
-              </span>
-              <span className="text-[11px] text-[#69778c]">
-                Multiplicador proporcional: <strong>{periodMultiplier.toFixed(2)}x</strong>
-              </span>
-            </div>
-
-            <button
-              type="button"
-              onClick={() => {
-                setDateSelection({
-                  years: [CURRENT_YEAR],
-                  months: [CURRENT_MONTH],
-                  days: AVAILABLE_DAYS,
-                });
-                handleBusinessFilterChange("all");
-                handleFranchiseFilterChange("all");
-              }}
-              className="text-[11px] font-bold text-[#69778c] hover:text-[#3c63da] transition-colors cursor-pointer self-end sm:self-auto"
-            >
-              Redefinir Filtros Padrão
-            </button>
           </div>
         </div>
       </div>

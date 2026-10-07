@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { BillItem, ScreenType } from "../../types";
 import { formatBrl2, getBillDaysUntilDue, getBillDueStatus, BillDueStatus } from "../../utils/calculations";
+import { detectApelido } from "../../utils/apelidos";
 import {
   CalendarDays,
   Plus,
@@ -20,7 +21,9 @@ import {
   ArrowUpDown,
   FileText,
   Calendar,
-  X
+  X,
+  Edit3,
+  Repeat
 } from "lucide-react";
 
 interface RpScreenProps {
@@ -70,6 +73,26 @@ const statusMeta: Record<BillDueStatus, StatusMeta> = {
   },
 };
 
+function addMonthsToDate(baseDateStr: string, monthsToAdd: number): string {
+  try {
+    const parts = baseDateStr.split("-");
+    const year = parseInt(parts[0], 10);
+    const month = parseInt(parts[1], 10) - 1;
+    const day = parseInt(parts[2], 10);
+
+    const targetDate = new Date(year, month + monthsToAdd, day);
+    if (targetDate.getDate() !== day) {
+      targetDate.setDate(0);
+    }
+    const y = targetDate.getFullYear();
+    const m = String(targetDate.getMonth() + 1).padStart(2, "0");
+    const d = String(targetDate.getDate()).padStart(2, "0");
+    return `${y}-${m}-${d}`;
+  } catch (e) {
+    return baseDateStr;
+  }
+}
+
 const initialBillDraft: BillItem = {
   id: "",
   desc: "",
@@ -86,6 +109,20 @@ export const RpScreen: React.FC<RpScreenProps> = ({ bills: incomingBills, curren
   const [value, setValue] = useState("");
   const [venc, setVenc] = useState(initialBillDraft.vencimento);
   const [cat, setCat] = useState(initialBillDraft.cat);
+  const [payMethod, setPayMethod] = useState("boleto");
+  
+  // Recorrência Mensal
+  const [recurrence, setRecurrence] = useState<"1" | "3" | "6" | "12" | "24">("1");
+  const [recurringValue, setRecurringValue] = useState("");
+
+  // Modal de Edição de Conta
+  const [editingBill, setEditingBill] = useState<BillItem | null>(null);
+  const [editDesc, setEditDesc] = useState("");
+  const [editValue, setEditValue] = useState("");
+  const [editVenc, setEditVenc] = useState("");
+  const [editCat, setEditCat] = useState("");
+  const [editPayMethod, setEditPayMethod] = useState("");
+
   const [isSaving, setIsSaving] = useState(false);
   const [saveMessage, setSaveMessage] = useState("");
 
@@ -387,21 +424,84 @@ export const RpScreen: React.FC<RpScreenProps> = ({ bills: incomingBills, curren
     const numericValue = Number(value.replace(",", "."));
     if (!desc.trim() || !Number.isFinite(numericValue) || numericValue <= 0 || !venc) return;
 
-    const nextBill: BillItem = {
-      id: `bill_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
-      desc: desc.trim(),
-      value: numericValue,
-      vencimento: venc,
-      cat,
-      status: "open",
-      payMethod: "boleto",
-      tenantId: currentTenantId,
-      createdAt: new Date().toISOString(),
-    };
+    const numMonths = parseInt(recurrence, 10) || 1;
+    const recVal = Number(recurringValue.replace(",", ".")) || numericValue;
 
-    void persist([...bills, nextBill]);
+    const newBillsList: BillItem[] = [];
+
+    if (numMonths > 1) {
+      for (let i = 0; i < numMonths; i++) {
+        const itemVenc = addMonthsToDate(venc, i);
+        const itemDesc = `${desc.trim()} (${i + 1}/${numMonths})`;
+        const detected = detectApelido(itemDesc, cat);
+        newBillsList.push({
+          id: `bill_${Date.now()}_${i}_${Math.random().toString(36).slice(2, 6)}`,
+          desc: itemDesc,
+          apelido: detected.apelido,
+          value: recVal,
+          vencimento: itemVenc,
+          cat,
+          status: "open",
+          payMethod: payMethod || "boleto",
+          tenantId: currentTenantId,
+          createdAt: new Date().toISOString(),
+        });
+      }
+    } else {
+      const detected = detectApelido(desc.trim(), cat);
+      newBillsList.push({
+        id: `bill_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+        desc: desc.trim(),
+        apelido: detected.apelido,
+        value: numericValue,
+        vencimento: venc,
+        cat,
+        status: "open",
+        payMethod: payMethod || "boleto",
+        tenantId: currentTenantId,
+        createdAt: new Date().toISOString(),
+      });
+    }
+
+    void persist([...bills, ...newBillsList]);
     setDesc("");
     setValue("");
+    setRecurringValue("");
+    setRecurrence("1");
+  };
+
+  const handleStartEditBill = (bill: BillItem) => {
+    setEditingBill(bill);
+    setEditDesc(bill.desc);
+    setEditValue(String(bill.value));
+    setEditVenc(bill.vencimento);
+    setEditCat(bill.cat);
+    setEditPayMethod(bill.payMethod || "boleto");
+  };
+
+  const handleSaveEditBill = (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!editingBill) return;
+    const numericValue = Number(editValue.replace(",", "."));
+    if (!editDesc.trim() || !Number.isFinite(numericValue) || numericValue <= 0 || !editVenc) return;
+
+    const detected = detectApelido(editDesc.trim(), editCat);
+    const updatedBills = bills.map((b) =>
+      b.id === editingBill.id
+        ? {
+            ...b,
+            desc: editDesc.trim(),
+            apelido: detected.apelido,
+            value: numericValue,
+            vencimento: editVenc,
+            cat: editCat,
+            payMethod: editPayMethod,
+          }
+        : b
+    );
+
+    void persist(updatedBills);
+    setEditingBill(null);
   };
 
   const handleDelete = (id: string) => {
@@ -409,15 +509,16 @@ export const RpScreen: React.FC<RpScreenProps> = ({ bills: incomingBills, curren
   };
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-150">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <div className="text-[10px] font-extrabold uppercase tracking-widest text-[#3c63da]">Contas a Pagar & Calendário</div>
-          <h2 className="text-2xl font-extrabold tracking-tight text-[#152238] flex items-center gap-2 mt-1">
-            <CalendarDays className="h-6 w-6 text-[#3c63da]" />
-            Rotinas Periódicas & Contas a Pagar
-          </h2>
-          <p className="text-xs text-[#69778c] mt-1">Acompanhe vencimentos, priorize o caixa e confirme cada baixa no mesmo fluxo.</p>
+    <div className="space-y-3.5 animate-in fade-in duration-150">
+      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-2">
+        <div className="space-y-1 w-full sm:max-w-2xl">
+          <h3 className="text-base font-extrabold text-[#152238] flex items-center gap-2 text-justify">
+            <CalendarDays className="h-4.5 w-4.5 text-[#3c63da] shrink-0" />
+            <span>Rotina Operacional de Pagamentos</span>
+          </h3>
+          <p className="text-xs text-[#526078] font-medium leading-relaxed text-justify">
+            Acompanhe vencimentos, priorize o caixa e confirme cada baixa no mesmo fluxo.
+          </p>
         </div>
         <div className="flex items-center gap-2 text-[11px] font-bold text-[#69778c]">
           {isSaving && <Loader2 className="h-3.5 w-3.5 animate-spin text-[#3c63da]" />}
@@ -425,15 +526,22 @@ export const RpScreen: React.FC<RpScreenProps> = ({ bills: incomingBills, curren
         </div>
       </div>
 
-      <div className="rounded-2xl border border-[#e5eaf1] bg-white p-4 sm:p-5 shadow-xs">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
-          <div>
-            <h3 className="text-sm font-extrabold text-[#152238] flex items-center gap-2"><CircleDollarSign className="h-4 w-4 text-[#3c63da]" />Semáforo de vencimentos</h3>
-            <p className="text-[11px] text-[#69778c] mt-1">A prioridade é calculada automaticamente pela data de vencimento e pelo status de pagamento.</p>
+      <div className="rounded-2xl border border-[#e5eaf1] bg-white p-4 sm:p-5 shadow-xs space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3 pb-2 border-b border-[#f0f4f8]">
+          <div className="space-y-1 w-full sm:max-w-2xl">
+            <h3 className="text-sm font-extrabold text-[#152238] flex items-center gap-2 text-justify">
+              <CircleDollarSign className="h-4 w-4 text-[#3c63da] shrink-0" />
+              <span>Semáforo de vencimentos</span>
+            </h3>
+            <p className="text-xs text-[#526078] font-medium leading-relaxed text-justify">
+              A prioridade é calculada automaticamente pela data de vencimento e pelo status de pagamento.
+            </p>
           </div>
-          <span className="text-[11px] font-bold text-[#69778c]">{scopedBills.length} compromisso(s) no escopo atual</span>
+          <span className="text-[11px] font-bold text-[#69778c] shrink-0 self-start sm:self-center bg-[#f8faff] border border-[#e5eaf1] px-2.5 py-1 rounded-lg">
+            {scopedBills.length} compromisso(s) no escopo atual
+          </span>
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
           <div className="rounded-xl border border-rose-200 bg-rose-50/70 p-3.5">
             <div className="flex items-center justify-between"><span className="h-3 w-3 rounded-full bg-rose-600" /><span className="text-[10px] font-black uppercase tracking-wider text-rose-700">Vencidas</span></div>
             <strong className="block mt-2 text-xl font-black text-rose-800">{formatBrl2(amounts.overdue)}</strong>
@@ -462,17 +570,177 @@ export const RpScreen: React.FC<RpScreenProps> = ({ bills: incomingBills, curren
         <div className="rounded-2xl border border-[#e5eaf1] bg-white p-5 sm:p-6 shadow-xs space-y-4">
           <h3 className="text-sm font-bold text-[#152238] border-b border-[#e5eaf1] pb-2">Agendar Nova Conta</h3>
           <form onSubmit={handleAddBill} className="space-y-3 text-xs">
-            <div><label className="block text-[10px] font-extrabold uppercase text-[#69778c] mb-1">Descrição do compromisso</label><input type="text" placeholder="Ex.: Aluguel, Provedor de Internet" value={desc} onChange={(e) => setDesc(e.target.value)} className="w-full rounded-lg border border-[#e5eaf1] px-3 py-2 text-xs font-semibold text-[#152238] focus:border-[#3c63da] focus:outline-none" /></div>
-            <div><label className="block text-[10px] font-extrabold uppercase text-[#69778c] mb-1">Valor previsto (R$)</label><input type="number" step="0.01" min="0" placeholder="0,00" value={value} onChange={(e) => setValue(e.target.value)} className="w-full rounded-lg border border-[#e5eaf1] px-3 py-2 text-xs font-mono font-bold text-[#152238] focus:border-[#3c63da] focus:outline-none" /></div>
-            <div><label className="block text-[10px] font-extrabold uppercase text-[#69778c] mb-1">Data de vencimento</label><input type="date" value={venc} onChange={(e) => setVenc(e.target.value)} className="w-full rounded-lg border border-[#e5eaf1] px-3 py-2 text-xs font-semibold text-[#152238] focus:border-[#3c63da] focus:outline-none" /></div>
-            <div><label className="block text-[10px] font-extrabold uppercase text-[#69778c] mb-1">Categoria</label><select value={cat} onChange={(e) => setCat(e.target.value)} className="w-full rounded-lg border border-[#e5eaf1] px-3 py-2 text-xs font-semibold text-[#152238] bg-white focus:border-[#3c63da] focus:outline-none"><option value="Ocupação">Ocupação / Aluguel</option><option value="Utilidades">Utilidades (Água, Luz, Internet)</option><option value="Pessoal">Pessoal / Salários</option><option value="Franquia">Royalties / Franquia</option><option value="Operacional">Operacional / Contabilidade</option><option value="CMV">Fornecedores / CMV</option></select></div>
-            <button type="submit" disabled={isSaving} className="w-full flex items-center justify-center gap-1.5 rounded-lg bg-[#3c63da] py-2.5 text-xs font-bold text-white hover:bg-[#2f52c0] shadow-xs disabled:opacity-60"><Plus className="h-4 w-4" /><span>Adicionar compromisso</span></button>
+            <div>
+              <label className="block text-[10px] font-extrabold uppercase text-[#69778c] mb-1">Descrição do compromisso</label>
+              <input type="text" placeholder="Ex.: Aluguel, Provedor de Internet" value={desc} onChange={(e) => setDesc(e.target.value)} className="w-full rounded-lg border border-[#e5eaf1] px-3 py-2 text-xs font-semibold text-[#152238] focus:border-[#3c63da] focus:outline-none" />
+            </div>
+
+            <div>
+              <label className="block text-[10px] font-extrabold uppercase text-[#69778c] mb-1">Valor previsto (R$)</label>
+              <input type="number" step="0.01" min="0" placeholder="0,00" value={value} onChange={(e) => setValue(e.target.value)} className="w-full rounded-lg border border-[#e5eaf1] px-3 py-2 text-xs font-mono font-bold text-[#152238] focus:border-[#3c63da] focus:outline-none" />
+            </div>
+
+            <div>
+              <label className="block text-[10px] font-extrabold uppercase text-[#69778c] mb-1">Data de vencimento</label>
+              <input type="date" value={venc} onChange={(e) => setVenc(e.target.value)} className="w-full rounded-lg border border-[#e5eaf1] px-3 py-2 text-xs font-semibold text-[#152238] focus:border-[#3c63da] focus:outline-none" />
+            </div>
+
+            <div>
+              <label className="block text-[10px] font-extrabold uppercase text-[#69778c] mb-1">Categoria</label>
+              <select value={cat} onChange={(e) => setCat(e.target.value)} className="w-full rounded-lg border border-[#e5eaf1] px-3 py-2 text-xs font-semibold text-[#152238] bg-white focus:border-[#3c63da] focus:outline-none">
+                <option value="Ocupação">Ocupação / Aluguel</option>
+                <option value="Utilidades">Utilidades (Água, Luz, Internet)</option>
+                <option value="Pessoal">Pessoal / Salários</option>
+                <option value="Franquia">Royalties / Franquia</option>
+                <option value="Operacional">Operacional / Contabilidade</option>
+                <option value="CMV">Fornecedores / CMV</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-[10px] font-extrabold uppercase text-[#69778c] mb-1">Forma de Pagamento</label>
+              <select value={payMethod} onChange={(e) => setPayMethod(e.target.value)} className="w-full rounded-lg border border-[#e5eaf1] px-3 py-2 text-xs font-semibold text-[#152238] bg-white focus:border-[#3c63da] focus:outline-none">
+                <option value="boleto">Boleto Bancário</option>
+                <option value="pix">PIX</option>
+                <option value="debito">Débito Automático / Cartão</option>
+                <option value="credito">Cartão de Crédito</option>
+                <option value="transferencia">Transferência / TED</option>
+              </select>
+            </div>
+
+            {/* Configuração de Recorrência Mensal */}
+            <div className="pt-2 border-t border-[#f0f4f9] space-y-2">
+              <div className="flex items-center justify-between">
+                <label className="flex items-center gap-1.5 text-[10px] font-extrabold uppercase text-[#3c63da]">
+                  <Repeat className="h-3 w-3" />
+                  <span>Recorrência Mensal</span>
+                </label>
+                <span className="text-[10px] font-bold text-[#69778c]">
+                  {recurrence === "1" ? "Única vez" : `${recurrence} parcelas`}
+                </span>
+              </div>
+
+              <div className="grid grid-cols-5 gap-1">
+                {[
+                  { val: "1", label: "1x" },
+                  { val: "3", label: "3x" },
+                  { val: "6", label: "6x" },
+                  { val: "12", label: "12x" },
+                  { val: "24", label: "24x" },
+                ].map((item) => (
+                  <button
+                    key={item.val}
+                    type="button"
+                    onClick={() => setRecurrence(item.val as any)}
+                    className={`py-1 text-[10px] font-bold rounded-md border transition-all cursor-pointer text-center ${
+                      recurrence === item.val
+                        ? "bg-[#3c63da] text-white border-[#3c63da]"
+                        : "bg-[#f8faff] text-[#48566a] border-[#e5eaf1] hover:border-[#c4cdd9]"
+                    }`}
+                  >
+                    {item.label}
+                  </button>
+                ))}
+              </div>
+
+              {recurrence !== "1" && (
+                <div className="p-2.5 rounded-xl bg-[#edf2ff] border border-[#3c63da]/25 space-y-1 animate-in fade-in duration-150">
+                  <div className="text-[10px] text-[#152238] font-bold">
+                    • Serão gerados <strong>{recurrence} compromissos mensais</strong> no valor de {formatBrl2(Number(value.replace(",", ".")) || 0)} a partir de {new Date(venc + "T12:00:00").toLocaleDateString("pt-BR")}.
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <button type="submit" disabled={isSaving} className="w-full flex items-center justify-center gap-1.5 rounded-lg bg-[#3c63da] py-2.5 text-xs font-bold text-white hover:bg-[#2f52c0] shadow-xs disabled:opacity-60 cursor-pointer">
+              <Plus className="h-4 w-4" />
+              <span>{recurrence !== "1" ? `Gerar ${recurrence} compromissos recorrentes` : "Adicionar compromisso"}</span>
+            </button>
           </form>
         </div>
 
         <div className="lg:col-span-2 rounded-2xl border border-[#e5eaf1] bg-white p-5 sm:p-6 shadow-xs space-y-4">
-          <div className="flex items-center justify-between gap-3 border-b border-[#e5eaf1] pb-3"><div><h3 className="text-sm font-bold text-[#152238]">Lista de compromissos agendados</h3><p className="text-[11px] text-[#69778c] mt-0.5">Clique no status para registrar a baixa.</p></div><CalendarDays className="h-5 w-5 text-[#3c63da]" /></div>
-          {scopedBills.length === 0 ? <div className="rounded-xl border border-dashed border-[#cbd5e1] bg-[#f8faff] p-8 text-center text-xs text-[#69778c]">Nenhum compromisso neste escopo. Cadastre a primeira conta ao lado.</div> : <div className="overflow-x-auto"><table className="w-full min-w-[720px] text-left text-xs border-collapse"><thead><tr className="bg-[#f8f9fc] text-[#69778c] uppercase text-[9px] tracking-wider border-b border-[#e5eaf1]"><th className="p-3">Semáforo</th><th className="p-3">Descrição</th><th className="p-3">Vencimento</th><th className="p-3">Categoria</th><th className="p-3 text-right">Valor</th><th className="p-3 text-right">Ações</th></tr></thead><tbody className="divide-y divide-[#e5eaf1]">{scopedBills.map((bill) => { const status = getBillDueStatus(bill); const meta = statusMeta[status]; const days = getBillDaysUntilDue(bill); return <tr key={bill.id} className="hover:bg-[#f8faff]"><td className="p-3"><button onClick={() => handleToggleStatus(bill.id)} title={status === "paid" ? "Reabrir compromisso" : "Marcar como pago"} className={`inline-flex items-center gap-1 px-2 py-1 text-[10px] font-bold rounded-full border ${meta.tone}`}>{meta.icon}<span>{meta.shortLabel}</span></button><span className="block text-[10px] text-[#69778c] mt-1">{status === "paid" ? "Baixa registrada" : days < 0 ? `${Math.abs(days)} dia(s) em atraso` : days === 0 ? "Vence hoje" : `Em ${days} dia(s)`}</span></td><td className="p-3"><b className="text-[#152238] block">{bill.desc}</b><span className="text-[10px] text-[#69778c]">{bill.payMethod || "Não informado"}</span></td><td className="p-3 text-[#69778c]">{new Date(`${bill.vencimento}T12:00:00`).toLocaleDateString("pt-BR")}</td><td className="p-3"><span className="bg-[#edf2ff] text-[#3c63da] px-2 py-0.5 text-[10px] font-bold rounded-full">{bill.cat}</span></td><td className="p-3 text-right font-mono font-bold text-[#152238]">{formatBrl2(bill.value)}</td><td className="p-3 text-right"><button onClick={() => handleDelete(bill.id)} disabled={isSaving} aria-label={`Excluir ${bill.desc}`} className="text-[#b44b4b] hover:text-red-800 p-1 rounded hover:bg-red-50 disabled:opacity-50"><Trash2 className="h-4 w-4" /></button></td></tr>; })}</tbody></table></div>}
+          <div className="flex items-center justify-between gap-3 border-b border-[#e5eaf1] pb-3">
+            <div>
+              <h3 className="text-sm font-bold text-[#152238]">Lista de compromissos agendados</h3>
+              <p className="text-[11px] text-[#69778c] mt-0.5">Clique no status para registrar a baixa ou em editar para alterar informações.</p>
+            </div>
+            <CalendarDays className="h-5 w-5 text-[#3c63da]" />
+          </div>
+          {scopedBills.length === 0 ? (
+            <div className="rounded-xl border border-dashed border-[#cbd5e1] bg-[#f8faff] p-8 text-center text-xs text-[#69778c]">
+              Nenhum compromisso neste escopo. Cadastre a primeira conta ao lado.
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[720px] text-left text-xs border-collapse">
+                <thead>
+                  <tr className="bg-[#f8f9fc] text-[#69778c] uppercase text-[9px] tracking-wider border-b border-[#e5eaf1]">
+                    <th className="p-3">Semáforo</th>
+                    <th className="p-3">Descrição</th>
+                    <th className="p-3">Vencimento</th>
+                    <th className="p-3">Categoria</th>
+                    <th className="p-3 text-right">Valor</th>
+                    <th className="p-3 text-right">Ações</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[#e5eaf1]">
+                  {scopedBills.map((bill) => {
+                    const status = getBillDueStatus(bill);
+                    const meta = statusMeta[status];
+                    const days = getBillDaysUntilDue(bill);
+                    return (
+                      <tr key={bill.id} className="hover:bg-[#f8faff]">
+                        <td className="p-3">
+                          <button
+                            onClick={() => handleToggleStatus(bill.id)}
+                            title={status === "paid" ? "Reabrir compromisso" : "Marcar como pago"}
+                            className={`inline-flex items-center gap-1 px-2 py-1 text-[10px] font-bold rounded-full border cursor-pointer ${meta.tone}`}
+                          >
+                            {meta.icon}
+                            <span>{meta.shortLabel}</span>
+                          </button>
+                          <span className="block text-[10px] text-[#69778c] mt-1">
+                            {status === "paid" ? "Baixa registrada" : days < 0 ? `${Math.abs(days)} dia(s) em atraso` : days === 0 ? "Vence hoje" : `Em ${days} dia(s)`}
+                          </span>
+                        </td>
+                        <td className="p-3">
+                          <b className="text-[#152238] block">{bill.desc}</b>
+                          {bill.apelido && <span className="inline-block bg-[#edf2ff] text-[#3c63da] text-[9px] font-extrabold px-1.5 py-0.5 rounded-md mr-1">{bill.apelido}</span>}
+                          <span className="text-[10px] text-[#69778c]">{bill.payMethod || "Não informado"}</span>
+                        </td>
+                        <td className="p-3 text-[#69778c] font-medium">
+                          {new Date(`${bill.vencimento}T12:00:00`).toLocaleDateString("pt-BR")}
+                        </td>
+                        <td className="p-3">
+                          <span className="bg-[#f0f4f9] text-[#152238] px-2 py-0.5 text-[10px] font-bold rounded-full border border-[#e5eaf1]">{bill.cat}</span>
+                        </td>
+                        <td className="p-3 text-right font-mono font-bold text-[#152238]">{formatBrl2(bill.value)}</td>
+                        <td className="p-3 text-right space-x-1">
+                          <button
+                            onClick={() => handleStartEditBill(bill)}
+                            disabled={isSaving}
+                            title="Editar compromisso"
+                            className="text-[#3c63da] hover:text-[#2f52c0] p-1.5 rounded-lg hover:bg-blue-50 transition-all cursor-pointer inline-flex items-center"
+                          >
+                            <Edit3 className="h-4 w-4" />
+                          </button>
+                          <button
+                            onClick={() => handleDelete(bill.id)}
+                            disabled={isSaving}
+                            title={`Excluir ${bill.desc}`}
+                            className="text-[#b44b4b] hover:text-red-800 p-1.5 rounded-lg hover:bg-red-50 transition-all cursor-pointer inline-flex items-center"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
       </div>
 
@@ -502,14 +770,6 @@ export const RpScreen: React.FC<RpScreenProps> = ({ bills: incomingBills, curren
             >
               <FileSpreadsheet className="h-3.5 w-3.5 text-emerald-600" />
               <span>Exportar Excel (.csv)</span>
-            </button>
-            <button
-              onClick={handlePrintReportPdf}
-              className="flex items-center gap-1.5 rounded-xl border border-[#3c63da]/30 bg-[#edf2ff] px-3.5 py-2 text-xs font-bold text-[#3c63da] hover:bg-[#dfe8fe] transition-all cursor-pointer shadow-2xs"
-              title="Imprimir relatório limpo apenas com a tabela e período"
-            >
-              <Printer className="h-3.5 w-3.5 text-[#3c63da]" />
-              <span>Imprimir / PDF</span>
             </button>
           </div>
         </div>
@@ -670,6 +930,7 @@ export const RpScreen: React.FC<RpScreenProps> = ({ bills: incomingBills, curren
               <thead>
                 <tr className="bg-[#f8faff] text-[#69778c] uppercase text-[9px] tracking-wider border-b border-[#e5eaf1]">
                   <th className="p-3">Descrição da Despesa</th>
+                  <th className="p-3">Apelido</th>
                   <th className="p-3">Vencimento</th>
                   <th className="p-3">Categoria</th>
                   <th className="p-3">Status / Prazo</th>
@@ -683,12 +944,18 @@ export const RpScreen: React.FC<RpScreenProps> = ({ bills: incomingBills, curren
                   const meta = statusMeta[status];
                   const days = getBillDaysUntilDue(bill);
                   const prazoStr = status === "paid" ? "Pago" : days < 0 ? `${Math.abs(days)}d atraso` : days === 0 ? "Vence Hoje" : `Em ${days}d`;
+                  const apelidoVal = bill.apelido || detectApelido(bill.desc, bill.cat).apelido;
 
                   return (
                     <tr key={bill.id} className="hover:bg-[#f8faff] transition-colors">
                       <td className="p-3">
                         <span className="font-bold text-[#152238] block">{bill.desc}</span>
                         <span className="text-[10px] text-[#69778c]">{bill.payMethod || "Boleto"}</span>
+                      </td>
+                      <td className="p-3">
+                        <span className="inline-flex items-center rounded-md bg-indigo-50 border border-indigo-200/60 px-2 py-0.5 text-[10px] font-extrabold text-indigo-700 whitespace-nowrap">
+                          {apelidoVal}
+                        </span>
                       </td>
                       <td className="p-3 text-[#152238] font-semibold">
                         {new Date(`${bill.vencimento}T12:00:00`).toLocaleDateString("pt-BR")}
@@ -728,6 +995,126 @@ export const RpScreen: React.FC<RpScreenProps> = ({ bills: incomingBills, curren
           )}
         </div>
       </div>
+
+      {/* Modal de Edição de Conta / Compromisso */}
+      {editingBill && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4 animate-in fade-in duration-150">
+          <div className="w-full max-w-md rounded-2xl border border-[#e5eaf1] bg-white p-5 sm:p-6 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between border-b border-[#e5eaf1] pb-3">
+              <div className="flex items-center gap-2">
+                <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-[#3c63da]/10 text-[#3c63da]">
+                  <Edit3 className="h-4 w-4" />
+                </div>
+                <h3 className="text-sm font-extrabold text-[#152238]">
+                  Editar Compromisso
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setEditingBill(null)}
+                className="rounded-lg p-1 text-[#69778c] hover:bg-slate-100 transition-all cursor-pointer"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveEditBill} className="space-y-3.5 text-xs">
+              <div>
+                <label className="block text-[10px] font-extrabold uppercase text-[#69778c] mb-1">
+                  Descrição
+                </label>
+                <input
+                  type="text"
+                  value={editDesc}
+                  onChange={(e) => setEditDesc(e.target.value)}
+                  className="w-full rounded-lg border border-[#e5eaf1] px-3 py-2 text-xs font-semibold text-[#152238] focus:border-[#3c63da] focus:outline-none"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-extrabold uppercase text-[#69778c] mb-1">
+                  Valor (R$)
+                </label>
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={editValue}
+                  onChange={(e) => setEditValue(e.target.value)}
+                  className="w-full rounded-lg border border-[#e5eaf1] px-3 py-2 text-xs font-mono font-bold text-[#152238] focus:border-[#3c63da] focus:outline-none"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-extrabold uppercase text-[#69778c] mb-1">
+                  Data de Vencimento
+                </label>
+                <input
+                  type="date"
+                  value={editVenc}
+                  onChange={(e) => setEditVenc(e.target.value)}
+                  className="w-full rounded-lg border border-[#e5eaf1] px-3 py-2 text-xs font-semibold text-[#152238] focus:border-[#3c63da] focus:outline-none"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-extrabold uppercase text-[#69778c] mb-1">
+                  Categoria
+                </label>
+                <select
+                  value={editCat}
+                  onChange={(e) => setEditCat(e.target.value)}
+                  className="w-full rounded-lg border border-[#e5eaf1] px-3 py-2 text-xs font-semibold text-[#152238] bg-white focus:border-[#3c63da] focus:outline-none"
+                >
+                  <option value="Ocupação">Ocupação / Aluguel</option>
+                  <option value="Utilidades">Utilidades (Água, Luz, Internet)</option>
+                  <option value="Pessoal">Pessoal / Salários</option>
+                  <option value="Franquia">Royalties / Franquia</option>
+                  <option value="Operacional">Operacional / Contabilidade</option>
+                  <option value="CMV">Fornecedores / CMV</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-extrabold uppercase text-[#69778c] mb-1">
+                  Forma de Pagamento
+                </label>
+                <select
+                  value={editPayMethod}
+                  onChange={(e) => setEditPayMethod(e.target.value)}
+                  className="w-full rounded-lg border border-[#e5eaf1] px-3 py-2 text-xs font-semibold text-[#152238] bg-white focus:border-[#3c63da] focus:outline-none"
+                >
+                  <option value="boleto">Boleto Bancário</option>
+                  <option value="pix">PIX</option>
+                  <option value="debito">Débito Automático / Cartão</option>
+                  <option value="credito">Cartão de Crédito</option>
+                  <option value="transferencia">Transferência / TED</option>
+                </select>
+              </div>
+
+              <div className="flex justify-end gap-2 pt-2 border-t border-[#e5eaf1]">
+                <button
+                  type="button"
+                  onClick={() => setEditingBill(null)}
+                  className="px-4 py-2 rounded-lg border border-[#e5eaf1] bg-white text-xs font-bold text-[#526078] hover:bg-slate-50 transition-all cursor-pointer"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSaving}
+                  className="px-4 py-2 rounded-lg bg-[#3c63da] text-xs font-bold text-white hover:bg-[#2f52c0] transition-all cursor-pointer shadow-xs disabled:opacity-60"
+                >
+                  Salvar Alterações
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

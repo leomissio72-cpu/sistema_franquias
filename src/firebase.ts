@@ -1,10 +1,16 @@
 import { getApp, getApps, initializeApp } from "firebase/app";
 import { getAuth, signInAnonymously } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
+import appletConfig from "../firebase-applet-config.json";
 
-// Firebase Web configuration is public by design. Security is enforced by
-// Firebase Authentication and Firestore rules, never by hiding this object.
-export const firebaseConfig = {
+export const firebaseConfig = appletConfig && appletConfig.projectId ? {
+  apiKey: appletConfig.apiKey,
+  authDomain: appletConfig.authDomain,
+  projectId: appletConfig.projectId,
+  storageBucket: appletConfig.storageBucket,
+  messagingSenderId: appletConfig.messagingSenderId,
+  appId: appletConfig.appId,
+} : {
   apiKey: "AIzaSyDDx2A4irYyhWhkPrhQwx64UBGRkoqMi7A",
   authDomain: "gestao-de-franquias.firebaseapp.com",
   projectId: "gestao-de-franquias",
@@ -16,7 +22,9 @@ export const firebaseConfig = {
 
 export const firebaseApp = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
 export const firebaseAuth = getAuth(firebaseApp);
-export const firebaseDb = getFirestore(firebaseApp);
+export const firebaseDb = appletConfig && (appletConfig as any).firestoreDatabaseId
+  ? getFirestore(firebaseApp, (appletConfig as any).firestoreDatabaseId)
+  : getFirestore(firebaseApp);
 
 let firebaseSessionPromise: Promise<boolean> | null = null;
 

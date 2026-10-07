@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "lastUpdated": "2026-10-04T00:59:16.146Z",
+  "lastUpdated": "2026-10-07T19:27:45.859Z",
   "configs": [
     {
       "key": "app_name",
@@ -85,12 +85,12 @@
     {
       "key": "two_factor_auth_required",
       "name": "Exigir 2FA para Administradores",
-      "value": "false",
+      "value": "true",
       "type": "boolean",
       "category": "Segurança",
       "description": "Obrigatoriedade de autenticação de dois fatores no painel administrativo",
-      "lastModified": "2026-10-03T23:20:09.229Z",
-      "modifiedBy": "Sistema"
+      "lastModified": "2026-10-07T19:27:45.859Z",
+      "modifiedBy": "Administrador"
     },
     {
       "key": "auto_conciliation_threshold",
@@ -114,6 +114,123 @@
     }
   ],
   "auditLogs": [
+    {
+      "id": "audit_1791401265859",
+      "timestamp": "2026-10-07T19:27:45.859Z",
+      "action": "UPDATE_CONFIG",
+      "key": "two_factor_auth_required",
+      "oldValue": "false",
+      "newValue": "true",
+      "user": "Administrador"
+    },
+    {
+      "id": "audit_1791388676014",
+      "timestamp": "2026-10-07T15:57:56.014Z",
+      "action": "SYNC_WHATSAPPCONFIG",
+      "key": "whatsappConfig",
+      "oldValue": null,
+      "newValue": "Updated whatsappConfig",
+      "user": "WhatsApp"
+    },
+    {
+      "id": "audit_1791387627859",
+      "timestamp": "2026-10-07T15:40:27.859Z",
+      "action": "SYNC_VTCONFIGS",
+      "key": "vtConfigs",
+      "oldValue": null,
+      "newValue": "Updated vtConfigs",
+      "user": "Administrador"
+    },
+    {
+      "id": "audit_1791387626716",
+      "timestamp": "2026-10-07T15:40:26.716Z",
+      "action": "SYNC_VTCONFIGS",
+      "key": "vtConfigs",
+      "oldValue": null,
+      "newValue": "Updated vtConfigs",
+      "user": "Administrador"
+    },
+    {
+      "id": "audit_1791387624672",
+      "timestamp": "2026-10-07T15:40:24.672Z",
+      "action": "SYNC_VTCONFIGS",
+      "key": "vtConfigs",
+      "oldValue": null,
+      "newValue": "Updated vtConfigs",
+      "user": "Administrador"
+    },
+    {
+      "id": "audit_1791387589172",
+      "timestamp": "2026-10-07T15:39:49.172Z",
+      "action": "SYNC_VTCONFIGS",
+      "key": "vtConfigs",
+      "oldValue": null,
+      "newValue": "Updated vtConfigs",
+      "user": "Administrador"
+    },
+    {
+      "id": "audit_1791387583259",
+      "timestamp": "2026-10-07T15:39:43.259Z",
+      "action": "SYNC_VTCONFIGS",
+      "key": "vtConfigs",
+      "oldValue": null,
+      "newValue": "Updated vtConfigs",
+      "user": "Administrador"
+    },
+    {
+      "id": "audit_1791387534988",
+      "timestamp": "2026-10-07T15:38:54.988Z",
+      "action": "SYNC_VTCONFIGS",
+      "key": "vtConfigs",
+      "oldValue": null,
+      "newValue": "Updated vtConfigs",
+      "user": "Administrador"
+    },
+    {
+      "id": "audit_1791387531692",
+      "timestamp": "2026-10-07T15:38:51.692Z",
+      "action": "SYNC_VTCONFIGS",
+      "key": "vtConfigs",
+      "oldValue": null,
+      "newValue": "Updated vtConfigs",
+      "user": "Administrador"
+    },
+    {
+      "id": "audit_1791387529818",
+      "timestamp": "2026-10-07T15:38:49.818Z",
+      "action": "SYNC_VTCONFIGS",
+      "key": "vtConfigs",
+      "oldValue": null,
+      "newValue": "Updated vtConfigs",
+      "user": "Administrador"
+    },
+    {
+      "id": "audit_1791384031087",
+      "timestamp": "2026-10-07T14:40:31.087Z",
+      "action": "SYNC_WHATSAPPCONFIG",
+      "key": "whatsappConfig",
+      "oldValue": null,
+      "newValue": "Updated whatsappConfig",
+      "user": "WhatsApp"
+    },
+    {
+      "id": "audit_1791383492376",
+      "timestamp": "2026-10-07T14:31:32.376Z",
+      "action": "SYNC_BILLS",
+      "key": "bills",
+      "oldValue": null,
+      "newValue": "Updated bills",
+      "user": "Administrador"
+    },
+    {
+      "id": "audit_1791383465930",
+      "timestamp": "2026-10-07T14:31:05.930Z",
+      "action": "SYNC_PRODUCTS",
+      "key": "products",
+      "oldValue": null,
+      "newValue": "Updated products",
+      "user": "Administrador"
+    },
     {
       "id": "audit_1791075556146",
       "timestamp": "2026-10-04T00:59:16.146Z",
@@ -160,60 +277,8 @@
       "user": "Administrador"
     }
   ],
-  "businesses": [
-    {
-      "id": "biz_cafegourmet",
-      "name": "Café Gourmet Brasil",
-      "brand": "Café Gourmet",
-      "color": "#d97706",
-      "royalty": 0.06
-    },
-    {
-      "id": "biz_1791075556136",
-      "name": "Rede Franquia Teste S/A",
-      "brand": "Franquia Teste",
-      "color": "#2563eb",
-      "royalty": 0.05
-    }
-  ],
-  "franchises": [
-    {
-      "id": "f_unidade_paulista",
-      "businessId": "biz_cafegourmet",
-      "name": "Unidade Paulista",
-      "code": "F001",
-      "resp": "Carlos Eduardo",
-      "city": "São Paulo - SP",
-      "address": "Av. Paulista, 1500",
-      "region": "Sudeste",
-      "lat": -23.561,
-      "lng": -46.656,
-      "faturamento": 85000,
-      "pendencias": 0,
-      "rpDone": 5,
-      "status": "green",
-      "email": "paulista@cafegourmet.com",
-      "phone": "(11) 98765-4321"
-    },
-    {
-      "id": "f_1791075556143",
-      "businessId": "biz_1791075556136",
-      "name": "Franquia Centro SP",
-      "code": "F002",
-      "resp": "Leonardo Missio",
-      "address": "Rua das Flores, 100",
-      "city": "São Paulo - SP",
-      "region": "Sudeste",
-      "lat": -23.5505,
-      "lng": -46.6333,
-      "faturamento": 75000,
-      "pendencias": 0,
-      "rpDone": 5,
-      "status": "green",
-      "email": "centro@franquiateste.com",
-      "phone": "(11) 98888-7777"
-    }
-  ],
+  "businesses": [],
+  "franchises": [],
   "employees": [],
   "users": [
     {
@@ -224,7 +289,7 @@
       "perfil": "dono",
       "unidade": "dono",
       "status": "ativo",
-      "last": "00:59",
+      "last": "19:15",
       "employeeId": "e1"
     }
   ],
@@ -319,7 +384,23 @@
   },
   "royalties": {},
   "permissions": {},
-  "vtConfigs": {},
+  "vtConfigs": {
+    "dono": {
+      "rate": 10,
+      "title": "Planilha VT Mensal - Benefício e Recarga",
+      "descontoCltPct": 0.06,
+      "tenant": "dono",
+      "notes": true,
+      "format": "both",
+      "prefix": "VT_Folha",
+      "periodoTipo": "mensal",
+      "period": "Mês Vigente",
+      "diasUteisCalculados": 22,
+      "employees": [],
+      "pix": true,
+      "days": 22
+    }
+  },
   "systemSettings": {
     "appName": "Gestão de Franquias",
     "companyName": "Gestão de Franquias S.A.",
@@ -327,19 +408,114 @@
   },
   "credentials": {
     "u1": {
-      "passwordHash": "scrypt$6f4695d5d50d0d5372ef6752ae9ea86a$57bacee5fbedef6107fe32f5ae5681d1f678ddf9a5529a1fa79f87d440719ed75826328438e3d55fca0f3db609ee10723a106a08b4ee73dd4fc27741a43e0300",
+      "passwordHash": "scrypt$1f876c643d2a46ba2767d0d599d69a42$dbe1f47b8bf46ffdf1b871c67e3062d5ec0d92af5326b1b6493b80c59d252e18ac232f8fd35874e671c6fc1bebac829de5531ea03d03857e538a639a2ed90b98",
       "version": 1,
-      "createdAt": "2026-10-04T00:52:39.818Z",
-      "updatedAt": "2026-10-04T00:52:39.818Z",
+      "createdAt": "2026-10-07T19:26:03.283Z",
+      "updatedAt": "2026-10-07T19:26:03.283Z",
       "mustReset": false
     }
   },
   "mfaSecrets": {},
   "whatsappConfig": {
-    "senderPhone": "+55 (11) 98888-0000",
-    "connectionStatus": "conectado",
     "minInterval": 3,
-    "maxInterval": 8
+    "maxInterval": 8,
+    "connectionStatus": "conectado",
+    "senderPhone": "+55 (11) 998888-0000"
   },
-  "whatsappHistory": []
+  "whatsappHistory": [],
+  "durableInitialized": true,
+  "emptySections": [
+    "employees",
+    "whatsappHistory",
+    "bills",
+    "manualEntries",
+    "businesses",
+    "franchises",
+    "products",
+    "suppliers",
+    "vtConfigs"
+  ],
+  "products": [],
+  "suppliers": [],
+  "bills": [],
+  "intercompanyRules": [
+    {
+      "id": "intercompany_lavo_vila_olimpia",
+      "name": "LAVO Vila Olímpia LTDA",
+      "active": true,
+      "scope": "rede",
+      "terms": [
+        "LAVO VILA OLIMPIA LTDA"
+      ],
+      "counterpartyDocuments": [
+        "53.374.430/0001-30"
+      ],
+      "counterpartyAccounts": [
+        "34237956-9"
+      ]
+    },
+    {
+      "id": "intercompany_lavo_clodomiro_amazonas",
+      "name": "LAVO Clodomiro Amazonas LTDA",
+      "active": true,
+      "scope": "rede",
+      "terms": [
+        "LAVO CLODOMIRO AMAZONAS LTDA"
+      ],
+      "counterpartyDocuments": [
+        "40.099.645/0001-48"
+      ],
+      "counterpartyAccounts": [
+        "9363737-3"
+      ]
+    },
+    {
+      "id": "intercompany_lavo_brooklin",
+      "name": "LAVO Brooklin LTDA",
+      "active": true,
+      "scope": "rede",
+      "terms": [
+        "LAVO BROOKLIN LTDA"
+      ],
+      "counterpartyDocuments": [
+        "45.809.375/0001-35"
+      ],
+      "counterpartyAccounts": [
+        "20082441-4"
+      ]
+    },
+    {
+      "id": "intercompany_lavo_morumbi",
+      "name": "LAVO Morumbi LTDA",
+      "active": true,
+      "scope": "rede",
+      "terms": [
+        "LAVO MORUMBI LTDA"
+      ],
+      "counterpartyDocuments": [
+        "45.606.295/0001-82"
+      ],
+      "counterpartyAccounts": [
+        "31362293-0"
+      ]
+    },
+    {
+      "id": "intercompany_santo_andre_stone",
+      "name": "Santo André / Stone",
+      "active": true,
+      "scope": "rede",
+      "terms": [
+        "STONE SANTO ANDRE",
+        "STONE SANTO. ANDRE",
+        "SANTO ANDRE STONE"
+      ],
+      "counterpartyDocuments": [
+        "62.248.516/0001-07"
+      ],
+      "counterpartyAccounts": [
+        "67061627-5"
+      ]
+    }
+  ],
+  "intercompanySeedVersion": 1
 }

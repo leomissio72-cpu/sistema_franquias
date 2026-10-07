@@ -141,6 +141,7 @@ export interface ManualEntry {
   date: string;
   value: number;
   desc: string;
+  apelido?: string;
   catId: string;
   catName: string;
   pay: string;
@@ -282,6 +283,7 @@ export interface VTConfig {
 export interface BillItem {
   id: string;
   desc: string;
+  apelido?: string;
   vencimento: string;
   value: number;
   cat: string;
@@ -345,6 +347,7 @@ export interface ConciliationItem {
   sourceFile?: string;
   date: string;
   desc: string;
+  apelido?: string;
   value: string;
   numericValue: number;
   categoria: string;

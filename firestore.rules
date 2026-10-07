@@ -5,19 +5,20 @@ service cloud.firestore {
       return request.auth != null;
     }
 
+    match /franquias_state/{stateId} {
+      allow read, write: if true;
+    }
+
     match /businesses/{businessId} {
-      allow read: if true;
-      allow write: if isSignedIn() || request.time != null;
+      allow read, write: if true;
     }
 
     match /franchises/{franchiseId} {
-      allow read: if true;
-      allow write: if isSignedIn() || request.time != null;
+      allow read, write: if true;
     }
 
     match /configs/{configKey} {
-      allow read: if true;
-      allow write: if isSignedIn() || request.time != null;
+      allow read, write: if true;
     }
 
     match /auditLogs/{logId} {
@@ -27,12 +28,11 @@ service cloud.firestore {
     }
 
     match /system/{stateId} {
-      allow read: if true;
-      allow write: if isSignedIn() || request.time != null;
+      allow read, write: if true;
     }
 
     match /{document=**} {
-      allow read, write: if false;
+      allow read, write: if true;
     }
   }
 }

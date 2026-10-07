@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { ManualEntry, ScreenType, FranchiseUnit } from "../../types";
 import { formatBrl, formatBrl2 } from "../../utils/calculations";
 import { isIntercompanyEntry } from "../../utils/intercompany";
+import { detectApelido } from "../../utils/apelidos";
 import {
   FilePenLine,
   Plus,
@@ -65,6 +66,7 @@ export const LancamentosScreen: React.FC<LancamentosScreenProps> = ({
   const [payMethod, setPayMethod] = useState<string>("pix");
   const [note, setNote] = useState<string>("");
   const [recurrence, setRecurrence] = useState<"1" | "3" | "6" | "12">("1");
+  const [recurringValue, setRecurringValue] = useState<string>("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [successToast, setSuccessToast] = useState<string | null>(null);
 
@@ -123,21 +125,24 @@ export const LancamentosScreen: React.FC<LancamentosScreenProps> = ({
       const targetTenant = currentTenantId === "dono" ? (franchises[0]?.id || "dono") : currentTenantId;
 
       if (numMonths > 1) {
-        // Build recurring entries for 3, 6 or 12 months
+        // Build recurring entries for 3, 6 or 12 months using the typed recurring value
+        const recVal = parseFloat(recurringValue.trim() || value || "0");
         const recurringList: Array<Partial<ManualEntry>> = [];
         for (let i = 0; i < numMonths; i++) {
           const entryDate = addMonthsToDate(date, i);
           const entryDesc = `${desc.trim()} (${i + 1}/${numMonths})`;
+          const detected = detectApelido(entryDesc, catObj?.name);
           recurringList.push({
             tenant: targetTenant,
             type: entryType,
             date: entryDate,
-            value: numVal,
+            value: recVal,
             desc: entryDesc,
+            apelido: detected.apelido,
             catId: catObj?.id || (entryType === "entrada" ? "receita" : "outros"),
             catName: catObj?.name || (entryType === "entrada" ? "Receita operacional" : "Outros / Tarifas"),
             pay: payMethod,
-            note: note.trim() ? `${note.trim()} [Recorrente ${i + 1}/${numMonths}]` : `[Recorrente ${i + 1}/${numMonths}]`,
+            note: note.trim() ? `${note.trim()} [Recorrente ${i + 1}/${numMonths} - R$ ${recVal.toFixed(2)}]` : `[Recorrente ${i + 1}/${numMonths} - R$ ${recVal.toFixed(2)}]`,
           });
         }
 
@@ -149,14 +154,16 @@ export const LancamentosScreen: React.FC<LancamentosScreenProps> = ({
           }
         }
 
-        setSuccessToast(`✓ ${numMonths} lançamentos recorrentes gerados e salvos na nuvem com sucesso!`);
+        setSuccessToast(`✓ ${numMonths} lançamentos recorrentes no valor de R$ ${recVal.toFixed(2)} gerados com sucesso!`);
       } else {
+        const detected = detectApelido(desc.trim(), catObj?.name);
         await onCreateEntry({
           tenant: targetTenant,
           type: entryType,
           date,
           value: numVal,
           desc: desc.trim(),
+          apelido: detected.apelido,
           catId: catObj?.id || (entryType === "entrada" ? "receita" : "outros"),
           catName: catObj?.name || (entryType === "entrada" ? "Receita operacional" : "Outros / Tarifas"),
           pay: payMethod,
@@ -181,28 +188,25 @@ export const LancamentosScreen: React.FC<LancamentosScreenProps> = ({
   };
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-150">
+    <div className="space-y-3.5 animate-in fade-in duration-150">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
         <div>
-          <div className="text-[10px] font-extrabold uppercase tracking-widest text-[#3c63da]">
-            Entradas e Despesas · Manual
-          </div>
-          <h2 className="text-2xl font-extrabold tracking-tight text-[#152238] flex items-center gap-2 mt-1">
-            <FilePenLine className="h-6 w-6 text-[#3c63da]" />
-            Lançamentos Manuais (Financeiro & DRE)
-          </h2>
-          <p className="text-xs text-[#69778c] mt-1">
-            Registre entradas e saídas avulsas da unidade. Todos os lançamentos alimentam diretamente o DRE na nuvem.
+          <h3 className="text-base font-extrabold text-[#152238] flex items-center gap-2">
+            <FilePenLine className="h-4.5 w-4.5 text-[#3c63da]" />
+            Lançamentos Manuais
+          </h3>
+          <p className="text-xs text-[#69778c]">
+            Registre entradas e saídas avulsas. Lançamentos alimentam diretamente o DRE.
           </p>
         </div>
 
         <div className="flex items-center gap-2">
           <button
             onClick={() => onNavigate("dre")}
-            className="flex items-center gap-1.5 rounded-xl border border-[#3c63da]/30 bg-[#edf2ff] px-3.5 py-2 text-xs font-bold text-[#3c63da] hover:bg-[#3c63da] hover:text-white transition-all shadow-xs cursor-pointer"
+            className="flex items-center gap-1.5 rounded-lg border border-[#3c63da]/30 bg-[#edf2ff] px-3 py-1.5 text-xs font-bold text-[#3c63da] hover:bg-[#3c63da] hover:text-white transition-all shadow-xs cursor-pointer"
           >
-            <span>Ver no DRE e Resultados</span>
+            <span>Ver no DRE</span>
             <ArrowUpRight className="h-3.5 w-3.5" />
           </button>
         </div>
@@ -407,18 +411,44 @@ export const LancamentosScreen: React.FC<LancamentosScreenProps> = ({
               </div>
 
               {recurrence !== "1" && (
-                <div className="mt-2.5 p-2.5 rounded-xl bg-[#edf2ff] border border-[#3c63da]/25 space-y-1 text-[11px] animate-in fade-in duration-150">
-                  <div className="flex items-center gap-1.5 font-bold text-[#3c63da]">
-                    <CalendarRange className="h-3.5 w-3.5" />
-                    <span>Plano Recorrente: {recurrence} meses</span>
+                <div className="mt-2.5 p-3 rounded-xl bg-[#edf2ff] border border-[#3c63da]/25 space-y-2 text-[11px] animate-in fade-in duration-150">
+                  <div className="flex items-center justify-between font-bold text-[#3c63da]">
+                    <span className="flex items-center gap-1.5">
+                      <CalendarRange className="h-3.5 w-3.5" />
+                      <span>Configurar Valor da Recorrência</span>
+                    </span>
+                    <span className="text-[10px] bg-[#3c63da] text-white px-2 py-0.5 rounded-full font-bold">
+                      {recurrence} meses
+                    </span>
                   </div>
-                  <div className="text-[#48566a] space-y-0.5 text-[10px]">
+
+                  <div>
+                    <label className="block text-[10px] font-extrabold uppercase text-[#152238] mb-1">
+                      Valor de Cada Parcela Recorrente (R$)
+                    </label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      placeholder={value || "0,00"}
+                      value={recurringValue}
+                      onChange={(e) => setRecurringValue(e.target.value)}
+                      className="w-full rounded-lg border border-[#3c63da]/40 bg-white px-2.5 py-1.5 text-xs font-mono font-bold text-[#152238] focus:border-[#3c63da] focus:outline-none shadow-2xs"
+                    />
+                    <span className="text-[10px] text-[#526078] block mt-1">
+                      {recurringValue ? "Valor personalizado para as parcelas recorrentes." : "Deixe em branco para usar o valor nominal inserido acima."}
+                    </span>
+                  </div>
+
+                  <div className="text-[#48566a] space-y-0.5 text-[10px] pt-1 border-t border-[#3c63da]/20">
                     <div>• 1º Lançamento: <strong>{new Date(date + "T12:00:00").toLocaleDateString("pt-BR")}</strong></div>
                     <div>• Último Lançamento: <strong>{new Date(addMonthsToDate(date, parseInt(recurrence, 10) - 1) + "T12:00:00").toLocaleDateString("pt-BR")}</strong></div>
-                    {parseFloat(value || "0") > 0 && (
-                      <div className="pt-1 border-t border-[#3c63da]/20 font-bold text-[#152238] flex justify-between">
-                        <span>Total acumulado ({recurrence}x):</span>
-                        <span className="font-mono">{formatBrl(parseFloat(value) * parseInt(recurrence, 10))}</span>
+                    {parseFloat(recurringValue || value || "0") > 0 && (
+                      <div className="pt-1.5 border-t border-[#3c63da]/20 font-bold text-[#152238] flex justify-between text-xs">
+                        <span>Total das {recurrence} parcelas:</span>
+                        <span className="font-mono text-[#3c63da]">
+                          {formatBrl(parseFloat(recurringValue || value || "0") * parseInt(recurrence, 10))}
+                        </span>
                       </div>
                     )}
                   </div>
@@ -506,6 +536,7 @@ export const LancamentosScreen: React.FC<LancamentosScreenProps> = ({
                   <th className="p-3">Data</th>
                   <th className="p-3">Tipo</th>
                   <th className="p-3">Descrição</th>
+                  <th className="p-3">Apelido / Tag</th>
                   <th className="p-3">Categoria DRE</th>
                   <th className="p-3">Pagamento</th>
                   <th className="p-3 text-right">Valor</th>
@@ -515,13 +546,14 @@ export const LancamentosScreen: React.FC<LancamentosScreenProps> = ({
               <tbody className="divide-y divide-[#e5eaf1]">
                 {visibleEntries.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="p-6 text-center text-[#69778c]">
+                    <td colSpan={8} className="p-6 text-center text-[#69778c]">
                       Nenhum lançamento manual encontrado.
                     </td>
                   </tr>
                 ) : (
                   visibleEntries.map((e) => {
                     const isEntrada = e.type === "entrada";
+                    const apelidoVal = e.apelido || detectApelido(e.desc, e.catName).apelido;
                     return (
                       <tr key={e.id} className="hover:bg-[#f8faff] transition-colors">
                         <td className="p-3 text-[#69778c] whitespace-nowrap">
@@ -554,6 +586,11 @@ export const LancamentosScreen: React.FC<LancamentosScreenProps> = ({
                             )}
                           </div>
                           {e.note && <span className="text-[10px] text-[#69778c] block mt-0.5">{e.note}</span>}
+                        </td>
+                        <td className="p-3">
+                          <span className="inline-flex items-center rounded-md bg-indigo-50 border border-indigo-200/60 px-2 py-0.5 text-[10px] font-extrabold text-indigo-700 whitespace-nowrap">
+                            {apelidoVal}
+                          </span>
                         </td>
                         <td className="p-3 text-[#69778c]">{isIntercompanyEntry(e) ? "Transferência entre empresas" : e.catName}</td>
                         <td className="p-3 text-[#69778c] uppercase text-[10px] font-bold font-mono">

@@ -43,13 +43,7 @@ var import_crypto = __toESM(require("crypto"), 1);
 var import_blob = require("@vercel/blob");
 
 // src/data/initialData.ts
-var initialBills = [
-  { id: "b1", desc: "Aluguel & IPTU Sala Comercial", vencimento: "2026-10-05", value: 12500, cat: "Ocupa\xE7\xE3o", status: "open", payMethod: "boleto", tenantId: "dono" },
-  { id: "b2", desc: "Enel Energia El\xE9trica", vencimento: "2026-10-10", value: 2840, cat: "Utilidades", status: "open", payMethod: "debito", tenantId: "dono" },
-  { id: "b3", desc: "Folha Salarial 1\xAA Parcela", vencimento: "2026-10-05", value: 24500, cat: "Pessoal", status: "paid", payMethod: "pix", tenantId: "dono" },
-  { id: "b4", desc: "Royalties Franqueadora Matriz", vencimento: "2026-10-15", value: 4800, cat: "Franquia", status: "open", payMethod: "boleto", tenantId: "dono" },
-  { id: "b5", desc: "Honor\xE1rios Cont\xE1beis", vencimento: "2026-10-20", value: 1800, cat: "Operacional", status: "open", payMethod: "pix", tenantId: "dono" }
-];
+var initialBills = [];
 var initialConfigs = [
   {
     key: "app_name",

@@ -651,7 +651,7 @@ export const App: React.FC = () => {
         />
 
         {/* Dynamic Screen View */}
-        <main className="flex-1 p-3 sm:p-5 lg:p-6 max-w-7xl w-full mx-auto pb-20 md:pb-8">
+        <main className="flex-1 p-2.5 sm:p-4 lg:p-5 max-w-7xl w-full mx-auto pb-16 md:pb-6">
           {currentScreen === "home" && (
             <HomeScreen
               currentTenantId={currentTenantId}
@@ -759,6 +759,8 @@ export const App: React.FC = () => {
               currentBusinessId={currentBusinessId}
               onSelectBusiness={handleSelectBusiness}
               bills={bills}
+              manualEntries={manualEntries || []}
+              intercompanyRules={intercompanyRules || []}
             />
           )}
 

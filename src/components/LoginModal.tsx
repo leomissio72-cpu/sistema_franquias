@@ -88,7 +88,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onSuccess, onClo
           <div className="mb-6 text-center">
             <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center overflow-hidden rounded-2xl border border-[#d7e2fb] bg-[#f0f5ff] shadow-sm"><img src="/login-visual.svg" alt="" className="h-full w-full object-cover object-[50%_42%]" /></div>
             <h1 id="login-title" className="text-2xl font-extrabold tracking-tight text-[#152238]">Gestão de Franquias</h1>
-            <div className="mt-1 inline-block rounded-full border border-[#d7e2fb] bg-[#f0f5ff] px-2.5 py-0.5 text-[11px] font-extrabold uppercase tracking-wide text-[#315bc5]">Acesso administrativo</div>
+
           </div>
 
           {errorMsg && <div className="mb-4 rounded-xl border border-[#f0d0d0] bg-[#fff0f0] p-3 text-xs font-semibold text-[#b44b4b]" role="alert">{errorMsg}</div>}
