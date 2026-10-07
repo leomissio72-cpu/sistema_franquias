@@ -10,14 +10,9 @@ import {
   LayoutGrid,
   TrendingUp,
   Percent,
-  FilePenLine,
-  ArrowLeftRight,
-  FileSpreadsheet,
-  Cog,
   Users,
   KeyRound,
   Settings,
-  CloudCog,
   X,
   PanelLeftClose,
   PanelLeftOpen,
@@ -26,8 +21,6 @@ import {
   UploadCloud,
   PackageCheck,
   Building2,
-  MapPin,
-  SlidersHorizontal,
   MessageSquare
 } from "lucide-react";
 
@@ -139,12 +132,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
   // Taxas e Recebimentos visível para unidades (modo consulta) e donos (edição)
   const financialNav: NavItem[] = isFranchisee
       ? [
-        { id: "pagamentos_despesas", label: "Lançamentos", icon: <CreditCard className="h-4 w-4 text-emerald-400" /> },
+        { id: "pagamentos_despesas", label: "Pagamentos e Despesas", icon: <CreditCard className="h-4 w-4 text-emerald-400" /> },
         { id: "fees", label: "Taxas e Recebimentos", icon: <Percent className="h-4 w-4 text-sky-400" /> },
       ]
     : [
         { id: "dre", label: "DRE e Resultados", icon: <TrendingUp className="h-4 w-4" /> },
-        { id: "pagamentos_despesas", label: "Pagamentos/Despesas", icon: <CreditCard className="h-4 w-4 text-emerald-400" /> },
+        { id: "pagamentos_despesas", label: "Pagamentos e Despesas", icon: <CreditCard className="h-4 w-4 text-emerald-400" /> },
         { id: "fees", label: "Taxas e Recebimentos", icon: <Percent className="h-4 w-4" /> },
       ];
 
@@ -154,25 +147,19 @@ export const Sidebar: React.FC<SidebarProps> = ({
         { id: "whatsapp", label: "Disparo WhatsApp", icon: <MessageSquare className="h-4 w-4 text-emerald-500" /> },
         { id: "employees", label: "Funcionários", icon: <Users className="h-4 w-4" /> },
         { id: "users", label: "Acessos e Logins", icon: <KeyRound className="h-4 w-4" /> },
+        { id: "produtos", label: "Fornecedores e Produtos", icon: <PackageCheck className="h-4 w-4" /> },
       ]
     : [
         { id: "configuracao", label: "Configurações", icon: <Settings className="h-4 w-4" /> },
         { id: "whatsapp", label: "Disparo WhatsApp", icon: <MessageSquare className="h-4 w-4 text-emerald-500" /> },
         { id: "employees", label: "Funcionários", icon: <Users className="h-4 w-4" /> },
         { id: "users", label: "Acessos e Logins", icon: <KeyRound className="h-4 w-4" /> },
+        { id: "produtos", label: "Fornecedores e Produtos", icon: <PackageCheck className="h-4 w-4" /> },
       ];
 
   // Todas as áreas continuam visíveis para o dono/equipe mesmo quando o banco está vazio.
   const networkNav: NavItem[] = [
     { id: "network", label: "Rede e Unidades", icon: <Building2 className="h-4 w-4" /> },
-  ];
-
-  const operationsNav: NavItem[] = [
-    { id: "lancamentos", label: "Lançamentos Manuais", icon: <FilePenLine className="h-4 w-4" /> },
-    { id: "conciliation", label: "Conciliação Bancária", icon: <ArrowLeftRight className="h-4 w-4" /> },
-    { id: "vt", label: "Vale-Transporte", icon: <FileSpreadsheet className="h-4 w-4" /> },
-    { id: "rp", label: "Rotinas / RP", icon: <ArrowLeftRight className="h-4 w-4" /> },
-    { id: "produtos", label: "Fornecedores e Produtos Homologados", icon: <PackageCheck className="h-4 w-4" /> },
   ];
 
   const handleNavClick = (screen: ScreenType) => {
@@ -392,7 +379,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
         {renderNavGroup("Principal", principalNav)}
         {renderNavGroup("Financeiro", financialNav)}
         {renderNavGroup("Rede", networkNav)}
-        {renderNavGroup("Operação", operationsNav)}
         {renderNavGroup("Configurações & Gestão", managementNav)}
       </div>
 
