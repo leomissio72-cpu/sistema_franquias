@@ -67,6 +67,7 @@ import { WhatsAppScreen } from "./components/screens/WhatsAppScreen";
 import { SettingsScreen } from "./components/screens/SettingsScreen";
 import { ProdutosHomologadosScreen } from "./components/screens/ProdutosHomologadosScreen";
 import { PagamentosDespesasScreen, PagamentoSubTab } from "./components/screens/PagamentosDespesasScreen";
+import { InstrucoesScreen } from "./components/screens/InstrucoesScreen";
 import { Cloud, Loader2 } from "lucide-react";
 
 export const App: React.FC = () => {
@@ -75,6 +76,7 @@ export const App: React.FC = () => {
     const path = window.location.pathname;
     const hash = window.location.hash.replace("#", "");
     if (path === "/configuracao" || hash === "configuracao") return "configuracao";
+    if (path === "/instrucoes" || hash === "instrucoes") return "instrucoes";
     if (
       hash &&
       [
@@ -97,6 +99,7 @@ export const App: React.FC = () => {
         "users",
         "settings",
         "produtos",
+        "instrucoes",
       ].includes(hash)
     ) {
       return hash as ScreenType;
@@ -653,6 +656,13 @@ export const App: React.FC = () => {
               onNavigate={setCurrentScreen}
               dreParams={dreParams}
               royalties={royalties}
+            />
+          )}
+
+          {currentScreen === "instrucoes" && (
+            <InstrucoesScreen
+              userSession={userSession}
+              onNavigate={setCurrentScreen}
             />
           )}
 
