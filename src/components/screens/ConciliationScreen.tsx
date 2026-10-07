@@ -30,6 +30,7 @@ import {
   CalendarDays,
   DollarSign,
 } from "lucide-react";
+import toast from "react-hot-toast";
 
 const FINANCIAL_CATEGORIES = [
   "Aluguel e Condomínio",
@@ -335,7 +336,6 @@ export const ConciliationScreen: React.FC<ConciliationScreenProps> = ({
   const [filter, setFilter] = useState<"all" | "match" | "review">("all");
   const [uploadedFileName, setUploadedFileName] = useState<string | null>("Extrato_Setembro_2026.ofx");
   const [isDragOver, setIsDragOver] = useState(false);
-  const [toastMsg, setToastMsg] = useState<string | null>(null);
   const [isReadingFile, setIsReadingFile] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
   const [hasPendingImport, setHasPendingImport] = useState(false);
@@ -527,11 +527,10 @@ export const ConciliationScreen: React.FC<ConciliationScreenProps> = ({
     // Run auto-scan immediately
     const res = await runRecurrenceScan(items, updatedBillsList);
     if (res.count > 0) {
-      setToastMsg(`Recorrência "${desc}" cadastrada e baixada automaticamente no extrato bancário!`);
+      toast.success(`Recorrência "${desc}" cadastrada e baixada automaticamente no extrato bancário!`);
     } else {
-      setToastMsg(`Recorrência "${desc}" cadastrada com sucesso! Ela será baixada automaticamente quando detectada no extrato.`);
+      toast.success(`Recorrência "${desc}" cadastrada com sucesso! Ela será baixada automaticamente quando detectada no extrato.`);
     }
-    setTimeout(() => setToastMsg(null), 4000);
   };
 
   const handleUndoClearance = async (log: ClearedRecurrence) => {
@@ -540,8 +539,7 @@ export const ConciliationScreen: React.FC<ConciliationScreenProps> = ({
       await onSaveBills(updated);
     }
     setClearedRecurrences((prev) => prev.filter((item) => item.id !== log.id));
-    setToastMsg(`Baixa da recorrência "${log.billDesc}" desfeita. O título voltou para o status Em Aberto.`);
-    setTimeout(() => setToastMsg(null), 3500);
+    toast.success(`Baixa da recorrência "${log.billDesc}" desfeita. O título voltou para o status Em Aberto.`);
   };
 
   const isSameItem = (a: ConciliationItem, b: ConciliationItem) => {
@@ -630,9 +628,8 @@ export const ConciliationScreen: React.FC<ConciliationScreenProps> = ({
     const selectedSet = new Set(selectedItems);
     setItems((previous) => previous.filter((item) => !selectedSet.has(item)));
     setHasPendingImport(items.some((item) => item.isImportPreview && !selectedSet.has(item)));
-    setToastMsg(`${selectedItems.length} movimentação(ões) aprovadas e movidas para a Caixa/Lançamentos.`);
+    toast.success(`${selectedItems.length} movimentação(ões) aprovadas e movidas para a Caixa/Lançamentos.`);
     setSelectedIds([]);
-    setTimeout(() => setToastMsg(null), 3500);
   };
 
   const handleRejectSelected = async () => {
@@ -654,8 +651,7 @@ export const ConciliationScreen: React.FC<ConciliationScreenProps> = ({
         : item));
     setHasPendingImport(items.some((item) => item.isImportPreview && !selectedPreviewItems.has(item)));
     setSelectedIds([]);
-    setToastMsg(`${selectedItems.length} movimentação(ões) rejeitada(s).`);
-    setTimeout(() => setToastMsg(null), 3500);
+    toast.success(`${selectedItems.length} movimentação(ões) rejeitada(s).`);
   };
 
   const startEditingItem = (item: ConciliationItem) => {
@@ -737,8 +733,7 @@ export const ConciliationScreen: React.FC<ConciliationScreenProps> = ({
       setItems((previous) => previous.map((item) => (isSameItem(item, editingItem) ? updatedItem : item)));
       setHasPendingImport(true);
       setEditingItem(null);
-      setToastMsg("Movimentação editada e salva com sucesso.");
-      setTimeout(() => setToastMsg(null), 3500);
+      toast.success("Movimentação editada e salva com sucesso.");
     } catch (error: any) {
       setImportError(error?.message || "Não foi possível salvar a edição.");
     }
@@ -794,8 +789,7 @@ export const ConciliationScreen: React.FC<ConciliationScreenProps> = ({
       setHasPendingImport(true);
       setIsBatchEditing(false);
       setSelectedIds([]);
-      setToastMsg(`${selectedItems.length} movimentação(ões) atualizada(s) em lote com sucesso.`);
-      setTimeout(() => setToastMsg(null), 3500);
+      toast.success(`${selectedItems.length} movimentação(ões) atualizada(s) em lote com sucesso.`);
     } catch (error: any) {
       setImportError(error?.message || "Não foi possível realizar a edição em lote.");
     }
@@ -822,11 +816,10 @@ export const ConciliationScreen: React.FC<ConciliationScreenProps> = ({
       const recResult = await runRecurrenceScan(previewItems);
 
       if (recResult.count > 0) {
-        setToastMsg(`${uniqueImported.length} linha(s) lida(s) • ${recResult.count} baixa(s) por recorrência identificada(s)!`);
+        toast.success(`${uniqueImported.length} linha(s) lida(s) • ${recResult.count} baixa(s) por recorrência identificada(s)!`);
       } else {
-        setToastMsg(`${uniqueImported.length} linha(s) lida(s)${ignored ? `; ${ignored} duplicata(s) ignorada(s)` : ""}. Revise e confirme a importação.`);
+        toast.success(`${uniqueImported.length} linha(s) lida(s)${ignored ? `; ${ignored} duplicata(s) ignorada(s)` : ""}. Revise e confirme a importação.`);
       }
-      setTimeout(() => setToastMsg(null), 3500);
     } catch (error: any) {
       setImportError(error?.message || "Não foi possível ler o arquivo.");
     } finally {
@@ -840,7 +833,7 @@ export const ConciliationScreen: React.FC<ConciliationScreenProps> = ({
     setIsImporting(true);
     try {
       await onImportEntries(entries);
-      setToastMsg(`${entries.length} lançamento(s) importado(s) para a unidade selecionada.`);
+      toast.success(`${entries.length} lançamento(s) importado(s) para a unidade selecionada.`);
       setItems([]);
       setHasPendingImport(false);
     } catch (error: any) {
@@ -856,8 +849,7 @@ export const ConciliationScreen: React.FC<ConciliationScreenProps> = ({
     setItems(scopedEntries());
     setUploadedFileName(null);
     setImportError(null);
-    setToastMsg("Prévia descartada. Nenhum lançamento foi alterado.");
-    setTimeout(() => setToastMsg(null), 3500);
+    toast.success("Prévia descartada. Nenhum lançamento foi alterado.");
   };
 
   const handleDeleteItem = async (item: ConciliationItem) => {
@@ -865,8 +857,7 @@ export const ConciliationScreen: React.FC<ConciliationScreenProps> = ({
     try {
       await onDeleteEntry(item.entryId);
       setItems((previous) => previous.filter((candidate) => candidate.entryId !== item.entryId));
-      setToastMsg("Lançamento excluído da conciliação com sucesso.");
-      setTimeout(() => setToastMsg(null), 3500);
+      toast.success("Lançamento excluído da conciliação com sucesso.");
     } catch (error: any) {
       setImportError(error?.message || "Não foi possível excluir este lançamento.");
     }
@@ -901,13 +892,6 @@ export const ConciliationScreen: React.FC<ConciliationScreenProps> = ({
           </button>
         </div>
       </div>
-
-      {toastMsg && (
-        <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-3.5 text-xs font-bold text-emerald-800 animate-in fade-in flex items-center gap-2">
-          <CheckCircle2 className="h-4 w-4 text-emerald-600" />
-          <span>{toastMsg}</span>
-        </div>
-      )}
 
       {/* KPI Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">

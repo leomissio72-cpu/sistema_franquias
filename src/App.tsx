@@ -71,6 +71,7 @@ import { ProdutosHomologadosScreen } from "./components/screens/ProdutosHomologa
 import { PagamentosDespesasScreen, PagamentoSubTab } from "./components/screens/PagamentosDespesasScreen";
 import { InstrucoesScreen } from "./components/screens/InstrucoesScreen";
 import { Cloud, Loader2 } from "lucide-react";
+import { Toaster } from "react-hot-toast";
 
 export const App: React.FC = () => {
   // Navigation & Routing
@@ -900,6 +901,7 @@ export const App: React.FC = () => {
         onClose={() => setIsLoginOpen(false)}
         onSuccess={handleLoginSuccess}
       />
+      <Toaster position="top-right" />
     </div>
   );
 };
