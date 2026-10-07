@@ -117,7 +117,7 @@ export const InstrucoesScreen: React.FC<InstrucoesScreenProps> = ({
       summary: "Gestão completa dos formatos de franquia da empresa, com cores personalizadas e associação direta com as unidades.",
       details: [
         "Criação ágil e edição direta de marcas.",
-        "Criação rápida dentro do próprio formulário de franquia ('+ Nova Marca Rápida').",
+        "Criação rápida dentro do próprio formulário de franquia ('Nova Marca Rápida').",
         "Vínculo automático com a tabela de royalties da rede."
       ],
       screen: "configuracao" as ScreenType
@@ -206,11 +206,11 @@ export const InstrucoesScreen: React.FC<InstrucoesScreenProps> = ({
     { title: "Rotinas / RP", screen: "rp", purpose: "Contas a pagar, vencimentos e semáforo financeiro.", steps: "Cadastre vencimento, valor e categoria; filtre vencidos, hoje, próximos, agendados e pagos." },
     { title: "Pagamentos / Despesas", screen: "pagamentos_despesas", purpose: "Módulo que reúne Rotinas, Conciliação, Lançamentos e VT.", steps: "Use as abas internas sem perder a unidade selecionada no cabeçalho." },
     { title: "Permissões e Royalties", screen: "permissoes", purpose: "Matriz de perfis e visão de repasses.", steps: "Consulte o escopo de cada perfil e ajuste royalties apenas com autorização." },
-    { title: "Cadastro de Franqueados", screen: "tenants", purpose: "Cadastro e edição das lojas/unidades.", steps: "Informe marca, nome, código, responsável, localização, faturamento e contatos; salve e aguarde a confirmação." },
+    { title: "Cadastro de Franqueados", screen: "tenants", purpose: "Cadastro e edição das lojas/unidades.", steps: "Informe marca, nome, código, responsável, localização, faturamento e contatos; salve e aguarde a confirmação. Em Configurações, use Ativa/Inativa para retirar uma unidade dos seletores sem apagar o cadastro." },
     { title: "Cadastro de Funcionários", screen: "employees", purpose: "Equipe, cargos, unidade, login e VT.", steps: "Cadastre cargo e unidade; desative acessos antigos em vez de reutilizar credenciais." },
     { title: "Acessos e Logins", screen: "users", purpose: "Usuários, perfis, senhas e escopos.", steps: "Crie o acesso com perfil e unidade corretos; cada pessoa deve usar seu próprio login." },
     { title: "Disparo WhatsApp", screen: "whatsapp", purpose: "Envio, templates e status pela WhatsApp Cloud API oficial.", steps: "Configure token, Phone Number ID e webhook no Vercel/Meta; use texto na janela de 24h ou template aprovado." },
-    { title: "Configurações", screen: "configuracao", purpose: "Marcas, unidades, fornecedores, parâmetros, regras e auditoria.", steps: "Use Transferências entre Empresas para termos, CNPJ/CPF e contas que não devem entrar no DRE." },
+    { title: "Configurações", screen: "configuracao", purpose: "Marcas, unidades, fornecedores, parâmetros, regras e auditoria.", steps: "Use Transferências entre Empresas para termos, CNPJ/CPF e contas que não devem entrar no DRE. Em Preferências, somente o Dono pode usar a Zona de manutenção para apagar dados operacionais com dupla confirmação." },
     { title: "Preferências do Usuário", screen: "settings", purpose: "Preferências de aparência e comportamento pessoal.", steps: "Ajuste tema e preferências sem alterar os dados financeiros da rede." },
     { title: "Fornecedores e Produtos Homologados", screen: "produtos", purpose: "Catálogo de fornecedores e produtos por escopo.", steps: "Cadastre, edite e revise vínculos antes de excluir um item usado pela operação." },
     { title: "Instruções & Ajuda", screen: "instrucoes", purpose: "Central de orientação e FAQ.", steps: "Use as categorias, a busca e os botões de navegação para abrir a página desejada." },

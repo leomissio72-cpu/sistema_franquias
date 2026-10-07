@@ -72,6 +72,8 @@ export interface FranchiseUnit {
   pendencias: number;
   rpDone: number;
   status: "green" | "amber" | "red" | "yellow";
+  /** Define se a unidade participa dos seletores e da operação atual. */
+  active?: boolean;
   email?: string;
   phone?: string;
 }

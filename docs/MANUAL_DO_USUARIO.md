@@ -89,7 +89,7 @@ O perfil é diferente da unidade selecionada. Mesmo com uma unidade selecionada 
 
 1. Em **Configurações → Modelos & Marcas**, cadastre cada marca/modelo.
 2. Em **Configurações → Royalties**, defina a taxa de cada marca.
-3. Em **Configurações → Franqueados**, cadastre cada unidade, cidade, endereço, responsável, contato e faturamento.
+3. Em **Configurações → Franqueados**, cadastre cada unidade, cidade, endereço, responsável, contato e faturamento. Use **Unidade ativa na operação** para definir se ela pode ser selecionada no menu; uma unidade inativa permanece cadastrada e pode ser reativada depois.
 4. Em **Configurações → Fornecedores e Produtos**, cadastre fornecedores e produtos homologados por empresa/unidade.
 5. Em **Acessos e Logins**, crie os usuários e vincule o escopo correto.
 6. Em **Configurações → Transferências entre Empresas**, cadastre os critérios intercompany recebidos do usuário responsável.
@@ -292,9 +292,9 @@ Royalties são aplicados sobre o faturamento bruto conforme a marca. Alteraçõe
 
 **Finalidade:** cadastrar e editar unidades da rede.
 
-**Campos importantes:** marca/modelo, nome da loja, código, responsável, cidade, estado, endereço, faturamento, e-mail, telefone e status.
+**Campos importantes:** marca/modelo, nome da loja, código, responsável, cidade, estado, endereço, faturamento, e-mail, telefone, status operacional e status administrativo **Ativa/Inativa**. O status administrativo não substitui o semáforo operacional: uma unidade pode estar ativa e requerer atenção.
 
-Use o formulário com rolagem em telas menores. Ao editar, confirme a alteração e aguarde a sincronização. Não apague e recrie uma unidade para corrigir um campo: edite a unidade existente para preservar vínculos.
+Use a busca e o filtro **Todas / Ativas / Inativas** para localizar unidades. O formulário tem rolagem em telas menores. Ao editar, confirme a alteração e aguarde a sincronização. Não apague e recrie uma unidade para corrigir um campo: edite a unidade existente para preservar vínculos.
 
 ### 5.16 Cadastro de Funcionários
 
@@ -341,6 +341,8 @@ A tela **não simula envio**. Sem as credenciais de produção, deve informar de
 - **Fornecedores e Produtos:** catálogo e homologação.
 - **Franqueados:** unidades e edição.
 - **Auditoria:** histórico de alterações.
+
+Na aba **Preferências**, a **Zona de manutenção de dados** permite ao Dono da Rede apagar dados operacionais em uma ação separada. É necessário digitar `APAGAR DADOS` e confirmar uma segunda vez. A ação remove unidades, marcas, funcionários, lançamentos, contas, fornecedores, produtos, parâmetros financeiros, vale-transporte e histórico de mensagens; preserva usuários, regras intercompany, preferências e auditoria. Não use essa opção para corrigir um cadastro isolado.
 
 ### 5.20 Preferências do Usuário
 

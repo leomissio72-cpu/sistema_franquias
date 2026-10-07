@@ -765,6 +765,14 @@ function requireAdminRole(req: Request, res: ExpressResponse, next: any) {
   next();
 }
 
+function requireOwnerRole(req: Request, res: ExpressResponse, next: any) {
+  const profile = String((req as any).auth?.user?.perfil || "").toLowerCase();
+  if (profile !== "dono") {
+    return res.status(403).json({ error: "Somente o Dono da Rede pode apagar dados operacionais." });
+  }
+  return next();
+}
+
 routeBoth("put", "/api/config/:key", requireSession, requireAdminRole, async (req: Request, res: ExpressResponse) => {
   const { key } = req.params;
   const { value, modifiedBy } = req.body;
@@ -974,6 +982,40 @@ routeBoth("post", "/api/state/sync", requireSession, async (req: Request, res: E
   }
 
   res.status(400).json({ error: "Parâmetros inválidos para sincronização." });
+});
+
+routeBoth("post", "/api/state/clear-operational", requireSession, requireOwnerRole, async (req: Request, res: ExpressResponse) => {
+  if (String(req.body?.confirm || "") !== "APAGAR DADOS OPERACIONAIS") {
+    return res.status(400).json({ error: "Confirmação inválida. Nada foi apagado." });
+  }
+
+  const actor = (req as any).auth?.user;
+  const timestamp = new Date().toISOString();
+  const preservedAudit = Array.isArray(db.auditLogs) ? db.auditLogs : [];
+  db.businesses = [];
+  db.franchises = [];
+  db.employees = [];
+  db.manualEntries = [];
+  db.bills = [];
+  db.products = [];
+  db.suppliers = [];
+  db.whatsappHistory = [];
+  db.royalties = {};
+  db.permissions = {};
+  db.vtConfigs = {};
+  db.dreParams = {};
+  db.auditLogs = [{
+    id: `audit_clear_${Date.now()}`,
+    timestamp,
+    action: "CLEAR_OPERATIONAL_DATA",
+    key: "operational_data",
+    oldValue: "Dados operacionais da rede",
+    newValue: "Dados operacionais apagados pelo Dono da Rede",
+    user: actor?.nome || actor?.login || "Dono da Rede",
+  }, ...preservedAudit].slice(0, 200);
+  await saveDatabase(db);
+  broadcastUpdate("operational_data_cleared", { lastUpdated: db.lastUpdated, user: actor?.nome || actor?.login });
+  return res.json({ success: true, message: "Dados operacionais apagados. Usuários, regras, configurações e auditoria foram preservados.", state: getFullState(db) });
 });
 
 // 6. Manual Entries

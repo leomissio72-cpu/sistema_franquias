@@ -963,6 +963,13 @@ function requireAdminRole(req, res, next) {
   }
   next();
 }
+function requireOwnerRole(req, res, next) {
+  const profile = String(req.auth?.user?.perfil || "").toLowerCase();
+  if (profile !== "dono") {
+    return res.status(403).json({ error: "Somente o Dono da Rede pode apagar dados operacionais." });
+  }
+  return next();
+}
 routeBoth("put", "/api/config/:key", requireSession, requireAdminRole, async (req, res) => {
   const { key } = req.params;
   const { value, modifiedBy } = req.body;
@@ -1149,6 +1156,38 @@ routeBoth("post", "/api/state/sync", requireSession, async (req, res) => {
     return res.json({ success: true, section, lastUpdated: db.lastUpdated, state: getFullState(db) });
   }
   res.status(400).json({ error: "Par\xE2metros inv\xE1lidos para sincroniza\xE7\xE3o." });
+});
+routeBoth("post", "/api/state/clear-operational", requireSession, requireOwnerRole, async (req, res) => {
+  if (String(req.body?.confirm || "") !== "APAGAR DADOS OPERACIONAIS") {
+    return res.status(400).json({ error: "Confirma\xE7\xE3o inv\xE1lida. Nada foi apagado." });
+  }
+  const actor = req.auth?.user;
+  const timestamp = (/* @__PURE__ */ new Date()).toISOString();
+  const preservedAudit = Array.isArray(db.auditLogs) ? db.auditLogs : [];
+  db.businesses = [];
+  db.franchises = [];
+  db.employees = [];
+  db.manualEntries = [];
+  db.bills = [];
+  db.products = [];
+  db.suppliers = [];
+  db.whatsappHistory = [];
+  db.royalties = {};
+  db.permissions = {};
+  db.vtConfigs = {};
+  db.dreParams = {};
+  db.auditLogs = [{
+    id: `audit_clear_${Date.now()}`,
+    timestamp,
+    action: "CLEAR_OPERATIONAL_DATA",
+    key: "operational_data",
+    oldValue: "Dados operacionais da rede",
+    newValue: "Dados operacionais apagados pelo Dono da Rede",
+    user: actor?.nome || actor?.login || "Dono da Rede"
+  }, ...preservedAudit].slice(0, 200);
+  await saveDatabase(db);
+  broadcastUpdate("operational_data_cleared", { lastUpdated: db.lastUpdated, user: actor?.nome || actor?.login });
+  return res.json({ success: true, message: "Dados operacionais apagados. Usu\xE1rios, regras, configura\xE7\xF5es e auditoria foram preservados.", state: getFullState(db) });
 });
 function normalizeEntryText(value) {
   return String(value ?? "").trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, " ");

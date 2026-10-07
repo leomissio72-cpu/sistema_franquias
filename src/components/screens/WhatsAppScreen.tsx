@@ -662,7 +662,7 @@ export const WhatsAppScreen: React.FC<WhatsAppScreenProps> = ({ onNavigate }) =>
               className="flex w-full items-center justify-center gap-1.5 rounded-lg bg-[#3c63da] hover:bg-[#2f52c0] py-2 text-xs font-bold text-white shadow-xs cursor-pointer"
             >
               <Plus className="h-4 w-4" />
-              <span>+ Adicionar Contato</span>
+              <span>Adicionar Contato</span>
             </button>
           </div>
         </div>

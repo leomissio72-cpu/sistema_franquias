@@ -406,7 +406,7 @@ export const TenantsScreen: React.FC<TenantsScreenProps> = ({
                         : "bg-amber-50 text-amber-700"
                     }`}
                   >
-                    {f.status === "green" ? "Ativa & Regular" : "Requer Atenção"}
+                    {f.active === false ? "Inativa" : f.status === "green" ? "Ativa & Regular" : "Requer Atenção"}
                   </span>
                 </div>
 
@@ -533,7 +533,7 @@ export const TenantsScreen: React.FC<TenantsScreenProps> = ({
                       onClick={() => setIsAddingBrandInline(!isAddingBrandInline)}
                       className="text-[11px] font-bold text-[#3c63da] hover:underline cursor-pointer"
                     >
-                      {isAddingBrandInline ? "Cancelar Nova Marca" : "+ Nova Marca Rápida"}
+                      {isAddingBrandInline ? "Cancelar Nova Marca" : "Nova Marca Rápida"}
                     </button>
                   </div>
 
@@ -592,7 +592,7 @@ export const TenantsScreen: React.FC<TenantsScreenProps> = ({
                           {b.name || b.brand}
                         </option>
                       ))}
-                      <option value="__new__">+ Cadastrar Novo Modelo/Marca...</option>
+                      <option value="__new__">Cadastrar Novo Modelo/Marca...</option>
                     </select>
                   )}
                 </div>

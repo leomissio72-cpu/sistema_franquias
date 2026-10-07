@@ -41,6 +41,7 @@ import {
   saveSystemSettings,
   saveIntercompanyRules,
   resetDatabase,
+  clearOperationalData,
   syncStateSection,
   logoutAPI,
   setAuthToken,
@@ -437,6 +438,13 @@ export const App: React.FC = () => {
     if (logsRes.auditLogs) setAuditLogs(logsRes.auditLogs);
   };
 
+  const handleClearOperationalData = async () => {
+    const updatedState = await clearOperationalData();
+    setServerState(updatedState);
+    const logsRes = await fetchAuditLogs();
+    if (logsRes.auditLogs) setAuditLogs(logsRes.auditLogs);
+  };
+
   const isFranchisee = userSession?.profile === "franqueado" || userSession?.profile === "operador";
 
   // Verificação de posse/propriedade de unidade:
@@ -682,6 +690,7 @@ export const App: React.FC = () => {
               products={products}
               dreParams={dreParams}
               initialTab="configs"
+              onClearOperationalData={handleClearOperationalData}
               onUpdateConfig={handleUpdateConfig}
               onBulkUpdate={handleBulkUpdateConfig}
               onSaveRoyalties={handleSaveRoyalties}

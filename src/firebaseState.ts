@@ -85,7 +85,7 @@ export async function readFirebaseMirror(): Promise<CloudState | null> {
  * Writes only sanitized application sections. Credentials and session tokens
  * are deliberately removed before any value reaches Firestore.
  */
-export async function writeFirebaseMirror(state: CloudState): Promise<boolean> {
+export async function writeFirebaseMirror(state: CloudState, options: { allowEmptyReset?: boolean } = {}): Promise<boolean> {
   if (!isFirebaseConfigured() || !state) return false;
 
   const writeOperation = async () => {
@@ -97,7 +97,7 @@ export async function writeFirebaseMirror(state: CloudState): Promise<boolean> {
       ];
       const incomingIsGloballyEmpty = operationalKeys.every((key) => Array.isArray(state[key]) && state[key].length === 0);
       const existingHasRecords = Boolean(existing && operationalKeys.some((key) => Array.isArray(existing[key]) && existing[key].length > 0));
-      if (incomingIsGloballyEmpty && existingHasRecords) {
+      if (incomingIsGloballyEmpty && existingHasRecords && !options.allowEmptyReset) {
         console.warn("Ignorando espelho vazio para preservar dados existentes no Firestore.");
         return false;
       }

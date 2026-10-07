@@ -102,6 +102,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   // Filtered franchise list according to business context and user permissions
   // Uma unidade não pode ver outra, a menos que pertença comprovadamente ao mesmo dono
   const availableFranchises = franchises.filter((f) => {
+    if (f.active === false) return false;
     if (isFranchisee) {
       const allowedTenants = (userSession?.tenant || "").split(",").map((t) => t.trim().toLowerCase());
       if (allowedTenants.includes(f.id.toLowerCase())) return true;

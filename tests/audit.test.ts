@@ -459,6 +459,32 @@ test("AUDITORIA 11: Texto bancário preserva acentos em UTF-8, mojibake e Window
   assert.equal(decodeBankText(new TextEncoder().encode("Conciliação;Descrição\n2026-10-05;Antecipação")), "Conciliação;Descrição\n2026-10-05;Antecipação");
 });
 
+test("AUDITORIA 12: Limpeza operacional exige Dono e preserva usuários, regras e auditoria", async () => {
+  const snapshot = JSON.parse(JSON.stringify(db));
+  const dono = db.users.find((user: any) => user.perfil === "dono")!;
+  const credential = getCredential(db, dono.id)!;
+  const token = createSignedSessionToken(dono.id, credential.version, true);
+  db.businesses = [{ id: "biz_clear_test", name: "Teste", brand: "Teste", color: "#000000" }];
+  db.franchises = [{ id: "f_clear_test", businessId: "biz_clear_test", name: "Unidade teste", code: "CLR", resp: "Teste", address: "Rua teste", city: "São Paulo", region: "Sudeste", faturamento: 1, pendencias: 0, rpDone: 0, status: "green" }];
+  db.manualEntries = [{ id: "entry_clear_test", tenant: "f_clear_test", type: "entrada", date: "2026-10-07", value: 1, desc: "Teste", catId: "teste", catName: "Teste", pay: "Teste", created: new Date().toISOString() }];
+  await saveDatabase(db);
+
+  const wrongConfirmation = await appRequest("POST", "/api/state/clear-operational", { Cookie: `gestao_session=${encodeURIComponent(token)}` }, { confirm: "APAGAR" });
+  assert.equal(wrongConfirmation.status, 400);
+  assert.equal(db.franchises.length, 1);
+
+  const clearResponse = await appRequest("POST", "/api/state/clear-operational", { Cookie: `gestao_session=${encodeURIComponent(token)}` }, { confirm: "APAGAR DADOS OPERACIONAIS" });
+  assert.equal(clearResponse.status, 200);
+  assert.equal(db.franchises.length, 0);
+  assert.equal(db.manualEntries.length, 0);
+  assert.ok(db.users.some((user: any) => user.id === dono.id));
+  assert.ok((db.intercompanyRules || []).length > 0);
+  assert.equal(db.auditLogs[0].action, "CLEAR_OPERATIONAL_DATA");
+
+  Object.assign(db, snapshot);
+  await saveDatabase(db);
+});
+
 after(() => {
   // Limpar resíduos de testes para manter a base limpa
   db.auditLogs = [];

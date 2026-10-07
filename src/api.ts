@@ -457,6 +457,26 @@ export async function resetDatabase(): Promise<CloudState> {
   return fetchServerState();
 }
 
+export async function clearOperationalData(): Promise<CloudState> {
+  const res = await fetchWithTimeout("/api/state/clear-operational", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ confirm: "APAGAR DADOS OPERACIONAIS" }),
+  });
+  if (!res.ok) {
+    const payload = await res.json().catch(() => ({}));
+    throw new Error(payload?.error || "Não foi possível apagar os dados operacionais.");
+  }
+  const payload = await safeResponseJSON(res, "Não foi possível ler o estado após a limpeza.");
+  const state = formatCloudState(payload?.state || payload);
+  await writeFirebaseMirror(state, { allowEmptyReset: true });
+  try {
+    localStorage.setItem("gestaofranquias_cloud_state", JSON.stringify(sanitizeClientValue(state)));
+    localStorage.removeItem("sofiacfo_cloud_state");
+  } catch (e) {}
+  return state;
+}
+
 export async function createManualEntryAPI(entry: Partial<ManualEntry>) {
   const res = await fetchWithTimeout("/api/entries", {
     method: "POST",

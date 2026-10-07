@@ -81,6 +81,7 @@ interface ConfiguracaoScreenProps {
   intercompanyRules?: IntercompanyRule[];
   onSaveIntercompanyRules?: (rules: IntercompanyRule[]) => Promise<void>;
   onResetDatabase?: () => Promise<void>;
+  onClearOperationalData?: () => Promise<void>;
   onRefresh: () => void;
   isSaving: boolean;
 }
@@ -114,6 +115,7 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
   onSaveDreParams,
   intercompanyRules = [],
   onSaveIntercompanyRules,
+  onClearOperationalData,
   onRefresh,
   isSaving,
 }) => {
@@ -177,6 +179,25 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
     }
   };
 
+  const handleClearOperationalData = async () => {
+    if (!onClearOperationalData || !isOwner) return;
+    const confirmation = window.prompt(
+      "Esta ação apagará unidades, marcas, funcionários, lançamentos, contas, fornecedores, produtos, parâmetros do DRE, vale-transporte e histórico de mensagens. Usuários, regras intercompany, preferências e auditoria serão preservados.\n\nDigite APAGAR DADOS para continuar:",
+    );
+    if (confirmation !== "APAGAR DADOS") {
+      setErrorMessage("Limpeza cancelada. A frase de confirmação não confere.");
+      return;
+    }
+    if (!window.confirm("Última confirmação: apagar os dados operacionais da rede agora? Esta ação não pode ser desfeita.")) return;
+    try {
+      await onClearOperationalData();
+      setSuccessMessage("Dados operacionais apagados. Usuários, regras, preferências e auditoria foram preservados.");
+      setTimeout(() => setSuccessMessage(""), 5000);
+    } catch (error: any) {
+      setErrorMessage(error?.message || "Não foi possível apagar os dados operacionais.");
+    }
+  };
+
   // 1. Cloud Configs State
   const [selectedCategory, setSelectedCategory] = useState<string>("Todas");
   const [editValues, setEditValues] = useState<Record<string, string>>(() => {
@@ -211,6 +232,7 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
   // 3. Franqueados State
   const [franchiseList, setFranchiseList] = useState<FranchiseUnit[]>(franchises);
   const [searchFranchise, setSearchFranchise] = useState("");
+  const [franchiseStatusFilter, setFranchiseStatusFilter] = useState<"all" | "active" | "inactive">("all");
   const [isSavedFranchises, setIsSavedFranchises] = useState(false);
   const [isAddingFranchise, setIsAddingFranchise] = useState(false);
   const [isSubmittingFranchise, setIsSubmittingFranchise] = useState(false);
@@ -230,6 +252,7 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
     email: "",
     phone: "",
     status: "green" as "green" | "yellow" | "red" | "amber",
+    active: true,
   });
   const [isSubmittingEditFranchise, setIsSubmittingEditFranchise] = useState(false);
   const [editFranchiseError, setEditFranchiseError] = useState("");
@@ -268,6 +291,7 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
     faturamento: 50000,
     email: "",
     phone: "",
+    active: true,
   });
 
   // 5. Produtos Homologados State
@@ -559,6 +583,14 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
     return selectedCategory === "Geral" ? c.category === "Geral" || c.category === "Financeiro" : c.category === selectedCategory;
   });
 
+  const visibleFranchises = franchiseList.filter((franchise) => {
+    const query = searchFranchise.trim().toLowerCase();
+    const matchesSearch = !query || `${franchise.name} ${franchise.code} ${franchise.resp} ${franchise.city}`.toLowerCase().includes(query);
+    const matchesStatus = franchiseStatusFilter === "all"
+      || (franchiseStatusFilter === "active" ? franchise.active !== false : franchise.active === false);
+    return matchesSearch && matchesStatus;
+  });
+
   const handleInputChange = (key: string, val: string) => {
     setEditValues((prev) => ({ ...prev, [key]: val }));
     setSavedStatus((prev) => ({ ...prev, [key]: false }));
@@ -700,6 +732,7 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
       pendencias: 0,
       rpDone: 5,
       status: "green",
+      active: newFranchise.active !== false,
       email: (newFranchise.email || "").trim(),
       phone: (newFranchise.phone || "").trim(),
     };
@@ -718,6 +751,7 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
       faturamento: 50000,
       email: "",
       phone: "",
+      active: true,
     });
 
     try {
@@ -753,6 +787,7 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
       email: f.email || "",
       phone: f.phone || "",
       status: (f.status as any) || "green",
+      active: f.active !== false,
     });
   };
 
@@ -785,6 +820,7 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
         email: editFranchiseForm.email.trim(),
         phone: editFranchiseForm.phone.trim(),
         status: editFranchiseForm.status,
+        active: editFranchiseForm.active !== false,
       };
     });
 
@@ -1282,6 +1318,29 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
             </div>
 
           </div>
+
+          <div className="rounded-2xl border border-rose-200 bg-rose-50/70 p-5 shadow-xs">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <h4 className="flex items-center gap-2 text-sm font-extrabold text-rose-900">
+                  <AlertTriangle className="h-4 w-4" />
+                  Zona de manutenção de dados
+                </h4>
+                <p className="mt-1 max-w-3xl text-xs leading-relaxed text-rose-800">
+                  Apaga somente dados operacionais da rede. Usuários, regras entre empresas, preferências e auditoria permanecem para evitar perda de acesso e de rastreabilidade.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => void handleClearOperationalData()}
+                disabled={!isOwner || !onClearOperationalData}
+                className="inline-flex shrink-0 items-center justify-center gap-1.5 rounded-xl border border-rose-300 bg-white px-4 py-2.5 text-xs font-extrabold text-rose-700 shadow-sm hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+                Apagar dados operacionais
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
@@ -1439,7 +1498,7 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
                 onClick={() => setIsAddingBiz(true)}
                 className="mt-4 px-4 py-2 rounded-xl bg-[#3c63da] text-xs font-bold text-white hover:bg-[#2f52c0] shadow-sm cursor-pointer"
               >
-                + Cadastrar Primeira Marca
+                Cadastrar Primeira Marca
               </button>
             </div>
           ) : (
@@ -1960,7 +2019,7 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
                 className="flex items-center gap-1.5 rounded-xl border border-[#3c63da] bg-[#edf2ff] px-3.5 py-2 text-xs font-bold text-[#3c63da] hover:bg-[#dfe8fe] shadow-2xs cursor-pointer"
               >
                 <Plus className="h-4 w-4" />
-                <span>+ Cadastrar Nova Marca</span>
+                <span>Cadastrar Nova Marca</span>
               </button>
 
               <button
@@ -2471,7 +2530,7 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
                       onClick={() => setIsAddingInlineBiz(!isAddingInlineBiz)}
                       className="text-[10px] font-bold text-[#3c63da] hover:underline"
                     >
-                      {isAddingInlineBiz ? "Cancelar Nova Marca" : "+ Nova Marca Rápida"}
+                      {isAddingInlineBiz ? "Cancelar Nova Marca" : "Nova Marca Rápida"}
                     </button>
                   </div>
                   {isAddingInlineBiz ? (
@@ -2536,7 +2595,7 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
                       {businessList.map((b) => (
                         <option key={b.id} value={b.id}>{b?.name || b?.brand || b?.id}</option>
                       ))}
-                      <option value="__new__">+ Cadastrar Novo Modelo/Marca...</option>
+                      <option value="__new__">Cadastrar Novo Modelo/Marca...</option>
                     </select>
                   )}
                 </div>
@@ -2615,6 +2674,15 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
                     className="w-full rounded-lg border border-[#c4cdd9] bg-white px-2.5 py-2 text-xs font-bold text-[#152238] focus:border-[#3c63da] focus:outline-none"
                   />
                 </div>
+
+                <label className="flex items-center gap-2 rounded-lg border border-[#dce4f0] bg-white px-3 py-2 text-xs font-bold text-[#152238]">
+                  <input
+                    type="checkbox"
+                    checked={newFranchise.active !== false}
+                    onChange={(e) => setNewFranchise({ ...newFranchise, active: e.target.checked })}
+                  />
+                  Unidade ativa na operação
+                </label>
               </div>
 
               <div className="flex justify-end gap-2 pt-3 border-t border-[#3c63da]/20">
@@ -2753,6 +2821,15 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
                     <option value="red">Vermelho (Crítico)</option>
                   </select>
                 </div>
+
+                <label className="flex items-center gap-2 rounded-lg border border-amber-200 bg-white px-3 py-2 font-bold text-[#152238]">
+                  <input
+                    type="checkbox"
+                    checked={editFranchiseForm.active !== false}
+                    onChange={(e) => setEditFranchiseForm({ ...editFranchiseForm, active: e.target.checked })}
+                  />
+                  Unidade ativa na operação
+                </label>
               </div>
 
               <div className="flex justify-end gap-2 pt-3 border-t border-amber-200">
@@ -2777,16 +2854,42 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
           )}
 
           {/* List of Franchises with Edit & Delete actions */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-            {franchiseList.map((f) => {
+          <div className="flex flex-col gap-2 rounded-xl border border-[#e5eaf1] bg-white p-3 sm:flex-row sm:items-center">
+            <div className="relative flex-1">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[#69778c]" />
+              <input
+                value={searchFranchise}
+                onChange={(event) => setSearchFranchise(event.target.value)}
+                placeholder="Buscar unidade, código, responsável ou cidade"
+                className="w-full rounded-lg border border-[#dce4f0] bg-[#f8faff] py-2 pl-9 pr-3 text-xs font-semibold text-[#152238] outline-none focus:border-[#3c63da]"
+              />
+            </div>
+            <select
+              value={franchiseStatusFilter}
+              onChange={(event) => setFranchiseStatusFilter(event.target.value as "all" | "active" | "inactive")}
+              className="rounded-lg border border-[#dce4f0] bg-white px-3 py-2 text-xs font-bold text-[#152238]"
+            >
+              <option value="all">Todas ({franchiseList.length})</option>
+              <option value="active">Ativas ({franchiseList.filter((item) => item.active !== false).length})</option>
+              <option value="inactive">Inativas ({franchiseList.filter((item) => item.active === false).length})</option>
+            </select>
+          </div>
+
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">
+            {visibleFranchises.map((f) => {
               const biz = businesses.find((b) => b.id === f.businessId);
               return (
                 <div key={f.id} className="p-3.5 rounded-xl border border-[#e5eaf1] bg-[#f8faff] space-y-2">
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between gap-2">
                     <span className="text-[9px] font-extrabold uppercase bg-white border border-[#e5eaf1] px-2 py-0.5 rounded-full text-[#3c63da]">
                       {biz?.brand || f.businessId}
                     </span>
-                    <span className="font-mono text-xs font-bold text-[#152238]">{f.code}</span>
+                    <div className="flex items-center gap-1.5">
+                      <span className={`rounded-full px-2 py-0.5 text-[9px] font-extrabold ${f.active === false ? "bg-slate-100 text-slate-600" : "bg-emerald-50 text-emerald-700"}`}>
+                        {f.active === false ? "Inativa" : "Ativa"}
+                      </span>
+                      <span className="font-mono text-xs font-bold text-[#152238]">{f.code}</span>
+                    </div>
                   </div>
                   <h4 className="text-xs font-bold text-[#152238] truncate">{f?.name || f?.code}</h4>
                   <div className="text-[11px] text-[#69778c]">Resp: <strong>{f.resp}</strong> · {f.city}</div>
@@ -2816,6 +2919,7 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
               );
             })}
           </div>
+          {visibleFranchises.length === 0 && <div className="rounded-xl border border-dashed border-[#cbd5e1] bg-[#f8faff] p-6 text-center text-xs text-[#69778c]">Nenhuma unidade corresponde aos filtros.</div>}
         </div>
       )}
 
