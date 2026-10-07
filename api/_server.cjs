@@ -107,7 +107,7 @@ var initialConfigs = [
   },
   {
     key: "realtime_sync_enabled",
-    name: "Sincroniza\xE7\xE3o em Tempo Real na Nuvem",
+    name: "Sincroniza\xE7\xE3o em Tempo Real",
     value: "true",
     type: "boolean",
     category: "Sincroniza\xE7\xE3o",
@@ -552,7 +552,7 @@ var defaultConfigs = [
   },
   {
     key: "realtime_sync_enabled",
-    name: "Sincroniza\xE7\xE3o em Tempo Real na Nuvem",
+    name: "Sincroniza\xE7\xE3o em Tempo Real",
     value: "true",
     type: "boolean",
     category: "Sincroniza\xE7\xE3o",
@@ -737,6 +737,7 @@ function loadDatabase() {
     paymentMethods: defaultPaymentMethods,
     businessRules: defaultBusinessRules,
     royalties: {},
+    royaltyHistory: [],
     permissions: {},
     vtConfigs: {},
     credentials: {},
@@ -803,6 +804,7 @@ function getFullState(database) {
     paymentMethods: database.paymentMethods || [],
     businessRules: database.businessRules || {},
     royalties: mergedRoyalties,
+    royaltyHistory: database.royaltyHistory || [],
     permissions: database.permissions || {},
     vtConfigs: database.vtConfigs || {},
     whatsappConfig: getWhatsAppConfigResponse(database),

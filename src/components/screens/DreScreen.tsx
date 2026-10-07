@@ -1074,40 +1074,40 @@ export const DreScreen: React.FC<DreScreenProps> = ({
 
       </div>
 
-      <>
-      {/* Sub-Tabs Selector */}
-      <div className="flex items-center gap-2 border-b border-[#e5eaf1] pb-3 flex-wrap">
-        <button
-          onClick={() => setActiveSubTab("demonstrativo")}
-          className={`px-4 py-2 text-xs font-bold rounded-xl transition-all cursor-pointer ${
-            activeSubTab === "demonstrativo"
-              ? "bg-[#3c63da] text-white shadow-xs"
-              : "bg-white border border-[#e5eaf1] text-[#69778c] hover:text-[#152238]"
-          }`}
-        >
-          Demonstrativo DRE & Gráficos
-        </button>
-        <button
-          onClick={() => setActiveSubTab("extrato")}
-          className={`px-4 py-2 text-xs font-bold rounded-xl transition-all cursor-pointer ${
-            activeSubTab === "extrato"
-              ? "bg-[#3c63da] text-white shadow-xs"
-              : "bg-white border border-[#e5eaf1] text-[#69778c] hover:text-[#152238]"
-          }`}
-        >
-          Entradas, Saídas & Despesas (Extrato DRE)
-        </button>
-        <button
-          onClick={() => setActiveSubTab("parametros")}
-          className={`px-4 py-2 text-xs font-bold rounded-xl transition-all cursor-pointer ${
-            activeSubTab === "parametros"
-              ? "bg-[#3c63da] text-white shadow-xs"
-              : "bg-white border border-[#e5eaf1] text-[#69778c] hover:text-[#152238]"
-          }`}
-        >
-          Parâmetros do DRE
-        </button>
-      </div>
+      <div className="space-y-6">
+        {/* Sub-Tabs Selector */}
+        <div className="flex items-center gap-2 border-b border-[#e5eaf1] pb-3 flex-wrap">
+          <button
+            onClick={() => setActiveSubTab("demonstrativo")}
+            className={`px-4 py-2 text-xs font-bold rounded-xl transition-all cursor-pointer ${
+              activeSubTab === "demonstrativo"
+                ? "bg-[#3c63da] text-white shadow-xs"
+                : "bg-white border border-[#e5eaf1] text-[#69778c] hover:text-[#152238]"
+            }`}
+          >
+            Demonstrativo DRE & Gráficos
+          </button>
+          <button
+            onClick={() => setActiveSubTab("extrato")}
+            className={`px-4 py-2 text-xs font-bold rounded-xl transition-all cursor-pointer ${
+              activeSubTab === "extrato"
+                ? "bg-[#3c63da] text-white shadow-xs"
+                : "bg-white border border-[#e5eaf1] text-[#69778c] hover:text-[#152238]"
+            }`}
+          >
+            Entradas, Saídas & Despesas (Extrato DRE)
+          </button>
+          <button
+            onClick={() => setActiveSubTab("parametros")}
+            className={`px-4 py-2 text-xs font-bold rounded-xl transition-all cursor-pointer ${
+              activeSubTab === "parametros"
+                ? "bg-[#3c63da] text-white shadow-xs"
+                : "bg-white border border-[#e5eaf1] text-[#69778c] hover:text-[#152238]"
+            }`}
+          >
+            Parâmetros do DRE
+          </button>
+        </div>
 
         {activeSubTab === "extrato" && (
         <div className="space-y-6">
@@ -1846,9 +1846,8 @@ export const DreScreen: React.FC<DreScreenProps> = ({
             </div>
           </div>
         </div>
-      </div>
       )}
-      </>
+      </div>
     </div>
   );
 };
