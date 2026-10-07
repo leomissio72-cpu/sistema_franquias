@@ -380,6 +380,9 @@ export interface WhatsAppMessageHistory {
   status: "enviado" | "pendente" | "erro" | "nao_enviado";
   errorReason?: string;
   providerMessageId?: string;
+  providerStatus?: "accepted" | "sent" | "delivered" | "read" | "failed";
+  providerErrorCode?: string;
+  providerUpdatedAt?: string;
   timestamp: string;
 }
 
@@ -392,6 +395,8 @@ export interface WhatsAppConfig {
   provider?: "meta_cloud_api" | "manual";
   providerReady?: boolean;
   providerMessage?: string;
+  webhookReady?: boolean;
+  webhookMessage?: string;
 }
 
 export interface CloudState {

@@ -444,12 +444,32 @@ No **mesmo projeto Vercel** do sistema:
    - `WHATSAPP_ACCESS_TOKEN`: token de acesso do System User da Meta.
    - `WHATSAPP_PHONE_NUMBER_ID`: ID do número de telefone da WhatsApp Cloud API.
    - `WHATSAPP_API_VERSION`: versão Graph API suportada pelo projeto, por exemplo `v23.0`.
+   - `WHATSAPP_WEBHOOK_VERIFY_TOKEN`: uma frase aleatória criada por você para a verificação do webhook.
+   - `WHATSAPP_APP_SECRET`: App Secret em Meta Developers → Configurações básicas.
 4. Salve e faça redeploy do mesmo projeto.
 5. Faça login novamente.
 6. Abra a tela WhatsApp e confirme `providerReady: true`/conectado.
 7. Faça um teste controlado para número autorizado e com opt-in.
 
-Nunca coloque o token no frontend, GitHub, Firestore, manual ou conversa. Se a Meta retornar erro de template/janela de 24 horas, use template aprovado; não altere o sistema para fingir sucesso.
+### Configurar o webhook na Meta
+
+No painel do app da Meta, em **WhatsApp → Configuração** (ou **Casos de uso → Personalizar → Configuração**):
+
+1. Use como Callback URL: `https://sistema-franquias-zeta.vercel.app/api/whatsapp/webhook`.
+2. Use no campo Verify token exatamente o valor de `WHATSAPP_WEBHOOK_VERIFY_TOKEN`.
+3. Salve a configuração e assine o campo **messages**.
+4. A Meta validará o GET e enviará POSTs com `X-Hub-Signature-256`.
+5. O sistema valida a assinatura com `WHATSAPP_APP_SECRET` e atualiza o histórico para **Enviado**, **Entregue**, **Lido** ou **Falhou**.
+
+### Texto livre ou template
+
+- **Texto livre:** use somente quando a janela de atendimento de 24 horas estiver aberta após uma mensagem/ligação do usuário.
+- **Template aprovado:** na tela WhatsApp, selecione **Template aprovado**, informe o nome exato aprovado no WhatsApp Manager, o idioma (por exemplo `pt_BR`) e os parâmetros na ordem aprovada.
+- Mensagens só podem ser enviadas para pessoas que deram opt-in. A aceitação HTTP da Meta não significa entrega; a confirmação vem pelo webhook.
+
+O guia enviado também informa as permissões do token permanente: `business_management`, `whatsapp_business_messaging` e `whatsapp_business_management`. Gere o token em **Configurações do negócio → Usuários do sistema**, atribua o app e a conta WhatsApp Business e guarde-o somente no Vercel.
+
+Nunca coloque qualquer token, App Secret ou Verify Token no frontend, GitHub, Firestore, manual ou conversa. Se a Meta retornar erro de template/janela de 24 horas, use o template aprovado; não altere o sistema para fingir sucesso.
 
 ---
 

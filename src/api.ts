@@ -622,11 +622,16 @@ export async function sendWhatsAppMessageAPI(payload: {
   recipientName: string;
   message: string;
   company?: string;
+  messageMode?: "text" | "template";
+  templateName?: string;
+  templateLanguage?: string;
+  templateParameters?: string[];
 }): Promise<{
   success: boolean;
   status: "enviado" | "erro";
   errorReason?: string;
   providerMessageId?: string;
+  messageMode?: "text" | "template";
   acceptedByMeta?: boolean;
   configured?: boolean;
 }> {

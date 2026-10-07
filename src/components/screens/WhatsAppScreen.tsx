@@ -44,6 +44,8 @@ export const WhatsAppScreen: React.FC<WhatsAppScreenProps> = ({ onNavigate }) =>
   const [connectionStatus, setConnectionStatus] = useState<"conectado" | "conectando" | "desconectado">("desconectado");
   const [providerReady, setProviderReady] = useState(false);
   const [providerMessage, setProviderMessage] = useState("Carregando configuração do provedor...");
+  const [webhookReady, setWebhookReady] = useState(false);
+  const [webhookMessage, setWebhookMessage] = useState("Carregando configuração do webhook...");
   const [minInterval, setMinInterval] = useState(3);
   const [maxInterval, setMaxInterval] = useState(8);
 
@@ -59,6 +61,10 @@ export const WhatsAppScreen: React.FC<WhatsAppScreenProps> = ({ onNavigate }) =>
   const [messageTemplate, setMessageTemplate] = useState(
     "Olá, {nome}!\nTemos uma novidade exclusiva da rede de franquias para a sua unidade {empresa}.\nQualquer dúvida, estamos à disposição por aqui."
   );
+  const [messageMode, setMessageMode] = useState<"text" | "template">("text");
+  const [templateName, setTemplateName] = useState("");
+  const [templateLanguage, setTemplateLanguage] = useState("pt_BR");
+  const [templateParametersText, setTemplateParametersText] = useState("");
 
   // Dispatch Queue Execution State
   const [isDispatching, setIsDispatching] = useState(false);
@@ -92,6 +98,8 @@ export const WhatsAppScreen: React.FC<WhatsAppScreenProps> = ({ onNavigate }) =>
         if (cfg.connectionStatus) setConnectionStatus(cfg.connectionStatus);
         setProviderReady(Boolean(cfg.providerReady));
         setProviderMessage(cfg.providerMessage || (cfg.providerReady ? "WhatsApp Cloud API da Meta configurada." : "WhatsApp Cloud API não configurada."));
+        setWebhookReady(Boolean(cfg.webhookReady));
+        setWebhookMessage(cfg.webhookMessage || (cfg.webhookReady ? "Webhook assinado da Meta configurado." : "Webhook não configurado."));
         if (cfg.minInterval) setMinInterval(cfg.minInterval);
         if (cfg.maxInterval) setMaxInterval(cfg.maxInterval);
       }
@@ -108,6 +116,23 @@ export const WhatsAppScreen: React.FC<WhatsAppScreenProps> = ({ onNavigate }) =>
       mounted = false;
       isStoppedRef.current = true;
     };
+  }, []);
+
+  useEffect(() => {
+    const refreshProviderStatuses = async () => {
+      if (isDispatchingRef.current) return;
+      try {
+        const latest = await fetchWhatsAppHistory();
+        if (latest?.length) {
+          setHistory(latest);
+          historyRef.current = latest;
+        }
+      } catch {
+        // A atualização de status é complementar; não interrompe a fila de envio.
+      }
+    };
+    const timer = window.setInterval(() => void refreshProviderStatuses(), 15000);
+    return () => window.clearInterval(timer);
   }, []);
 
   // Format phone number utility
@@ -210,6 +235,10 @@ export const WhatsAppScreen: React.FC<WhatsAppScreenProps> = ({ onNavigate }) =>
     }
   };
 
+  // Validation Stats
+  const validRecipients = recipients.filter((r) => r.valid);
+  const invalidCount = recipients.length - validRecipients.length;
+
   // Interpolate template variables
   const interpolateMessage = (template: string, recipient: WhatsAppRecipient) => {
     return template
@@ -218,9 +247,22 @@ export const WhatsAppScreen: React.FC<WhatsAppScreenProps> = ({ onNavigate }) =>
       .replace(/{empresa}/gi, recipient.company || "Franquia");
   };
 
-  // Validation Stats
-  const validRecipients = recipients.filter((r) => r.valid);
-  const invalidCount = recipients.length - validRecipients.length;
+  const getTemplateParameters = (recipient: WhatsAppRecipient) => templateParametersText
+    .split(/\r?\n|\|/)
+    .map((value) => interpolateMessage(value.trim(), recipient))
+    .filter(Boolean)
+    .slice(0, 20);
+
+  const previewRecipient = validRecipients?.[0] || {
+    id: "sample",
+    name: "João Silva",
+    phone: "+55 11 99999-1111",
+    company: "Café Prime Campinas",
+    valid: true,
+  };
+  const previewMessage = messageMode === "template"
+    ? `Template: ${templateName || "(informe o nome aprovado)"}\nIdioma: ${templateLanguage}\nParâmetros: ${getTemplateParameters(previewRecipient).join(" · ") || "(nenhum)"}`
+    : interpolateMessage(messageTemplate, previewRecipient);
 
   // Single persistent dispatch loop (1 sessão -> 1 conexão -> 1 aba -> fila sequencial)
   const startDispatchLoop = async (startIndex = 0) => {
@@ -261,9 +303,11 @@ export const WhatsAppScreen: React.FC<WhatsAppScreenProps> = ({ onNavigate }) =>
       setTimeRemainingSeconds(Math.round(remainingItems * avgDelay));
 
       const personalizedMessage = interpolateMessage(messageTemplate, recipient);
+      const personalizedTemplateParameters = getTemplateParameters(recipient);
 
       let sendOk = false;
       let sendErrorReason = "Falha de rede";
+      let providerMessageId: string | undefined;
       try {
         // Envio sequencial mantendo a mesma conexão sem nunca abrir janelas/abas
         const res = await sendWhatsAppMessageAPI({
@@ -272,10 +316,15 @@ export const WhatsAppScreen: React.FC<WhatsAppScreenProps> = ({ onNavigate }) =>
           recipientName: recipient.name,
           message: personalizedMessage,
           company: recipient.company,
+          messageMode,
+          templateName: messageMode === "template" ? templateName : undefined,
+          templateLanguage: messageMode === "template" ? templateLanguage : undefined,
+          templateParameters: messageMode === "template" ? personalizedTemplateParameters : undefined,
         });
 
         if (res.success && res.status === "enviado") {
           sendOk = true;
+          providerMessageId = res.providerMessageId;
           sent++;
           setSentCount(sent);
           setCurrentContactStatus("✓ Mensagem aceita pela API oficial do WhatsApp; a entrega é confirmada pelo status da Meta.");
@@ -301,9 +350,11 @@ export const WhatsAppScreen: React.FC<WhatsAppScreenProps> = ({ onNavigate }) =>
         recipientName: recipient.name,
         date: now.toLocaleDateString("pt-BR"),
         time: now.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", second: "2-digit" }),
-        message: personalizedMessage,
+        message: messageMode === "template" ? `Template Meta: ${templateName} (${templateLanguage})` : personalizedMessage,
         status: sendOk ? "enviado" : "erro",
         errorReason: sendOk ? undefined : sendErrorReason,
+        providerMessageId,
+        providerStatus: sendOk ? "accepted" : undefined,
         timestamp: now.toISOString(),
       };
       const nextHistory = [newHistoryItem, ...historyRef.current].slice(0, 500);
@@ -377,6 +428,17 @@ export const WhatsAppScreen: React.FC<WhatsAppScreenProps> = ({ onNavigate }) =>
     return matchesSearch && matchesFilter;
   });
 
+  const providerStatusLabel = (status?: WhatsAppMessageHistory["providerStatus"]) => {
+    switch (status) {
+      case "accepted": return "Aceito pela Meta";
+      case "sent": return "Enviado ao WhatsApp";
+      case "delivered": return "Entregue";
+      case "read": return "Lido";
+      case "failed": return "Falhou na Meta";
+      default: return "Aguardando retorno";
+    }
+  };
+
   return (
     <div className="space-y-6 animate-in fade-in duration-150">
       {/* ------------------------------------------------------------- */}
@@ -435,12 +497,13 @@ export const WhatsAppScreen: React.FC<WhatsAppScreenProps> = ({ onNavigate }) =>
             </button>
           </div>
         </div>
-        {!providerReady && (
+        {(!providerReady || !webhookReady) && (
           <div className="mt-4 flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs font-semibold text-amber-900">
             <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
             <div>
-              <div className="font-extrabold">WhatsApp ainda não está pronto para envio</div>
-              <div className="mt-0.5 font-normal">{providerMessage} Configure <code>WHATSAPP_ACCESS_TOKEN</code> e <code>WHATSAPP_PHONE_NUMBER_ID</code> no ambiente de produção e recarregue esta tela.</div>
+              <div className="font-extrabold">WhatsApp ainda não está completamente configurado</div>
+              {!providerReady && <div className="mt-0.5 font-normal">{providerMessage} Configure <code>WHATSAPP_ACCESS_TOKEN</code> e <code>WHATSAPP_PHONE_NUMBER_ID</code> no ambiente de produção.</div>}
+              {!webhookReady && <div className="mt-0.5 font-normal">{webhookMessage} Configure também <code>WHATSAPP_WEBHOOK_VERIFY_TOKEN</code> e <code>WHATSAPP_APP_SECRET</code> e use o callback <code>/api/whatsapp/webhook</code>.</div>}
             </div>
           </div>
         )}
@@ -664,10 +727,23 @@ export const WhatsAppScreen: React.FC<WhatsAppScreenProps> = ({ onNavigate }) =>
       {/* ------------------------------------------------------------- */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         <div className="rounded-2xl border border-[#e5eaf1] bg-white p-5 sm:p-6 shadow-xs space-y-3">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between gap-2">
             <label className="block text-base font-extrabold text-[#152238]">
               3. Mensagem
             </label>
+            <select
+              value={messageMode}
+              onChange={(e) => setMessageMode(e.target.value as "text" | "template")}
+              className="rounded-lg border border-[#cbd5e1] bg-white px-2 py-1.5 text-[11px] font-bold text-[#152238]"
+              title="Texto livre na janela de 24 horas ou template aprovado pela Meta"
+            >
+              <option value="text">Texto livre (janela de 24h)</option>
+              <option value="template">Template aprovado</option>
+            </select>
+          </div>
+
+          {messageMode === "text" ? (
+            <>
             <div className="flex items-center gap-1">
               <span className="text-[10px] text-[#69778c] font-bold">Variáveis:</span>
               <button
@@ -692,15 +768,42 @@ export const WhatsAppScreen: React.FC<WhatsAppScreenProps> = ({ onNavigate }) =>
                 +&#123;telefone&#125;
               </button>
             </div>
-          </div>
-
-          <textarea
-            rows={6}
-            value={messageTemplate}
-            onChange={(e) => setMessageTemplate(e.target.value)}
-            className="w-full rounded-xl border border-[#cbd5e1] p-3 text-xs leading-relaxed font-sans text-[#152238] focus:border-[#10b981] focus:outline-none"
-            placeholder="Digite o texto da mensagem a ser enviada..."
-          />
+            <textarea
+              rows={6}
+              value={messageTemplate}
+              onChange={(e) => setMessageTemplate(e.target.value)}
+              className="w-full rounded-xl border border-[#cbd5e1] p-3 text-xs leading-relaxed font-sans text-[#152238] focus:border-[#10b981] focus:outline-none"
+              placeholder="Digite o texto da mensagem a ser enviada..."
+            />
+            </>
+          ) : (
+            <div className="space-y-2 rounded-xl border border-amber-200 bg-amber-50 p-3">
+              <p className="text-[11px] leading-relaxed text-amber-800">
+                Use o nome e o idioma de um template aprovado no WhatsApp Manager. Informe os parâmetros um por linha ou separados por <code>|</code>.
+              </p>
+              <input
+                value={templateName}
+                onChange={(e) => setTemplateName(e.target.value)}
+                placeholder="Nome aprovado, por exemplo: aviso_vencimento"
+                className="w-full rounded-lg border border-amber-300 bg-white px-3 py-2 text-xs text-[#152238] focus:border-[#10b981] focus:outline-none"
+              />
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                <input
+                  value={templateLanguage}
+                  onChange={(e) => setTemplateLanguage(e.target.value)}
+                  placeholder="Idioma, por exemplo: pt_BR"
+                  className="rounded-lg border border-amber-300 bg-white px-3 py-2 text-xs text-[#152238] focus:border-[#10b981] focus:outline-none"
+                />
+                <textarea
+                  rows={2}
+                  value={templateParametersText}
+                  onChange={(e) => setTemplateParametersText(e.target.value)}
+                  placeholder={"Parâmetro 1\nParâmetro 2"}
+                  className="rounded-lg border border-amber-300 bg-white px-3 py-2 text-xs text-[#152238] focus:border-[#10b981] focus:outline-none"
+                />
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Pré-visualização da Mensagem */}
@@ -719,16 +822,7 @@ export const WhatsAppScreen: React.FC<WhatsAppScreenProps> = ({ onNavigate }) =>
               WhatsApp · Mensagem
             </div>
             <p className="text-xs text-[#152238] whitespace-pre-wrap leading-relaxed">
-              {interpolateMessage(
-                messageTemplate,
-                validRecipients[0] || {
-                  id: "sample",
-                  name: "João Silva",
-                  phone: "+55 11 99999-1111",
-                  company: "Café Prime Campinas",
-                  valid: true,
-                }
-              )}
+              {previewMessage}
             </p>
             <div className="text-[9px] text-[#8ea1be] text-right mt-2">
               Agora · Entregue
@@ -910,15 +1004,22 @@ export const WhatsAppScreen: React.FC<WhatsAppScreenProps> = ({ onNavigate }) =>
                     <td className="p-3 text-[#69778c] whitespace-nowrap">{item.date} {item.time}</td>
                     <td className="p-3 text-[#152238] max-w-xs truncate" title={item.message}>{item.message}</td>
                     <td className="p-3">
-                      {item.status === "enviado" ? (
-                        <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-700">
-                          <CheckCircle2 className="h-3 w-3" /> 🟢 Enviado
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-1 rounded-full bg-rose-50 px-2 py-0.5 text-[10px] font-bold text-rose-700" title={item.errorReason}>
-                          <AlertCircle className="h-3 w-3" /> 🔴 Erro
-                        </span>
-                      )}
+                      <div className="space-y-1">
+                        {item.status === "enviado" ? (
+                          <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-700">
+                            <CheckCircle2 className="h-3 w-3" /> Envio aceito
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center gap-1 rounded-full bg-rose-50 px-2 py-0.5 text-[10px] font-bold text-rose-700" title={item.errorReason}>
+                            <AlertCircle className="h-3 w-3" /> Erro
+                          </span>
+                        )}
+                        {item.providerStatus && (
+                          <span className="block text-[10px] font-semibold text-[#69778c]">
+                            Meta: {providerStatusLabel(item.providerStatus)}
+                          </span>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -1021,7 +1122,9 @@ export const WhatsAppScreen: React.FC<WhatsAppScreenProps> = ({ onNavigate }) =>
               <div className="p-3 rounded-xl bg-[#f8faff] border border-[#e5eaf1]">
                 <span className="text-[10px] font-bold text-[#69778c] block uppercase">Mensagem Personalizada:</span>
                 <p className="mt-1 text-[11px] text-[#152238] italic whitespace-pre-wrap max-h-24 overflow-y-auto">
-                  {interpolateMessage(messageTemplate, validRecipients[0] || { id: "ex", name: "Nome", phone: "", valid: true })}
+                  {messageMode === "template"
+                    ? `Template: ${templateName || "(informe o nome aprovado)"} (${templateLanguage})`
+                    : interpolateMessage(messageTemplate, validRecipients[0] || { id: "ex", name: "Nome", phone: "", valid: true })}
                 </p>
               </div>
             </div>

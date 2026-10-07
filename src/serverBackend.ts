@@ -9,7 +9,12 @@ import { findIntercompanyRule } from "./utils/intercompany.ts";
 
 const app = express();
 
-app.use(express.json({ limit: "10mb" }));
+app.use(express.json({
+  limit: "10mb",
+  verify: (req, _res, buffer) => {
+    (req as any).rawBody = Buffer.from(buffer);
+  },
+}));
 
 const SESSION_TTL_MS = 8 * 60 * 60 * 1000;
 const loginAttempts = new Map<string, { count: number; resetAt: number }>();
@@ -64,7 +69,8 @@ app.use((req, res, next) => {
     "/api/auth/logout", "/auth/logout",
     "/api/auth/mfa", "/auth/mfa",
     "/api/auth/bootstrap", "/auth/bootstrap",
-    "/api/events", "/events"
+    "/api/events", "/events",
+    "/api/whatsapp/webhook", "/whatsapp/webhook"
   ].includes(req.path);
   if (openPath || !req.path.startsWith("/api")) return next();
   return requireSession(req, res, next);
@@ -86,9 +92,30 @@ function getWhatsAppCloudConfig() {
   };
 }
 
+function getWhatsAppWebhookConfig() {
+  return {
+    verifyToken: String(process.env.WHATSAPP_WEBHOOK_VERIFY_TOKEN || "").trim(),
+    appSecret: String(process.env.WHATSAPP_APP_SECRET || "").trim(),
+  };
+}
+
+function hasValidWhatsAppSignature(req: Request) {
+  const { appSecret } = getWhatsAppWebhookConfig();
+  const signature = String(req.header("x-hub-signature-256") || "");
+  const rawBody = (req as any).rawBody as Buffer | undefined;
+  if (!appSecret || !signature.startsWith("sha256=") || !rawBody) return false;
+  const expected = crypto.createHmac("sha256", appSecret).update(rawBody).digest("hex");
+  const received = signature.slice("sha256=".length).toLowerCase();
+  const expectedBuffer = Buffer.from(expected, "utf8");
+  const receivedBuffer = Buffer.from(received, "utf8");
+  return expectedBuffer.length === receivedBuffer.length && crypto.timingSafeEqual(expectedBuffer, receivedBuffer);
+}
+
 function getWhatsAppConfigResponse(database: DatabaseState) {
   const cloud = getWhatsAppCloudConfig();
+  const webhook = getWhatsAppWebhookConfig();
   const providerReady = Boolean(cloud.accessToken && cloud.phoneNumberId);
+  const webhookReady = Boolean(webhook.verifyToken && webhook.appSecret);
   const storedConfig = database.whatsappConfig || {};
   return {
     senderPhone: storedConfig.senderPhone || "",
@@ -100,6 +127,10 @@ function getWhatsAppConfigResponse(database: DatabaseState) {
     providerMessage: providerReady
       ? "WhatsApp Cloud API da Meta configurada."
       : "WhatsApp ainda não está configurado no ambiente de produção.",
+    webhookReady,
+    webhookMessage: webhookReady
+      ? "Webhook assinado da Meta configurado."
+      : "Webhook ainda não está configurado: faltam WHATSAPP_WEBHOOK_VERIFY_TOKEN e/ou WHATSAPP_APP_SECRET.",
   };
 }
 
@@ -1059,6 +1090,76 @@ routeBoth("delete", "/api/entries/:id", requireSession, async (req: Request, res
 });
 
 // 7. WhatsApp Messaging Dispatch Module
+routeBoth("get", "/api/whatsapp/webhook", (req: Request, res: ExpressResponse) => {
+  const { verifyToken } = getWhatsAppWebhookConfig();
+  const mode = String(req.query["hub.mode"] || "");
+  const token = String(req.query["hub.verify_token"] || "");
+  const challenge = String(req.query["hub.challenge"] || "");
+  if (!verifyToken || mode !== "subscribe" || token !== verifyToken || !challenge) {
+    return res.status(403).send("Webhook não verificado.");
+  }
+  return res.status(200).send(challenge);
+});
+
+routeBoth("post", "/api/whatsapp/webhook", async (req: Request, res: ExpressResponse) => {
+  const { appSecret } = getWhatsAppWebhookConfig();
+  if (!appSecret) {
+    return res.status(503).json({ success: false, error: "WHATSAPP_APP_SECRET não está configurado no ambiente de produção." });
+  }
+  if (!hasValidWhatsAppSignature(req)) {
+    return res.status(403).json({ success: false, error: "Assinatura do webhook WhatsApp inválida." });
+  }
+
+  const payload = req.body || {};
+  const statuses = (Array.isArray(payload.entry) ? payload.entry : []).flatMap((entry: any) =>
+    (Array.isArray(entry?.changes) ? entry.changes : []).flatMap((change: any) =>
+      Array.isArray(change?.value?.statuses) ? change.value.statuses : []
+    )
+  );
+  const history = Array.isArray(db.whatsappHistory) ? [...db.whatsappHistory] : [];
+  let updated = 0;
+  for (const statusEvent of statuses) {
+    const providerMessageId = String(statusEvent?.id || "").trim();
+    const providerStatus = String(statusEvent?.status || "").toLowerCase();
+    if (!providerMessageId || !["sent", "delivered", "read", "failed"].includes(providerStatus)) continue;
+
+    const now = new Date();
+    const errorDetail = Array.isArray(statusEvent?.errors)
+      ? statusEvent.errors.map((item: any) => [item?.code, item?.title || item?.message].filter(Boolean).join(": ")).filter(Boolean).join("; ")
+      : "";
+    const existingIndex = history.findIndex((item: any) => item.providerMessageId === providerMessageId);
+    const providerUpdate = {
+      providerMessageId,
+      providerStatus,
+      providerErrorCode: statusEvent?.errors?.[0]?.code ? String(statusEvent.errors[0].code) : undefined,
+      providerUpdatedAt: now.toISOString(),
+      ...(providerStatus === "failed" ? { status: "erro", errorReason: errorDetail || "A Meta informou falha na entrega." } : { status: "enviado" }),
+    };
+    if (existingIndex >= 0) {
+      history[existingIndex] = { ...history[existingIndex], ...providerUpdate };
+    } else {
+      history.unshift({
+        id: `wa_status_${providerMessageId}`,
+        senderPhone: String(statusEvent?.recipient_id || ""),
+        recipientPhone: String(statusEvent?.recipient_id || ""),
+        recipientName: "Atualização recebida da Meta",
+        date: now.toLocaleDateString("pt-BR"),
+        time: now.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", second: "2-digit" }),
+        message: "",
+        ...providerUpdate,
+        timestamp: now.toISOString(),
+      });
+    }
+    updated += 1;
+  }
+
+  if (updated > 0) {
+    db.whatsappHistory = history.slice(0, 500);
+    await saveDatabase(db);
+  }
+  return res.status(200).json({ success: true, received: statuses.length, updated });
+});
+
 routeBoth("get", "/api/whatsapp/config", requireSession, (req: Request, res: ExpressResponse) => {
   res.json(getWhatsAppConfigResponse(db));
 });
@@ -1090,16 +1191,38 @@ routeBoth("get", "/api/whatsapp/history", requireSession, (req: Request, res: Ex
 routeBoth("post", "/api/whatsapp/history", requireSession, requireWhatsAppRole, async (req: Request, res: ExpressResponse) => {
   const { history } = req.body || {};
   if (Array.isArray(history)) {
-    db.whatsappHistory = history;
+    const currentHistory = Array.isArray(db.whatsappHistory) ? db.whatsappHistory : [];
+    const providerRank: Record<string, number> = { accepted: 1, sent: 2, delivered: 3, read: 4, failed: 5 };
+    const mergedHistory = history.map((item: any) => {
+      const previous = currentHistory.find((candidate: any) => candidate.providerMessageId && candidate.providerMessageId === item.providerMessageId);
+      if (!previous?.providerStatus || (providerRank[previous.providerStatus] || 0) <= (providerRank[item.providerStatus] || 0)) return item;
+      return {
+        ...item,
+        providerStatus: previous.providerStatus,
+        providerErrorCode: previous.providerErrorCode,
+        providerUpdatedAt: previous.providerUpdatedAt,
+        status: previous.status,
+        errorReason: previous.errorReason,
+      };
+    });
+    const incomingProviderIds = new Set(mergedHistory.map((item: any) => item.providerMessageId).filter(Boolean));
+    const webhookOnlyItems = currentHistory.filter((item: any) => item.providerMessageId && !incomingProviderIds.has(item.providerMessageId));
+    db.whatsappHistory = [...mergedHistory, ...webhookOnlyItems].slice(0, 500);
     await saveDatabase(db);
   }
   res.json({ success: true, count: (db.whatsappHistory || []).length });
 });
 
 routeBoth("post", "/api/whatsapp/send", requireSession, requireWhatsAppRole, async (req: Request, res: ExpressResponse) => {
-  const { senderPhone, recipientPhone, recipientName, message, company } = req.body || {};
-  if (!recipientPhone || !message) {
-    return res.status(400).json({ success: false, error: "Destinatário e mensagem são obrigatórios." });
+  const { senderPhone, recipientPhone, recipientName, message, company, messageMode, templateName, templateLanguage, templateParameters } = req.body || {};
+  const cleanTemplateName = String(templateName || "").trim();
+  const cleanTemplateLanguage = String(templateLanguage || "pt_BR").trim() || "pt_BR";
+  const cleanTemplateParameters = Array.isArray(templateParameters)
+    ? templateParameters.map((value: unknown) => String(value ?? "").slice(0, 1024)).slice(0, 20)
+    : [];
+  const isTemplateMessage = messageMode === "template";
+  if (!recipientPhone || (isTemplateMessage ? !cleanTemplateName : !message)) {
+    return res.status(400).json({ success: false, error: isTemplateMessage ? "Destinatário e nome do template são obrigatórios." : "Destinatário e mensagem são obrigatórios." });
   }
 
   // Sanitização do número do destinatário
@@ -1153,19 +1276,37 @@ routeBoth("post", "/api/whatsapp/send", requireSession, requireWhatsAppRole, asy
 
   let providerResult: any = {};
   try {
+    const providerPayload = isTemplateMessage
+      ? {
+          messaging_product: "whatsapp",
+          recipient_type: "individual",
+          to: cleanPhone,
+          type: "template",
+          template: {
+            name: cleanTemplateName,
+            language: { code: cleanTemplateLanguage },
+            ...(cleanTemplateParameters.length > 0 ? {
+              components: [{
+                type: "body",
+                parameters: cleanTemplateParameters.map((text: string) => ({ type: "text", text })),
+              }],
+            } : {}),
+          },
+        }
+      : {
+          messaging_product: "whatsapp",
+          recipient_type: "individual",
+          to: cleanPhone,
+          type: "text",
+          text: { preview_url: false, body: String(message).slice(0, 4096) },
+        };
     const providerResponse = await fetch(`https://graph.facebook.com/${cloud.apiVersion}/${cloud.phoneNumberId}/messages`, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${cloud.accessToken}`,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({
-        messaging_product: "whatsapp",
-        recipient_type: "individual",
-        to: cleanPhone,
-        type: "text",
-        text: { preview_url: false, body: String(message).slice(0, 4096) },
-      }),
+      body: JSON.stringify(providerPayload),
     });
     providerResult = await providerResponse.json().catch(() => ({}));
     if (!providerResponse.ok) {
@@ -1199,9 +1340,10 @@ routeBoth("post", "/api/whatsapp/send", requireSession, requireWhatsAppRole, asy
     recipientName: recipientName || "Contato",
     date: dateStr,
     time: timeStr,
-    message,
+    message: isTemplateMessage ? `Template Meta: ${cleanTemplateName} (${cleanTemplateLanguage})` : message,
     status: "enviado",
     providerMessageId: providerResult?.messages?.[0]?.id,
+    providerStatus: "accepted",
     timestamp: now.toISOString(),
   };
 
@@ -1210,7 +1352,7 @@ routeBoth("post", "/api/whatsapp/send", requireSession, requireWhatsAppRole, asy
   if (db.whatsappHistory.length > 500) db.whatsappHistory = db.whatsappHistory.slice(0, 500);
   await saveDatabase(db);
 
-  res.json({ success: true, status: "enviado", id: historyItem.id, providerMessageId: historyItem.providerMessageId, acceptedByMeta: true });
+  res.json({ success: true, status: "enviado", id: historyItem.id, providerMessageId: historyItem.providerMessageId, acceptedByMeta: true, messageMode: isTemplateMessage ? "template" : "text" });
 });
 
 // Resilient 404 handler for unmatched API routes

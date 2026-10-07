@@ -1,6 +1,7 @@
 import test, { after } from "node:test";
 import assert from "node:assert/strict";
 import http from "node:http";
+import crypto from "node:crypto";
 import { app, db, saveDatabase } from "../src/serverBackend";
 import {
   hashPassword,
@@ -370,6 +371,36 @@ test("AUDITORIA 9: WhatsApp exige sessão assinada e perfil autorizado", async (
 
   db.users = db.users.filter((user: any) => user.id !== operator.id);
   if (db.credentials) delete db.credentials[operator.id];
+  await saveDatabase(db);
+});
+
+test("AUDITORIA 9B: Webhook WhatsApp valida desafio e assinatura antes de atualizar entrega", async () => {
+  const previousVerifyToken = process.env.WHATSAPP_WEBHOOK_VERIFY_TOKEN;
+  const previousAppSecret = process.env.WHATSAPP_APP_SECRET;
+  process.env.WHATSAPP_WEBHOOK_VERIFY_TOKEN = "verify-auditoria-2026";
+  process.env.WHATSAPP_APP_SECRET = "app-secret-auditoria-2026";
+
+  const challenge = await appRequest("GET", "/api/whatsapp/webhook?hub.mode=subscribe&hub.verify_token=verify-auditoria-2026&hub.challenge=123456");
+  assert.equal(challenge.status, 200);
+  assert.equal(String(challenge.body), "123456");
+
+  const providerMessageId = "wamid.audit-webhook-2026";
+  const payload = {
+    object: "whatsapp_business_account",
+    entry: [{ changes: [{ value: { statuses: [{ id: providerMessageId, status: "delivered", recipient_id: "5511999999999" }] } }] }],
+  };
+  const serializedPayload = JSON.stringify(payload);
+  const signature = crypto.createHmac("sha256", process.env.WHATSAPP_APP_SECRET).update(serializedPayload).digest("hex");
+  const webhook = await appRequest("POST", "/api/whatsapp/webhook", { "X-Hub-Signature-256": `sha256=${signature}` }, payload);
+  assert.equal(webhook.status, 200);
+  assert.equal(webhook.body.updated, 1);
+  assert.equal((db.whatsappHistory || []).find((item: any) => item.providerMessageId === providerMessageId)?.providerStatus, "delivered");
+
+  db.whatsappHistory = (db.whatsappHistory || []).filter((item: any) => item.providerMessageId !== providerMessageId);
+  if (previousVerifyToken === undefined) delete process.env.WHATSAPP_WEBHOOK_VERIFY_TOKEN;
+  else process.env.WHATSAPP_WEBHOOK_VERIFY_TOKEN = previousVerifyToken;
+  if (previousAppSecret === undefined) delete process.env.WHATSAPP_APP_SECRET;
+  else process.env.WHATSAPP_APP_SECRET = previousAppSecret;
   await saveDatabase(db);
 });
 
