@@ -1008,7 +1008,7 @@ export const DreScreen: React.FC<DreScreenProps> = ({
       <tr style="background:#f1f5f9;color:#475569;text-align:left;">
         <th style="padding:8px 12px;border-bottom:2px solid #cbd5e1;">Conta Contábil / Descrição</th>
         <th style="padding:8px 12px;text-align:right;border-bottom:2px solid #cbd5e1;">Valor Nominal (R$)</th>
-        <th style="padding:8px 12px;text-align:right;border-bottom:2px solid #cbd5e1;">% Sobre Receita</th>
+        <th style="padding:8px 12px;text-align:right;border-bottom:2px solid #cbd5e1;">Classificação</th>
       </tr>
     </thead>
     <tbody>${rowsHtml}</tbody>
