@@ -2311,31 +2311,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
           {/* ----------------------------------------------------------- */}
           {/* SELETOR DE FOCO DE GRÁFICOS & CONTROLE DE RÓTULOS           */}
           {/* ----------------------------------------------------------- */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 bg-[#f8faff] rounded-2xl border border-[#e5eaf1]">
-            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 text-xs">
-              <span className="text-[11px] font-bold text-[#69778c] mr-2">Visualizar:</span>
-              {[
-                { id: "all", label: "Todos os Gráficos" },
-                { id: "unidades", label: "Faturamento por Unidade" },
-                { id: "mensal", label: "Faturamento por Mês" },
-                { id: "empilhado", label: "Colunas Empilhadas" },
-                { id: "royalties", label: "Valor dos Royalties" },
-                { id: "estados", label: "Faturamento por Estado" },
-              ].map((btn) => (
-                <button
-                  key={btn.id}
-                  onClick={() => setActiveChartFilter(btn.id as ActiveChartType)}
-                  className={`rounded-xl px-3 py-1.5 font-bold transition-all whitespace-nowrap cursor-pointer ${
-                    activeChartFilter === btn.id
-                      ? "bg-[#152238] text-white shadow-xs"
-                      : "bg-white border border-[#e5eaf1] text-[#69778c] hover:text-[#152238] hover:bg-[#f8faff]"
-                  }`}
-                >
-                  {btn.label}
-                </button>
-              ))}
-            </div>
-
+          <div className="flex flex-col sm:flex-row sm:items-center justify-end gap-3 p-3 bg-[#f8faff] rounded-2xl border border-[#e5eaf1]">
             {/* Toggle Rótulos de Dados do Painel */}
             <button
               type="button"

@@ -191,12 +191,13 @@ export const TenantsScreen: React.FC<TenantsScreenProps> = ({
       .replace(/[^a-z0-9]/g, "_")
       .replace(/^_+|_+$/g, "") || `biz_${Date.now()}`;
 
+    const parsedRoy = Number(inlineBrandRoyalty);
     const newBiz: Business = {
       id: cleanId,
       name: inlineBrandName.trim(),
       brand: inlineBrandName.trim(),
       color: inlineBrandColor || "#3c63da",
-      royalty: (Number(inlineBrandRoyalty) || 6) / 100,
+      royalty: Number.isFinite(parsedRoy) ? parsedRoy / 100 : 0.06,
     };
 
     const nextBusinesses = [...businesses.filter((b) => b.id !== cleanId), newBiz];

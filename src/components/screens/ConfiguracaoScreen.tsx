@@ -507,12 +507,13 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
       .replace(/[^a-z0-9]/g, "_")
       .replace(/^_+|_+$/g, "") || `biz_${Date.now()}`;
 
+    const parsedBizRoy = Number(inlineBizRoyalty);
     const newBiz: Business = {
       id: cleanId,
       name: inlineBizName.trim(),
       brand: inlineBizName.trim(),
       color: inlineBizColor || "#3c63da",
-      royalty: (Number(inlineBizRoyalty) || 6) / 100,
+      royalty: Number.isFinite(parsedBizRoy) ? parsedBizRoy / 100 : 0.06,
     };
 
     const updated = [...businessList.filter((b) => b.id !== cleanId), newBiz];
@@ -523,7 +524,8 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
 
     try {
       if (onSaveBusinesses) await onSaveBusinesses(updated);
-      const updatedRoyalties = { ...royaltyRates, [cleanId]: newBiz.royalty || 0.06 };
+      const royVal: number = Number.isFinite(newBiz.royalty) ? Number(newBiz.royalty) : 0.06;
+      const updatedRoyalties = { ...royaltyRates, [cleanId]: royVal };
       setRoyaltyRates(updatedRoyalties);
       if (onSaveRoyalties) await onSaveRoyalties(updatedRoyalties);
       setSuccessMessage(`Modelo/Marca "${newBiz.name}" criado e selecionado com sucesso!`);

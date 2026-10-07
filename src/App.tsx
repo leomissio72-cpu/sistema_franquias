@@ -494,7 +494,10 @@ export const App: React.FC = () => {
     const restrictedBusiness = userSession?.tenant?.toLowerCase().startsWith("biz") ? userSession.tenant : null;
     if (userSession?.profile === "admin" && restrictedBusiness && businessId !== restrictedBusiness) return;
     setCurrentBusinessId(businessId);
-    setCurrentTenantId(businessId === "all" ? "dono" : businessId);
+    const currentUnit = (serverState?.franchises || []).find((f) => f.id === currentTenantId);
+    if (!currentUnit || (businessId !== "all" && currentUnit.businessId !== businessId)) {
+      setCurrentTenantId(businessId === "all" ? "dono" : businessId);
+    }
   };
 
   // Restrição estrita de telas para unidades:
