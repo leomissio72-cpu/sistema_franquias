@@ -39,6 +39,7 @@ import {
   AlertTriangle
 } from "lucide-react";
 import Chart from "chart.js/auto";
+import toast from "react-hot-toast";
 import {
   DateMultiFilter,
   DateFilterSelection,
@@ -380,9 +381,11 @@ export const DreScreen: React.FC<DreScreenProps> = ({
     try {
       await onSaveParams(targetTenantKey, paramsForm);
       setIsSaved(true);
+      toast.success("Parâmetros do DRE salvos com sucesso!");
       setTimeout(() => setIsSaved(false), 3000);
     } catch (e) {
       console.error(e);
+      toast.error("Erro ao salvar parâmetros do DRE. Tente novamente.");
     } finally {
       setIsSaving(false);
     }
@@ -878,40 +881,33 @@ export const DreScreen: React.FC<DreScreenProps> = ({
       <tr style="background:#f8faff;font-weight:bold;">
         <td style="padding:8px 12px;border-bottom:1px solid #e2e8f0;">(=) RECEITA BRUTA OPERACIONAL</td>
         <td style="padding:8px 12px;text-align:right;border-bottom:1px solid #e2e8f0;color:#118464;font-family:monospace;">${formatBrl2(dre.fatBruta)}</td>
-        <td style="padding:8px 12px;text-align:right;border-bottom:1px solid #e2e8f0;font-family:monospace;">100,00%</td>
       </tr>
       <tr style="color:#64748b;">
         <td style="padding:7px 12px;padding-left:24px;border-bottom:1px solid #e2e8f0;">(-) Descontos & Cancelamentos</td>
         <td style="padding:7px 12px;text-align:right;border-bottom:1px solid #e2e8f0;color:#b44b4b;font-family:monospace;">-${formatBrl2(dre.desconto)}</td>
-        <td style="padding:7px 12px;text-align:right;border-bottom:1px solid #e2e8f0;font-family:monospace;">${formatPct2(dre.desconto / (dre.fatBruta || 1))}</td>
       </tr>
       <tr style="color:#64748b;">
         <td style="padding:7px 12px;padding-left:24px;border-bottom:1px solid #e2e8f0;">(-) Impostos sobre Vendas</td>
         <td style="padding:7px 12px;text-align:right;border-bottom:1px solid #e2e8f0;color:#b44b4b;font-family:monospace;">-${formatBrl2(dre.impostos)}</td>
-        <td style="padding:7px 12px;text-align:right;border-bottom:1px solid #e2e8f0;font-family:monospace;">${formatPct2(dre.impostos / (dre.receitaAjustada || 1))}</td>
       </tr>
       <tr style="background:#f1f5f9;font-weight:bold;">
         <td style="padding:8px 12px;border-bottom:1px solid #cbd5e1;">(=) RECEITA LÍQUIDA OPERACIONAL</td>
         <td style="padding:8px 12px;text-align:right;border-bottom:1px solid #cbd5e1;font-family:monospace;">${formatBrl2(dre.receitaLiquida)}</td>
-        <td style="padding:8px 12px;text-align:right;border-bottom:1px solid #cbd5e1;font-family:monospace;">100,00%</td>
       </tr>
       <tr style="color:#64748b;">
         <td style="padding:7px 12px;padding-left:24px;border-bottom:1px solid #e2e8f0;">(-) Custo das Mercadorias Vendidas (CMV)</td>
         <td style="padding:7px 12px;text-align:right;border-bottom:1px solid #e2e8f0;color:#b44b4b;font-family:monospace;">-${formatBrl2(dre.cmv)}</td>
-        <td style="padding:7px 12px;text-align:right;border-bottom:1px solid #e2e8f0;font-family:monospace;">${formatPct2(dre.cmv / (dre.receitaLiquida || 1))}</td>
       </tr>
       <tr style="color:#64748b;">
         <td style="padding:7px 12px;padding-left:24px;border-bottom:1px solid #e2e8f0;">(-) Taxas de Cartão & Meios de Pagamento</td>
         <td style="padding:7px 12px;text-align:right;border-bottom:1px solid #e2e8f0;color:#b44b4b;font-family:monospace;">-${formatBrl2(dre.taxasNegocio)}</td>
-        <td style="padding:7px 12px;text-align:right;border-bottom:1px solid #e2e8f0;font-family:monospace;">${formatPct2(dre.taxasNegocio / (dre.receitaLiquida || 1))}</td>
       </tr>
       <tr style="background:#edf2ff;font-weight:bold;">
         <td style="padding:8px 12px;border-bottom:1px solid #cbd5e1;color:#1e3a8a;">(=) Lucro Bruto (Margem de Contribuição)</td>
         <td style="padding:8px 12px;text-align:right;border-bottom:1px solid #cbd5e1;color:#2563eb;font-family:monospace;">${formatBrl2(dre.lucroBruto)}</td>
-        <td style="padding:8px 12px;text-align:right;border-bottom:1px solid #cbd5e1;font-family:monospace;">${formatPct2(dre.margemBruta)}</td>
       </tr>
       <tr style="background:#f8fafc;font-weight:bold;">
-        <td colspan="3" style="padding:6px 12px;text-transform:uppercase;font-size:10px;color:#64748b;letter-spacing:0.05em;border-bottom:1px solid #e2e8f0;">Despesas Operacionais Fixas</td>
+        <td colspan="2" style="padding:6px 12px;text-transform:uppercase;font-size:10px;color:#64748b;letter-spacing:0.05em;border-bottom:1px solid #e2e8f0;">Despesas Operacionais Fixas</td>
       </tr>
     `;
 
@@ -920,7 +916,6 @@ export const DreScreen: React.FC<DreScreenProps> = ({
         <tr style="color:#64748b;">
           <td style="padding:6px 12px;padding-left:24px;border-bottom:1px solid #f1f5f9;">${d?.name || "Despesa"}</td>
           <td style="padding:6px 12px;text-align:right;border-bottom:1px solid #f1f5f9;color:#b44b4b;font-family:monospace;">-${formatBrl2(d.value)}</td>
-          <td style="padding:6px 12px;text-align:right;border-bottom:1px solid #f1f5f9;font-family:monospace;">${formatPct2(d.value / (dre.receitaLiquida || 1))}</td>
         </tr>
       `;
     });
@@ -929,7 +924,6 @@ export const DreScreen: React.FC<DreScreenProps> = ({
       <tr style="background:#ecfdf5;font-weight:bold;border-top:2px solid #10b981;">
         <td style="padding:10px 12px;font-size:13px;color:#064e3b;">(=) RESULTADO LÍQUIDO DO PERÍODO</td>
         <td style="padding:10px 12px;text-align:right;font-size:13px;color:#047857;font-family:monospace;">${formatBrl2(dre.lucroLiquido)}</td>
-        <td style="padding:10px 12px;text-align:right;font-size:13px;color:#047857;font-family:monospace;">${formatPct2(dre.margemLiquida)}</td>
       </tr>
     `;
 
