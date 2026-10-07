@@ -853,13 +853,40 @@ export const ConciliationScreen: React.FC<ConciliationScreenProps> = ({
   };
 
   const handleDeleteItem = async (item: ConciliationItem) => {
-    if (!item.entryId || !canDeleteEntries) return;
+    if (!item.entryId) {
+      setItems((previous) => previous.filter((candidate) => candidate !== item));
+      setSelectedIds((prev) => prev.filter((_, idx) => filteredItems[idx] !== item));
+      toast.success("Linha removida da conciliação.");
+      return;
+    }
+    if (!canDeleteEntries) {
+      toast.error("Seu perfil não pode excluir lançamentos.");
+      return;
+    }
     try {
-      await onDeleteEntry(item.entryId);
       setItems((previous) => previous.filter((candidate) => candidate.entryId !== item.entryId));
+      await onDeleteEntry(item.entryId);
       toast.success("Lançamento excluído da conciliação com sucesso.");
     } catch (error: any) {
-      setImportError(error?.message || "Não foi possível excluir este lançamento.");
+      toast.error(error?.message || "Não foi possível excluir este lançamento.");
+    }
+  };
+
+  const handleRemoveSelected = async () => {
+    const selectedItems = filteredItems.filter((_, index) => selectedIds.includes(index));
+    if (!selectedItems.length) return;
+    try {
+      for (const item of selectedItems) {
+        if (item.entryId && canDeleteEntries) {
+          await onDeleteEntry(item.entryId);
+        }
+      }
+      const selectedSet = new Set(selectedItems);
+      setItems((previous) => previous.filter((item) => !selectedSet.has(item)));
+      setSelectedIds([]);
+      toast.success(`${selectedItems.length} linha(s) removida(s) com sucesso.`);
+    } catch (error: any) {
+      toast.error(error?.message || "Erro ao remover linhas selecionadas.");
     }
   };
 
@@ -881,14 +908,22 @@ export const ConciliationScreen: React.FC<ConciliationScreenProps> = ({
           </p>
         </div>
 
-        <div className="flex items-center gap-2 self-start sm:self-auto">
+        <div className="flex items-center gap-2 self-start sm:self-auto flex-wrap">
           <button
             onClick={() => void handleApproveSelected()}
             disabled={selectedIds.length === 0}
-            className="flex items-center gap-1.5 rounded-lg bg-[#3c63da] px-3.5 py-1.5 text-xs font-bold text-white hover:bg-[#2f52c0] shadow-xs disabled:opacity-50 cursor-pointer"
+            className="flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3.5 py-1.5 text-xs font-bold text-white hover:bg-emerald-700 shadow-xs disabled:opacity-50 cursor-pointer"
           >
             <CheckCircle2 className="h-3.5 w-3.5" />
             <span>Aprovar Selecionados ({selectedIds.length})</span>
+          </button>
+          <button
+            onClick={() => void handleRemoveSelected()}
+            disabled={selectedIds.length === 0}
+            className="flex items-center gap-1.5 rounded-lg bg-rose-600 px-3.5 py-1.5 text-xs font-bold text-white hover:bg-rose-700 shadow-xs disabled:opacity-50 cursor-pointer"
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+            <span>Remover Selecionados ({selectedIds.length})</span>
           </button>
         </div>
       </div>
@@ -972,18 +1007,18 @@ export const ConciliationScreen: React.FC<ConciliationScreenProps> = ({
             </span>
           )}
         </div>
-        {importError && <div className="mt-3 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs font-semibold text-red-800">{importError}</div>}
         {items.some(item => item.isImportPreview) && (
-          <div className="mt-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-xl border border-blue-200 bg-blue-50 p-3">
-            <p className="text-xs font-semibold text-blue-900">A prévia foi lida e está protegida contra a sincronização automática. Rejeite o que não deve entrar, edite o necessário e finalize para enviar os itens aprovados à Caixa/Lançamentos.</p>
+          <div className="mt-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-xl border border-indigo-200 bg-indigo-50/60 p-3">
+            <p className="text-xs font-semibold text-indigo-950">A prévia foi lida e está protegida. Rejeite ou remova o que não deve entrar, edite se necessário e aprove para refletir na Caixa, Lançamentos e DRE.</p>
             <div className="flex flex-wrap items-center gap-2 shrink-0">
-              <button type="button" onClick={() => void handleApproveSelected()} disabled={!selectedIds.length || isImporting} className="rounded-lg bg-emerald-600 px-3 py-2 text-xs font-bold text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50">Aprovar ({selectedIds.length})</button>
-              <button type="button" onClick={() => void handleRejectSelected()} disabled={!selectedIds.length || isImporting} className="rounded-lg bg-rose-600 px-3 py-2 text-xs font-bold text-white hover:bg-rose-700 disabled:cursor-not-allowed disabled:opacity-50">Rejeitar</button>
-              <button type="button" onClick={startEditingSelected} disabled={selectedIds.length === 0 || isImporting} className="rounded-lg border border-blue-300 bg-white px-3 py-2 text-xs font-bold text-blue-800 hover:bg-blue-100 disabled:cursor-not-allowed disabled:opacity-50">
+              <button type="button" onClick={() => void handleApproveSelected()} disabled={!selectedIds.length || isImporting} className="rounded-lg bg-emerald-600 px-3 py-2 text-xs font-bold text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer shadow-2xs">Aprovar ({selectedIds.length})</button>
+              <button type="button" onClick={() => void handleRemoveSelected()} disabled={!selectedIds.length || isImporting} className="rounded-lg bg-rose-600 px-3 py-2 text-xs font-bold text-white hover:bg-rose-700 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer shadow-2xs">Remover ({selectedIds.length})</button>
+              <button type="button" onClick={() => void handleRejectSelected()} disabled={!selectedIds.length || isImporting} className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-bold text-slate-700 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer">Rejeitar</button>
+              <button type="button" onClick={startEditingSelected} disabled={selectedIds.length === 0 || isImporting} className="rounded-lg border border-blue-300 bg-white px-3 py-2 text-xs font-bold text-blue-800 hover:bg-blue-100 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer">
                 {selectedIds.length > 1 ? `Editar em Lote (${selectedIds.length})` : "Editar"}
               </button>
-              <button type="button" onClick={handleDiscardImport} disabled={isImporting} className="rounded-lg border border-blue-200 bg-white px-3 py-2 text-xs font-bold text-blue-800 hover:bg-blue-100 disabled:opacity-60">Descartar</button>
-              <button type="button" onClick={() => void handleImportEntries()} disabled={isImporting} className="rounded-lg bg-[#3c63da] px-4 py-2 text-xs font-bold text-white hover:bg-[#2f52c0] disabled:opacity-60">{isImporting ? "Enviando para a Caixa..." : "Finalizar e enviar à Caixa"}</button>
+              <button type="button" onClick={handleDiscardImport} disabled={isImporting} className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-bold text-slate-700 hover:bg-slate-100 disabled:opacity-60 cursor-pointer">Descartar</button>
+              <button type="button" onClick={() => void handleImportEntries()} disabled={isImporting} className="rounded-lg bg-[#3c63da] px-4 py-2 text-xs font-bold text-white hover:bg-[#2f52c0] disabled:opacity-60 cursor-pointer shadow-2xs">{isImporting ? "Enviando para a Caixa..." : "Finalizar e enviar à Caixa"}</button>
             </div>
           </div>
         )}
@@ -1230,20 +1265,16 @@ export const ConciliationScreen: React.FC<ConciliationScreenProps> = ({
                       >
                         <Edit3 className="h-3.5 w-3.5" aria-hidden="true" />
                       </button>
-                      {item.entryId ? (
-                        <button
-                          type="button"
-                          onClick={() => void handleDeleteItem(item)}
-                          disabled={!canDeleteEntries}
-                          title={canDeleteEntries ? "Excluir lançamento" : "Seu perfil não pode excluir lançamentos"}
-                          aria-label={canDeleteEntries ? `Excluir ${item.desc}` : "Exclusão não autorizada"}
-                          className="rounded-lg p-1.5 text-rose-600 transition hover:bg-rose-50 hover:text-rose-800 disabled:cursor-not-allowed disabled:opacity-35"
-                        >
-                          <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
-                        </button>
-                      ) : (
-                        <span className="text-[10px] text-[#9aa7b8]">Prévia</span>
-                      )}
+                      <button
+                        type="button"
+                        onClick={() => void handleDeleteItem(item)}
+                        disabled={item.entryId ? !canDeleteEntries : false}
+                        title={item.entryId ? (canDeleteEntries ? "Excluir lançamento" : "Seu perfil não pode excluir lançamentos") : "Remover linha da conciliação"}
+                        aria-label={`Excluir ${item.desc}`}
+                        className="rounded-lg p-1.5 text-rose-600 transition hover:bg-rose-50 hover:text-rose-800 disabled:cursor-not-allowed disabled:opacity-35 cursor-pointer"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
+                      </button>
                     </td>
                   </tr>
                 );

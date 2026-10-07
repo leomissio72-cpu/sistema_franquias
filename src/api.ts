@@ -194,11 +194,10 @@ function formatCloudState(data: any): CloudState {
 function mergeNonEmptyCollections(primary: CloudState, mirror: CloudState | null, preserveSection?: string): CloudState {
   if (!mirror) return primary;
   const merged: any = { ...mirror, ...primary };
-  const collectionKeys = [
-    "businesses", "franchises", "employees", "users", "manualEntries", "bills",
-    "configs", "products", "suppliers", "whatsappHistory", "intercompanyRules",
-  ];
-  for (const key of collectionKeys) {
+  // Only preserve core setup collections (businesses/franchises) if an empty instance initializes
+  // NEVER resurrect deleted operational entries (manualEntries, bills, etc.)
+  const coreSetupKeys = ["businesses", "franchises"];
+  for (const key of coreSetupKeys) {
     if (key === preserveSection) continue;
     const current = (primary as any)[key];
     const previous = (mirror as any)[key];
@@ -256,16 +255,7 @@ function getLocalFallbackState(): CloudState {
 export async function fetchServerState(): Promise<CloudState> {
   try {
     const mirroredState = await readFirebaseMirror();
-    const mirrorHasCurrentSections = mirroredState && [
-      "businesses",
-      "franchises",
-      "bills",
-      "products",
-      "suppliers",
-      "whatsappConfig",
-      "whatsappHistory",
-    ].every((key) => Object.prototype.hasOwnProperty.call(mirroredState, key));
-    if (mirrorHasCurrentSections && Array.isArray(mirroredState.businesses) && Array.isArray(mirroredState.franchises)) {
+    if (mirroredState && (Array.isArray(mirroredState.businesses) || Array.isArray(mirroredState.franchises) || Array.isArray(mirroredState.manualEntries))) {
       const state = formatCloudState(mirroredState);
       try {
         localStorage.setItem("gestaofranquias_cloud_state", JSON.stringify(sanitizeClientValue(state)));
@@ -276,12 +266,6 @@ export async function fetchServerState(): Promise<CloudState> {
     const res = await fetchWithTimeout("/api/state", {}, 15000);
     const data = await safeResponseJSON(res, "Failed to load server state");
     let state = mergeNonEmptyCollections(formatCloudState(data), mirroredState);
-    // During the migration, an old mirror or a fresh serverless instance can
-    // legitimately return empty core collections. Preserve the last local
-    // snapshot/default seed only until the mirror receives the complete shape.
-    if (!mirrorHasCurrentSections) {
-      state = mergeNonEmptyCollections(state, getLocalFallbackState());
-    }
 
     // Seed Firebase when the mirror is empty. Later loads use this durable
     // state instead of a new serverless instance's ephemeral /tmp file.
@@ -498,25 +482,107 @@ export async function createManualEntriesBulkAPI(entries: Array<Partial<ManualEn
 }
 
 export async function createManualEntry(entry: Partial<ManualEntry>, userName?: string, userId?: string): Promise<CloudState> {
-  const result = await createManualEntryAPI(entry);
-  if (result?.state) {
-    const state = formatCloudState(result.state);
-    await writeFirebaseMirror(state);
-    try { localStorage.setItem("gestaofranquias_cloud_state", JSON.stringify(sanitizeClientValue(state))); } catch {}
-    return state;
+  let backendState: any = null;
+  try {
+    const result = await createManualEntryAPI(entry);
+    if (result?.state) backendState = result.state;
+  } catch (err) {
+    console.warn("Backend create entry API notice, syncing directly with cloud:", err);
   }
-  return fetchServerState();
+
+  const currentState = (await readFirebaseMirror()) || getLocalFallbackState();
+  const currentEntries = Array.isArray(currentState.manualEntries) ? currentState.manualEntries : [];
+  const newEntry: ManualEntry = {
+    id: entry.id || `m_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+    tenant: entry.tenant || "dono",
+    type: entry.type || "despesa",
+    date: entry.date || new Date().toISOString().slice(0, 10),
+    value: Number(entry.value) || 0,
+    desc: entry.desc || "Lançamento",
+    apelido: entry.apelido,
+    catId: entry.catId || (entry.type === "entrada" ? "receita" : "outros"),
+    catName: entry.catName || "Despesa",
+    pay: entry.pay || "pix",
+    note: entry.note,
+    sourceFile: entry.sourceFile,
+    conciliationStatus: entry.conciliationStatus || "matched",
+    isIntercompany: entry.isIntercompany,
+    excludedFromDre: entry.excludedFromDre,
+    intercompanyRuleId: entry.intercompanyRuleId,
+    intercompanyReason: entry.intercompanyReason,
+    counterpartyDocument: entry.counterpartyDocument,
+    sourceAccount: entry.sourceAccount,
+    destinationAccount: entry.destinationAccount,
+    created: entry.created || new Date().toISOString(),
+  };
+
+  const updatedEntries = [newEntry, ...currentEntries.filter((e) => e.id !== newEntry.id)];
+  const updatedState: CloudState = {
+    ...(backendState ? formatCloudState(backendState) : currentState),
+    manualEntries: updatedEntries,
+    lastUpdated: new Date().toISOString(),
+  };
+
+  await writeFirebaseMirror(updatedState);
+  try {
+    localStorage.setItem("gestaofranquias_cloud_state", JSON.stringify(sanitizeClientValue(updatedState)));
+  } catch {}
+
+  return updatedState;
 }
 
 export async function createManualEntriesBulk(entries: Array<Partial<ManualEntry>>, userName?: string, userId?: string): Promise<CloudState> {
-  const result = await createManualEntriesBulkAPI(entries);
-  if (result?.state) {
-    const state = formatCloudState(result.state);
-    await writeFirebaseMirror(state);
-    try { localStorage.setItem("gestaofranquias_cloud_state", JSON.stringify(sanitizeClientValue(state))); } catch {}
-    return state;
+  let backendState: any = null;
+  try {
+    const result = await createManualEntriesBulkAPI(entries);
+    if (result?.state) backendState = result.state;
+  } catch (err) {
+    console.warn("Backend bulk entry API notice, syncing directly with cloud:", err);
   }
-  return fetchServerState();
+
+  const currentState = (await readFirebaseMirror()) || getLocalFallbackState();
+  const existingEntries = Array.isArray(currentState.manualEntries) ? currentState.manualEntries : [];
+  const now = Date.now();
+
+  const newFullEntries: ManualEntry[] = entries.map((e, idx) => ({
+    id: e.id || `m_${now}_${idx}_${Math.random().toString(36).substring(2, 6)}`,
+    tenant: e.tenant || "dono",
+    type: e.type || "despesa",
+    date: e.date || new Date().toISOString().slice(0, 10),
+    value: Number(e.value) || 0,
+    desc: e.desc || "Lançamento",
+    apelido: e.apelido,
+    catId: e.catId || (e.type === "entrada" ? "receita" : "outros"),
+    catName: e.catName || "Despesa",
+    pay: e.pay || "Importação",
+    note: e.note,
+    sourceFile: e.sourceFile,
+    conciliationStatus: e.conciliationStatus || "matched",
+    isIntercompany: e.isIntercompany,
+    excludedFromDre: e.excludedFromDre,
+    intercompanyRuleId: e.intercompanyRuleId,
+    intercompanyReason: e.intercompanyReason,
+    counterpartyDocument: e.counterpartyDocument,
+    sourceAccount: e.sourceAccount,
+    destinationAccount: e.destinationAccount,
+    created: e.created || new Date().toISOString(),
+  }));
+
+  const newIds = new Set(newFullEntries.map((e) => e.id));
+  const combinedEntries = [...newFullEntries, ...existingEntries.filter((e) => !newIds.has(e.id))];
+
+  const stateToSave: CloudState = {
+    ...(backendState ? formatCloudState(backendState) : currentState),
+    manualEntries: combinedEntries,
+    lastUpdated: new Date().toISOString(),
+  };
+
+  await writeFirebaseMirror(stateToSave);
+  try {
+    localStorage.setItem("gestaofranquias_cloud_state", JSON.stringify(sanitizeClientValue(stateToSave)));
+  } catch {}
+
+  return stateToSave;
 }
 
 export async function deleteManualEntryAPI(id: string) {
@@ -527,14 +593,30 @@ export async function deleteManualEntryAPI(id: string) {
 }
 
 export async function deleteManualEntry(id: string, userName?: string, userId?: string): Promise<CloudState> {
-  const result = await deleteManualEntryAPI(id);
-  if (result?.state) {
-    const state = formatCloudState(result.state);
-    await writeFirebaseMirror(state);
-    try { localStorage.setItem("gestaofranquias_cloud_state", JSON.stringify(sanitizeClientValue(state))); } catch {}
-    return state;
+  let backendState: any = null;
+  try {
+    const result = await deleteManualEntryAPI(id);
+    if (result?.state) backendState = result.state;
+  } catch (err) {
+    console.warn("Backend delete API notice, proceeding with cloud sync:", err);
   }
-  return fetchServerState();
+
+  const currentState = (await readFirebaseMirror()) || getLocalFallbackState();
+  const currentEntries = Array.isArray(currentState.manualEntries) ? currentState.manualEntries : [];
+  const updatedEntries = currentEntries.filter((e: any) => e.id !== id);
+
+  const updatedState: CloudState = {
+    ...(backendState ? formatCloudState(backendState) : currentState),
+    manualEntries: updatedEntries,
+    lastUpdated: new Date().toISOString(),
+  };
+
+  await writeFirebaseMirror(updatedState);
+  try {
+    localStorage.setItem("gestaofranquias_cloud_state", JSON.stringify(sanitizeClientValue(updatedState)));
+  } catch {}
+
+  return updatedState;
 }
 
 export async function loginAPI(username: string, password: string) {

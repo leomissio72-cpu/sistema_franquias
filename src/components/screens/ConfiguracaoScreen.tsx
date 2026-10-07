@@ -1619,7 +1619,7 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
                                 setEditingBizId(b.id);
                                 setEditBizName(b.name);
                                 setEditBizColor(b.color || "#3c63da");
-                                setEditBizRoyalty(royaltyVal);
+                                setEditBizRoyalty(String(royaltyVal));
                               }}
                               className="text-[11px] font-semibold text-[#3c63da] hover:underline cursor-pointer"
                             >

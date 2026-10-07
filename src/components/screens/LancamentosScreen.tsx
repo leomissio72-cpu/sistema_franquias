@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import toast from "react-hot-toast";
 import { ManualEntry, ScreenType, FranchiseUnit, Business } from "../../types";
 import { formatBrl, formatBrl2 } from "../../utils/calculations";
 import { isIntercompanyEntry } from "../../utils/intercompany";
@@ -232,18 +233,16 @@ export const LancamentosScreen: React.FC<LancamentosScreenProps> = ({
             note: note.trim(),
           });
 
-          setSuccessToast(`✓ Lançamento salvo com sucesso no banco de dados!`);
+          toast.success("Lançamento salvo com sucesso no banco de dados!");
         }
       }
-
-      setTimeout(() => setSuccessToast(null), 4000);
 
       setValue("");
       setDesc("");
       setNote("");
       setRecurrence("1");
     } catch (err: any) {
-      alert(err.message || "Erro ao salvar lançamento");
+      toast.error(err?.message || "Erro ao salvar lançamento");
     } finally {
       setIsSubmitting(false);
     }
@@ -827,7 +826,14 @@ export const LancamentosScreen: React.FC<LancamentosScreenProps> = ({
                             <span>Editar</span>
                           </button>
                           <button
-                            onClick={() => onDeleteEntry(e.id)}
+                            onClick={async () => {
+                              try {
+                                await onDeleteEntry(e.id);
+                                toast.success("Lançamento excluído com sucesso.");
+                              } catch (err: any) {
+                                toast.error(err?.message || "Erro ao excluir lançamento.");
+                              }
+                            }}
                             className="text-[#b44b4b] hover:text-red-800 p-1 rounded hover:bg-red-50 transition-all cursor-pointer"
                             title="Remover lançamento"
                           >

@@ -382,11 +382,19 @@ export const App: React.FC = () => {
   };
 
   const handleDeleteManualEntry = async (id: string) => {
+    setServerState((prev) => (prev ? { ...prev, manualEntries: (prev.manualEntries || []).filter((e) => e.id !== id) } : prev));
     const updatedState = await deleteManualEntry(id, userSession?.name || "Admin");
     setServerState(updatedState);
   };
 
   const handleUpdateManualEntry = async (id: string, patch: Partial<ManualEntry>) => {
+    setServerState((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        manualEntries: (prev.manualEntries || []).map((entry) => entry.id === id ? { ...entry, ...patch } : entry),
+      };
+    });
     const currentEntries = serverState?.manualEntries || [];
     const updatedEntries = currentEntries.map((entry) => entry.id === id ? { ...entry, ...patch } : entry);
     const updatedState = await syncStateSection("manualEntries", updatedEntries, userSession?.name || "Admin", userSession || undefined);

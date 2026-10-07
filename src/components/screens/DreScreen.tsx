@@ -92,7 +92,7 @@ export const DreScreen: React.FC<DreScreenProps> = ({
   // -------------------------------------------------------------
   const [dateSelection, setDateSelection] = useState<DateFilterSelection>({
     years: [CURRENT_YEAR],
-    months: [CURRENT_MONTH],
+    months: AVAILABLE_MONTHS.map((m) => m.value),
     days: AVAILABLE_DAYS,
   });
 
@@ -276,6 +276,9 @@ export const DreScreen: React.FC<DreScreenProps> = ({
       // Real entries exist: calculate using real revenue & real expenses
       const calc = calculateDre(realFatBruta, currentParams, unitRoyalty, targetBiz);
 
+      // Track all matched items so none are dropped
+      const matchedItemIds = new Set<string>();
+
       // Group real expenses by category where possible
       const mappedDespesas = dreExpenseDefs.map((e) => {
         const matchedItems = realDespesas.filter((de) => {
@@ -283,31 +286,53 @@ export const DreScreen: React.FC<DreScreenProps> = ({
           const cName = (de.catName || "").toLowerCase();
           const eId = e.id.toLowerCase();
           const eName = e.name.toLowerCase();
-          return cId.includes(eId) || cName.includes(eId) || cName.includes(eName) || eName.includes(cName);
+          const isMatch = cId.includes(eId) || cName.includes(eId) || cName.includes(eName) || eName.includes(cName);
+          if (isMatch) matchedItemIds.add(de.id);
+          return isMatch;
         });
 
-        if (matchedItems.length > 0) {
-          const catSum = matchedItems.reduce((s, item) => s + (Number(item.value) || 0), 0);
-          return {
-            ...e,
-            pct: realFatBruta > 0 ? catSum / realFatBruta : 0,
-            value: catSum,
-          };
-        }
-
+        const catSum = matchedItems.reduce((s, item) => s + (Number(item.value) || 0), 0);
         return {
           ...e,
-          pct: 0,
-          value: 0,
+          pct: realFatBruta > 0 ? catSum / realFatBruta : 0,
+          value: catSum,
         };
       });
 
-      const totRealDesp = mappedDespesas.reduce((s, d) => s + d.value, 0);
+      // Find any unmatched real expenses (e.g. Marketing, Softwares, Insumos, Serviços de Terceiros, etc.)
+      const unmatchedItems = realDespesas.filter((de) => !matchedItemIds.has(de.id));
+      if (unmatchedItems.length > 0) {
+        // Group unmatched items by their actual category name
+        const customCategoryGroups: Record<string, number> = {};
+        unmatchedItems.forEach((de) => {
+          const cat = de.catName || "Outras Despesas Operacionais";
+          customCategoryGroups[cat] = (customCategoryGroups[cat] || 0) + (Number(de.value) || 0);
+        });
+
+        Object.entries(customCategoryGroups).forEach(([catName, val], idx) => {
+          mappedDespesas.push({
+            id: `custom_${idx}_${catName.toLowerCase().replace(/[^a-z0-9]/g, "")}`,
+            name: catName,
+            group: "operacional",
+            pct: realFatBruta > 0 ? val / realFatBruta : 0,
+            value: val,
+            fromConciliation: true,
+            icon: "📄",
+          });
+        });
+      }
+
+      // Filter to items that have value > 0 for display, or show all if empty
+      const nonZeroDespesas = mappedDespesas.filter((d) => d.value > 0);
+      const activeDespesasTable = nonZeroDespesas.length > 0 ? nonZeroDespesas : mappedDespesas;
+
+      // Ensure totRealDesp EXACTLY equals the sum of realDespesas
+      const totRealDesp = realDespesas.reduce((s, d) => s + (Number(d.value) || 0), 0);
       const lucroLiq = calc.lucroBruto - totRealDesp;
 
       return {
         ...calc,
-        despesas: mappedDespesas,
+        despesas: activeDespesasTable,
         totalDesp: totRealDesp,
         lucroLiquido: lucroLiq,
         margemLiquida: realFatBruta > 0 ? lucroLiq / realFatBruta : 0,
@@ -1643,7 +1668,6 @@ export const DreScreen: React.FC<DreScreenProps> = ({
                   <tr className="bg-[#f8faff] border-b border-[#e5eaf1] text-[#69778c]">
                     <th className="py-2.5 px-4 font-bold uppercase text-[10px]">Conta Contábil / Descrição</th>
                     <th className="py-2.5 px-4 text-right font-bold uppercase text-[10px]">Valor Nominal (R$)</th>
-                    <th className="py-2.5 px-4 text-right font-bold uppercase text-[10px]">% Sobre Receita</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[#e5eaf1]">
@@ -1652,52 +1676,37 @@ export const DreScreen: React.FC<DreScreenProps> = ({
                     <td className="py-2.5 px-4 text-right font-mono text-emerald-800">
                       {formatBrl2(dre.fatBruta)}
                     </td>
-                    <td className="py-2.5 px-4 text-right font-mono">100,00%</td>
                   </tr>
                   <tr className="text-[#69778c]">
                     <td className="py-2.5 px-4 pl-8">(-) Descontos & Cancelamentos</td>
                     <td className="py-2.5 px-4 text-right font-mono">-{formatBrl2(dre.desconto)}</td>
-                    <td className="py-2.5 px-4 text-right font-mono">
-                      {formatPct2(dre.desconto / (dre.fatBruta || 1))}
-                    </td>
                   </tr>
                   <tr className="text-[#69778c]">
                     <td className="py-2.5 px-4 pl-8">(-) Impostos sobre Vendas</td>
                     <td className="py-2.5 px-4 text-right font-mono">-{formatBrl2(dre.impostos)}</td>
-                    <td className="py-2.5 px-4 text-right font-mono">
-                      {formatPct2(dre.impostos / (dre.receitaAjustada || 1))}
-                    </td>
                   </tr>
                   <tr className="font-bold text-[#152238] bg-[#f4f7fb]/60">
                     <td className="py-2.5 px-4">(=) RECEITA LÍQUIDA OPERACIONAL</td>
                     <td className="py-2.5 px-4 text-right font-mono">{formatBrl2(dre.receitaLiquida)}</td>
-                    <td className="py-2.5 px-4 text-right font-mono">100,00%</td>
                   </tr>
                   <tr className="text-[#69778c]">
                     <td className="py-2.5 px-4 pl-8">(-) Custo das Mercadorias Vendidas (CMV)</td>
                     <td className="py-2.5 px-4 text-right font-mono">-{formatBrl2(dre.cmv)}</td>
-                    <td className="py-2.5 px-4 text-right font-mono">
-                      {formatPct2(dre.cmv / (dre.receitaLiquida || 1))}
-                    </td>
                   </tr>
                   <tr className="text-[#69778c]">
                     <td className="py-2.5 px-4 pl-8">(-) Taxas de Cartão & Plataforma</td>
                     <td className="py-2.5 px-4 text-right font-mono">-{formatBrl2(dre.taxasNegocio)}</td>
-                    <td className="py-2.5 px-4 text-right font-mono">
-                      {formatPct2(dre.taxasNegocio / (dre.receitaLiquida || 1))}
-                    </td>
                   </tr>
                   <tr className="bg-[#edf2ff] font-bold text-[#152238]">
                     <td className="py-3 px-4">(=) Margem de Contribuição Bruta (Lucro Bruto)</td>
                     <td className="py-3 px-4 text-right font-mono font-bold text-[#3c63da]">
                       {formatBrl2(dre.lucroBruto)}
                     </td>
-                    <td className="py-3 px-4 text-right font-mono">{formatPct2(dre.margemBruta)}</td>
                   </tr>
 
                   {/* Despesas Fixas Group */}
                   <tr className="bg-[#f8faff]">
-                    <td colSpan={3} className="py-2 px-4 text-[10px] font-extrabold uppercase tracking-wider text-[#69778c]">
+                    <td colSpan={2} className="py-2 px-4 text-[10px] font-extrabold uppercase tracking-wider text-[#69778c]">
                       Despesas Operacionais Fixas & Administrativas
                     </td>
                   </tr>
@@ -1707,9 +1716,6 @@ export const DreScreen: React.FC<DreScreenProps> = ({
                       <td className="py-2 px-4 text-right font-mono text-[#b44b4b]">
                         -{formatBrl2(item.value)}
                       </td>
-                      <td className="py-2 px-4 text-right font-mono text-[11px]">
-                        {formatPct2(item.value / (dre.receitaLiquida || 1))}
-                      </td>
                     </tr>
                   ))}
 
@@ -1718,9 +1724,6 @@ export const DreScreen: React.FC<DreScreenProps> = ({
                     <td className="py-4 px-4">(=) RESULTADO LÍQUIDO DO PERÍODO</td>
                     <td className="py-4 px-4 text-right font-mono text-emerald-800 text-base">
                       {formatBrl2(dre.lucroLiquido)}
-                    </td>
-                    <td className="py-4 px-4 text-right font-mono text-emerald-800 text-base">
-                      {formatPct2(dre.margemLiquida)}
                     </td>
                   </tr>
                 </tbody>

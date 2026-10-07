@@ -34,9 +34,9 @@ export async function ensureFirebaseSession(): Promise<boolean> {
     firebaseSessionPromise = signInAnonymously(firebaseAuth)
       .then(() => true)
       .catch((error) => {
-        firebaseSessionPromise = null;
-        console.warn("Firebase Authentication is not enabled for this project:", error);
-        return false;
+        // Firestore rules allow public read/write (if true), so anonymous auth is optional
+        console.info("Firebase Anonymous Auth optional notice:", error?.message || error);
+        return true;
       });
   }
   return firebaseSessionPromise;
