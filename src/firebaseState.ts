@@ -96,9 +96,11 @@ export async function writeFirebaseMirror(state: CloudState, options: { allowEmp
         "businesses", "franchises", "employees", "manualEntries", "bills", "products", "suppliers", "whatsappHistory", "intercompanyRules",
       ];
       const incomingIsGloballyEmpty = operationalKeys.every((key) => Array.isArray(state[key]) && state[key].length === 0);
+      const incomingIsMissingCoreData = !state.businesses || !state.franchises;
       const existingHasRecords = Boolean(existing && operationalKeys.some((key) => Array.isArray(existing[key]) && existing[key].length > 0));
-      if (incomingIsGloballyEmpty && existingHasRecords && !options.allowEmptyReset) {
-        console.warn("Ignorando espelho vazio para preservar dados existentes no Firestore.");
+      
+      if ((incomingIsGloballyEmpty || incomingIsMissingCoreData) && existingHasRecords && !options.allowEmptyReset) {
+        console.warn("Ignorando espelho vazio ou incompleto para preservar dados existentes no Firestore.");
         return false;
       }
 

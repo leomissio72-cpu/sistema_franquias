@@ -285,7 +285,9 @@ export async function fetchServerState(): Promise<CloudState> {
 
     // Seed Firebase when the mirror is empty. Later loads use this durable
     // state instead of a new serverless instance's ephemeral /tmp file.
-    await writeFirebaseMirror(state);
+    if (state.businesses && state.businesses.length > 0) {
+      await writeFirebaseMirror(state);
+    }
 
     try {
       localStorage.setItem("gestaofranquias_cloud_state", JSON.stringify(sanitizeClientValue(state)));
