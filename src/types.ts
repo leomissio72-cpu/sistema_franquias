@@ -145,7 +145,33 @@ export interface ManualEntry {
   note?: string;
   sourceFile?: string;
   conciliationStatus?: "review" | "matched" | "rejected";
+  /** Mantém a transferência no histórico, mas exclui seu valor do DRE/totais operacionais. */
+  isIntercompany?: boolean;
+  excludedFromDre?: boolean;
+  intercompanyRuleId?: string;
+  intercompanyReason?: string;
+  counterpartyDocument?: string;
+  sourceAccount?: string;
+  destinationAccount?: string;
   created: string;
+}
+
+export type IntercompanyRuleScope = "rede" | "empresa" | "unidade";
+
+export interface IntercompanyRule {
+  id: string;
+  name: string;
+  active: boolean;
+  scope: IntercompanyRuleScope;
+  businessId?: string;
+  tenantId?: string;
+  /** Termos que devem aparecer na descrição/histórico do extrato. */
+  terms: string[];
+  /** CNPJ/CPF ou conta/PIX de contraparte, quando o arquivo trouxer esses dados. */
+  counterpartyDocuments?: string[];
+  counterpartyAccounts?: string[];
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface Employee {
@@ -325,6 +351,12 @@ export interface ConciliationItem {
   label: string;
   tone: "green" | "amber" | "red";
   toDre?: boolean;
+  isIntercompany?: boolean;
+  intercompanyRuleId?: string;
+  intercompanyReason?: string;
+  counterpartyDocument?: string;
+  sourceAccount?: string;
+  destinationAccount?: string;
   previsao?: string;
 }
 
@@ -383,6 +415,7 @@ export interface CloudState {
   systemSettings: SystemSettings;
   products?: HomologatedProduct[];
   suppliers?: RegisteredSupplier[];
+  intercompanyRules?: IntercompanyRule[];
   whatsappConfig?: WhatsAppConfig;
   whatsappHistory?: WhatsAppMessageHistory[];
   lastUpdated: string;

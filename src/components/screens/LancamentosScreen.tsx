@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { ManualEntry, ScreenType, FranchiseUnit } from "../../types";
 import { formatBrl, formatBrl2 } from "../../utils/calculations";
+import { isIntercompanyEntry } from "../../utils/intercompany";
 import {
   FilePenLine,
   Plus,
@@ -97,11 +98,11 @@ export const LancamentosScreen: React.FC<LancamentosScreenProps> = ({
   });
 
   const totalEntradas = manualEntries
-    .filter((e) => (isRede || e.tenant === currentTenantId || e.tenant === "dono") && e.type === "entrada")
+    .filter((e) => (isRede || e.tenant === currentTenantId || e.tenant === "dono") && e.type === "entrada" && !isIntercompanyEntry(e))
     .reduce((s, e) => s + e.value, 0);
 
   const totalDespesas = manualEntries
-    .filter((e) => (isRede || e.tenant === currentTenantId || e.tenant === "dono") && e.type === "despesa")
+    .filter((e) => (isRede || e.tenant === currentTenantId || e.tenant === "dono") && e.type === "despesa" && !isIntercompanyEntry(e))
     .reduce((s, e) => s + e.value, 0);
 
   const saldoManual = totalEntradas - totalDespesas;
@@ -540,6 +541,11 @@ export const LancamentosScreen: React.FC<LancamentosScreenProps> = ({
                         <td className="p-3">
                           <div className="flex items-center gap-1.5 flex-wrap">
                             <b className="text-[#152238]">{e.desc}</b>
+                            {isIntercompanyEntry(e) && (
+                              <span className="inline-flex items-center rounded-md border border-amber-200 bg-amber-50 px-1.5 py-0.5 text-[9px] font-extrabold text-amber-800" title="Mantido no histórico, excluído dos totais do DRE">
+                                Não entra no DRE
+                              </span>
+                            )}
                             {/\(\d+\/\d+\)/.test(e.desc) && (
                               <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md bg-[#edf2ff] text-[#3c63da] text-[9px] font-extrabold border border-[#3c63da]/20">
                                 <Repeat className="h-2.5 w-2.5" />
@@ -549,7 +555,7 @@ export const LancamentosScreen: React.FC<LancamentosScreenProps> = ({
                           </div>
                           {e.note && <span className="text-[10px] text-[#69778c] block mt-0.5">{e.note}</span>}
                         </td>
-                        <td className="p-3 text-[#69778c]">{e.catName}</td>
+                        <td className="p-3 text-[#69778c]">{isIntercompanyEntry(e) ? "Transferência entre empresas" : e.catName}</td>
                         <td className="p-3 text-[#69778c] uppercase text-[10px] font-bold font-mono">
                           {e.pay}
                         </td>

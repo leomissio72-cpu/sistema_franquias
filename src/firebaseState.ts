@@ -36,6 +36,7 @@ const STATE_KEYS: Array<keyof CloudState> = [
   "bills",
   "products",
   "suppliers",
+  "intercompanyRules",
   "whatsappConfig",
   "whatsappHistory",
 ];
@@ -92,7 +93,7 @@ export async function writeFirebaseMirror(state: CloudState): Promise<boolean> {
       if (!(await ensureFirebaseSession())) return false;
       const existing = await readFirebaseMirror();
       const operationalKeys: Array<keyof CloudState> = [
-        "businesses", "franchises", "employees", "manualEntries", "bills", "products", "suppliers", "whatsappHistory",
+        "businesses", "franchises", "employees", "manualEntries", "bills", "products", "suppliers", "whatsappHistory", "intercompanyRules",
       ];
       const incomingIsGloballyEmpty = operationalKeys.every((key) => Array.isArray(state[key]) && state[key].length === 0);
       const existingHasRecords = Boolean(existing && operationalKeys.some((key) => Array.isArray(existing[key]) && existing[key].length > 0));

@@ -1,5 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
-import { ConciliationItem, ManualEntry, ScreenType, UserSession } from "../../types";
+import { ConciliationItem, IntercompanyRule, ManualEntry, ScreenType, UserSession } from "../../types";
+import { classifyIntercompanyItem } from "../../utils/intercompany";
+import { decodeBankText, repairMojibake } from "../../utils/textEncoding";
 import ExcelJS from "exceljs";
 import mammoth from "mammoth";
 import * as pdfjsLib from "pdfjs-dist/legacy/build/pdf.mjs";
@@ -20,7 +22,9 @@ import {
 
 interface ConciliationScreenProps {
   currentTenantId: string;
+  currentBusinessId?: string;
   manualEntries: ManualEntry[];
+  intercompanyRules?: IntercompanyRule[];
   userSession: UserSession;
   onNavigate: (screen: ScreenType) => void;
   onImportEntries: (entries: Array<Partial<ManualEntry>>) => Promise<void>;
@@ -46,10 +50,10 @@ const parseDate = (value: unknown) => {
   return Number.isNaN(date.getTime()) ? new Date().toISOString().slice(0, 10) : date.toISOString().slice(0, 10);
 };
 
-const keyText = (value: unknown) => String(value ?? "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]/g, "");
+const keyText = (value: unknown) => repairMojibake(String(value ?? "")).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]/g, "");
 
 function parseDelimitedText(text: string): Record<string, unknown>[] {
-  const cleanText = text.replace(/^\uFEFF/, "").replace(/\r\n/g, "\n").replace(/\r/g, "\n").trim();
+  const cleanText = repairMojibake(text).replace(/^\uFEFF/, "").replace(/\r\n/g, "\n").replace(/\r/g, "\n").trim();
   if (!cleanText) return [];
   const firstLine = cleanText.split("\n", 1)[0] || "";
   const separators = [";", ",", "\t"];
@@ -83,35 +87,44 @@ function parseDelimitedText(text: string): Record<string, unknown>[] {
   row.push(field.trim());
   if (row.some(Boolean)) rows.push(row);
   if (rows.length < 2) return [];
-  const headers = rows[0].map((value, index) => value || `Coluna ${index + 1}`);
-  return rows.slice(1).map((values) => Object.fromEntries(headers.map((header, index) => [header, values[index] || ""])));
+  const headers = rows[0].map((value, index) => repairMojibake(value) || `Coluna ${index + 1}`);
+  return rows.slice(1).map((values) => Object.fromEntries(headers.map((header, index) => [header, repairMojibake(values[index] || "")] )));
 }
 
 function rowToItem(row: Record<string, unknown>, index: number): ConciliationItem {
   const entries = Object.entries(row);
-  const find = (keys: string[]) => entries.find(([key]) => keys.some(candidate => keyText(key).includes(candidate)))?.[1] ?? "";
+  const find = (keys: string[]) => entries.find(([key]) => keys.some(candidate => keyText(key).includes(keyText(candidate))))?.[1] ?? "";
   const rawAmount = find(["valor", "amount", "total", "entrada", "saida", "credito", "debito"]);
   const amount = parseAmount(rawAmount);
-  const description = String(find(["descricao", "historico", "desc", "memo", "nome", "lancamento"]) || Object.values(row).filter(Boolean).join(" • ")).slice(0, 180);
+  const description = repairMojibake(String(find(["descricao", "historico", "desc", "memo", "nome", "lancamento"]) || Object.values(row).filter(Boolean).join(" • "))).slice(0, 180);
   const date = parseDate(find(["data", "date", "competencia"]));
   const numericValue = /saida|debito|despesa|pagamento/i.test(`${Object.keys(row).join(" ")} ${description}`) ? -Math.abs(amount) : amount;
-  return { date, desc: description || `Linha importada ${index + 1}`, value: numericValue.toLocaleString("pt-BR", { style: "currency", currency: "BRL" }), numericValue, categoria: "Importado", match: "Aguardando classificação", status: "review", label: "Importado", tone: "amber", toDre: numericValue < 0 };
+  return {
+    date,
+    desc: description || `Linha importada ${index + 1}`,
+    value: numericValue.toLocaleString("pt-BR", { style: "currency", currency: "BRL" }),
+    numericValue,
+    categoria: "Importado",
+    match: "Aguardando classificação",
+    status: "review",
+    label: "Importado",
+    tone: "amber",
+    toDre: numericValue < 0,
+    counterpartyDocument: repairMojibake(String(find(["cnpj", "cpf", "documento", "doc contraparte"]) || "")).trim() || undefined,
+    sourceAccount: repairMojibake(String(find(["conta origem", "origem", "banco origem", "pix origem"]) || "")).trim() || undefined,
+    destinationAccount: repairMojibake(String(find(["conta destino", "destino", "banco destino", "pix destino"]) || "")).trim() || undefined,
+  };
 }
 
 async function readBankText(file: File): Promise<string> {
   const bytes = new Uint8Array(await file.arrayBuffer());
-  if (bytes[0] === 0xff && bytes[1] === 0xfe) return new TextDecoder("utf-16le").decode(bytes.slice(2));
-  if (bytes[0] === 0xfe && bytes[1] === 0xff) return new TextDecoder("utf-16be").decode(bytes.slice(2));
-  const header = new TextDecoder("ascii").decode(bytes.slice(0, 512));
-  if (/CHARSET\s*:\s*1252|ENCODING\s*:\s*USASCII/i.test(header)) {
-    try { return new TextDecoder("windows-1252").decode(bytes); } catch { /* fallback UTF-8 */ }
-  }
-  return new TextDecoder("utf-8").decode(bytes);
+  const header = new TextDecoder("latin1").decode(bytes.slice(0, 512));
+  return decodeBankText(bytes, header);
 }
 
 async function readWordText(file: File): Promise<string> {
   const result = await mammoth.extractRawText({ arrayBuffer: await file.arrayBuffer() });
-  return result.value || "";
+  return repairMojibake(result.value || "");
 }
 
 function decodeMarkup(text: string): string {
@@ -125,13 +138,14 @@ function decodeMarkup(text: string): string {
 
 function getOfxTag(block: string, tag: string): string {
   const match = block.match(new RegExp(`<${tag}[^>]*>\\s*([\\s\\S]*?)(?=<[A-Z][A-Z0-9_:-]*\\b|$)`, "i"));
-  return (match?.[1] || "").replace(/<!\[CDATA\[|\]\]>/g, "").replace(/<[^>]+>/g, "").trim();
+  return repairMojibake((match?.[1] || "").replace(/<!\[CDATA\[|\]\]>/g, "").replace(/<[^>]+>/g, "").trim());
 }
 
 function entryToItem(entry: ManualEntry): ConciliationItem {
   const numericValue = entry.type === "despesa" ? -Math.abs(Number(entry.value)) : Math.abs(Number(entry.value));
   const matched = entry.conciliationStatus === "matched";
   const rejected = entry.conciliationStatus === "rejected";
+  const isIntercompany = Boolean(entry.isIntercompany || entry.excludedFromDre);
   return {
     entryId: entry.id,
     sourceFile: entry.sourceFile,
@@ -139,12 +153,18 @@ function entryToItem(entry: ManualEntry): ConciliationItem {
     desc: entry.desc,
     value: numericValue.toLocaleString("pt-BR", { style: "currency", currency: "BRL" }),
     numericValue,
-    categoria: entry.catName || "Importado",
-    match: matched ? "Conciliação confirmada" : rejected ? "Rejeitado para revisão" : "Aguardando classificação",
+    categoria: isIntercompany ? "Transferência entre empresas" : entry.catName || "Importado",
+    match: isIntercompany ? "Marcada para não entrar no DRE" : matched ? "Conciliação confirmada" : rejected ? "Rejeitado para revisão" : "Aguardando classificação",
     status: matched ? "match" : "review",
-    label: rejected ? "Rejeitado" : entry.sourceFile ? "Importado" : "Lançamento salvo",
-    tone: matched ? "green" : rejected ? "red" : "amber",
-    toDre: numericValue < 0,
+    label: isIntercompany ? "Intercompany" : rejected ? "Rejeitado" : entry.sourceFile ? "Importado" : "Lançamento salvo",
+    tone: isIntercompany ? "amber" : matched ? "green" : rejected ? "red" : "amber",
+    toDre: numericValue < 0 && !isIntercompany,
+    isIntercompany,
+    intercompanyRuleId: entry.intercompanyRuleId,
+    intercompanyReason: entry.intercompanyReason,
+    counterpartyDocument: entry.counterpartyDocument,
+    sourceAccount: entry.sourceAccount,
+    destinationAccount: entry.destinationAccount,
   };
 }
 
@@ -238,7 +258,9 @@ async function readImportFile(file: File): Promise<ConciliationItem[]> {
 
 export const ConciliationScreen: React.FC<ConciliationScreenProps> = ({
   currentTenantId,
+  currentBusinessId,
   manualEntries,
+  intercompanyRules = [],
   userSession,
   onNavigate,
   onImportEntries,
@@ -398,7 +420,11 @@ export const ConciliationScreen: React.FC<ConciliationScreenProps> = ({
       const imported = await readImportFile(file);
       if (!imported.length) throw new Error("Não encontrei linhas de dados no arquivo.");
       const uniqueImported = removeDuplicateItems(imported, currentTenantId);
-      setItems(uniqueImported.map((item) => ({ ...item, isImportPreview: true })));
+      const classifiedImported = uniqueImported.map((item) => classifyIntercompanyItem(item, intercompanyRules, {
+        tenantId: currentTenantId,
+        businessId: currentBusinessId,
+      }));
+      setItems(classifiedImported.map((item) => ({ ...item, isImportPreview: true })));
       setHasPendingImport(true);
       setUploadedFileName(file.name);
       const ignored = imported.length - uniqueImported.length;
@@ -412,7 +438,7 @@ export const ConciliationScreen: React.FC<ConciliationScreenProps> = ({
   };
 
   const handleImportEntries = async () => {
-    const entries: Array<Partial<ManualEntry>> = items.filter(item => item.isImportPreview && !item.entryId).map(item => ({ tenant: currentTenantId, type: item.numericValue >= 0 ? "entrada" as const : "despesa" as const, date: item.date, value: Math.abs(item.numericValue), desc: item.desc, catId: "importado", catName: item.categoria, pay: "Importação", note: `Importado de ${uploadedFileName || "arquivo"}`, sourceFile: uploadedFileName || undefined, conciliationStatus: item.status === "match" ? "matched" : "review", created: new Date().toISOString() }));
+    const entries: Array<Partial<ManualEntry>> = items.filter(item => item.isImportPreview && !item.entryId).map(item => ({ tenant: currentTenantId, type: item.numericValue >= 0 ? "entrada" as const : "despesa" as const, date: item.date, value: Math.abs(item.numericValue), desc: item.desc, catId: item.isIntercompany ? "intercompany" : "importado", catName: item.categoria, pay: "Importação", note: `${item.intercompanyReason ? `${item.intercompanyReason}. ` : ""}Importado de ${uploadedFileName || "arquivo"}`, sourceFile: uploadedFileName || undefined, conciliationStatus: item.status === "match" ? "matched" : "review", isIntercompany: item.isIntercompany || undefined, excludedFromDre: item.isIntercompany || undefined, intercompanyRuleId: item.intercompanyRuleId, intercompanyReason: item.intercompanyReason, counterpartyDocument: item.counterpartyDocument, sourceAccount: item.sourceAccount, destinationAccount: item.destinationAccount, created: new Date().toISOString() }));
     if (!entries.length) return;
     setIsImporting(true);
     try {
@@ -466,7 +492,7 @@ export const ConciliationScreen: React.FC<ConciliationScreenProps> = ({
             Conciliação Bancária
           </h2>
           <p className="text-xs text-[#69778c] mt-1">
-            Aceita OFX, CSV, TXT, PDF e comprovantes em imagem. Despesas como luz e água alimentam o DRE automaticamente.
+            Aceita OFX, CSV, TXT, PDF, Excel e Word (.docx com OFX). A prévia fica protegida até sua confirmação; transferências entre empresas podem ser marcadas para não entrar no DRE.
           </p>
         </div>
 
@@ -563,7 +589,7 @@ export const ConciliationScreen: React.FC<ConciliationScreenProps> = ({
           Arraste seu arquivo de extrato ou selecione no dispositivo
         </h3>
         <p className="text-xs text-[#69778c] mt-1 max-w-md mx-auto">
-            Formatos compatíveis: <b>Excel</b> (.xlsx/.xls), <b>Word</b> (.docx com OFX), <b>CSV</b>, <b>PDF</b>, OFX e TXT. Para Word antigo (.doc), salve como .docx. A leitura ocorre no navegador e a gravação só acontece após sua confirmação.
+            Formatos compatíveis: <b>Excel</b> (.xlsx/.xls), <b>Word</b> (.docx com OFX), <b>CSV</b>, <b>PDF</b>, OFX e TXT. Acentos de arquivos UTF-8, Windows-1252 e ISO-8859-1 são normalizados. Para Word antigo (.doc), salve como .docx. A gravação só acontece após sua confirmação.
         </p>
 
         <div className="mt-4 flex items-center justify-center gap-3">
@@ -604,7 +630,7 @@ export const ConciliationScreen: React.FC<ConciliationScreenProps> = ({
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[#e5eaf1]">
           <div>
             <h3 className="text-sm font-bold text-[#152238]">Revisar Correspondências</h3>
-            <p className="text-[11px] text-[#69778c]">Marque os itens validados para conciliar em lote.</p>
+            <p className="text-[11px] text-[#69778c]">Marque os itens validados para conciliar em lote. Transferências entre empresas continuam registradas para auditoria, mas não entram no DRE.</p>
           </div>
 
           <div className="flex items-center gap-1 bg-[#f8faff] p-1 rounded-lg border border-[#e5eaf1]">

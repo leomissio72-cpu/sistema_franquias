@@ -5,6 +5,7 @@ import crypto from "crypto";
 import { get, put } from "@vercel/blob";
 import { initialBills } from "./data/initialData.ts";
 import { cookieOptions, createSignedSessionToken, getCredential, hashPassword, migrateLegacyCredentials, safeUser, setCredential, stripSensitiveFields, verifyPassword, verifySignedSessionToken } from "./serverSecurity.ts";
+import { findIntercompanyRule } from "./utils/intercompany.ts";
 
 const app = express();
 
@@ -30,30 +31,22 @@ function requireSession(req: Request, res: ExpressResponse, next: any) {
   const bearerToken = authHeader?.startsWith("Bearer ") ? authHeader.slice(7).trim() : authHeader;
   const token = cookieToken || bearerToken;
   const session = token ? verifySignedSessionToken(token) : null;
-  let user = session ? db.users.find((candidate: any) => candidate.id === session.sub) : null;
-  
-  if (session && !user) {
-    user = db.users.find((candidate: any) => candidate.perfil === "dono" || candidate.login === "admin") || db.users[0];
+  const user = session ? db.users.find((candidate: any) => candidate.id === session.sub) : null;
+  const credential = user ? getCredential(db, user.id) : null;
+  if (!session || !user || user.status === "inativo" || (credential && Number(session.cv) !== Number(credential.version))) {
+    return res.status(401).json({ error: "Sessão expirada. Faça login novamente." });
   }
 
-  const clientProfile = req.header("x-user-profile") || req.body?.userProfile;
-  const clientLogin = req.header("x-user-login") || req.body?.userLogin;
-  if (!user && (clientProfile || clientLogin)) {
-    user = db.users.find((candidate: any) => (clientLogin && candidate.login === clientLogin) || (clientProfile && candidate.perfil === clientProfile)) || db.users.find((candidate: any) => candidate.perfil === "dono") || db.users[0];
-  }
-
-  if (!user && !session) {
-    const fallbackMaster = db.users.find((u: any) => u.perfil === "dono" || u.login === "admin");
-    if (fallbackMaster) {
-      user = fallbackMaster;
-    } else {
-      return res.status(401).json({ error: "Sessão expirada. Faça login novamente." });
-    }
-  }
-
-  const safeUserData = user ? safeUser(user) : { id: "u1", perfil: "dono", nome: "Administrador" };
-  (req as any).auth = { ...session, user: safeUserData, userId: user?.id || "u1", expiresAt: session?.exp || Date.now() + 8 * 60 * 60 * 1000 };
+  (req as any).auth = { ...session, user: safeUser(user), userId: user.id, expiresAt: session.exp };
   next();
+}
+
+function requireWhatsAppRole(req: Request, res: ExpressResponse, next: any) {
+  const profile = String((req as any).auth?.user?.perfil || "").toLowerCase();
+  if (!["dono", "equipe", "admin"].includes(profile)) {
+    return res.status(403).json({ error: "Seu perfil não está autorizado a configurar ou disparar mensagens pelo WhatsApp." });
+  }
+  return next();
 }
 
 app.use(async (req, res, next) => {
@@ -71,9 +64,6 @@ app.use((req, res, next) => {
     "/api/auth/logout", "/auth/logout",
     "/api/auth/mfa", "/auth/mfa",
     "/api/auth/bootstrap", "/auth/bootstrap",
-    "/api/whatsapp/config", "/whatsapp/config",
-    "/api/whatsapp/history", "/whatsapp/history",
-    "/api/whatsapp/send", "/whatsapp/send",
     "/api/events", "/events"
   ].includes(req.path);
   if (openPath || !req.path.startsWith("/api")) return next();
@@ -99,12 +89,12 @@ function getWhatsAppCloudConfig() {
 function getWhatsAppConfigResponse(database: DatabaseState) {
   const cloud = getWhatsAppCloudConfig();
   const providerReady = Boolean(cloud.accessToken && cloud.phoneNumberId);
+  const storedConfig = database.whatsappConfig || {};
   return {
-    ...(database.whatsappConfig || {}),
-    senderPhone: database.whatsappConfig?.senderPhone || "",
+    senderPhone: storedConfig.senderPhone || "",
     connectionStatus: providerReady ? "conectado" : "desconectado",
-    minInterval: Number(database.whatsappConfig?.minInterval) || 3,
-    maxInterval: Number(database.whatsappConfig?.maxInterval) || 8,
+    minInterval: Number(storedConfig.minInterval) || 3,
+    maxInterval: Number(storedConfig.maxInterval) || 8,
     provider: "meta_cloud_api",
     providerReady,
     providerMessage: providerReady
@@ -137,7 +127,7 @@ async function hydrateDatabaseFromBlob() {
         // Após esta migração, o marcador permite que uma exclusão intencional para
         // zero seja respeitada nas próximas inicializações.
         const explicitEmpty = new Set<string>(Array.isArray(parsed.emptySections) ? parsed.emptySections : []);
-        const collections = ["businesses", "franchises", "employees", "users", "manualEntries", "bills", "products", "suppliers", "whatsappHistory"];
+        const collections = ["businesses", "franchises", "employees", "users", "manualEntries", "bills", "products", "suppliers", "whatsappHistory", "intercompanyRules"];
         const mergedState: DatabaseState = { ...localState, ...(parsed as DatabaseState), durableInitialized: true };
         let mergedLegacyData = false;
         for (const section of collections) {
@@ -344,6 +334,7 @@ interface DatabaseState {
   whatsappHistory?: any[];
   products?: any[];
   suppliers?: any[];
+  intercompanyRules?: any[];
   emptySections?: string[];
   durableInitialized?: boolean;
 }
@@ -421,6 +412,7 @@ function loadDatabase(): DatabaseState {
     whatsappHistory: [],
     products: [],
     suppliers: [],
+    intercompanyRules: [],
   };
 
   try {
@@ -439,7 +431,7 @@ function loadDatabase(): DatabaseState {
 async function saveDatabase(data: DatabaseState) {
   data.lastUpdated = new Date().toISOString();
   data.durableInitialized = true;
-  const sections = ["businesses", "franchises", "employees", "users", "manualEntries", "bills", "products", "suppliers", "whatsappHistory"];
+  const sections = ["businesses", "franchises", "employees", "users", "manualEntries", "bills", "products", "suppliers", "whatsappHistory", "intercompanyRules"];
   data.emptySections = sections.filter((section) => Array.isArray((data as any)[section]) && (data as any)[section].length === 0);
   try {
     const localBackup = path.join(process.cwd(), "data", "database.json");
@@ -480,6 +472,7 @@ function getFullState(database: DatabaseState) {
     whatsappHistory: database.whatsappHistory || [],
     products: database.products || [],
     suppliers: database.suppliers || [],
+    intercompanyRules: database.intercompanyRules || [],
     systemSettings: database.systemSettings || {
       appName: "Gestão de Franquias",
       companyName: "Gestão de Franquias S.A.",
@@ -778,10 +771,14 @@ routeBoth("post", "/api/state/sync", requireSession, async (req: Request, res: E
   const effectiveProfile = authenticatedUser?.perfil || userProfile;
   const effectiveTenant = authenticatedUser?.unidade || userTenant;
   const userName = user || "Sistema";
+  const canManageIntercompany = ["dono", "equipe", "admin"].includes(String(effectiveProfile || "").toLowerCase());
 
   if (batch && typeof batch === "object") {
     for (const [sec, secData] of Object.entries(batch)) {
       if (secData !== undefined) {
+        if (sec === "intercompanyRules" && !canManageIntercompany) {
+          return res.status(403).json({ error: "Seu perfil não pode alterar as regras entre empresas." });
+        }
         if (sec === "manualEntries" && Array.isArray(secData)) {
           const validation = validateManualEntriesSync(secData, authenticatedUser);
           if (!validation.ok) return res.status(403).json({ error: validation.error });
@@ -806,6 +803,9 @@ routeBoth("post", "/api/state/sync", requireSession, async (req: Request, res: E
 
   let data = incomingData;
   if (section && data !== undefined) {
+    if (section === "intercompanyRules" && !canManageIntercompany) {
+      return res.status(403).json({ error: "Seu perfil não pode alterar as regras entre empresas." });
+    }
     if (section === "manualEntries" && Array.isArray(data)) {
       const validation = validateManualEntriesSync(data, authenticatedUser);
       if (!validation.ok) return res.status(403).json({ error: validation.error });
@@ -900,6 +900,25 @@ function manualEntryIdentity(entry: any): string {
   ].join("|");
 }
 
+function applyIntercompanyRule(entry: any): any {
+  if (entry?.isIntercompany || entry?.excludedFromDre || entry?.catId === "intercompany") return entry;
+  const tenantId = String(entry?.tenant || "dono");
+  const businessId = entry?.businessId
+    || db.franchises.find((franchise: any) => franchise.id === tenantId)?.businessId
+    || (tenantId.startsWith("biz") ? tenantId : undefined);
+  const rule = findIntercompanyRule(entry, db.intercompanyRules || [], { tenantId, businessId });
+  if (!rule) return entry;
+  return {
+    ...entry,
+    catId: "intercompany",
+    catName: "Transferência entre empresas",
+    isIntercompany: true,
+    excludedFromDre: true,
+    intercompanyRuleId: rule.id,
+    intercompanyReason: `Regra "${rule.name}"`,
+  };
+}
+
 function canUserAccessEntryTenant(user: any, tenantId: string): boolean {
   const profile = String(user?.perfil || "").toLowerCase();
   const tenant = String(tenantId || "").trim();
@@ -963,12 +982,12 @@ routeBoth("post", "/api/entries", requireSession, async (req: Request, res: Expr
     return res.json({ success: true, duplicate: true, entry: duplicate, state: getFullState(db) });
   }
 
-  const entry = {
+  const entry = applyIntercompanyRule({
     id: `m_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
     ...newEntry,
     tenant: entryTenant,
     created: new Date().toISOString(),
-  };
+  });
 
   db.manualEntries.unshift(entry);
   await saveDatabase(db);
@@ -996,7 +1015,7 @@ routeBoth("post", "/api/entries/bulk", requireSession, async (req: Request, res:
 
   entries.forEach((item, index) => {
     if (item.desc && item.value !== undefined && item.value !== null && item.value !== "" && item.date) {
-      const candidate = { ...item, tenant: item.tenant || "dono" };
+      const candidate = applyIntercompanyRule({ ...item, tenant: item.tenant || "dono" });
       const identity = manualEntryIdentity(candidate);
       if (knownKeys.has(identity)) {
         duplicateEntries.push(item);
@@ -1040,12 +1059,17 @@ routeBoth("delete", "/api/entries/:id", requireSession, async (req: Request, res
 });
 
 // 7. WhatsApp Messaging Dispatch Module
-routeBoth("get", "/api/whatsapp/config", (req: Request, res: ExpressResponse) => {
+routeBoth("get", "/api/whatsapp/config", requireSession, (req: Request, res: ExpressResponse) => {
   res.json(getWhatsAppConfigResponse(db));
 });
 
-routeBoth("post", "/api/whatsapp/config", requireSession, async (req: Request, res: ExpressResponse) => {
-  const updates = req.body || {};
+routeBoth("post", "/api/whatsapp/config", requireSession, requireWhatsAppRole, async (req: Request, res: ExpressResponse) => {
+  const body = req.body || {};
+  const updates = {
+    ...(body.senderPhone !== undefined ? { senderPhone: String(body.senderPhone).slice(0, 40) } : {}),
+    ...(body.minInterval !== undefined ? { minInterval: Math.max(0, Math.min(3600, Number(body.minInterval) || 0)) } : {}),
+    ...(body.maxInterval !== undefined ? { maxInterval: Math.max(0, Math.min(3600, Number(body.maxInterval) || 0)) } : {}),
+  };
   db.whatsappConfig = {
     ...(db.whatsappConfig || {
       senderPhone: "+55 (11) 98888-0000",
@@ -1059,11 +1083,11 @@ routeBoth("post", "/api/whatsapp/config", requireSession, async (req: Request, r
   res.json({ success: true, config: getWhatsAppConfigResponse(db) });
 });
 
-routeBoth("get", "/api/whatsapp/history", (req: Request, res: ExpressResponse) => {
+routeBoth("get", "/api/whatsapp/history", requireSession, (req: Request, res: ExpressResponse) => {
   res.json({ history: db.whatsappHistory || [] });
 });
 
-routeBoth("post", "/api/whatsapp/history", requireSession, async (req: Request, res: ExpressResponse) => {
+routeBoth("post", "/api/whatsapp/history", requireSession, requireWhatsAppRole, async (req: Request, res: ExpressResponse) => {
   const { history } = req.body || {};
   if (Array.isArray(history)) {
     db.whatsappHistory = history;
@@ -1072,7 +1096,7 @@ routeBoth("post", "/api/whatsapp/history", requireSession, async (req: Request, 
   res.json({ success: true, count: (db.whatsappHistory || []).length });
 });
 
-routeBoth("post", "/api/whatsapp/send", requireSession, async (req: Request, res: ExpressResponse) => {
+routeBoth("post", "/api/whatsapp/send", requireSession, requireWhatsAppRole, async (req: Request, res: ExpressResponse) => {
   const { senderPhone, recipientPhone, recipientName, message, company } = req.body || {};
   if (!recipientPhone || !message) {
     return res.status(400).json({ success: false, error: "Destinatário e mensagem são obrigatórios." });

@@ -6,6 +6,7 @@ import {
   VTConfig,
   BillItem,
   UserSession,
+  IntercompanyRule,
 } from "../../types";
 import { RpScreen } from "./RpScreen";
 import { ConciliationScreen } from "./ConciliationScreen";
@@ -27,9 +28,11 @@ export type PagamentoSubTab = "rp" | "conciliation" | "lancamentos" | "vt";
 
 interface PagamentosDespesasScreenProps {
   currentTenantId: string;
+  currentBusinessId?: string;
   userSession: UserSession;
   franchises: FranchiseUnit[];
   manualEntries: ManualEntry[];
+  intercompanyRules?: IntercompanyRule[];
   bills: BillItem[];
   onCreateEntry: (entry: Partial<ManualEntry>) => Promise<void>;
   onCreateEntriesBulk: (entries: Array<Partial<ManualEntry>>) => Promise<void>;
@@ -44,9 +47,11 @@ interface PagamentosDespesasScreenProps {
 
 export const PagamentosDespesasScreen: React.FC<PagamentosDespesasScreenProps> = ({
   currentTenantId,
+  currentBusinessId,
   userSession,
   franchises,
   manualEntries,
+  intercompanyRules = [],
   bills,
   onCreateEntry,
   onCreateEntriesBulk,
@@ -187,7 +192,9 @@ export const PagamentosDespesasScreen: React.FC<PagamentosDespesasScreenProps> =
         {activeTab === "conciliation" && (
           <ConciliationScreen
             currentTenantId={currentTenantId}
+            currentBusinessId={currentBusinessId}
             manualEntries={manualEntries}
+            intercompanyRules={intercompanyRules}
             userSession={userSession}
             onNavigate={onNavigate}
             onImportEntries={onCreateEntriesBulk}

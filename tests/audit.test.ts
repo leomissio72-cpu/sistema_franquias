@@ -10,6 +10,7 @@ import {
   setCredential,
   getCredential,
 } from "../src/serverSecurity";
+import { decodeBankText, repairMojibake } from "../src/utils/textEncoding";
 
 // Helper to make local requests to the express app
 function appRequest(
@@ -328,6 +329,102 @@ test("AUDITORIA 8: Importação ignora duplicidades e operador não exclui conci
   saveDatabase(db);
 });
 
+test("AUDITORIA 9: WhatsApp exige sessão assinada e perfil autorizado", async () => {
+  const unauthenticatedConfig = await appRequest("GET", "/api/whatsapp/config");
+  assert.equal(unauthenticatedConfig.status, 401);
+
+  const unauthenticatedSend = await appRequest("POST", "/api/whatsapp/send", {}, {
+    recipientPhone: "+5511999999999",
+    message: "Teste de segurança",
+  });
+  assert.equal(unauthenticatedSend.status, 401);
+
+  const operator = {
+    id: "u_op_whatsapp_test",
+    nome: "Operador WhatsApp",
+    email: "operador-whatsapp@teste.com",
+    login: "op_whatsapp_test",
+    perfil: "operador",
+    unidade: "dono",
+    status: "ativo",
+  };
+  db.users.push(operator);
+  Object.assign(db, setCredential(db, operator.id, "SenhaOperadorWhatsApp2026!"));
+  const credential = getCredential(db, operator.id)!;
+  const token = createSignedSessionToken(operator.id, credential.version, false);
+
+  const authenticatedConfig = await appRequest("GET", "/api/whatsapp/config", {
+    Cookie: `gestao_session=${encodeURIComponent(token)}`,
+  });
+  assert.equal(authenticatedConfig.status, 200);
+  assert.equal(Object.prototype.hasOwnProperty.call(authenticatedConfig.body, "accessToken"), false);
+  assert.equal(Object.prototype.hasOwnProperty.call(authenticatedConfig.body, "phoneNumberId"), false);
+
+  const forbiddenSend = await appRequest("POST", "/api/whatsapp/send", {
+    Cookie: `gestao_session=${encodeURIComponent(token)}`,
+  }, {
+    recipientPhone: "+5511999999999",
+    message: "Teste de autorização",
+  });
+  assert.equal(forbiddenSend.status, 403);
+
+  db.users = db.users.filter((user: any) => user.id !== operator.id);
+  if (db.credentials) delete db.credentials[operator.id];
+  await saveDatabase(db);
+});
+
+test("AUDITORIA 10: Regra intercompany preserva a linha e exclui o lançamento do DRE", async () => {
+  const dono = db.users.find((user: any) => user.perfil === "dono")!;
+  const credential = getCredential(db, dono.id)!;
+  const token = createSignedSessionToken(dono.id, credential.version, true);
+  const previousRules = db.intercompanyRules || [];
+  const rule = {
+    id: `rule_auditoria_${Date.now()}`,
+    name: "Transferência para matriz - auditoria",
+    active: true,
+    scope: "rede",
+    terms: ["TED PARA MATRIZ"],
+    counterpartyDocuments: [],
+    counterpartyAccounts: [],
+  };
+  db.intercompanyRules = [...previousRules, rule];
+  await saveDatabase(db);
+
+  const date = new Date().toISOString().slice(0, 10);
+  const res = await appRequest("POST", "/api/entries/bulk", {
+    Cookie: `gestao_session=${encodeURIComponent(token)}`,
+  }, {
+    entries: [{
+      tenant: "dono",
+      desc: "TED para matriz - transferência interna",
+      value: 987.65,
+      type: "despesa",
+      date,
+      sourceFile: "extrato-intercompany.ofx",
+    }],
+  });
+
+  assert.equal(res.status, 200);
+  assert.equal(res.body.count, 1);
+  const entry = res.body.entries[0];
+  assert.equal(entry.isIntercompany, true);
+  assert.equal(entry.excludedFromDre, true);
+  assert.equal(entry.catId, "intercompany");
+  assert.equal(entry.intercompanyRuleId, rule.id);
+
+  db.manualEntries = db.manualEntries.filter((candidate: any) => candidate.id !== entry.id);
+  db.intercompanyRules = previousRules;
+  await saveDatabase(db);
+});
+
+test("AUDITORIA 11: Texto bancário preserva acentos em UTF-8, mojibake e Windows-1252", () => {
+  assert.equal(repairMojibake("CartÃ£o de DÃ©bito - Stone"), "Cartão de Débito - Stone");
+  assert.equal(repairMojibake("AntecipaÃ§Ã£o"), "Antecipação");
+  const windows1252 = Uint8Array.from([0x43, 0x61, 0x72, 0x74, 0xe3, 0x6f, 0x20, 0x64, 0x65, 0x20, 0xc9, 0x62, 0x69, 0x74, 0x6f]);
+  assert.equal(decodeBankText(windows1252), "Cartão de Ébito");
+  assert.equal(decodeBankText(new TextEncoder().encode("Conciliação;Descrição\n2026-10-05;Antecipação")), "Conciliação;Descrição\n2026-10-05;Antecipação");
+});
+
 after(() => {
   // Limpar resíduos de testes para manter a base limpa
   db.auditLogs = [];
@@ -337,5 +434,7 @@ after(() => {
     delete db.credentials["u_op_test"];
   }
   db.users = (db.users || []).filter((u: any) => u.id !== "u_op_test");
+  db.users = (db.users || []).filter((u: any) => u.id !== "u_op_whatsapp_test");
+  if (db.credentials) delete db.credentials["u_op_whatsapp_test"];
   saveDatabase(db);
 });

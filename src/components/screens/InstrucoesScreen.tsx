@@ -191,6 +191,31 @@ export const InstrucoesScreen: React.FC<InstrucoesScreenProps> = ({
     }
   ];
 
+  const pageGuide: Array<{ title: string; screen: ScreenType; purpose: string; steps: string }> = [
+    { title: "Início", screen: "home", purpose: "Resumo da rede, atalhos e visão do escopo atual.", steps: "Selecione rede, empresa ou unidade e use os atalhos para abrir Analítico, DRE, Conciliação ou Rotinas." },
+    { title: "Rede e Unidades", screen: "network", purpose: "Lista, status e desempenho das unidades.", steps: "Filtre por empresa, unidade, estado e status; clique na unidade para trabalhar dentro do escopo correto." },
+    { title: "Mapa das Unidades", screen: "map", purpose: "Localização geográfica das franquias.", steps: "Confira endereço, cidade e coordenadas; corrija o cadastro se uma unidade não aparecer." },
+    { title: "Analítico", screen: "dashboard", purpose: "Indicadores, gráficos e comparações por período.", steps: "Escolha anos, meses, dias, empresa, unidade, estado e status antes de interpretar os cards." },
+    { title: "DRE e Resultados", screen: "dre", purpose: "Receita, CMV, impostos, royalties, despesas e lucro.", steps: "Selecione o escopo e o período; confira os parâmetros e valide transferências intercompany fora dos totais." },
+    { title: "Taxas e Recebimentos", screen: "fees", purpose: "Meios de pagamento, taxas e prazos de liquidação.", steps: "Revise Pix, débito, crédito, dinheiro e transferência; salve alterações autorizadas." },
+    { title: "Parâmetros do DRE", screen: "dreparams", purpose: "Percentuais e despesas usados na demonstração.", steps: "Selecione o tenant, altere os percentuais, observe a prévia e clique em Salvar." },
+    { title: "Lançamentos Manuais", screen: "lancamentos", purpose: "Entradas e despesas que não vieram do extrato.", steps: "Informe data, tipo, valor, descrição e categoria; lançamentos intercompany mantêm histórico, mas não entram no DRE." },
+    { title: "Conciliação Bancária", screen: "conciliation", purpose: "Leitura, revisão e confirmação de extratos.", steps: "Envie OFX, TXT, CSV, Excel, PDF ou DOCX com OFX; revise a prévia, aprove/rejeite/edite e confirme." },
+    { title: "Upload de Bases", screen: "import_base", purpose: "Atalho para iniciar importações bancárias.", steps: "Use o mesmo fluxo da Conciliação e confirme o tenant antes do upload." },
+    { title: "Vale Transporte", screen: "vt", purpose: "Cálculo e registro do vale-transporte.", steps: "Confira funcionários, conduções, tarifas, dias e faltas; revise antes de registrar o pagamento." },
+    { title: "Rotinas / RP", screen: "rp", purpose: "Contas a pagar, vencimentos e semáforo financeiro.", steps: "Cadastre vencimento, valor e categoria; filtre vencidos, hoje, próximos, agendados e pagos." },
+    { title: "Pagamentos / Despesas", screen: "pagamentos_despesas", purpose: "Módulo que reúne Rotinas, Conciliação, Lançamentos e VT.", steps: "Use as abas internas sem perder a unidade selecionada no cabeçalho." },
+    { title: "Permissões e Royalties", screen: "permissoes", purpose: "Matriz de perfis e visão de repasses.", steps: "Consulte o escopo de cada perfil e ajuste royalties apenas com autorização." },
+    { title: "Cadastro de Franqueados", screen: "tenants", purpose: "Cadastro e edição das lojas/unidades.", steps: "Informe marca, nome, código, responsável, localização, faturamento e contatos; salve e aguarde a confirmação." },
+    { title: "Cadastro de Funcionários", screen: "employees", purpose: "Equipe, cargos, unidade, login e VT.", steps: "Cadastre cargo e unidade; desative acessos antigos em vez de reutilizar credenciais." },
+    { title: "Acessos e Logins", screen: "users", purpose: "Usuários, perfis, senhas e escopos.", steps: "Crie o acesso com perfil e unidade corretos; cada pessoa deve usar seu próprio login." },
+    { title: "Disparo WhatsApp", screen: "whatsapp", purpose: "Envio pela WhatsApp Cloud API oficial.", steps: "Configure o provedor no Vercel; somente Dono, Equipe e Admin podem disparar e o sucesso depende da resposta real da Meta." },
+    { title: "Configurações", screen: "configuracao", purpose: "Marcas, unidades, fornecedores, parâmetros, regras e auditoria.", steps: "Use Transferências entre Empresas para termos, CNPJ/CPF e contas que não devem entrar no DRE." },
+    { title: "Preferências do Usuário", screen: "settings", purpose: "Preferências de aparência e comportamento pessoal.", steps: "Ajuste tema e preferências sem alterar os dados financeiros da rede." },
+    { title: "Fornecedores e Produtos Homologados", screen: "produtos", purpose: "Catálogo de fornecedores e produtos por escopo.", steps: "Cadastre, edite e revise vínculos antes de excluir um item usado pela operação." },
+    { title: "Instruções & Ajuda", screen: "instrucoes", purpose: "Central de orientação e FAQ.", steps: "Use as categorias, a busca e os botões de navegação para abrir a página desejada." },
+  ];
+
   const faqs = [
     {
       q: "Quem tem permissão para alterar as taxas de royalties?",
@@ -377,6 +402,28 @@ export const InstrucoesScreen: React.FC<InstrucoesScreenProps> = ({
                 </div>
               </div>
             ))}
+          </div>
+
+          <div className="rounded-2xl border border-[#e5eaf1] bg-white p-5 shadow-xs">
+            <div className="flex items-center justify-between gap-3 border-b border-[#e5eaf1] pb-3">
+              <div>
+                <h3 className="text-sm font-extrabold text-[#152238]">Guia rápido de cada página</h3>
+                <p className="mt-0.5 text-xs text-[#69778c]">Consulte a finalidade e o primeiro passo sem sair da Central de Ajuda.</p>
+              </div>
+              <BookOpen className="h-5 w-5 text-[#3c63da]" />
+            </div>
+            <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
+              {pageGuide.map((page) => (
+                <div key={page.screen} className="rounded-xl border border-[#e5eaf1] bg-[#f8faff] p-3">
+                  <div className="flex items-start justify-between gap-2">
+                    <h4 className="text-xs font-extrabold text-[#152238]">{page.title}</h4>
+                    <button type="button" onClick={() => onNavigate(page.screen)} className="shrink-0 rounded-md p-1 text-[#3c63da] hover:bg-[#edf2ff]" title={`Abrir ${page.title}`}><ChevronRight className="h-3.5 w-3.5" /></button>
+                  </div>
+                  <p className="mt-1 text-[11px] font-semibold text-[#475569]">{page.purpose}</p>
+                  <p className="mt-1.5 text-[10px] leading-relaxed text-[#69778c]">{page.steps}</p>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       )}

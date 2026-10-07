@@ -9,7 +9,8 @@ import {
   UserAccount,
   RegisteredSupplier,
   HomologatedProduct,
-  DreParams
+  DreParams,
+  IntercompanyRule
 } from "../../types";
 import AccessManagementPanel from "../AccessManagementPanel";
 import SupplierManager from "../SupplierManager";
@@ -49,7 +50,8 @@ import {
   Trash2,
   PackageCheck,
   Tag,
-  X
+  X,
+  ArrowLeftRight
 } from "lucide-react";
 
 interface ConfiguracaoScreenProps {
@@ -76,12 +78,14 @@ interface ConfiguracaoScreenProps {
   onSaveSuppliers?: (suppliers: RegisteredSupplier[]) => Promise<void>;
   onSaveProducts?: (products: HomologatedProduct[]) => Promise<void>;
   onSaveDreParams?: (tenantId: string, params: any) => Promise<void>;
+  intercompanyRules?: IntercompanyRule[];
+  onSaveIntercompanyRules?: (rules: IntercompanyRule[]) => Promise<void>;
   onResetDatabase?: () => Promise<void>;
   onRefresh: () => void;
   isSaving: boolean;
 }
 
-export type ConfigTab = "preferencias" | "marcas" | "configs" | "dreparams" | "permissoes" | "royalties" | "fornecedores" | "franqueados" | "audit" | "deploy";
+export type ConfigTab = "preferencias" | "marcas" | "configs" | "intercompany" | "dreparams" | "permissoes" | "royalties" | "fornecedores" | "franqueados" | "audit" | "deploy";
 
 export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
   configs,
@@ -108,6 +112,8 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
   onSaveSuppliers,
   onSaveProducts,
   onSaveDreParams,
+  intercompanyRules = [],
+  onSaveIntercompanyRules,
   onRefresh,
   isSaving,
 }) => {
@@ -183,6 +189,20 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
   const [savedStatus, setSavedStatus] = useState<Record<string, boolean>>({});
   const [errorMessage, setErrorMessage] = useState<string>("");
   const [successMessage, setSuccessMessage] = useState<string>("");
+
+  const [intercompanyList, setIntercompanyList] = useState<IntercompanyRule[]>(intercompanyRules);
+  const [intercompanyForm, setIntercompanyForm] = useState({
+    name: "",
+    active: true,
+    scope: "rede" as IntercompanyRule["scope"],
+    businessId: "",
+    tenantId: "",
+    terms: "",
+    counterpartyDocuments: "",
+    counterpartyAccounts: "",
+  });
+  const [editingIntercompanyId, setEditingIntercompanyId] = useState<string | null>(null);
+  const [isSavingIntercompany, setIsSavingIntercompany] = useState(false);
 
   // 2. Royalties State
   const [royaltyRates, setRoyaltyRates] = useState<Record<string, number>>(royalties);
@@ -271,6 +291,96 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
   React.useEffect(() => {
     setProductList(products);
   }, [products]);
+
+  React.useEffect(() => {
+    setIntercompanyList(intercompanyRules);
+  }, [intercompanyRules]);
+
+  const resetIntercompanyForm = () => {
+    setIntercompanyForm({ name: "", active: true, scope: "rede", businessId: "", tenantId: "", terms: "", counterpartyDocuments: "", counterpartyAccounts: "" });
+    setEditingIntercompanyId(null);
+  };
+
+  const splitRuleValues = (value: string) => value.split(/[\n,;]+/).map((item) => item.trim()).filter(Boolean);
+
+  const handleSaveIntercompanyRule = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!isOwner) return;
+    const terms = splitRuleValues(intercompanyForm.terms);
+    const counterpartyDocuments = splitRuleValues(intercompanyForm.counterpartyDocuments);
+    const counterpartyAccounts = splitRuleValues(intercompanyForm.counterpartyAccounts);
+    if (!intercompanyForm.name.trim() || (!terms.length && !counterpartyDocuments.length && !counterpartyAccounts.length)) {
+      setErrorMessage("Informe um nome e pelo menos um termo, CNPJ/CPF ou conta/PIX de contraparte.");
+      return;
+    }
+    if (intercompanyForm.scope === "empresa" && !intercompanyForm.businessId) {
+      setErrorMessage("Selecione a empresa à qual a regra será aplicada.");
+      return;
+    }
+    if (intercompanyForm.scope === "unidade" && !intercompanyForm.tenantId) {
+      setErrorMessage("Selecione a unidade à qual a regra será aplicada.");
+      return;
+    }
+    const now = new Date().toISOString();
+    const existing = editingIntercompanyId ? intercompanyList.find((rule) => rule.id === editingIntercompanyId) : undefined;
+    const rule: IntercompanyRule = {
+      id: editingIntercompanyId || `intercompany_${Date.now()}`,
+      name: intercompanyForm.name.trim(),
+      active: intercompanyForm.active,
+      scope: intercompanyForm.scope,
+      businessId: intercompanyForm.scope === "empresa" ? intercompanyForm.businessId : undefined,
+      tenantId: intercompanyForm.scope === "unidade" ? intercompanyForm.tenantId : undefined,
+      terms,
+      counterpartyDocuments,
+      counterpartyAccounts,
+      createdAt: existing?.createdAt || now,
+      updatedAt: now,
+    };
+    const updated = [...intercompanyList.filter((item) => item.id !== rule.id), rule];
+    setIsSavingIntercompany(true);
+    try {
+      await onSaveIntercompanyRules?.(updated);
+      setIntercompanyList(updated);
+      resetIntercompanyForm();
+      setSuccessMessage("Regra entre empresas salva na nuvem. Novas importações já poderão marcá-la para fora do DRE.");
+      setTimeout(() => setSuccessMessage(""), 4500);
+    } catch (error: any) {
+      setErrorMessage(error?.message || "Não foi possível salvar a regra entre empresas.");
+    } finally {
+      setIsSavingIntercompany(false);
+    }
+  };
+
+  const handleEditIntercompanyRule = (rule: IntercompanyRule) => {
+    setEditingIntercompanyId(rule.id);
+    setIntercompanyForm({
+      name: rule.name,
+      active: rule.active,
+      scope: rule.scope,
+      businessId: rule.businessId || "",
+      tenantId: rule.tenantId || "",
+      terms: rule.terms.join("\n"),
+      counterpartyDocuments: (rule.counterpartyDocuments || []).join("\n"),
+      counterpartyAccounts: (rule.counterpartyAccounts || []).join("\n"),
+    });
+  };
+
+  const handleDeleteIntercompanyRule = async (ruleId: string) => {
+    if (!isOwner || !confirm("Excluir esta regra? Lançamentos já marcados continuarão no histórico e não serão apagados.")) return;
+    const updated = intercompanyList.filter((rule) => rule.id !== ruleId);
+    setIsSavingIntercompany(true);
+    try {
+      await onSaveIntercompanyRules?.(updated);
+      setIntercompanyList(updated);
+      if (editingIntercompanyId === ruleId) resetIntercompanyForm();
+      setSuccessMessage("Regra excluída. Nenhum lançamento histórico foi apagado.");
+      setTimeout(() => setSuccessMessage(""), 3500);
+    } catch (error: any) {
+      setErrorMessage(error?.message || "Não foi possível excluir a regra.");
+    } finally {
+      setIsSavingIntercompany(false);
+    }
+  };
 
   React.useEffect(() => {
     setBusinessList(businesses);
@@ -902,6 +1012,18 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
         >
           <CloudCog className="h-3.5 w-3.5" />
           <span>Regras do Sistema</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab("intercompany")}
+          className={`flex items-center gap-1.5 rounded-lg px-3.5 py-2 text-xs font-bold transition-all cursor-pointer ${
+            activeTab === "intercompany"
+              ? "bg-[#3c63da] text-white shadow-xs"
+              : "text-[#69778c] hover:bg-[#f4f7fb] hover:text-[#152238]"
+          }`}
+        >
+          <ArrowLeftRight className="h-3.5 w-3.5" />
+          <span>Transferências entre Empresas</span>
         </button>
 
         <button
@@ -1575,6 +1697,132 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
                 </div>
               );
             })}
+          </div>
+        </div>
+      )}
+
+      {/* ------------------------------------------------------------- */}
+      {/* 1.5 ABA: TRANSFERÊNCIAS ENTRE EMPRESAS                         */}
+      {/* ------------------------------------------------------------- */}
+      {activeTab === "intercompany" && (
+        <div className="space-y-4">
+          <div className="rounded-2xl border border-amber-200 bg-gradient-to-r from-amber-50 to-orange-50 p-5 shadow-xs">
+            <div className="flex items-start gap-3">
+              <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-amber-100 text-amber-700">
+                <ArrowLeftRight className="h-4 w-4" />
+              </div>
+              <div>
+                <h3 className="text-sm font-extrabold text-amber-950">Transferências entre empresas</h3>
+                <p className="mt-1 text-xs leading-relaxed text-amber-900/80">
+                  A regra não apaga o lançamento: ela mantém o extrato e a origem para auditoria, mas marca a movimentação como <b>fora do DRE e dos totais operacionais</b>. A classificação ocorre na prévia da conciliação e é revalidada no servidor.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)]">
+            <form onSubmit={handleSaveIntercompanyRule} className="rounded-2xl border border-[#e5eaf1] bg-white p-5 shadow-xs space-y-3">
+              <div className="flex items-center justify-between gap-3 border-b border-[#e5eaf1] pb-3">
+                <div>
+                  <h3 className="text-sm font-extrabold text-[#152238]">{editingIntercompanyId ? "Editar regra" : "Nova regra"}</h3>
+                  <p className="mt-0.5 text-[11px] text-[#69778c]">Use um termo por linha. Acentos e pontuação são normalizados.</p>
+                </div>
+                {editingIntercompanyId && <button type="button" onClick={resetIntercompanyForm} className="rounded-lg px-2 py-1 text-[11px] font-bold text-[#69778c] hover:bg-[#f4f7fb]">Cancelar edição</button>}
+              </div>
+
+              <label className="block text-[10px] font-extrabold uppercase tracking-wider text-[#69778c]">
+                Nome da regra *
+                <input required value={intercompanyForm.name} onChange={(event) => setIntercompanyForm((form) => ({ ...form, name: event.target.value }))} placeholder="Ex.: TED para a matriz" className="mt-1 w-full rounded-lg border border-[#cbd5e1] bg-white px-3 py-2 text-xs font-semibold normal-case text-[#152238]" />
+              </label>
+
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <label className="block text-[10px] font-extrabold uppercase tracking-wider text-[#69778c]">
+                  Escopo da regra
+                  <select value={intercompanyForm.scope} onChange={(event) => setIntercompanyForm((form) => ({ ...form, scope: event.target.value as IntercompanyRule["scope"] }))} className="mt-1 w-full rounded-lg border border-[#cbd5e1] bg-white px-3 py-2 text-xs font-semibold normal-case text-[#152238]">
+                    <option value="rede">Toda a rede</option>
+                    <option value="empresa">Uma empresa / marca</option>
+                    <option value="unidade">Uma unidade</option>
+                  </select>
+                </label>
+                <label className="flex items-center gap-2 rounded-lg border border-[#e5eaf1] bg-[#f8faff] px-3 py-2 text-xs font-bold text-[#152238]">
+                  <input type="checkbox" checked={intercompanyForm.active} onChange={(event) => setIntercompanyForm((form) => ({ ...form, active: event.target.checked }))} />
+                  Regra ativa para novas importações
+                </label>
+              </div>
+
+              {intercompanyForm.scope === "empresa" && (
+                <label className="block text-[10px] font-extrabold uppercase tracking-wider text-[#69778c]">
+                  Empresa / marca *
+                  <select value={intercompanyForm.businessId} onChange={(event) => setIntercompanyForm((form) => ({ ...form, businessId: event.target.value }))} className="mt-1 w-full rounded-lg border border-[#cbd5e1] bg-white px-3 py-2 text-xs font-semibold normal-case text-[#152238]">
+                    <option value="">Selecione a empresa</option>
+                    {businessList.map((business) => <option key={business.id} value={business.id}>{business.name || business.brand}</option>)}
+                  </select>
+                </label>
+              )}
+
+              {intercompanyForm.scope === "unidade" && (
+                <label className="block text-[10px] font-extrabold uppercase tracking-wider text-[#69778c]">
+                  Unidade *
+                  <select value={intercompanyForm.tenantId} onChange={(event) => setIntercompanyForm((form) => ({ ...form, tenantId: event.target.value }))} className="mt-1 w-full rounded-lg border border-[#cbd5e1] bg-white px-3 py-2 text-xs font-semibold normal-case text-[#152238]">
+                    <option value="">Selecione a unidade</option>
+                    {franchiseList.map((franchise) => <option key={franchise.id} value={franchise.id}>{franchise.name} ({franchise.code})</option>)}
+                  </select>
+                </label>
+              )}
+
+              <label className="block text-[10px] font-extrabold uppercase tracking-wider text-[#69778c]">
+                Termos do histórico / descrição
+                <textarea rows={3} value={intercompanyForm.terms} onChange={(event) => setIntercompanyForm((form) => ({ ...form, terms: event.target.value }))} placeholder={'TED MATRIZ\nTRANSFERENCIA ENTRE EMPRESAS\nREPASSE INTERNO'} className="mt-1 w-full rounded-lg border border-[#cbd5e1] bg-white px-3 py-2 text-xs font-semibold normal-case text-[#152238]" />
+              </label>
+
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <label className="block text-[10px] font-extrabold uppercase tracking-wider text-[#69778c]">
+                  CNPJ / CPF da contraparte
+                  <textarea rows={2} value={intercompanyForm.counterpartyDocuments} onChange={(event) => setIntercompanyForm((form) => ({ ...form, counterpartyDocuments: event.target.value }))} placeholder="Um documento por linha" className="mt-1 w-full rounded-lg border border-[#cbd5e1] bg-white px-3 py-2 text-xs font-semibold normal-case text-[#152238]" />
+                </label>
+                <label className="block text-[10px] font-extrabold uppercase tracking-wider text-[#69778c]">
+                  Conta / PIX da contraparte
+                  <textarea rows={2} value={intercompanyForm.counterpartyAccounts} onChange={(event) => setIntercompanyForm((form) => ({ ...form, counterpartyAccounts: event.target.value }))} placeholder="Conta, agência ou chave por linha" className="mt-1 w-full rounded-lg border border-[#cbd5e1] bg-white px-3 py-2 text-xs font-semibold normal-case text-[#152238]" />
+                </label>
+              </div>
+
+              <button type="submit" disabled={!isOwner || isSavingIntercompany} className="inline-flex w-full items-center justify-center gap-1.5 rounded-xl bg-[#3c63da] px-4 py-2.5 text-xs font-extrabold text-white hover:bg-[#2f52c0] disabled:cursor-not-allowed disabled:opacity-50">
+                <Save className="h-3.5 w-3.5" />
+                {isSavingIntercompany ? "Salvando na nuvem..." : editingIntercompanyId ? "Salvar alterações" : "Salvar regra na nuvem"}
+              </button>
+            </form>
+
+            <div className="rounded-2xl border border-[#e5eaf1] bg-white p-5 shadow-xs">
+              <div className="flex items-center justify-between gap-3 border-b border-[#e5eaf1] pb-3">
+                <div>
+                  <h3 className="text-sm font-extrabold text-[#152238]">Regras salvas ({intercompanyList.length})</h3>
+                  <p className="mt-0.5 text-[11px] text-[#69778c]">Aplicadas apenas a novas leituras; históricos não são apagados ao editar.</p>
+                </div>
+                <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2 py-1 text-[10px] font-extrabold text-emerald-700">Rastreável</span>
+              </div>
+              <div className="mt-3 space-y-2">
+                {intercompanyList.length === 0 ? (
+                  <div className="rounded-xl border border-dashed border-[#cbd5e1] bg-[#f8faff] p-6 text-center text-xs text-[#69778c]">Nenhuma regra cadastrada. Aguarde os dados das empresas e cadastre os termos exatos do extrato.</div>
+                ) : intercompanyList.map((rule) => (
+                  <div key={rule.id} className="rounded-xl border border-[#e5eaf1] bg-[#f8faff] p-3">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <div className="flex flex-wrap items-center gap-1.5">
+                          <b className="text-xs text-[#152238]">{rule.name}</b>
+                          <span className={`rounded-full px-2 py-0.5 text-[9px] font-extrabold ${rule.active ? "bg-emerald-50 text-emerald-700" : "bg-slate-100 text-slate-500"}`}>{rule.active ? "Ativa" : "Pausada"}</span>
+                          <span className="rounded-full bg-amber-50 px-2 py-0.5 text-[9px] font-extrabold text-amber-800">{rule.scope === "rede" ? "Rede" : rule.scope === "empresa" ? "Empresa" : "Unidade"}</span>
+                        </div>
+                        <p className="mt-1 text-[10px] text-[#69778c]">{[...rule.terms, ...(rule.counterpartyDocuments || []), ...(rule.counterpartyAccounts || [])].join(" · ") || "Sem critérios"}</p>
+                      </div>
+                      <div className="flex shrink-0 items-center gap-1">
+                        <button type="button" onClick={() => handleEditIntercompanyRule(rule)} className="rounded-lg p-1.5 text-[#3c63da] hover:bg-[#edf2ff]" title="Editar regra"><Edit3 className="h-3.5 w-3.5" /></button>
+                        <button type="button" onClick={() => void handleDeleteIntercompanyRule(rule.id)} className="rounded-lg p-1.5 text-rose-600 hover:bg-rose-50" title="Excluir regra"><Trash2 className="h-3.5 w-3.5" /></button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
       )}

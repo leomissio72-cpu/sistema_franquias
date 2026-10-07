@@ -15,7 +15,8 @@ import {
   WhatsAppConfig,
   WhatsAppMessageHistory,
   RegisteredSupplier,
-  HomologatedProduct
+  HomologatedProduct,
+  IntercompanyRule,
 } from "./types";
 import { readFirebaseMirror, writeFirebaseMirror } from "./firebaseState";
 import {
@@ -186,6 +187,7 @@ function formatCloudState(data: any): CloudState {
       companyName: "Gestão de Franquias S.A.",
       cnpjMatriz: "12.345.678/0001-90",
     },
+    intercompanyRules: Array.isArray(data.intercompanyRules) ? data.intercompanyRules : [],
   };
 }
 
@@ -194,7 +196,7 @@ function mergeNonEmptyCollections(primary: CloudState, mirror: CloudState | null
   const merged: any = { ...mirror, ...primary };
   const collectionKeys = [
     "businesses", "franchises", "employees", "users", "manualEntries", "bills",
-    "configs", "products", "suppliers", "whatsappHistory",
+    "configs", "products", "suppliers", "whatsappHistory", "intercompanyRules",
   ];
   for (const key of collectionKeys) {
     if (key === preserveSection) continue;
@@ -247,6 +249,7 @@ function getLocalFallbackState(): CloudState {
       companyName: "Gestão de Franquias S.A.",
       cnpjMatriz: "12.345.678/0001-90",
     },
+    intercompanyRules: [],
   };
 }
 
@@ -438,6 +441,10 @@ export async function saveProducts(products: HomologatedProduct[], userName: str
 
 export async function saveSystemSettings(settings: SystemSettings, userName: string, userId?: string): Promise<CloudState> {
   return syncStateSection("systemSettings", settings, userName);
+}
+
+export async function saveIntercompanyRules(rules: IntercompanyRule[], userName: string): Promise<CloudState> {
+  return syncStateSection("intercompanyRules", rules, userName);
 }
 
 export async function resetDatabase(): Promise<CloudState> {

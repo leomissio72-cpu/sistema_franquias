@@ -18,7 +18,8 @@ import {
   Employee,
   BillItem,
   RegisteredSupplier,
-  HomologatedProduct
+  HomologatedProduct,
+  IntercompanyRule
 } from "./types";
 import {
   fetchServerState,
@@ -38,6 +39,7 @@ import {
   createManualEntriesBulk,
   deleteManualEntry,
   saveSystemSettings,
+  saveIntercompanyRules,
   resetDatabase,
   syncStateSection,
   logoutAPI,
@@ -391,6 +393,11 @@ export const App: React.FC = () => {
     setServerState(updatedState);
   };
 
+  const handleSaveIntercompanyRules = async (rules: IntercompanyRule[]) => {
+    const updatedState = await saveIntercompanyRules(rules, userSession?.name || "Admin");
+    setServerState(updatedState);
+  };
+
   const handleSaveUsers = async (users: UserAccount[], credential?: { userId: string; password: string }) => {
     const updatedState = await syncStateSection("users", users, userSession?.name || "Administrador", userSession || undefined, credential);
     setServerState(updatedState);
@@ -573,6 +580,7 @@ export const App: React.FC = () => {
     permissions,
     products = [],
     suppliers = [],
+    intercompanyRules = [],
   } = serverState;
 
   const getTenantDisplayName = () => {
@@ -660,6 +668,7 @@ export const App: React.FC = () => {
               settings={systemSettings}
               users={serverState.users}
               suppliers={suppliers}
+              intercompanyRules={intercompanyRules}
               products={products}
               dreParams={dreParams}
               initialTab="configs"
@@ -672,6 +681,7 @@ export const App: React.FC = () => {
               onSaveUsers={handleSaveUsers}
               onSaveSuppliers={handleSaveSuppliers}
               onSaveProducts={handleSaveProducts}
+              onSaveIntercompanyRules={handleSaveIntercompanyRules}
               onSaveDreParams={handleSaveDreParams}
               onResetDatabase={handleResetDatabase}
               onRefresh={loadState}
@@ -770,9 +780,11 @@ export const App: React.FC = () => {
           {["pagamentos_despesas", "lancamentos", "conciliation", "import_base", "vt", "rp"].includes(currentScreen) && (
             <PagamentosDespesasScreen
               currentTenantId={currentTenantId}
+              currentBusinessId={currentBusinessId}
               userSession={userSession}
               franchises={franchises}
               manualEntries={manualEntries}
+              intercompanyRules={intercompanyRules}
               bills={bills}
               onCreateEntry={handleCreateManualEntry}
               onCreateEntriesBulk={async (entries) => {

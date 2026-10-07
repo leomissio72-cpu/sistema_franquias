@@ -283,6 +283,37 @@ function setCredential(database, userId, password) {
   };
   return { ...database, credentials: nextCredentials };
 }
+function getCredential(database, userId) {
+  const credential = database.credentials?.[userId];
+  return credential && !credential.revokedAt && !credential.mustReset && credential.passwordHash ? credential : null;
+}
+
+// src/utils/intercompany.ts
+function normalizeIntercompanyText(value) {
+  return String(value ?? "").trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, " ");
+}
+function compact(value) {
+  return normalizeIntercompanyText(value).replace(/[^a-z0-9]/g, "");
+}
+function hasMatch(values, haystack, compactHaystack) {
+  return (values || []).some((value) => {
+    const normalized = normalizeIntercompanyText(value);
+    if (!normalized) return false;
+    return haystack.includes(normalized) || compactHaystack.includes(compact(normalized));
+  });
+}
+function ruleMatchesItem(rule, item, context) {
+  if (!rule.active) return false;
+  if (rule.scope === "empresa" && (!rule.businessId || rule.businessId !== context.businessId)) return false;
+  if (rule.scope === "unidade" && (!rule.tenantId || rule.tenantId !== context.tenantId)) return false;
+  const values = [item.desc, item.counterpartyDocument, item.sourceAccount, item.destinationAccount];
+  const haystack = normalizeIntercompanyText(values.filter(Boolean).join(" "));
+  const compactHaystack = compact(haystack);
+  return hasMatch(rule.terms, haystack, compactHaystack) || hasMatch(rule.counterpartyDocuments, haystack, compactHaystack) || hasMatch(rule.counterpartyAccounts, haystack, compactHaystack);
+}
+function findIntercompanyRule(item, rules = [], context) {
+  return rules.find((rule) => ruleMatchesItem(rule, item, context));
+}
 
 // src/serverBackend.ts
 var app = (0, import_express.default)();
@@ -307,26 +338,20 @@ function requireSession(req, res, next) {
   const bearerToken = authHeader?.startsWith("Bearer ") ? authHeader.slice(7).trim() : authHeader;
   const token = cookieToken || bearerToken;
   const session = token ? verifySignedSessionToken(token) : null;
-  let user = session ? db.users.find((candidate) => candidate.id === session.sub) : null;
-  if (session && !user) {
-    user = db.users.find((candidate) => candidate.perfil === "dono" || candidate.login === "admin") || db.users[0];
+  const user = session ? db.users.find((candidate) => candidate.id === session.sub) : null;
+  const credential = user ? getCredential(db, user.id) : null;
+  if (!session || !user || user.status === "inativo" || credential && Number(session.cv) !== Number(credential.version)) {
+    return res.status(401).json({ error: "Sess\xE3o expirada. Fa\xE7a login novamente." });
   }
-  const clientProfile = req.header("x-user-profile") || req.body?.userProfile;
-  const clientLogin = req.header("x-user-login") || req.body?.userLogin;
-  if (!user && (clientProfile || clientLogin)) {
-    user = db.users.find((candidate) => clientLogin && candidate.login === clientLogin || clientProfile && candidate.perfil === clientProfile) || db.users.find((candidate) => candidate.perfil === "dono") || db.users[0];
-  }
-  if (!user && !session) {
-    const fallbackMaster = db.users.find((u) => u.perfil === "dono" || u.login === "admin");
-    if (fallbackMaster) {
-      user = fallbackMaster;
-    } else {
-      return res.status(401).json({ error: "Sess\xE3o expirada. Fa\xE7a login novamente." });
-    }
-  }
-  const safeUserData = user ? safeUser(user) : { id: "u1", perfil: "dono", nome: "Administrador" };
-  req.auth = { ...session, user: safeUserData, userId: user?.id || "u1", expiresAt: session?.exp || Date.now() + 8 * 60 * 60 * 1e3 };
+  req.auth = { ...session, user: safeUser(user), userId: user.id, expiresAt: session.exp };
   next();
+}
+function requireWhatsAppRole(req, res, next) {
+  const profile = String(req.auth?.user?.perfil || "").toLowerCase();
+  if (!["dono", "equipe", "admin"].includes(profile)) {
+    return res.status(403).json({ error: "Seu perfil n\xE3o est\xE1 autorizado a configurar ou disparar mensagens pelo WhatsApp." });
+  }
+  return next();
 }
 app.use(async (req, res, next) => {
   await hydrateDatabaseFromBlob();
@@ -350,12 +375,6 @@ app.use((req, res, next) => {
     "/auth/mfa",
     "/api/auth/bootstrap",
     "/auth/bootstrap",
-    "/api/whatsapp/config",
-    "/whatsapp/config",
-    "/api/whatsapp/history",
-    "/whatsapp/history",
-    "/api/whatsapp/send",
-    "/whatsapp/send",
     "/api/events",
     "/events"
   ].includes(req.path);
@@ -378,12 +397,12 @@ function getWhatsAppCloudConfig() {
 function getWhatsAppConfigResponse(database) {
   const cloud = getWhatsAppCloudConfig();
   const providerReady = Boolean(cloud.accessToken && cloud.phoneNumberId);
+  const storedConfig = database.whatsappConfig || {};
   return {
-    ...database.whatsappConfig || {},
-    senderPhone: database.whatsappConfig?.senderPhone || "",
+    senderPhone: storedConfig.senderPhone || "",
     connectionStatus: providerReady ? "conectado" : "desconectado",
-    minInterval: Number(database.whatsappConfig?.minInterval) || 3,
-    maxInterval: Number(database.whatsappConfig?.maxInterval) || 8,
+    minInterval: Number(storedConfig.minInterval) || 3,
+    maxInterval: Number(storedConfig.maxInterval) || 8,
     provider: "meta_cloud_api",
     providerReady,
     providerMessage: providerReady ? "WhatsApp Cloud API da Meta configurada." : "WhatsApp ainda n\xE3o est\xE1 configurado no ambiente de produ\xE7\xE3o."
@@ -404,7 +423,7 @@ async function hydrateDatabaseFromBlob() {
         const cloudRecords = countRecords(parsed);
         const localRecords = countRecords(localState);
         const explicitEmpty = new Set(Array.isArray(parsed.emptySections) ? parsed.emptySections : []);
-        const collections = ["businesses", "franchises", "employees", "users", "manualEntries", "bills", "products", "suppliers", "whatsappHistory"];
+        const collections = ["businesses", "franchises", "employees", "users", "manualEntries", "bills", "products", "suppliers", "whatsappHistory", "intercompanyRules"];
         const mergedState = { ...localState, ...parsed, durableInitialized: true };
         let mergedLegacyData = false;
         for (const section of collections) {
@@ -645,7 +664,8 @@ function loadDatabase() {
     },
     whatsappHistory: [],
     products: [],
-    suppliers: []
+    suppliers: [],
+    intercompanyRules: []
   };
   try {
     const localBackup = import_path.default.join(process.cwd(), "data", "database.json");
@@ -663,7 +683,7 @@ function loadDatabase() {
 async function saveDatabase(data) {
   data.lastUpdated = (/* @__PURE__ */ new Date()).toISOString();
   data.durableInitialized = true;
-  const sections = ["businesses", "franchises", "employees", "users", "manualEntries", "bills", "products", "suppliers", "whatsappHistory"];
+  const sections = ["businesses", "franchises", "employees", "users", "manualEntries", "bills", "products", "suppliers", "whatsappHistory", "intercompanyRules"];
   data.emptySections = sections.filter((section) => Array.isArray(data[section]) && data[section].length === 0);
   try {
     const localBackup = import_path.default.join(process.cwd(), "data", "database.json");
@@ -703,6 +723,7 @@ function getFullState(database) {
     whatsappHistory: database.whatsappHistory || [],
     products: database.products || [],
     suppliers: database.suppliers || [],
+    intercompanyRules: database.intercompanyRules || [],
     systemSettings: database.systemSettings || {
       appName: "Gest\xE3o de Franquias",
       companyName: "Gest\xE3o de Franquias S.A.",
@@ -935,9 +956,13 @@ routeBoth("post", "/api/state/sync", requireSession, async (req, res) => {
   const effectiveProfile = authenticatedUser?.perfil || userProfile;
   const effectiveTenant = authenticatedUser?.unidade || userTenant;
   const userName = user || "Sistema";
+  const canManageIntercompany = ["dono", "equipe", "admin"].includes(String(effectiveProfile || "").toLowerCase());
   if (batch && typeof batch === "object") {
     for (const [sec, secData] of Object.entries(batch)) {
       if (secData !== void 0) {
+        if (sec === "intercompanyRules" && !canManageIntercompany) {
+          return res.status(403).json({ error: "Seu perfil n\xE3o pode alterar as regras entre empresas." });
+        }
         if (sec === "manualEntries" && Array.isArray(secData)) {
           const validation = validateManualEntriesSync(secData, authenticatedUser);
           if (!validation.ok) return res.status(403).json({ error: validation.error });
@@ -961,6 +986,9 @@ routeBoth("post", "/api/state/sync", requireSession, async (req, res) => {
   }
   let data = incomingData;
   if (section && data !== void 0) {
+    if (section === "intercompanyRules" && !canManageIntercompany) {
+      return res.status(403).json({ error: "Seu perfil n\xE3o pode alterar as regras entre empresas." });
+    }
     if (section === "manualEntries" && Array.isArray(data)) {
       const validation = validateManualEntriesSync(data, authenticatedUser);
       if (!validation.ok) return res.status(403).json({ error: validation.error });
@@ -1043,6 +1071,22 @@ function manualEntryIdentity(entry) {
     normalizeEntryText(entry?.desc)
   ].join("|");
 }
+function applyIntercompanyRule(entry) {
+  if (entry?.isIntercompany || entry?.excludedFromDre || entry?.catId === "intercompany") return entry;
+  const tenantId = String(entry?.tenant || "dono");
+  const businessId = entry?.businessId || db.franchises.find((franchise) => franchise.id === tenantId)?.businessId || (tenantId.startsWith("biz") ? tenantId : void 0);
+  const rule = findIntercompanyRule(entry, db.intercompanyRules || [], { tenantId, businessId });
+  if (!rule) return entry;
+  return {
+    ...entry,
+    catId: "intercompany",
+    catName: "Transfer\xEAncia entre empresas",
+    isIntercompany: true,
+    excludedFromDre: true,
+    intercompanyRuleId: rule.id,
+    intercompanyReason: `Regra "${rule.name}"`
+  };
+}
 function canUserAccessEntryTenant(user, tenantId) {
   const profile = String(user?.perfil || "").toLowerCase();
   const tenant = String(tenantId || "").trim();
@@ -1097,12 +1141,12 @@ routeBoth("post", "/api/entries", requireSession, async (req, res) => {
   if (duplicate) {
     return res.json({ success: true, duplicate: true, entry: duplicate, state: getFullState(db) });
   }
-  const entry = {
+  const entry = applyIntercompanyRule({
     id: `m_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
     ...newEntry,
     tenant: entryTenant,
     created: (/* @__PURE__ */ new Date()).toISOString()
-  };
+  });
   db.manualEntries.unshift(entry);
   await saveDatabase(db);
   broadcastUpdate("entry_created", { entry, lastUpdated: db.lastUpdated });
@@ -1124,7 +1168,7 @@ routeBoth("post", "/api/entries/bulk", requireSession, async (req, res) => {
   const now = Date.now();
   entries.forEach((item, index) => {
     if (item.desc && item.value !== void 0 && item.value !== null && item.value !== "" && item.date) {
-      const candidate = { ...item, tenant: item.tenant || "dono" };
+      const candidate = applyIntercompanyRule({ ...item, tenant: item.tenant || "dono" });
       const identity = manualEntryIdentity(candidate);
       if (knownKeys.has(identity)) {
         duplicateEntries.push(item);
@@ -1162,11 +1206,16 @@ routeBoth("delete", "/api/entries/:id", requireSession, async (req, res) => {
   broadcastUpdate("entry_deleted", { id, lastUpdated: db.lastUpdated });
   res.json({ success: true, id, state: getFullState(db) });
 });
-routeBoth("get", "/api/whatsapp/config", (req, res) => {
+routeBoth("get", "/api/whatsapp/config", requireSession, (req, res) => {
   res.json(getWhatsAppConfigResponse(db));
 });
-routeBoth("post", "/api/whatsapp/config", requireSession, async (req, res) => {
-  const updates = req.body || {};
+routeBoth("post", "/api/whatsapp/config", requireSession, requireWhatsAppRole, async (req, res) => {
+  const body = req.body || {};
+  const updates = {
+    ...body.senderPhone !== void 0 ? { senderPhone: String(body.senderPhone).slice(0, 40) } : {},
+    ...body.minInterval !== void 0 ? { minInterval: Math.max(0, Math.min(3600, Number(body.minInterval) || 0)) } : {},
+    ...body.maxInterval !== void 0 ? { maxInterval: Math.max(0, Math.min(3600, Number(body.maxInterval) || 0)) } : {}
+  };
   db.whatsappConfig = {
     ...db.whatsappConfig || {
       senderPhone: "+55 (11) 98888-0000",
@@ -1179,10 +1228,10 @@ routeBoth("post", "/api/whatsapp/config", requireSession, async (req, res) => {
   await saveDatabase(db);
   res.json({ success: true, config: getWhatsAppConfigResponse(db) });
 });
-routeBoth("get", "/api/whatsapp/history", (req, res) => {
+routeBoth("get", "/api/whatsapp/history", requireSession, (req, res) => {
   res.json({ history: db.whatsappHistory || [] });
 });
-routeBoth("post", "/api/whatsapp/history", requireSession, async (req, res) => {
+routeBoth("post", "/api/whatsapp/history", requireSession, requireWhatsAppRole, async (req, res) => {
   const { history } = req.body || {};
   if (Array.isArray(history)) {
     db.whatsappHistory = history;
@@ -1190,7 +1239,7 @@ routeBoth("post", "/api/whatsapp/history", requireSession, async (req, res) => {
   }
   res.json({ success: true, count: (db.whatsappHistory || []).length });
 });
-routeBoth("post", "/api/whatsapp/send", requireSession, async (req, res) => {
+routeBoth("post", "/api/whatsapp/send", requireSession, requireWhatsAppRole, async (req, res) => {
   const { senderPhone, recipientPhone, recipientName, message, company } = req.body || {};
   if (!recipientPhone || !message) {
     return res.status(400).json({ success: false, error: "Destinat\xE1rio e mensagem s\xE3o obrigat\xF3rios." });
