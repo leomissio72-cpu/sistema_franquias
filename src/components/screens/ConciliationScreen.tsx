@@ -18,6 +18,7 @@ import {
   Sparkles,
   Zap,
   Trash2,
+  Edit3,
 } from "lucide-react";
 
 interface ConciliationScreenProps {
@@ -396,16 +397,19 @@ export const ConciliationScreen: React.FC<ConciliationScreenProps> = ({
     setTimeout(() => setToastMsg(null), 3500);
   };
 
-  const startEditingSelected = () => {
-    const selectedItems = filteredItems.filter((_, index) => selectedIds.includes(index));
-    if (selectedItems.length !== 1) {
-      setImportError("Selecione exatamente uma linha para editar.");
-      return;
-    }
-    const item = selectedItems[0];
+  const startEditingItem = (item: ConciliationItem) => {
     setEditingItem(item);
     setEditDraft({ desc: item.desc, date: item.date, value: Math.abs(item.numericValue).toFixed(2).replace(".", ",") });
     setImportError(null);
+  };
+
+  const startEditingSelected = () => {
+    const selectedItems = filteredItems.filter((_, index) => selectedIds.includes(index));
+    if (selectedItems.length !== 1) {
+      setImportError("Marque uma linha ou use o botão de edição da própria linha.");
+      return;
+    }
+    startEditingItem(selectedItems[0]);
   };
 
   const saveEditedItem = async () => {
@@ -423,7 +427,7 @@ export const ConciliationScreen: React.FC<ConciliationScreenProps> = ({
       date: editDraft.date,
       numericValue,
       value: numericValue.toLocaleString("pt-BR", { style: "currency", currency: "BRL" }),
-      toDre: numericValue < 0,
+      toDre: numericValue < 0 && !editingItem.isIntercompany,
     };
     try {
       if (editingItem.entryId) {
@@ -766,6 +770,16 @@ export const ConciliationScreen: React.FC<ConciliationScreenProps> = ({
                       </span>
                     </td>
                     <td className="p-3 text-right">
+                      <button
+                        type="button"
+                        onClick={() => startEditingItem(item)}
+                        disabled={isImporting}
+                        title="Editar esta movimentação"
+                        aria-label={`Editar ${item.desc}`}
+                        className="mr-1 rounded-lg p-1.5 text-[#3c63da] transition hover:bg-[#edf2ff] hover:text-[#2f52c0] disabled:cursor-not-allowed disabled:opacity-35"
+                      >
+                        <Edit3 className="h-3.5 w-3.5" aria-hidden="true" />
+                      </button>
                       {item.entryId ? (
                         <button
                           type="button"
