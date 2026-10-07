@@ -273,7 +273,7 @@ export const DreScreen: React.FC<DreScreenProps> = ({
 
     if (calculationMode === "real") {
       // Real entries exist: calculate using real revenue & real expenses
-      const calc = calculateDre(realFatBruta, currentParams, unitRoyalty);
+      const calc = calculateDre(realFatBruta, currentParams, unitRoyalty, targetBiz);
 
       // Group real expenses by category where possible
       const mappedDespesas = dreExpenseDefs.map((e) => {
@@ -294,11 +294,10 @@ export const DreScreen: React.FC<DreScreenProps> = ({
           };
         }
 
-        const fallbackItem = calc.despesas.find((d) => d.id === e.id);
         return {
           ...e,
-          pct: fallbackItem?.pct || e.pct,
-          value: fallbackItem?.value || 0,
+          pct: 0,
+          value: 0,
         };
       });
 
@@ -315,7 +314,7 @@ export const DreScreen: React.FC<DreScreenProps> = ({
     }
 
     // Projection mode: target projection from franchise baseFat
-    return calculateDre(baseFat, currentParams, unitRoyalty);
+    return calculateDre(baseFat, currentParams, unitRoyalty, targetBiz);
   }, [calculationMode, activeEntries, realEntradas, realDespesas, realFatBruta, baseFat, currentParams, unitRoyalty]);
 
   const scopedBills = bills.filter((bill) => {

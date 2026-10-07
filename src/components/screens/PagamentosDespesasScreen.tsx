@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import {
   ScreenType,
   FranchiseUnit,
+  Business,
   ManualEntry,
   VTConfig,
   BillItem,
@@ -31,6 +32,7 @@ interface PagamentosDespesasScreenProps {
   currentBusinessId?: string;
   userSession: UserSession;
   franchises: FranchiseUnit[];
+  businesses: Business[];
   manualEntries: ManualEntry[];
   intercompanyRules?: IntercompanyRule[];
   bills: BillItem[];
@@ -50,6 +52,7 @@ export const PagamentosDespesasScreen: React.FC<PagamentosDespesasScreenProps> =
   currentBusinessId,
   userSession,
   franchises,
+  businesses,
   manualEntries,
   intercompanyRules = [],
   bills,
@@ -185,6 +188,7 @@ export const PagamentosDespesasScreen: React.FC<PagamentosDespesasScreenProps> =
           <LancamentosScreen
             currentTenantId={currentTenantId}
             franchises={franchises}
+            businesses={businesses}
             manualEntries={manualEntries}
             onCreateEntry={onCreateEntry}
             onDeleteEntry={onDeleteEntry}

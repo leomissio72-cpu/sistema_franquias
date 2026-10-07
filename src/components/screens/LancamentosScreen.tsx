@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { ManualEntry, ScreenType, FranchiseUnit } from "../../types";
+import { ManualEntry, ScreenType, FranchiseUnit, Business } from "../../types";
 import { formatBrl, formatBrl2 } from "../../utils/calculations";
 import { isIntercompanyEntry } from "../../utils/intercompany";
 import { detectApelido } from "../../utils/apelidos";
@@ -15,12 +15,14 @@ import {
   Sparkles,
   Repeat,
   CalendarRange,
-  CheckCircle2
+  CheckCircle2,
+  Download
 } from "lucide-react";
 
 interface LancamentosScreenProps {
   currentTenantId: string;
   franchises: FranchiseUnit[];
+  businesses: Business[];
   manualEntries: ManualEntry[];
   onCreateEntry: (entry: Partial<ManualEntry>) => Promise<void>;
   onCreateBulkEntries?: (entries: Array<Partial<ManualEntry>>) => Promise<void>;
@@ -51,6 +53,7 @@ function addMonthsToDate(baseDateStr: string, monthsToAdd: number): string {
 export const LancamentosScreen: React.FC<LancamentosScreenProps> = ({
   currentTenantId,
   franchises,
+  businesses,
   manualEntries,
   onCreateEntry,
   onCreateBulkEntries,
@@ -59,6 +62,11 @@ export const LancamentosScreen: React.FC<LancamentosScreenProps> = ({
 }) => {
   const [entryType, setEntryType] = useState<"entrada" | "despesa">("entrada");
   const [filterType, setFilterType] = useState<"all" | "entrada" | "despesa">("all");
+  const [filterCompany, setFilterCompany] = useState<string>("all");
+  const [filterYear, setFilterYear] = useState<string>("all");
+  const [filterMonth, setFilterMonth] = useState<string>("all");
+  const [filterDay, setFilterDay] = useState<string>("all");
+
   const [date, setDate] = useState<string>(new Date().toISOString().slice(0, 10));
   const [value, setValue] = useState<string>("");
   const [desc, setDesc] = useState<string>("");
@@ -95,8 +103,34 @@ export const LancamentosScreen: React.FC<LancamentosScreenProps> = ({
 
   const visibleEntries = manualEntries.filter((e) => {
     if (!isRede && e.tenant && e.tenant !== currentTenantId && e.tenant !== "dono") return false;
-    if (filterType === "all") return true;
-    return e.type === filterType;
+
+    // Filter by Company / Business / Unit
+    if (filterCompany !== "all") {
+      if (e.tenant !== filterCompany) {
+        const u = franchises.find((f) => f.id === e.tenant);
+        if (!u || u.businessId !== filterCompany) return false;
+      }
+    }
+
+    // Filter by Type (Entrada / Despesa)
+    if (filterType !== "all" && e.type !== filterType) return false;
+
+    // Filter by Date (Year, Month, Day)
+    if (e.date) {
+      const parts = e.date.split("-");
+      if (parts.length >= 3) {
+        const y = parts[0];
+        const m = parseInt(parts[1], 10).toString();
+        const d = parseInt(parts[2], 10).toString();
+        if (filterYear !== "all" && y !== filterYear) return false;
+        if (filterMonth !== "all" && m !== filterMonth) return false;
+        if (filterDay !== "all" && d !== filterDay) return false;
+      }
+    } else {
+      if (filterYear !== "all" || filterMonth !== "all" || filterDay !== "all") return false;
+    }
+
+    return true;
   });
 
   const totalEntradas = manualEntries
@@ -109,8 +143,8 @@ export const LancamentosScreen: React.FC<LancamentosScreenProps> = ({
 
   const saldoManual = totalEntradas - totalDespesas;
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async (ev: React.FormEvent) => {
+    ev.preventDefault();
     const numVal = parseFloat(value || "0");
     if (!desc.trim() || numVal <= 0 || !date) {
       alert("Por favor, preencha a data, descrição e um valor positivo.");
@@ -125,7 +159,6 @@ export const LancamentosScreen: React.FC<LancamentosScreenProps> = ({
       const targetTenant = currentTenantId === "dono" ? (franchises[0]?.id || "dono") : currentTenantId;
 
       if (numMonths > 1) {
-        // Build recurring entries for 3, 6 or 12 months using the typed recurring value
         const recVal = parseFloat(recurringValue.trim() || value || "0");
         const recurringList: Array<Partial<ManualEntry>> = [];
         for (let i = 0; i < numMonths; i++) {
@@ -175,7 +208,6 @@ export const LancamentosScreen: React.FC<LancamentosScreenProps> = ({
 
       setTimeout(() => setSuccessToast(null), 4000);
 
-      // Clear form
       setValue("");
       setDesc("");
       setNote("");
@@ -184,6 +216,105 @@ export const LancamentosScreen: React.FC<LancamentosScreenProps> = ({
       alert(err.message || "Erro ao criar lançamento");
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleDownloadPdf = () => {
+    const dateStr = new Date().toLocaleDateString("pt-BR");
+    let rowsHtml = "";
+    let totalEntradasFiltered = 0;
+    let totalDespesasFiltered = 0;
+
+    visibleEntries.forEach((e) => {
+      const isEntrada = e.type === "entrada";
+      if (isEntrada) totalEntradasFiltered += e.value;
+      else totalDespesasFiltered += e.value;
+
+      rowsHtml += `
+        <tr>
+          <td style="padding:6px 8px;border-bottom:1px solid #e2e8f0;">${new Date(e.date + "T12:00:00").toLocaleDateString("pt-BR")}</td>
+          <td style="padding:6px 8px;border-bottom:1px solid #e2e8f0;font-weight:bold;color:${isEntrada ? "#047857" : "#b44b4b"};">${isEntrada ? "Entrada" : "Despesa"}</td>
+          <td style="padding:6px 8px;border-bottom:1px solid #e2e8f0;">${e.desc} ${e.note ? `<br/><small style="color:#64748b;">${e.note}</small>` : ""}</td>
+          <td style="padding:6px 8px;border-bottom:1px solid #e2e8f0;">${e.apelido || "-"}</td>
+          <td style="padding:6px 8px;border-bottom:1px solid #e2e8f0;">${e.catName || "-"}</td>
+          <td style="padding:6px 8px;border-bottom:1px solid #e2e8f0;text-transform:uppercase;">${e.pay || "-"}</td>
+          <td style="padding:6px 8px;border-bottom:1px solid #e2e8f0;text-align:right;font-family:monospace;font-weight:bold;color:${isEntrada ? "#047857" : "#b44b4b"};">${isEntrada ? "+" : "-"} ${formatBrl2(e.value)}</td>
+        </tr>
+      `;
+    });
+
+    const saldoFiltered = totalEntradasFiltered - totalDespesasFiltered;
+
+    const htmlContent = `<!DOCTYPE html>
+    <html lang="pt-BR">
+    <head>
+      <meta charset="UTF-8">
+      <title>Relatório de Lançamentos Manuais</title>
+      <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; margin: 20px; color: #1e293b; font-size: 11px; }
+        .header { border-bottom: 2px solid #3c63da; padding-bottom: 8px; margin-bottom: 14px; }
+        .title { font-size: 16px; font-weight: 800; color: #0f172a; margin: 0; }
+        .meta { font-size: 10px; color: #475569; margin-top: 4px; display: flex; gap: 12px; flex-wrap: wrap; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th { background: #f8fafc; color: #64748b; text-transform: uppercase; font-size: 9px; padding: 6px 8px; border-bottom: 2px solid #cbd5e1; text-align: left; }
+        .summary { margin-top: 15px; padding: 10px; background: #f8faff; border: 1px solid #e2e8f0; border-radius: 6px; display: flex; justify-content: space-between; font-weight: bold; }
+        @media print { body { margin: 10mm; } @page { size: landscape; margin: 10mm; } }
+      </style>
+    </head>
+    <body>
+      <div class="header">
+        <h1 class="title">Relatório de Lançamentos Manuais</h1>
+        <div class="meta">
+          <span><strong>Empresa/Unidade:</strong> ${filterCompany === "all" ? "Todas" : filterCompany}</span>
+          <span><strong>Tipo:</strong> ${filterType === "all" ? "Todos" : filterType}</span>
+          <span><strong>Período (Ano/Mês/Dia):</strong> Ano: ${filterYear} | Mês: ${filterMonth} | Dia: ${filterDay}</span>
+          <span><strong>Emissão:</strong> ${dateStr}</span>
+        </div>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>Data</th>
+            <th>Tipo</th>
+            <th>Descrição</th>
+            <th>Apelido</th>
+            <th>Categoria DRE</th>
+            <th>Pagamento</th>
+            <th style="text-align:right;">Valor (R$)</th>
+          </tr>
+        </thead>
+        <tbody>${rowsHtml || '<tr><td colspan="7" style="text-align:center;padding:12px;">Nenhum lançamento encontrado para os filtros selecionados.</td></tr>'}</tbody>
+      </table>
+      <div class="summary">
+        <span>Total Entradas: ${formatBrl2(totalEntradasFiltered)}</span>
+        <span>Total Despesas: ${formatBrl2(totalDespesasFiltered)}</span>
+        <span>Saldo Líquido: ${formatBrl2(saldoFiltered)}</span>
+      </div>
+    </body>
+    </html>`;
+
+    const oldFrame = document.getElementById("lancamentos-print-iframe");
+    if (oldFrame) oldFrame.remove();
+
+    const iframe = document.createElement("iframe");
+    iframe.id = "lancamentos-print-iframe";
+    iframe.style.position = "fixed";
+    iframe.style.right = "0";
+    iframe.style.bottom = "0";
+    iframe.style.width = "0";
+    iframe.style.height = "0";
+    iframe.style.border = "none";
+    document.body.appendChild(iframe);
+
+    const doc = iframe.contentWindow?.document;
+    if (doc) {
+      doc.open();
+      doc.write(htmlContent);
+      doc.close();
+      setTimeout(() => {
+        iframe.contentWindow?.focus();
+        iframe.contentWindow?.print();
+      }, 350);
     }
   };
 
@@ -376,7 +507,7 @@ export const LancamentosScreen: React.FC<LancamentosScreenProps> = ({
               </select>
             </div>
 
-            {/* Recorrência: 1x, 3 meses, 6 meses, 12 meses */}
+            {/* Recorrência */}
             <div className="pt-2 border-t border-[#f0f4f9]">
               <div className="flex items-center justify-between mb-1.5">
                 <label className="flex items-center gap-1.5 text-[10px] font-extrabold uppercase text-[#3c63da]">
@@ -435,22 +566,6 @@ export const LancamentosScreen: React.FC<LancamentosScreenProps> = ({
                       onChange={(e) => setRecurringValue(e.target.value)}
                       className="w-full rounded-lg border border-[#3c63da]/40 bg-white px-2.5 py-1.5 text-xs font-mono font-bold text-[#152238] focus:border-[#3c63da] focus:outline-none shadow-2xs"
                     />
-                    <span className="text-[10px] text-[#526078] block mt-1">
-                      {recurringValue ? "Valor personalizado para as parcelas recorrentes." : "Deixe em branco para usar o valor nominal inserido acima."}
-                    </span>
-                  </div>
-
-                  <div className="text-[#48566a] space-y-0.5 text-[10px] pt-1 border-t border-[#3c63da]/20">
-                    <div>• 1º Lançamento: <strong>{new Date(date + "T12:00:00").toLocaleDateString("pt-BR")}</strong></div>
-                    <div>• Último Lançamento: <strong>{new Date(addMonthsToDate(date, parseInt(recurrence, 10) - 1) + "T12:00:00").toLocaleDateString("pt-BR")}</strong></div>
-                    {parseFloat(recurringValue || value || "0") > 0 && (
-                      <div className="pt-1.5 border-t border-[#3c63da]/20 font-bold text-[#152238] flex justify-between text-xs">
-                        <span>Total das {recurrence} parcelas:</span>
-                        <span className="font-mono text-[#3c63da]">
-                          {formatBrl(parseFloat(recurringValue || value || "0") * parseInt(recurrence, 10))}
-                        </span>
-                      </div>
-                    )}
                   </div>
                 </div>
               )}
@@ -493,39 +608,109 @@ export const LancamentosScreen: React.FC<LancamentosScreenProps> = ({
           </form>
         </div>
 
-        {/* History Table */}
+        {/* History Table with Advanced Filters & PDF Export */}
         <div className="lg:col-span-2 rounded-2xl border border-[#e5eaf1] bg-white p-5 sm:p-6 shadow-xs space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[#e5eaf1]">
             <div>
               <h3 className="text-sm font-bold text-[#152238]">Histórico de Lançamentos</h3>
-              <p className="text-[11px] text-[#69778c]">Registros da unidade em contexto salvos na nuvem.</p>
+              <p className="text-[11px] text-[#69778c]">Filtre por empresa, período, dia, mês, ano ou tipo e baixe o relatório em PDF.</p>
             </div>
 
-            <div className="flex items-center gap-1 bg-[#f8faff] p-1 rounded-lg border border-[#e5eaf1]">
+            <div className="flex items-center gap-2 flex-wrap">
               <button
-                onClick={() => setFilterType("all")}
-                className={`rounded px-2.5 py-1 text-xs font-bold transition-all ${
-                  filterType === "all" ? "bg-[#3c63da] text-white" : "text-[#69778c]"
-                }`}
+                type="button"
+                onClick={handleDownloadPdf}
+                className="flex items-center gap-1.5 rounded-xl border border-[#3c63da]/30 bg-[#edf2ff] px-3 py-1.5 text-xs font-bold text-[#3c63da] hover:bg-[#dfe8fe] transition-all cursor-pointer shadow-2xs"
+                title="Baixar PDF considerando os filtros aplicados"
               >
-                Todos
+                <Download className="h-3.5 w-3.5 text-[#3c63da]" />
+                <span>Baixar PDF</span>
               </button>
-              <button
-                onClick={() => setFilterType("entrada")}
-                className={`rounded px-2.5 py-1 text-xs font-bold transition-all ${
-                  filterType === "entrada" ? "bg-emerald-600 text-white" : "text-[#69778c]"
-                }`}
+            </div>
+          </div>
+
+          {/* Advanced Filters Bar */}
+          <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 p-3 bg-[#f8faff] rounded-xl border border-[#e5eaf1] text-xs">
+            {/* Empresa / Unidade */}
+            <div>
+              <label className="block text-[9px] font-extrabold uppercase text-[#69778c] mb-1">Empresa / Unidade</label>
+              <select
+                value={filterCompany}
+                onChange={(e) => setFilterCompany(e.target.value)}
+                className="w-full rounded-lg border border-[#e5eaf1] bg-white px-2 py-1.5 text-xs font-semibold text-[#152238] focus:border-[#3c63da] focus:outline-none"
               >
-                Entradas
-              </button>
-              <button
-                onClick={() => setFilterType("despesa")}
-                className={`rounded px-2.5 py-1 text-xs font-bold transition-all ${
-                  filterType === "despesa" ? "bg-red-600 text-white" : "text-[#69778c]"
-                }`}
+                <option value="all">Todas as Unidades</option>
+                {businesses.map((b) => (
+                  <option key={b.id} value={b.id}>Marca: {b.name}</option>
+                ))}
+                {franchises.map((f) => (
+                  <option key={f.id} value={f.id}>Unidade: {f.name} ({f.code})</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Tipo */}
+            <div>
+              <label className="block text-[9px] font-extrabold uppercase text-[#69778c] mb-1">Tipo</label>
+              <select
+                value={filterType}
+                onChange={(e) => setFilterType(e.target.value as any)}
+                className="w-full rounded-lg border border-[#e5eaf1] bg-white px-2 py-1.5 text-xs font-semibold text-[#152238] focus:border-[#3c63da] focus:outline-none"
               >
-                Despesas
-              </button>
+                <option value="all">Entradas & Despesas</option>
+                <option value="entrada">Somente Entradas</option>
+                <option value="despesa">Somente Despesas</option>
+              </select>
+            </div>
+
+            {/* Ano */}
+            <div>
+              <label className="block text-[9px] font-extrabold uppercase text-[#69778c] mb-1">Ano</label>
+              <select
+                value={filterYear}
+                onChange={(e) => setFilterYear(e.target.value)}
+                className="w-full rounded-lg border border-[#e5eaf1] bg-white px-2 py-1.5 text-xs font-semibold text-[#152238] focus:border-[#3c63da] focus:outline-none"
+              >
+                <option value="all">Todos os Anos</option>
+                <option value="2026">2026</option>
+                <option value="2025">2025</option>
+                <option value="2024">2024</option>
+              </select>
+            </div>
+
+            {/* Mês */}
+            <div>
+              <label className="block text-[9px] font-extrabold uppercase text-[#69778c] mb-1">Mês</label>
+              <select
+                value={filterMonth}
+                onChange={(e) => setFilterMonth(e.target.value)}
+                className="w-full rounded-lg border border-[#e5eaf1] bg-white px-2 py-1.5 text-xs font-semibold text-[#152238] focus:border-[#3c63da] focus:outline-none"
+              >
+                <option value="all">Todos os Meses</option>
+                {[
+                  { v: "1", l: "Janeiro" }, { v: "2", l: "Fevereiro" }, { v: "3", l: "Março" },
+                  { v: "4", l: "Abril" }, { v: "5", l: "Maio" }, { v: "6", l: "Junho" },
+                  { v: "7", l: "Julho" }, { v: "8", l: "Agosto" }, { v: "9", l: "Setembro" },
+                  { v: "10", l: "Outubro" }, { v: "11", l: "Novembro" }, { v: "12", l: "Dezembro" },
+                ].map((m) => (
+                  <option key={m.v} value={m.v}>{m.l}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Dia */}
+            <div>
+              <label className="block text-[9px] font-extrabold uppercase text-[#69778c] mb-1">Dia</label>
+              <select
+                value={filterDay}
+                onChange={(e) => setFilterDay(e.target.value)}
+                className="w-full rounded-lg border border-[#e5eaf1] bg-white px-2 py-1.5 text-xs font-semibold text-[#152238] focus:border-[#3c63da] focus:outline-none"
+              >
+                <option value="all">Todos os Dias</option>
+                {Array.from({ length: 31 }, (_, i) => i + 1).map((d) => (
+                  <option key={d} value={String(d)}>{d}</option>
+                ))}
+              </select>
             </div>
           </div>
 
@@ -547,7 +732,7 @@ export const LancamentosScreen: React.FC<LancamentosScreenProps> = ({
                 {visibleEntries.length === 0 ? (
                   <tr>
                     <td colSpan={8} className="p-6 text-center text-[#69778c]">
-                      Nenhum lançamento manual encontrado.
+                      Nenhum lançamento manual encontrado com os filtros selecionados.
                     </td>
                   </tr>
                 ) : (

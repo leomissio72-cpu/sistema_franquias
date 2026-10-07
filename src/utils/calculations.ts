@@ -1,4 +1,4 @@
-import { BillItem, DreCalculation, DreParams, PaymentMethod, DreExpenseItem } from "../types";
+import { BillItem, DreCalculation, DreParams, PaymentMethod, DreExpenseItem, Business } from "../types";
 import { dreExpenseDefs } from "../data/initialData";
 
 export const formatBrl = (n: number | string): string => {
@@ -85,7 +85,8 @@ export function calculateSettlement(method: PaymentMethod, saleDate?: Date, inst
 export function calculateDre(
   fatBruta: number,
   params: DreParams,
-  customRoyalties?: number
+  customRoyalties?: number,
+  business?: Business
 ): DreCalculation {
   const safeParams = params || {
     impostos: 0.08,
@@ -106,9 +107,19 @@ export function calculateDre(
   const despMap = { ...safeParams.despesas };
   if (customRoyalties !== undefined) {
     despMap["royalties"] = customRoyalties;
+  } else if (business?.royalty !== undefined && business.royaltyType !== "fixed") {
+    despMap["royalties"] = business.royalty;
   }
 
   const despesas: DreExpenseItem[] = dreExpenseDefs.map((e) => {
+    if (e.id === "royalties" && business?.royaltyType === "fixed") {
+      const fixedVal = business.royalty ?? 0;
+      return {
+        ...e,
+        pct: receitaAjustada > 0 ? fixedVal / receitaAjustada : 0,
+        value: fixedVal,
+      };
+    }
     const rate = despMap[e.id] ?? e.pct;
     return {
       ...e,

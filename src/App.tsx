@@ -807,6 +807,7 @@ export const App: React.FC = () => {
               currentBusinessId={currentBusinessId}
               userSession={userSession}
               franchises={franchises}
+              businesses={serverState?.businesses || []}
               manualEntries={manualEntries}
               intercompanyRules={intercompanyRules}
               bills={bills}

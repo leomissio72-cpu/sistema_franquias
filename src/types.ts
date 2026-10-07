@@ -53,6 +53,7 @@ export interface Business {
   brand: string;
   color: string;
   royalty?: number;
+  royaltyType?: "pct" | "fixed";
 }
 
 export interface FranchiseUnit {

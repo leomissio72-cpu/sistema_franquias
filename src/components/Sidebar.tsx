@@ -146,13 +146,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
     ? [
         { id: "employees", label: "Funcionários", icon: <Users className="h-4 w-4" /> },
         { id: "users", label: "Acessos e Logins", icon: <KeyRound className="h-4 w-4" /> },
-        { id: "produtos", label: "Fornecedores e Produtos", icon: <PackageCheck className="h-4 w-4" /> },
       ]
     : [
         { id: "configuracao", label: "Configurações", icon: <Settings className="h-4 w-4" /> },
         { id: "employees", label: "Funcionários", icon: <Users className="h-4 w-4" /> },
         { id: "users", label: "Acessos e Logins", icon: <KeyRound className="h-4 w-4" /> },
-        { id: "produtos", label: "Fornecedores e Produtos", icon: <PackageCheck className="h-4 w-4" /> },
       ];
 
   // Todas as áreas continuam visíveis para o dono/equipe mesmo quando o banco está vazio.
