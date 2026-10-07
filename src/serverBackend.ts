@@ -88,6 +88,31 @@ const HAS_DURABLE_BLOB = Boolean(process.env.BLOB_READ_WRITE_TOKEN);
 let durableHydrationPromise: Promise<void> | null = null;
 let durableWritePromise: Promise<void> = Promise.resolve();
 
+function getWhatsAppCloudConfig() {
+  return {
+    accessToken: String(process.env.WHATSAPP_ACCESS_TOKEN || "").trim(),
+    phoneNumberId: String(process.env.WHATSAPP_PHONE_NUMBER_ID || "").trim(),
+    apiVersion: String(process.env.WHATSAPP_API_VERSION || "v23.0").trim(),
+  };
+}
+
+function getWhatsAppConfigResponse(database: DatabaseState) {
+  const cloud = getWhatsAppCloudConfig();
+  const providerReady = Boolean(cloud.accessToken && cloud.phoneNumberId);
+  return {
+    ...(database.whatsappConfig || {}),
+    senderPhone: database.whatsappConfig?.senderPhone || "",
+    connectionStatus: providerReady ? "conectado" : "desconectado",
+    minInterval: Number(database.whatsappConfig?.minInterval) || 3,
+    maxInterval: Number(database.whatsappConfig?.maxInterval) || 8,
+    provider: "meta_cloud_api",
+    providerReady,
+    providerMessage: providerReady
+      ? "WhatsApp Cloud API da Meta configurada."
+      : "WhatsApp ainda não está configurado no ambiente de produção.",
+  };
+}
+
 async function hydrateDatabaseFromBlob() {
   if (!HAS_DURABLE_BLOB) return;
   if (durableHydrationPromise) return durableHydrationPromise;
@@ -451,12 +476,7 @@ function getFullState(database: DatabaseState) {
     royalties: mergedRoyalties,
     permissions: database.permissions || {},
     vtConfigs: database.vtConfigs || {},
-    whatsappConfig: database.whatsappConfig || {
-      senderPhone: "+55 (11) 98888-0000",
-      connectionStatus: "conectado",
-      minInterval: 3,
-      maxInterval: 8
-    },
+    whatsappConfig: getWhatsAppConfigResponse(database),
     whatsappHistory: database.whatsappHistory || [],
     products: database.products || [],
     suppliers: database.suppliers || [],
@@ -1021,12 +1041,7 @@ routeBoth("delete", "/api/entries/:id", requireSession, async (req: Request, res
 
 // 7. WhatsApp Messaging Dispatch Module
 routeBoth("get", "/api/whatsapp/config", (req: Request, res: ExpressResponse) => {
-  res.json(db.whatsappConfig || {
-    senderPhone: "+55 (11) 98888-0000",
-    connectionStatus: "conectado",
-    minInterval: 3,
-    maxInterval: 8
-  });
+  res.json(getWhatsAppConfigResponse(db));
 });
 
 routeBoth("post", "/api/whatsapp/config", requireSession, async (req: Request, res: ExpressResponse) => {
@@ -1041,7 +1056,7 @@ routeBoth("post", "/api/whatsapp/config", requireSession, async (req: Request, r
     ...updates,
   };
   await saveDatabase(db);
-  res.json({ success: true, config: db.whatsappConfig });
+  res.json({ success: true, config: getWhatsAppConfigResponse(db) });
 });
 
 routeBoth("get", "/api/whatsapp/history", (req: Request, res: ExpressResponse) => {
@@ -1090,16 +1105,79 @@ routeBoth("post", "/api/whatsapp/send", requireSession, async (req: Request, res
     return res.status(200).json({ success: false, status: "erro", errorReason: "Número inválido" });
   }
 
-  // Simulação controlada de envio bem-sucedido na mesma conexão persistente
+  const cloud = getWhatsAppCloudConfig();
+  if (!cloud.accessToken || !cloud.phoneNumberId) {
+    const errorReason = "WhatsApp Cloud API não configurada. Cadastre WHATSAPP_ACCESS_TOKEN e WHATSAPP_PHONE_NUMBER_ID no ambiente de produção.";
+    const errorHistoryItem = {
+      id: `wa_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+      senderPhone: senderPhone || db.whatsappConfig?.senderPhone || "",
+      recipientPhone,
+      recipientName: recipientName || "Contato",
+      date: dateStr,
+      time: timeStr,
+      message,
+      status: "erro",
+      errorReason,
+      timestamp: now.toISOString(),
+    };
+    if (!db.whatsappHistory) db.whatsappHistory = [];
+    db.whatsappHistory.unshift(errorHistoryItem);
+    if (db.whatsappHistory.length > 500) db.whatsappHistory = db.whatsappHistory.slice(0, 500);
+    await saveDatabase(db);
+    return res.status(503).json({ success: false, status: "erro", errorReason, configured: false });
+  }
+
+  let providerResult: any = {};
+  try {
+    const providerResponse = await fetch(`https://graph.facebook.com/${cloud.apiVersion}/${cloud.phoneNumberId}/messages`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${cloud.accessToken}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        messaging_product: "whatsapp",
+        recipient_type: "individual",
+        to: cleanPhone,
+        type: "text",
+        text: { preview_url: false, body: String(message).slice(0, 4096) },
+      }),
+    });
+    providerResult = await providerResponse.json().catch(() => ({}));
+    if (!providerResponse.ok) {
+      throw new Error(providerResult?.error?.message || `Meta recusou o envio (HTTP ${providerResponse.status}).`);
+    }
+  } catch (error: any) {
+    const errorReason = error?.message || "A API do WhatsApp não aceitou o envio.";
+    const errorHistoryItem = {
+      id: `wa_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+      senderPhone: senderPhone || db.whatsappConfig?.senderPhone || "",
+      recipientPhone,
+      recipientName: recipientName || "Contato",
+      date: dateStr,
+      time: timeStr,
+      message,
+      status: "erro",
+      errorReason,
+      timestamp: now.toISOString(),
+    };
+    if (!db.whatsappHistory) db.whatsappHistory = [];
+    db.whatsappHistory.unshift(errorHistoryItem);
+    if (db.whatsappHistory.length > 500) db.whatsappHistory = db.whatsappHistory.slice(0, 500);
+    await saveDatabase(db);
+    return res.status(502).json({ success: false, status: "erro", errorReason });
+  }
+
   const historyItem = {
     id: `wa_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
-    senderPhone: senderPhone || db.whatsappConfig?.senderPhone || "+55 (11) 98888-0000",
+    senderPhone: senderPhone || db.whatsappConfig?.senderPhone || "",
     recipientPhone,
     recipientName: recipientName || "Contato",
     date: dateStr,
     time: timeStr,
     message,
     status: "enviado",
+    providerMessageId: providerResult?.messages?.[0]?.id,
     timestamp: now.toISOString(),
   };
 
@@ -1108,7 +1186,7 @@ routeBoth("post", "/api/whatsapp/send", requireSession, async (req: Request, res
   if (db.whatsappHistory.length > 500) db.whatsappHistory = db.whatsappHistory.slice(0, 500);
   await saveDatabase(db);
 
-  res.json({ success: true, status: "enviado", id: historyItem.id });
+  res.json({ success: true, status: "enviado", id: historyItem.id, providerMessageId: historyItem.providerMessageId, acceptedByMeta: true });
 });
 
 // Resilient 404 handler for unmatched API routes

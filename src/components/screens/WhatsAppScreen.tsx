@@ -41,7 +41,9 @@ interface WhatsAppScreenProps {
 export const WhatsAppScreen: React.FC<WhatsAppScreenProps> = ({ onNavigate }) => {
   // Config & Connection State
   const [senderPhone, setSenderPhone] = useState("+55 (11) 98888-0000");
-  const [connectionStatus, setConnectionStatus] = useState<"conectado" | "conectando" | "desconectado">("conectado");
+  const [connectionStatus, setConnectionStatus] = useState<"conectado" | "conectando" | "desconectado">("desconectado");
+  const [providerReady, setProviderReady] = useState(false);
+  const [providerMessage, setProviderMessage] = useState("Carregando configuração do provedor...");
   const [minInterval, setMinInterval] = useState(3);
   const [maxInterval, setMaxInterval] = useState(8);
 
@@ -88,6 +90,8 @@ export const WhatsAppScreen: React.FC<WhatsAppScreenProps> = ({ onNavigate }) =>
       if (mounted && cfg) {
         if (cfg.senderPhone) setSenderPhone(cfg.senderPhone);
         if (cfg.connectionStatus) setConnectionStatus(cfg.connectionStatus);
+        setProviderReady(Boolean(cfg.providerReady));
+        setProviderMessage(cfg.providerMessage || (cfg.providerReady ? "WhatsApp Cloud API da Meta configurada." : "WhatsApp Cloud API não configurada."));
         if (cfg.minInterval) setMinInterval(cfg.minInterval);
         if (cfg.maxInterval) setMaxInterval(cfg.maxInterval);
       }
@@ -221,6 +225,11 @@ export const WhatsAppScreen: React.FC<WhatsAppScreenProps> = ({ onNavigate }) =>
   // Single persistent dispatch loop (1 sessão -> 1 conexão -> 1 aba -> fila sequencial)
   const startDispatchLoop = async (startIndex = 0) => {
     if (validRecipients.length === 0) return;
+    if (!providerReady) {
+      setConnectionStatus("desconectado");
+      setCurrentContactStatus("Envio bloqueado: configure a WhatsApp Cloud API da Meta no ambiente de produção.");
+      return;
+    }
 
     setIsDispatching(true);
     isDispatchingRef.current = true;
@@ -269,7 +278,7 @@ export const WhatsAppScreen: React.FC<WhatsAppScreenProps> = ({ onNavigate }) =>
           sendOk = true;
           sent++;
           setSentCount(sent);
-          setCurrentContactStatus("✓ Mensagem entregue com sucesso!");
+          setCurrentContactStatus("✓ Mensagem aceita pela API oficial do WhatsApp; a entrega é confirmada pelo status da Meta.");
         } else {
           sendErrorReason = res.errorReason || "Falha de rede";
           errors++;
@@ -317,7 +326,7 @@ export const WhatsAppScreen: React.FC<WhatsAppScreenProps> = ({ onNavigate }) =>
 
     setIsDispatching(false);
     isDispatchingRef.current = false;
-    setCurrentContactStatus(isStoppedRef.current ? "Disparo interrompido pelo usuário." : "Disparo sequencial concluído com sucesso!");
+    setCurrentContactStatus(isStoppedRef.current ? "Disparo interrompido pelo usuário." : "Fila concluída. Confira os itens aceitos e os erros no histórico.");
   };
 
   const handlePause = () => {
@@ -341,6 +350,11 @@ export const WhatsAppScreen: React.FC<WhatsAppScreenProps> = ({ onNavigate }) =>
   };
 
   const handleReconnect = () => {
+    if (!providerReady) {
+      setConnectionStatus("desconectado");
+      setCurrentContactStatus("Não há provedor configurado para reconectar. Configure a WhatsApp Cloud API da Meta no ambiente de produção.");
+      return;
+    }
     setConnectionStatus("conectando");
     setTimeout(() => {
       setConnectionStatus("conectado");
@@ -380,7 +394,7 @@ export const WhatsAppScreen: React.FC<WhatsAppScreenProps> = ({ onNavigate }) =>
               Disparo de Mensagens WhatsApp
             </h1>
             <p className="text-xs text-[#69778c] mt-0.5">
-              Envio sequencial para contatos utilizando uma única sessão ativa e a mesma aba de execução, sem recarregar o navegador.
+              Envio sequencial pela WhatsApp Cloud API oficial da Meta. O sistema não marca mensagens como enviadas sem confirmação da API.
             </p>
           </div>
 
@@ -421,6 +435,15 @@ export const WhatsAppScreen: React.FC<WhatsAppScreenProps> = ({ onNavigate }) =>
             </button>
           </div>
         </div>
+        {!providerReady && (
+          <div className="mt-4 flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs font-semibold text-amber-900">
+            <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
+            <div>
+              <div className="font-extrabold">WhatsApp ainda não está pronto para envio</div>
+              <div className="mt-0.5 font-normal">{providerMessage} Configure <code>WHATSAPP_ACCESS_TOKEN</code> e <code>WHATSAPP_PHONE_NUMBER_ID</code> no ambiente de produção e recarregue esta tela.</div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* ------------------------------------------------------------- */}
@@ -981,7 +1004,7 @@ export const WhatsAppScreen: React.FC<WhatsAppScreenProps> = ({ onNavigate }) =>
                 <span className="text-[10px] font-bold text-[#69778c] block uppercase">Número Remetente:</span>
                 <strong className="text-sm font-bold text-[#152238]">{senderPhone}</strong>
                 <span className="text-[10px] text-emerald-700 block font-semibold mt-0.5">
-                  Conexão ativa · 1 única sessão persistente
+                  API oficial da Meta · envio autenticado
                 </span>
               </div>
 

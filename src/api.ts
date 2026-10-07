@@ -583,10 +583,13 @@ export async function fetchWhatsAppConfig(): Promise<WhatsAppConfig> {
     throw new Error("Configuração do WhatsApp não encontrada");
   } catch (e) {
     return {
-      senderPhone: "+55 11 99999-0000",
-      connectionStatus: "conectado",
+      senderPhone: "",
+      connectionStatus: "desconectado",
       minInterval: 3,
-      maxInterval: 8
+      maxInterval: 8,
+      provider: "meta_cloud_api",
+      providerReady: false,
+      providerMessage: "Não foi possível carregar a configuração do WhatsApp.",
     };
   }
 }
@@ -612,7 +615,14 @@ export async function sendWhatsAppMessageAPI(payload: {
   recipientName: string;
   message: string;
   company?: string;
-}): Promise<{ success: boolean; status: "enviado" | "erro"; errorReason?: string }> {
+}): Promise<{
+  success: boolean;
+  status: "enviado" | "erro";
+  errorReason?: string;
+  providerMessageId?: string;
+  acceptedByMeta?: boolean;
+  configured?: boolean;
+}> {
   const res = await fetchWithTimeout("/api/whatsapp/send", {
     method: "POST",
     headers: { "Content-Type": "application/json" },

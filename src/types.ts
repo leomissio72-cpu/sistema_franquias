@@ -347,6 +347,7 @@ export interface WhatsAppMessageHistory {
   message: string;
   status: "enviado" | "pendente" | "erro" | "nao_enviado";
   errorReason?: string;
+  providerMessageId?: string;
   timestamp: string;
 }
 
@@ -356,6 +357,9 @@ export interface WhatsAppConfig {
   minInterval: number;
   maxInterval: number;
   activeSessionId?: string;
+  provider?: "meta_cloud_api" | "manual";
+  providerReady?: boolean;
+  providerMessage?: string;
 }
 
 export interface CloudState {
