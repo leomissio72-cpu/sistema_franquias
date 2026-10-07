@@ -74,7 +74,7 @@ export const DreParamsScreen: React.FC<DreParamsScreenProps> = ({
       expMap[e.id] = (val * 100).toFixed(2);
     });
     setRawExpenses(expMap);
-  }, [activeTenant, dreParams]);
+  }, [activeTenant]);
 
   const sampleFat = currentUnit ? currentUnit.faturamento : 100000;
   const previewDre = calculateDre(sampleFat, form);
@@ -201,7 +201,7 @@ export const DreParamsScreen: React.FC<DreParamsScreenProps> = ({
             className="flex items-center gap-1.5 rounded-lg bg-[#3c63da] px-4 py-2 text-xs font-bold text-white hover:bg-[#2f52c0] shadow-sm disabled:opacity-50 cursor-pointer"
           >
             {isSaved ? <CheckCircle2 className="h-3.5 w-3.5 text-emerald-300" /> : <Save className="h-3.5 w-3.5" />}
-            <span>{isSaved ? "Parâmetros Salvos na Nuvem!" : isSaving ? "Salvando..." : "Salvar Parâmetros"}</span>
+            <span>{isSaved ? "Parâmetros Salvos!" : isSaving ? "Salvando..." : "Salvar Parâmetros"}</span>
           </button>
         </div>
       </div>

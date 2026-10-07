@@ -191,6 +191,7 @@ export const PagamentosDespesasScreen: React.FC<PagamentosDespesasScreenProps> =
             businesses={businesses}
             manualEntries={manualEntries}
             onCreateEntry={onCreateEntry}
+            onUpdateEntry={onUpdateEntry}
             onDeleteEntry={onDeleteEntry}
             onNavigate={onNavigate}
           />

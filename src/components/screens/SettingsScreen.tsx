@@ -37,7 +37,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
   };
 
   const handleReset = async () => {
-    if (confirm("Tem certeza que deseja restaurar o banco de dados da nuvem para os valores de fábrica?")) {
+    if (confirm("Tem certeza que deseja restaurar o banco de dados para os valores de fábrica?")) {
       await onResetDatabase();
       alert("Banco de dados restaurado com sucesso!");
     }
@@ -116,7 +116,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
 
         <div className="hidden rounded-2xl border border-[#e5eaf1] bg-white p-5 sm:p-6 shadow-xs space-y-4">
           <h3 className="text-sm font-bold text-[#152238] border-b border-[#e5eaf1] pb-3">
-            Sincronização em Nuvem & Manutenção
+            Sincronização & Manutenção
           </h3>
 
           <div className="space-y-4 text-xs">
@@ -129,7 +129,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                 </div>
               </div>
               <span className="bg-emerald-50 text-emerald-700 px-2.5 py-1 text-[10px] font-bold rounded-full">
-                Ativo na Nuvem
+                Ativo
               </span>
             </div>
 

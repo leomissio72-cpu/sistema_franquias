@@ -1256,7 +1256,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
             {/* Modal Footer */}
             <div className="p-4 bg-[#f8faff] border-t border-[#e5eaf1] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div className="text-xs text-[#69778c]">
-                Mostrando <strong className="text-[#152238]">{modalFilteredFranchises.length}</strong> unidades. Todos os dados são sincronizados diretamente na nuvem.
+                Mostrando <strong className="text-[#152238]">{modalFilteredFranchises.length}</strong> unidades. Todos os dados são sincronizados diretamente.
               </div>
 
               <div className="flex items-center gap-2 self-end sm:self-auto">

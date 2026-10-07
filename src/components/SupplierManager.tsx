@@ -145,9 +145,9 @@ export const SupplierManager: React.FC<SupplierManagerProps> = ({
     try {
       await onSaveSuppliers(next);
       setIsOpen(false);
-      setMessage(editingId ? "Fornecedor atualizado e salvo na nuvem." : "Fornecedor cadastrado e salvo na nuvem.");
+      setMessage(editingId ? "Fornecedor atualizado e salvo." : "Fornecedor cadastrado e salvo.");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Não foi possível salvar o fornecedor na nuvem.");
+      setError(err instanceof Error ? err.message : "Não foi possível salvar o fornecedor.");
     } finally {
       setSaving(false);
     }
@@ -159,7 +159,7 @@ export const SupplierManager: React.FC<SupplierManagerProps> = ({
     setError("");
     try {
       await onSaveSuppliers(suppliers.filter((item) => item.id !== supplier.id));
-      setMessage("Fornecedor excluído e removido da nuvem.");
+      setMessage("Fornecedor excluído e removido.");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Não foi possível excluir o fornecedor.");
     } finally {

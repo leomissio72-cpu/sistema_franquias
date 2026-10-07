@@ -26,6 +26,7 @@ interface LancamentosScreenProps {
   manualEntries: ManualEntry[];
   onCreateEntry: (entry: Partial<ManualEntry>) => Promise<void>;
   onCreateBulkEntries?: (entries: Array<Partial<ManualEntry>>) => Promise<void>;
+  onUpdateEntry?: (id: string, patch: Partial<ManualEntry>) => Promise<void>;
   onDeleteEntry: (id: string) => Promise<void>;
   onNavigate: (screen: ScreenType) => void;
 }
@@ -57,6 +58,7 @@ export const LancamentosScreen: React.FC<LancamentosScreenProps> = ({
   manualEntries,
   onCreateEntry,
   onCreateBulkEntries,
+  onUpdateEntry,
   onDeleteEntry,
   onNavigate,
 }) => {
@@ -75,8 +77,21 @@ export const LancamentosScreen: React.FC<LancamentosScreenProps> = ({
   const [note, setNote] = useState<string>("");
   const [recurrence, setRecurrence] = useState<"1" | "3" | "6" | "12">("1");
   const [recurringValue, setRecurringValue] = useState<string>("");
+  const [editingEntryId, setEditingEntryId] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [successToast, setSuccessToast] = useState<string | null>(null);
+
+  const handleStartEdit = (e: ManualEntry) => {
+    setEditingEntryId(e.id);
+    setEntryType(e.type);
+    setDate(e.date);
+    setValue(String(e.value));
+    setDesc(e.desc.replace(/\s\(\d+\/\d+\)$/, ""));
+    setCatId(e.catId || (e.type === "entrada" ? "receita" : "outros"));
+    setPayMethod(e.pay || "pix");
+    setNote(e.note || "");
+    setRecurrence("1");
+  };
 
   const isRede = currentTenantId === "dono" || currentTenantId === "equipe" || currentTenantId.startsWith("biz");
 
@@ -93,7 +108,6 @@ export const LancamentosScreen: React.FC<LancamentosScreenProps> = ({
     { id: "luz", name: "Energia elétrica" },
     { id: "agua", name: "Água e esgoto" },
     { id: "internet", name: "Internet / Telefonia" },
-    { id: "marketing", name: "Marketing e tráfego" },
     { id: "royalties", name: "Royalties da franquia" },
     { id: "cmv", name: "CMV / Fornecedor" },
     { id: "outros", name: "Outros / Tarifas bancárias" },
@@ -152,46 +166,11 @@ export const LancamentosScreen: React.FC<LancamentosScreenProps> = ({
     }
 
     const catObj = currentCategories.find((c) => c.id === catId) || currentCategories[0];
-    const numMonths = parseInt(recurrence, 10) || 1;
-
     setIsSubmitting(true);
     try {
-      const targetTenant = currentTenantId === "dono" ? (franchises[0]?.id || "dono") : currentTenantId;
-
-      if (numMonths > 1) {
-        const recVal = parseFloat(recurringValue.trim() || value || "0");
-        const recurringList: Array<Partial<ManualEntry>> = [];
-        for (let i = 0; i < numMonths; i++) {
-          const entryDate = addMonthsToDate(date, i);
-          const entryDesc = `${desc.trim()} (${i + 1}/${numMonths})`;
-          const detected = detectApelido(entryDesc, catObj?.name);
-          recurringList.push({
-            tenant: targetTenant,
-            type: entryType,
-            date: entryDate,
-            value: recVal,
-            desc: entryDesc,
-            apelido: detected.apelido,
-            catId: catObj?.id || (entryType === "entrada" ? "receita" : "outros"),
-            catName: catObj?.name || (entryType === "entrada" ? "Receita operacional" : "Outros / Tarifas"),
-            pay: payMethod,
-            note: note.trim() ? `${note.trim()} [Recorrente ${i + 1}/${numMonths} - R$ ${recVal.toFixed(2)}]` : `[Recorrente ${i + 1}/${numMonths} - R$ ${recVal.toFixed(2)}]`,
-          });
-        }
-
-        if (onCreateBulkEntries) {
-          await onCreateBulkEntries(recurringList);
-        } else {
-          for (const item of recurringList) {
-            await onCreateEntry(item);
-          }
-        }
-
-        setSuccessToast(`✓ ${numMonths} lançamentos recorrentes no valor de R$ ${recVal.toFixed(2)} gerados com sucesso!`);
-      } else {
+      if (editingEntryId && onUpdateEntry) {
         const detected = detectApelido(desc.trim(), catObj?.name);
-        await onCreateEntry({
-          tenant: targetTenant,
+        await onUpdateEntry(editingEntryId, {
           type: entryType,
           date,
           value: numVal,
@@ -202,8 +181,59 @@ export const LancamentosScreen: React.FC<LancamentosScreenProps> = ({
           pay: payMethod,
           note: note.trim(),
         });
+        setSuccessToast(`✓ Lançamento atualizado com sucesso!`);
+        setEditingEntryId(null);
+      } else {
+        const numMonths = parseInt(recurrence, 10) || 1;
+        const targetTenant = currentTenantId === "dono" ? (franchises[0]?.id || "dono") : currentTenantId;
 
-        setSuccessToast(`✓ Lançamento salvo com sucesso no banco de dados da nuvem!`);
+        if (numMonths > 1) {
+          const recVal = parseFloat(recurringValue.trim() || value || "0");
+          const recurringList: Array<Partial<ManualEntry>> = [];
+          for (let i = 0; i < numMonths; i++) {
+            const entryDate = addMonthsToDate(date, i);
+            const entryDesc = `${desc.trim()} (${i + 1}/${numMonths})`;
+            const detected = detectApelido(entryDesc, catObj?.name);
+            recurringList.push({
+              tenant: targetTenant,
+              type: entryType,
+              date: entryDate,
+              value: recVal,
+              desc: entryDesc,
+              apelido: detected.apelido,
+              catId: catObj?.id || (entryType === "entrada" ? "receita" : "outros"),
+              catName: catObj?.name || (entryType === "entrada" ? "Receita operacional" : "Outros / Tarifas"),
+              pay: payMethod,
+              note: note.trim() ? `${note.trim()} [Recorrente ${i + 1}/${numMonths} - R$ ${recVal.toFixed(2)}]` : `[Recorrente ${i + 1}/${numMonths} - R$ ${recVal.toFixed(2)}]`,
+            });
+          }
+
+          if (onCreateBulkEntries) {
+            await onCreateBulkEntries(recurringList);
+          } else {
+            for (const item of recurringList) {
+              await onCreateEntry(item);
+            }
+          }
+
+          setSuccessToast(`✓ ${numMonths} lançamentos recorrentes no valor de R$ ${recVal.toFixed(2)} gerados com sucesso!`);
+        } else {
+          const detected = detectApelido(desc.trim(), catObj?.name);
+          await onCreateEntry({
+            tenant: targetTenant,
+            type: entryType,
+            date,
+            value: numVal,
+            desc: desc.trim(),
+            apelido: detected.apelido,
+            catId: catObj?.id || (entryType === "entrada" ? "receita" : "outros"),
+            catName: catObj?.name || (entryType === "entrada" ? "Receita operacional" : "Outros / Tarifas"),
+            pay: payMethod,
+            note: note.trim(),
+          });
+
+          setSuccessToast(`✓ Lançamento salvo com sucesso no banco de dados!`);
+        }
       }
 
       setTimeout(() => setSuccessToast(null), 4000);
@@ -213,7 +243,7 @@ export const LancamentosScreen: React.FC<LancamentosScreenProps> = ({
       setNote("");
       setRecurrence("1");
     } catch (err: any) {
-      alert(err.message || "Erro ao criar lançamento");
+      alert(err.message || "Erro ao salvar lançamento");
     } finally {
       setIsSubmitting(false);
     }
@@ -236,7 +266,6 @@ export const LancamentosScreen: React.FC<LancamentosScreenProps> = ({
           <td style="padding:6px 8px;border-bottom:1px solid #e2e8f0;font-weight:bold;color:${isEntrada ? "#047857" : "#b44b4b"};">${isEntrada ? "Entrada" : "Despesa"}</td>
           <td style="padding:6px 8px;border-bottom:1px solid #e2e8f0;">${e.desc} ${e.note ? `<br/><small style="color:#64748b;">${e.note}</small>` : ""}</td>
           <td style="padding:6px 8px;border-bottom:1px solid #e2e8f0;">${e.apelido || "-"}</td>
-          <td style="padding:6px 8px;border-bottom:1px solid #e2e8f0;">${e.catName || "-"}</td>
           <td style="padding:6px 8px;border-bottom:1px solid #e2e8f0;text-transform:uppercase;">${e.pay || "-"}</td>
           <td style="padding:6px 8px;border-bottom:1px solid #e2e8f0;text-align:right;font-family:monospace;font-weight:bold;color:${isEntrada ? "#047857" : "#b44b4b"};">${isEntrada ? "+" : "-"} ${formatBrl2(e.value)}</td>
         </tr>
@@ -278,12 +307,11 @@ export const LancamentosScreen: React.FC<LancamentosScreenProps> = ({
             <th>Tipo</th>
             <th>Descrição</th>
             <th>Apelido</th>
-            <th>Categoria DRE</th>
             <th>Pagamento</th>
             <th style="text-align:right;">Valor (R$)</th>
           </tr>
         </thead>
-        <tbody>${rowsHtml || '<tr><td colspan="7" style="text-align:center;padding:12px;">Nenhum lançamento encontrado para os filtros selecionados.</td></tr>'}</tbody>
+        <tbody>${rowsHtml || '<tr><td colspan="6" style="text-align:center;padding:12px;">Nenhum lançamento encontrado para os filtros selecionados.</td></tr>'}</tbody>
       </table>
       <div class="summary">
         <span>Total Entradas: ${formatBrl2(totalEntradasFiltered)}</span>
@@ -386,7 +414,7 @@ export const LancamentosScreen: React.FC<LancamentosScreenProps> = ({
           <strong className="text-2xl font-extrabold text-[#152238] block mt-1">
             {manualEntries.length}
           </strong>
-          <small className="text-[11px] text-[#69778c] block mt-0.5">Persistidos em nuvem</small>
+          <small className="text-[11px] text-[#69778c] block mt-0.5">Persistidos</small>
         </div>
       </div>
 
@@ -394,9 +422,25 @@ export const LancamentosScreen: React.FC<LancamentosScreenProps> = ({
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
         {/* Form Card */}
         <div className="rounded-2xl border border-[#e5eaf1] bg-white p-5 sm:p-6 shadow-xs space-y-4">
-          <h3 className="text-sm font-bold text-[#152238] border-b border-[#e5eaf1] pb-3">
-            Novo Lançamento
-          </h3>
+          <div className="flex items-center justify-between border-b border-[#e5eaf1] pb-3">
+            <h3 className="text-sm font-bold text-[#152238]">
+              {editingEntryId ? "Editar Lançamento" : "Novo Lançamento"}
+            </h3>
+            {editingEntryId && (
+              <button
+                type="button"
+                onClick={() => {
+                  setEditingEntryId(null);
+                  setValue("");
+                  setDesc("");
+                  setNote("");
+                }}
+                className="text-[11px] font-bold text-[#3c63da] hover:underline cursor-pointer"
+              >
+                Cancelar Edição
+              </button>
+            )}
+          </div>
 
           <div className="flex gap-2">
             <button
@@ -472,22 +516,7 @@ export const LancamentosScreen: React.FC<LancamentosScreenProps> = ({
               />
             </div>
 
-            <div>
-              <label className="block text-[10px] font-extrabold uppercase text-[#69778c] mb-1">
-                Categoria DRE
-              </label>
-              <select
-                value={catId}
-                onChange={(e) => setCatId(e.target.value)}
-                className="w-full rounded-lg border border-[#e5eaf1] px-3 py-2 text-xs font-semibold text-[#152238] bg-white focus:border-[#3c63da] focus:outline-none"
-              >
-                {currentCategories.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name}
-                  </option>
-                ))}
-              </select>
-            </div>
+
 
             <div>
               <label className="block text-[10px] font-extrabold uppercase text-[#69778c] mb-1">
@@ -599,7 +628,9 @@ export const LancamentosScreen: React.FC<LancamentosScreenProps> = ({
               <Plus className="h-4 w-4" />
               <span>
                 {isSubmitting
-                  ? "Salvando na Nuvem..."
+                  ? "Salvando..."
+                  : editingEntryId
+                  ? "Atualizar Lançamento"
                   : recurrence !== "1"
                   ? `Salvar ${recurrence} Lançamentos Recorrentes`
                   : "Salvar Lançamento"}
@@ -714,7 +745,7 @@ export const LancamentosScreen: React.FC<LancamentosScreenProps> = ({
             </div>
           </div>
 
-          <div className="overflow-x-auto">
+          <div className="max-h-[460px] overflow-y-auto pr-1">
             <table className="w-full text-left text-xs border-collapse">
               <thead>
                 <tr className="bg-[#f8f9fc] text-[#69778c] uppercase text-[9px] tracking-wider border-b border-[#e5eaf1]">
@@ -722,7 +753,6 @@ export const LancamentosScreen: React.FC<LancamentosScreenProps> = ({
                   <th className="p-3">Tipo</th>
                   <th className="p-3">Descrição</th>
                   <th className="p-3">Apelido / Tag</th>
-                  <th className="p-3">Categoria DRE</th>
                   <th className="p-3">Pagamento</th>
                   <th className="p-3 text-right">Valor</th>
                   <th className="p-3 text-right">Ação</th>
@@ -731,7 +761,7 @@ export const LancamentosScreen: React.FC<LancamentosScreenProps> = ({
               <tbody className="divide-y divide-[#e5eaf1]">
                 {visibleEntries.length === 0 ? (
                   <tr>
-                    <td colSpan={8} className="p-6 text-center text-[#69778c]">
+                    <td colSpan={7} className="p-6 text-center text-[#69778c]">
                       Nenhum lançamento manual encontrado com os filtros selecionados.
                     </td>
                   </tr>
@@ -777,7 +807,6 @@ export const LancamentosScreen: React.FC<LancamentosScreenProps> = ({
                             {apelidoVal}
                           </span>
                         </td>
-                        <td className="p-3 text-[#69778c]">{isIntercompanyEntry(e) ? "Transferência entre empresas" : e.catName}</td>
                         <td className="p-3 text-[#69778c] uppercase text-[10px] font-bold font-mono">
                           {e.pay}
                         </td>
@@ -788,7 +817,15 @@ export const LancamentosScreen: React.FC<LancamentosScreenProps> = ({
                         >
                           {isEntrada ? "+" : "-"} {formatBrl2(e.value)}
                         </td>
-                        <td className="p-3 text-right">
+                        <td className="p-3 text-right flex items-center justify-end gap-1.5">
+                          <button
+                            onClick={() => handleStartEdit(e)}
+                            className="text-[#3c63da] hover:text-[#2f52c0] p-1 rounded hover:bg-[#edf2ff] transition-all cursor-pointer font-semibold text-xs flex items-center gap-1"
+                            title="Editar lançamento"
+                          >
+                            <FilePenLine className="h-3.5 w-3.5" />
+                            <span>Editar</span>
+                          </button>
                           <button
                             onClick={() => onDeleteEntry(e.id)}
                             className="text-[#b44b4b] hover:text-red-800 p-1 rounded hover:bg-red-50 transition-all cursor-pointer"

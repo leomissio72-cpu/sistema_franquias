@@ -19,7 +19,8 @@ import {
   BillItem,
   RegisteredSupplier,
   HomologatedProduct,
-  IntercompanyRule
+  IntercompanyRule,
+  RoyaltyHistoryEntry
 } from "./types";
 import {
   fetchServerState,
@@ -186,7 +187,7 @@ export const App: React.FC = () => {
         setUserSession(null);
         setIsLoginOpen(true);
       } else {
-        setLoadError("Não foi possível carregar os dados desta conta na nuvem. Verifique a conexão.");
+        setLoadError("Não foi possível carregar os dados desta conta. Verifique a conexão.");
       }
     } finally {
       setIsLoading(false);
@@ -286,6 +287,11 @@ export const App: React.FC = () => {
 
   const handleSaveRoyalties = async (rates: Record<string, number>) => {
     const updatedState = await saveRoyalties(rates, userSession?.name || "Admin");
+    setServerState(updatedState);
+  };
+
+  const handleSaveRoyaltyHistory = async (history: RoyaltyHistoryEntry[]) => {
+    const updatedState = await syncStateSection("royaltyHistory", history, userSession?.name || "Admin");
     setServerState(updatedState);
   };
 
@@ -571,7 +577,7 @@ export const App: React.FC = () => {
           </div>
           <div>
             <h1 className="text-xl font-extrabold tracking-tight">Gestão de Franquias</h1>
-            <p className="max-w-md text-xs text-[#8ea1be]">{loadError || "Conectando à base central na nuvem..."}</p>
+            <p className="max-w-md text-xs text-[#8ea1be]">{loadError || "Conectando à base central..."}</p>
             {loadError && <button type="button" onClick={() => void loadState()} className="mt-4 rounded-xl bg-[#3c63da] px-4 py-2 text-xs font-bold text-white">Tentar novamente</button>}
           </div>
         </div>
@@ -841,9 +847,12 @@ export const App: React.FC = () => {
               businesses={businesses}
               franchises={franchises}
               royalties={royalties}
+              royaltyHistory={serverState?.royaltyHistory || []}
               onSaveRoyalties={handleSaveRoyalties}
+              onSaveRoyaltyHistory={handleSaveRoyaltyHistory}
               onSaveBusinesses={handleSaveBusinesses}
               onNavigate={setCurrentScreen}
+              userSession={userSession}
             />
           )}
 

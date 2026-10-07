@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { FranchiseUnit, Business, ScreenType } from "../../types";
+import { FranchiseUnit, Business, ScreenType, RoyaltyHistoryEntry, UserSession } from "../../types";
 import { formatBrl } from "../../utils/calculations";
 import {
   ShieldCheck,
@@ -8,24 +8,32 @@ import {
   CheckCircle2,
   Plus,
   KeyRound,
-  Palette
+  Palette,
+  Clock,
+  RotateCcw
 } from "lucide-react";
 
 interface PermissoesScreenProps {
   franchises: FranchiseUnit[];
   businesses: Business[];
   royalties: Record<string, number>;
+  royaltyHistory?: RoyaltyHistoryEntry[];
   onSaveRoyalties: (royalties: Record<string, number>) => Promise<void>;
+  onSaveRoyaltyHistory?: (history: RoyaltyHistoryEntry[]) => Promise<void>;
   onSaveBusinesses?: (businesses: Business[]) => Promise<void>;
   onNavigate?: (screen: ScreenType) => void;
+  userSession: UserSession;
 }
 
 export const PermissoesScreen: React.FC<PermissoesScreenProps> = ({
   franchises,
   businesses,
   royalties,
+  royaltyHistory = [],
   onSaveRoyalties,
+  onSaveRoyaltyHistory,
   onSaveBusinesses,
+  userSession,
 }) => {
   const [rates, setRates] = useState<Record<string, number>>(royalties || {});
   const [bizTypes, setBizTypes] = useState<Record<string, "pct" | "fixed">>(() => {
@@ -78,10 +86,63 @@ export const PermissoesScreen: React.FC<PermissoesScreenProps> = ({
         }));
         await onSaveBusinesses(updatedBiz);
       }
+
+      // Log history entry if rates changed
+      const newHistoryEntries = [...royaltyHistory];
+      businesses.forEach((biz) => {
+        const currentRate = rates[biz.id];
+        const prevRate = biz.royalty;
+        const currentType = bizTypes[biz.id] || biz.royaltyType || "pct";
+        if (currentRate !== undefined && currentRate !== prevRate) {
+          newHistoryEntries.unshift({
+            id: `rh_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+            businessId: biz.id,
+            businessName: biz.name || biz.brand,
+            date: new Date().toISOString(),
+            type: currentType,
+            value: currentRate,
+            user: userSession?.name || "Administrador",
+          });
+        }
+      });
+      if (onSaveRoyaltyHistory) {
+        await onSaveRoyaltyHistory(newHistoryEntries);
+      }
+
       setIsSaved(true);
       window.setTimeout(() => setIsSaved(false), 3000);
     } catch (error) {
       console.error("Erro ao salvar royalties:", error);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleFormatRoyalties = async () => {
+    if (!window.confirm("Deseja formatar e redefinir todas as taxas de royalties para o padrão de 6% e limpar o histórico?")) return;
+    const defaultRates: Record<string, number> = {};
+    const updatedBiz = businesses.map((b) => {
+      defaultRates[b.id] = 0.06;
+      return {
+        ...b,
+        royaltyType: "pct" as const,
+        royalty: 0.06,
+      };
+    });
+    setRates(defaultRates);
+    const map: Record<string, "pct" | "fixed"> = {};
+    businesses.forEach((b) => { map[b.id] = "pct"; });
+    setBizTypes(map);
+
+    setIsSaving(true);
+    try {
+      await onSaveRoyalties(defaultRates);
+      if (onSaveBusinesses) await onSaveBusinesses(updatedBiz);
+      if (onSaveRoyaltyHistory) await onSaveRoyaltyHistory([]);
+      setIsSaved(true);
+      window.setTimeout(() => setIsSaved(false), 3000);
+    } catch (error) {
+      console.error("Erro ao formatar royalties:", error);
     } finally {
       setIsSaving(false);
     }
@@ -123,6 +184,23 @@ export const PermissoesScreen: React.FC<PermissoesScreenProps> = ({
     try {
       await onSaveBusinesses([...businesses, newBrand]);
       await onSaveRoyalties(nextRates);
+
+      const newHistoryEntries = [
+        {
+          id: `rh_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+          businessId: id,
+          businessName: cleanName,
+          date: new Date().toISOString(),
+          type: brandRoyaltyType,
+          value: finalRoyalty,
+          user: userSession?.name || "Administrador",
+        },
+        ...royaltyHistory,
+      ];
+      if (onSaveRoyaltyHistory) {
+        await onSaveRoyaltyHistory(newHistoryEntries);
+      }
+
       setRates(nextRates);
       setBizTypes((prev) => ({ ...prev, [id]: brandRoyaltyType }));
       setBrandName("");
@@ -146,17 +224,29 @@ export const PermissoesScreen: React.FC<PermissoesScreenProps> = ({
             Permissões & Royalties por Marca
           </h2>
           <p className="text-xs text-[#69778c] mt-1">
-            Defina se o royalty será cobrado como percentual (%) sobre o faturamento ou como valor fixo (R$).
+            Defina se o royalty será cobrado como percentual (%) sobre o faturamento ou como valor fixo (R$), com histórico de reajustes.
           </p>
         </div>
-        <button
-          onClick={handleSave}
-          disabled={isSaving}
-          className="flex items-center gap-1.5 rounded-lg bg-[#3c63da] px-4 py-2 text-xs font-bold text-white hover:bg-[#2f52c0] shadow-sm disabled:opacity-50 cursor-pointer"
-        >
-          {isSaved ? <CheckCircle2 className="h-3.5 w-3.5 text-emerald-300" /> : <Save className="h-3.5 w-3.5" />}
-          <span>{isSaved ? "Taxas salvas na nuvem" : isSaving ? "Salvando..." : "Salvar taxas de royalties"}</span>
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={handleFormatRoyalties}
+            disabled={isSaving}
+            className="flex items-center gap-1.5 rounded-lg border border-[#3c63da]/30 bg-[#edf2ff] px-3 py-2 text-xs font-bold text-[#3c63da] hover:bg-[#dfe8fe] shadow-sm disabled:opacity-50 cursor-pointer"
+            title="Formatar e redefinir taxas de royalties padrão (6%)"
+          >
+            <RotateCcw className="h-3.5 w-3.5" />
+            <span>Formatar Royalties</span>
+          </button>
+          <button
+            onClick={handleSave}
+            disabled={isSaving}
+            className="flex items-center gap-1.5 rounded-lg bg-[#3c63da] px-4 py-2 text-xs font-bold text-white hover:bg-[#2f52c0] shadow-sm disabled:opacity-50 cursor-pointer"
+          >
+            {isSaved ? <CheckCircle2 className="h-3.5 w-3.5 text-emerald-300" /> : <Save className="h-3.5 w-3.5" />}
+            <span>{isSaved ? "Taxas salvas" : isSaving ? "Salvando..." : "Salvar taxas de royalties"}</span>
+          </button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
@@ -320,6 +410,60 @@ export const PermissoesScreen: React.FC<PermissoesScreenProps> = ({
             <Palette className="mr-1 inline h-3.5 w-3.5" />
             A cor escolhida identifica a marca nos cadastros e relatórios; ela não altera os dados financeiros.
           </div>
+        </div>
+      </div>
+
+      {/* Histórico de Reajustes de Royalties */}
+      <div className="rounded-2xl border border-[#e5eaf1] bg-white p-5 sm:p-6 shadow-xs space-y-4">
+        <h3 className="text-sm font-bold text-[#152238] border-b border-[#e5eaf1] pb-3 flex items-center gap-2">
+          <Clock className="h-4 w-4 text-[#3c63da]" />
+          Histórico de Reajustes de Royalties
+        </h3>
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-xs border-collapse">
+            <thead>
+              <tr className="bg-[#f8f9fc] text-[#69778c] uppercase text-[9px] tracking-wider border-b border-[#e5eaf1]">
+                <th className="p-2.5">Data / Hora</th>
+                <th className="p-2.5">Marca / Modelo</th>
+                <th className="p-2.5">Tipo</th>
+                <th className="p-2.5">Novo Valor</th>
+                <th className="p-2.5">Responsável</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-[#e5eaf1]">
+              {(!royaltyHistory || royaltyHistory.length === 0) ? (
+                <tr>
+                  <td colSpan={5} className="p-5 text-center text-[#69778c]">
+                    Nenhum reajuste registrado no histórico.
+                  </td>
+                </tr>
+              ) : (
+                royaltyHistory.map((h) => {
+                  const b = businesses.find((x) => x.id === h.businessId);
+                  const isPct = h.type === "pct";
+                  return (
+                    <tr key={h.id} className="hover:bg-[#f8faff]">
+                      <td className="p-2.5 text-[#69778c] whitespace-nowrap">
+                        {new Date(h.date).toLocaleString("pt-BR")}
+                      </td>
+                      <td className="p-2.5 font-bold text-[#152238]">
+                        {h.businessName || b?.name || h.businessId}
+                      </td>
+                      <td className="p-2.5">
+                        <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${isPct ? "bg-blue-50 text-blue-700" : "bg-emerald-50 text-emerald-700"}`}>
+                          {isPct ? "Percentual (%)" : "Valor Fixo (R$)"}
+                        </span>
+                      </td>
+                      <td className="p-2.5 font-mono font-bold text-[#3c63da]">
+                        {isPct ? `${(h.value * 100).toFixed(1)}%` : formatBrl(h.value)}
+                      </td>
+                      <td className="p-2.5 text-[#69778c]">{h.user}</td>
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
         </div>
       </div>
     </div>

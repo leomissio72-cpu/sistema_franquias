@@ -369,7 +369,7 @@ export const WhatsAppScreen: React.FC<WhatsAppScreenProps> = ({ onNavigate }) =>
         await saveWhatsAppHistory(nextHistory);
       } catch (historyError) {
         console.error("Falha ao persistir histórico do disparo:", historyError);
-        setCurrentContactStatus("Mensagem processada, mas o histórico não foi salvo na nuvem.");
+        setCurrentContactStatus("Mensagem processada, mas o histórico não foi salvo.");
       }
 
       // Intervalo variável configurável (ex: 3 a 8 segundos)

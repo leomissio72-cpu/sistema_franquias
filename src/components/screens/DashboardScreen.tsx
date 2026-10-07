@@ -1411,7 +1411,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
         u.royValue.toFixed(2),
         u.fppValue.toFixed(2),
         u.totalDevidoMatriz.toFixed(2),
-        "Apurado na Nuvem",
+        "Apurado",
       ]);
     });
 

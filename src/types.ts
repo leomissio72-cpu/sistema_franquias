@@ -405,6 +405,16 @@ export interface WhatsAppConfig {
   webhookMessage?: string;
 }
 
+export interface RoyaltyHistoryEntry {
+  id: string;
+  businessId: string;
+  businessName?: string;
+  date: string;
+  type: "pct" | "fixed";
+  value: number;
+  user: string;
+}
+
 export interface CloudState {
   version?: number;
   businesses: Business[];
@@ -412,7 +422,7 @@ export interface CloudState {
   employees: Employee[];
   users: UserAccount[];
   manualEntries: ManualEntry[];
-  /** Compromissos de contas a pagar persistidos na nuvem. */
+  /** Compromissos de contas a pagar persistidos. */
   bills?: BillItem[];
   configs: ConfigItem[];
   cloudConfigs?: ConfigItem[];
@@ -421,6 +431,7 @@ export interface CloudState {
   paymentMethods: PaymentMethod[] | Record<string, PaymentMethod[]>;
   businessRules: BusinessRule | Record<string, BusinessRule>;
   royalties: Record<string, number>;
+  royaltyHistory?: RoyaltyHistoryEntry[];
   permissions: Record<string, any>;
   vtConfigs: Record<string, VTConfig>;
   systemSettings: SystemSettings;

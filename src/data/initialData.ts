@@ -28,7 +28,6 @@ export const dreExpenseDefs: DreExpenseDef[] = [
   { id: "luz", name: "Energia elétrica", group: "utilidades", pct: 0.023, fromConciliation: true, icon: "⚡" },
   { id: "agua", name: "Água e esgoto", group: "utilidades", pct: 0.012, fromConciliation: true, icon: "💧" },
   { id: "internet", name: "Internet / Telefonia", group: "utilidades", pct: 0.004, fromConciliation: true, icon: "🌐" },
-  { id: "marketing", name: "Marketing", group: "operacional", pct: 0.020, fromConciliation: false, icon: "📣" },
   { id: "royalties", name: "Royalties franqueadora", group: "franquia", pct: 0.060, fromConciliation: false, icon: "🤝" },
   { id: "outros", name: "Outros / Tarifas", group: "operacional", pct: 0.008, fromConciliation: true, icon: "📄" }
 ];
@@ -45,7 +44,6 @@ export const defaultDreParams: DreParams = {
     luz: 0.023,
     agua: 0.012,
     internet: 0.004,
-    marketing: 0.020,
     royalties: 0.060,
     outros: 0.008
   }
@@ -159,7 +157,7 @@ export const initialConfigs: ConfigItem[] = [
   },
   {
     key: "realtime_sync_enabled",
-    name: "Sincronização em Tempo Real na Nuvem",
+    name: "Sincronização em Tempo Real",
     value: "true",
     type: "boolean",
     category: "Sincronização",

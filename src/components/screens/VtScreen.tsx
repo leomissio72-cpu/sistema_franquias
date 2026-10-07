@@ -795,7 +795,7 @@ export const VtScreen: React.FC<VtScreenProps> = ({
             className="flex items-center gap-1.5 rounded-xl bg-[#3c63da] px-4 py-2 text-xs font-bold text-white hover:bg-[#2f52c0] shadow-sm cursor-pointer transition-all"
           >
             {isSaved ? <CheckCircle2 className="h-4 w-4 text-emerald-300" /> : <Save className="h-4 w-4" />}
-            <span>{isSaved ? "Salvo na Nuvem!" : "Salvar na Nuvem"}</span>
+            <span>{isSaved ? "Salvo!" : "Salvar"}</span>
           </button>
         </div>
       </div>
@@ -987,7 +987,7 @@ export const VtScreen: React.FC<VtScreenProps> = ({
           </div>
         </div>
 
-        <div className="overflow-x-auto">
+        <div className="max-h-[460px] overflow-y-auto">
           <table className="w-full text-left text-xs border-collapse">
             <thead>
               <tr className="bg-[#f8f9fc] text-[#69778c] uppercase text-[9px] tracking-wider border-b border-[#e5eaf1]">
@@ -1180,10 +1180,11 @@ export const VtScreen: React.FC<VtScreenProps> = ({
 
                           <button
                             onClick={() => openEditModal(emp)}
-                            className="p-1.5 rounded-lg border border-[#e5eaf1] bg-white text-[#69778c] hover:text-[#3c63da] hover:bg-[#edf2ff] cursor-pointer transition-colors"
+                            className="px-2 py-1.5 rounded-lg border border-[#e5eaf1] bg-white text-[#69778c] hover:text-[#3c63da] hover:bg-[#edf2ff] cursor-pointer transition-colors inline-flex items-center gap-1 font-bold text-xs"
                             title="Editar colaborador"
                           >
                             <Edit2 className="h-3.5 w-3.5" />
+                            <span>Editar</span>
                           </button>
 
                           <button

@@ -403,7 +403,7 @@ export const RpScreen: React.FC<RpScreenProps> = ({ bills: incomingBills, curren
     setSaveMessage("");
     try {
       await onSaveBills(nextBills);
-      setSaveMessage("Salvo na nuvem");
+      setSaveMessage("Salvo");
       window.setTimeout(() => setSaveMessage(""), 2400);
     } catch (error) {
       console.error("Erro ao salvar compromissos:", error);
@@ -672,7 +672,7 @@ export const RpScreen: React.FC<RpScreenProps> = ({ bills: incomingBills, curren
               Nenhum compromisso neste escopo. Cadastre a primeira conta ao lado.
             </div>
           ) : (
-            <div className="overflow-x-auto">
+            <div className="max-h-[460px] overflow-y-auto">
               <table className="w-full min-w-[720px] text-left text-xs border-collapse">
                 <thead>
                   <tr className="bg-[#f8f9fc] text-[#69778c] uppercase text-[9px] tracking-wider border-b border-[#e5eaf1]">
@@ -716,14 +716,15 @@ export const RpScreen: React.FC<RpScreenProps> = ({ bills: incomingBills, curren
                           <span className="bg-[#f0f4f9] text-[#152238] px-2 py-0.5 text-[10px] font-bold rounded-full border border-[#e5eaf1]">{bill.cat}</span>
                         </td>
                         <td className="p-3 text-right font-mono font-bold text-[#152238]">{formatBrl2(bill.value)}</td>
-                        <td className="p-3 text-right space-x-1">
+                        <td className="p-3 text-right flex items-center justify-end gap-1.5">
                           <button
                             onClick={() => handleStartEditBill(bill)}
                             disabled={isSaving}
                             title="Editar compromisso"
-                            className="text-[#3c63da] hover:text-[#2f52c0] p-1.5 rounded-lg hover:bg-blue-50 transition-all cursor-pointer inline-flex items-center"
+                            className="text-[#3c63da] hover:text-[#2f52c0] p-1.5 rounded-lg hover:bg-blue-50 transition-all cursor-pointer inline-flex items-center gap-1 font-semibold text-xs"
                           >
                             <Edit3 className="h-4 w-4" />
+                            <span>Editar</span>
                           </button>
                           <button
                             onClick={() => handleDelete(bill.id)}
@@ -920,7 +921,7 @@ export const RpScreen: React.FC<RpScreenProps> = ({ bills: incomingBills, curren
         </div>
 
         {/* Tabela do Relatório */}
-        <div className="overflow-x-auto rounded-xl border border-[#e5eaf1]">
+        <div className="max-h-[460px] overflow-y-auto rounded-xl border border-[#e5eaf1]">
           {filteredBillsForReport.length === 0 ? (
             <div className="p-8 text-center text-xs text-[#69778c] bg-[#f8faff]">
               Nenhuma despesa localizada com os filtros selecionados.

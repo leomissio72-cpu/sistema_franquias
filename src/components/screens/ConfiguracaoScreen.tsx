@@ -154,7 +154,7 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
     try {
       await onSaveSettings(settingsForm);
       setIsSavedSettings(true);
-      setSuccessMessage("Preferências gerais salvas na nuvem com sucesso!");
+      setSuccessMessage("Preferências gerais salvas com sucesso!");
       setTimeout(() => {
         setIsSavedSettings(false);
         setSuccessMessage("");
@@ -168,7 +168,7 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
 
   const handleResetDb = async () => {
     if (!onResetDatabase) return;
-    if (confirm("ATENÇÃO: Deseja realmente restaurar o banco de dados da nuvem para os valores de fábrica? Todas as alterações serão redefinidas.")) {
+    if (confirm("ATENÇÃO: Deseja realmente restaurar o banco de dados para os valores de fábrica? Todas as alterações serão redefinidas.")) {
       try {
         await onResetDatabase();
         setSuccessMessage("Banco de dados restaurado com sucesso para os valores padrão de fábrica!");
@@ -266,6 +266,7 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
   const [newBizName, setNewBizName] = useState("");
   const [newBizBrand, setNewBizBrand] = useState("");
   const [newBizColor, setNewBizColor] = useState("#3c63da");
+  const [newBizRoyaltyType, setNewBizRoyaltyType] = useState<"pct" | "fixed">("pct");
   const [newBizRoyalty, setNewBizRoyalty] = useState("6.0");
   const [bizError, setBizError] = useState("");
 
@@ -273,6 +274,7 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
   const [editingBizId, setEditingBizId] = useState<string | null>(null);
   const [editBizName, setEditBizName] = useState("");
   const [editBizColor, setEditBizColor] = useState("#3c63da");
+  const [editBizRoyaltyType, setEditBizRoyaltyType] = useState<"pct" | "fixed">("pct");
   const [editBizRoyalty, setEditBizRoyalty] = useState("6.0");
 
   // Inline business creation from within Franchise form
@@ -366,7 +368,7 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
       await onSaveIntercompanyRules?.(updated);
       setIntercompanyList(updated);
       resetIntercompanyForm();
-      setSuccessMessage("Regra entre empresas salva na nuvem. Novas importações já poderão marcá-la para fora do DRE.");
+      setSuccessMessage("Regra entre empresas salva. Novas importações já poderão marcá-la para fora do DRE.");
       setTimeout(() => setSuccessMessage(""), 4500);
     } catch (error: any) {
       setErrorMessage(error?.message || "Não foi possível salvar a regra entre empresas.");
@@ -425,14 +427,16 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
       .replace(/[^a-z0-9]/g, "_")
       .replace(/^_+|_+$/g, "") || `biz_${Date.now()}`;
 
-    // Apenas o dono pode definir taxa personalizada. Se não for dono, adota padrão 6% (0.06)
-    const assignedRoyalty = isOwner ? (Number(newBizRoyalty) || 6) / 100 : 0.06;
+    const parsedNewRoy = Number(newBizRoyalty);
+    const validRate = Number.isFinite(parsedNewRoy) ? parsedNewRoy : 0;
+    const assignedRoyalty = isOwner ? (newBizRoyaltyType === "pct" ? validRate / 100 : validRate) : 0.06;
 
     const newBiz: Business = {
       id: cleanId,
       name: newBizName.trim(),
       brand: newBizBrand.trim() || newBizName.trim(),
       color: newBizColor || "#3c63da",
+      royaltyType: newBizRoyaltyType,
       royalty: assignedRoyalty,
     };
 
@@ -453,10 +457,10 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
       setNewBizBrand("");
       setNewBizRoyalty("6.0");
       setBizError("");
-      setSuccessMessage(`Modelo / Marca "${newBiz.name}" cadastrado e salvo com sucesso na nuvem!`);
+      setSuccessMessage(`Modelo / Marca "${newBiz.name}" cadastrado e salvo com sucesso!`);
       setTimeout(() => setSuccessMessage(""), 4000);
     } catch (err: any) {
-      setErrorMessage(err.message || "Erro ao salvar Modelo / Marca na nuvem.");
+      setErrorMessage(err.message || "Erro ao salvar Modelo / Marca.");
       setTimeout(() => setErrorMessage(""), 4000);
     }
   };
@@ -464,9 +468,10 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
   const handleSaveEditBusiness = async (bizId: string) => {
     if (!editBizName.trim()) return;
     const existing = businessList.find((b) => b.id === bizId);
-    // Somente o dono pode alterar alíquota de royalty
+    const parsedEditRoy = Number(editBizRoyalty);
+    const validEditRate = Number.isFinite(parsedEditRoy) ? parsedEditRoy : 0;
     const assignedRoyalty = isOwner
-      ? (Number(editBizRoyalty) || 6) / 100
+      ? (editBizRoyaltyType === "pct" ? validEditRate / 100 : validEditRate)
       : (existing?.royalty ?? royaltyRates[bizId] ?? 0.06);
 
     const updated = businessList.map((b) =>
@@ -476,6 +481,7 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
             name: editBizName.trim(),
             brand: editBizName.trim(),
             color: editBizColor || b.color || "#3c63da",
+            royaltyType: editBizRoyaltyType,
             royalty: assignedRoyalty,
           }
         : b
@@ -606,7 +612,7 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
     try {
       await onUpdateConfig(item.key, val);
       setSavedStatus((prev) => ({ ...prev, [item.key]: true }));
-      setSuccessMessage(`Configuração "${item.name}" salva com sucesso no banco de dados na nuvem.`);
+      setSuccessMessage(`Configuração "${item.name}" salva com sucesso no banco de dados.`);
       setTimeout(() => {
         setSavedStatus((prev) => ({ ...prev, [item.key]: false }));
       }, 3000);
@@ -631,7 +637,7 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
         newStatus[u.key] = true;
       });
       setSavedStatus(newStatus);
-      setSuccessMessage(`${updates.length} configurações sincronizadas com a nuvem.`);
+      setSuccessMessage(`${updates.length} configurações sincronizadas com a sistema.`);
       setTimeout(() => {
         setSavedStatus({});
       }, 3000);
@@ -730,7 +736,7 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
       lat: coordinates.lat,
       lng: coordinates.lng,
       coordinatesVerified: true,
-      faturamento: Number(newFranchise.faturamento) > 0 ? Number(newFranchise.faturamento) : 50000,
+      faturamento: Number.isFinite(Number(newFranchise.faturamento)) ? Number(newFranchise.faturamento) : 50000,
       pendencias: 0,
       rpDone: 5,
       status: "green",
@@ -766,7 +772,7 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
       setSuccessMessage(`Novo franqueado "${created.name}" (${created.code}) cadastrado com sucesso!`);
       setTimeout(() => setSuccessMessage(""), 4000);
     } catch (err: any) {
-      setErrorMessage(err.message || "Erro ao salvar novo franqueado na nuvem.");
+      setErrorMessage(err.message || "Erro ao salvar novo franqueado.");
       setTimeout(() => setErrorMessage(""), 4000);
     } finally {
       setIsSubmittingFranchise(false);
@@ -785,7 +791,7 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
       city: f.city || "",
       state: f.state || "",
       address: f.address || "",
-      faturamento: f.faturamento || 50000,
+      faturamento: Number.isFinite(Number(f.faturamento)) ? Number(f.faturamento) : 50000,
       email: f.email || "",
       phone: f.phone || "",
       status: (f.status as any) || "green",
@@ -818,7 +824,7 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
         city: editFranchiseForm.city.trim(),
         state: editFranchiseForm.state.trim(),
         address: editFranchiseForm.address.trim(),
-        faturamento: Number(editFranchiseForm.faturamento) > 0 ? Number(editFranchiseForm.faturamento) : f.faturamento,
+        faturamento: Number.isFinite(Number(editFranchiseForm.faturamento)) ? Number(editFranchiseForm.faturamento) : f.faturamento,
         email: editFranchiseForm.email.trim(),
         phone: editFranchiseForm.phone.trim(),
         status: editFranchiseForm.status,
@@ -986,7 +992,7 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
             Configurações, acessos e unidades
           </h2>
           <p className="text-xs text-[#69778c] mt-0.5">
-            Qualquer alteração salva aqui é persistida na nuvem e propagada para todos os aparelhos (Desktop, iPhone, Android).
+            Qualquer alteração salva aqui é persistida e propagada para todos os aparelhos (Desktop, iPhone, Android).
           </p>
         </div>
 
@@ -995,7 +1001,7 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
           className="flex items-center gap-1.5 rounded-xl border border-[#e5eaf1] bg-white px-3.5 py-2 text-xs font-bold text-[#152238] hover:bg-[#f4f7fb] shadow-2xs cursor-pointer flex-shrink-0"
         >
           <RefreshCw className="h-3.5 w-3.5 text-[#3c63da]" />
-          <span>Atualizar da Nuvem</span>
+          <span>Atualizar</span>
         </button>
       </div>
 
@@ -1169,8 +1175,8 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
                 {isSavedSettings
                   ? "Preferências Salvas!"
                   : isSavingSettings
-                  ? "Salvando na Nuvem..."
-                  : "Salvar Preferências na Nuvem"}
+                  ? "Salvando..."
+                  : "Salvar Preferências"}
               </span>
             </button>
           </div>
@@ -1265,7 +1271,7 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
               <div className="flex items-center justify-between border-b border-[#e5eaf1] pb-3">
                 <h4 className="text-sm font-bold text-[#152238] flex items-center gap-2">
                   <Cloud className="h-4 w-4 text-[#3c63da]" />
-                  <span>Sincronização em Nuvem (Multi-Dispositivo)</span>
+                  <span>Sincronização (Multi-Dispositivo)</span>
                 </h4>
                 <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-bold">
                   <span className="h-2 w-2 rounded-full bg-emerald-600" />
@@ -1410,46 +1416,39 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
                 <div>
                   <div className="flex items-center justify-between mb-1">
                     <label className="block text-[10px] font-bold text-[#152238]">
-                      Royalty sobre Faturamento (%)
+                      Tipo e Valor do Royalty
                     </label>
-                    {!isOwner ? (
-                      <span className="inline-flex items-center gap-1 text-[9px] font-bold text-amber-700 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200">
-                        <Lock className="h-2.5 w-2.5" />
-                        Exclusivo do Dono
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center gap-1 text-[9px] font-bold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">
-                        👑 Dono
-                      </span>
-                    )}
                   </div>
-                  <div className="relative">
-                    <input
-                      type="number"
-                      step="0.1"
-                      min="0"
-                      max="100"
-                      placeholder="6.0"
-                      value={isOwner ? newBizRoyalty : "6.0"}
-                      onChange={(e) => isOwner && setNewBizRoyalty(e.target.value)}
+                  <div className="grid grid-cols-[110px_1fr] gap-2">
+                    <select
+                      value={newBizRoyaltyType}
+                      onChange={(e) => setNewBizRoyaltyType(e.target.value as any)}
                       disabled={!isOwner}
-                      className={`w-full rounded-lg border px-2.5 py-1.5 text-xs font-bold ${
-                        !isOwner
-                          ? "bg-slate-100 text-slate-500 border-slate-200 cursor-not-allowed"
-                          : "bg-white text-[#152238] border-[#c4cdd9] focus:border-[#3c63da] focus:outline-none"
-                      }`}
-                    />
-                    <span className="absolute right-2.5 top-1.5 text-xs font-bold text-[#69778c]">%</span>
+                      className="rounded-lg border border-[#c4cdd9] bg-white px-2 py-1.5 text-xs font-bold text-[#152238]"
+                    >
+                      <option value="pct">% Faturamento</option>
+                      <option value="fixed">Valor Fixo R$</option>
+                    </select>
+                    <div className="relative">
+                      <input
+                        type="number"
+                        step={newBizRoyaltyType === "pct" ? "0.1" : "1"}
+                        min="0"
+                        placeholder={newBizRoyaltyType === "pct" ? "6.0" : "3000"}
+                        value={isOwner ? newBizRoyalty : (newBizRoyaltyType === "pct" ? "6.0" : "3000")}
+                        onChange={(e) => isOwner && setNewBizRoyalty(e.target.value)}
+                        disabled={!isOwner}
+                        className={`w-full rounded-lg border px-2.5 py-1.5 text-xs font-bold ${
+                          !isOwner
+                            ? "bg-slate-100 text-slate-500 border-slate-200 cursor-not-allowed"
+                            : "bg-white text-[#152238] border-[#c4cdd9] focus:border-[#3c63da] focus:outline-none"
+                        }`}
+                      />
+                      <span className="absolute right-2.5 top-1.5 text-xs font-bold text-[#69778c]">
+                        {newBizRoyaltyType === "pct" ? "%" : "R$"}
+                      </span>
+                    </div>
                   </div>
-                  {!isOwner ? (
-                    <span className="text-[10px] text-[#69778c] mt-0.5 block">
-                      Taxa padrão atribuída. Somente o Dono da Rede pode personalizar.
-                    </span>
-                  ) : (
-                    <span className="text-[10px] text-emerald-600 mt-0.5 block font-medium">
-                      Defina a taxa de royalty que este modelo repassará à matriz.
-                    </span>
-                  )}
                 </div>
                 <div>
                   <label className="block text-[10px] font-bold text-[#152238] mb-1">
@@ -1482,7 +1481,7 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
                   onClick={handleAddBusiness}
                   className="px-4 py-1.5 rounded-lg bg-[#3c63da] text-xs font-bold text-white hover:bg-[#2f52c0] shadow-xs cursor-pointer"
                 >
-                  Salvar Marca na Nuvem
+                  Salvar Marca
                 </button>
               </div>
             </div>
@@ -1507,7 +1506,8 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
               {businessList.map((b) => {
                 const unitsCount = franchiseList.filter((f) => f.businessId === b.id).length;
-                const royaltyVal = ((b.royalty !== undefined ? b.royalty : (royaltyRates[b.id] ?? 0.06)) * 100).toFixed(1);
+                const royaltyValNum = b.royalty !== undefined ? b.royalty : (royaltyRates[b.id] ?? 0.06);
+                const royaltyVal = b.royaltyType === "fixed" ? royaltyValNum : (royaltyValNum * 100).toFixed(1);
                 const isEditing = editingBizId === b.id;
 
                 return (
@@ -1547,20 +1547,24 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
                         </div>
                         <div className="grid grid-cols-2 gap-2">
                           <div>
-                            <div className="flex items-center justify-between mb-0.5">
-                              <label className="block text-[10px] font-bold text-[#152238]">Royalty (%)</label>
-                              {!isOwner ? (
-                                <span className="inline-flex items-center gap-0.5 text-[9px] font-bold text-amber-700 bg-amber-50 px-1 rounded border border-amber-200">
-                                  <Lock className="h-2 w-2" />
-                                  Dono
-                                </span>
-                              ) : (
-                                <span className="text-[9px] font-bold text-emerald-700">👑 Dono</span>
-                              )}
-                            </div>
+                            <label className="block text-[10px] font-bold text-[#152238] mb-0.5">Tipo</label>
+                            <select
+                              value={editBizRoyaltyType}
+                              onChange={(e) => setEditBizRoyaltyType(e.target.value as any)}
+                              disabled={!isOwner}
+                              className="w-full rounded border border-[#c4cdd9] bg-white px-1.5 py-1 text-xs font-bold"
+                            >
+                              <option value="pct">% Fat.</option>
+                              <option value="fixed">R$ Fixo</option>
+                            </select>
+                          </div>
+                          <div>
+                            <label className="block text-[10px] font-bold text-[#152238] mb-0.5">
+                              {editBizRoyaltyType === "pct" ? "Taxa (%)" : "Valor (R$)"}
+                            </label>
                             <input
                               type="number"
-                              step="0.1"
+                              step={editBizRoyaltyType === "pct" ? "0.1" : "1"}
                               value={editBizRoyalty}
                               onChange={(e) => isOwner && setEditBizRoyalty(e.target.value)}
                               disabled={!isOwner}
@@ -1569,20 +1573,6 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
                                   ? "bg-slate-100 text-slate-500 border-slate-200 cursor-not-allowed"
                                   : "border-[#c4cdd9] bg-white text-[#152238]"
                               }`}
-                            />
-                            {!isOwner && (
-                              <span className="text-[9px] text-[#69778c] block mt-0.5">
-                                Apenas o Dono pode alterar.
-                              </span>
-                            )}
-                          </div>
-                          <div>
-                            <label className="block text-[10px] font-bold text-[#152238] mb-0.5">Cor</label>
-                            <input
-                              type="color"
-                              value={editBizColor}
-                              onChange={(e) => setEditBizColor(e.target.value)}
-                              className="h-7 w-full rounded border border-[#c4cdd9] p-0.5 bg-white cursor-pointer"
                             />
                           </div>
                         </div>
@@ -1618,7 +1608,7 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
                               Royalty Padrão
                             </span>
                             <strong className="text-emerald-700 font-extrabold font-mono">
-                              {royaltyVal}%
+                              {b.royaltyType === "fixed" ? formatBrl(Number(royaltyVal) || 0) : royaltyVal + "%"}
                             </strong>
                           </div>
 
@@ -1655,7 +1645,7 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
       )}
 
       {/* ------------------------------------------------------------- */}
-      {/* 1. ABA: PARÂMETROS DA NUVEM                                   */}
+      {/* 1. ABA: PARÂMETROS                                   */}
       {/* ------------------------------------------------------------- */}
       {activeTab === "configs" && (
         <div className="space-y-4">
@@ -1849,7 +1839,7 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
 
               <button type="submit" disabled={!isOwner || isSavingIntercompany} className="inline-flex w-full items-center justify-center gap-1.5 rounded-xl bg-[#3c63da] px-4 py-2.5 text-xs font-extrabold text-white hover:bg-[#2f52c0] disabled:cursor-not-allowed disabled:opacity-50">
                 <Save className="h-3.5 w-3.5" />
-                {isSavingIntercompany ? "Salvando na nuvem..." : editingIntercompanyId ? "Salvar alterações" : "Salvar regra na nuvem"}
+                {isSavingIntercompany ? "Salvando..." : editingIntercompanyId ? "Salvar alterações" : "Salvar regra"}
               </button>
             </form>
 
@@ -2032,10 +2022,10 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
                     ? "bg-slate-300 text-slate-500 cursor-not-allowed border border-slate-300"
                     : "bg-[#3c63da] hover:bg-[#2f52c0] cursor-pointer"
                 }`}
-                title={!isOwner ? "Apenas o Dono da Rede pode alterar ou salvar taxas de royalties" : "Salvar alterações de royalties na nuvem"}
+                title={!isOwner ? "Apenas o Dono da Rede pode alterar ou salvar taxas de royalties" : "Salvar alterações de royalties"}
               >
                 {isSavedRoyalties ? <CheckCircle2 className="h-4 w-4 text-emerald-300" /> : <Save className="h-4 w-4" />}
-                <span>{isSavedRoyalties ? "Salvo na Nuvem!" : !isOwner ? "Salvar (Exclusivo do Dono)" : "Salvar Taxas na Nuvem"}</span>
+                <span>{isSavedRoyalties ? "Salvo!" : !isOwner ? "Salvar (Exclusivo do Dono)" : "Salvar Taxas"}</span>
               </button>
             </div>
           </div>
@@ -2514,7 +2504,7 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
                   <Store className="h-4 w-4" />
                   <span>Cadastrar Novo Franqueado</span>
                 </h4>
-                <span className="text-[11px] text-[#69778c]">Cadastro ágil com sincronização instantânea na nuvem</span>
+                <span className="text-[11px] text-[#69778c]">Cadastro ágil com sincronização instantânea</span>
               </div>
 
               {franchiseFormError && (
@@ -2849,7 +2839,7 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
                   className="px-5 py-2 rounded-lg bg-emerald-600 text-white text-xs font-bold hover:bg-emerald-700 shadow-sm disabled:opacity-50 flex items-center gap-1.5 cursor-pointer"
                 >
                   <Save className="h-3.5 w-3.5" />
-                  <span>{isSubmittingEditFranchise ? "Salvando..." : "Salvar Alterações & Fixar na Nuvem"}</span>
+                  <span>{isSubmittingEditFranchise ? "Salvando..." : "Salvar Alterações & Fixar"}</span>
                 </button>
               </div>
             </div>
@@ -2926,7 +2916,7 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
       )}
 
       {/* ------------------------------------------------------------- */}
-      {/* 5. ABA: AUDITORIA DA NUVEM                                    */}
+      {/* 5. ABA: AUDITORIA                                    */}
       {/* ------------------------------------------------------------- */}
       {activeTab === "audit" && (
         <div className="rounded-2xl border border-[#e5eaf1] bg-white p-5 sm:p-6 shadow-xs space-y-4">
@@ -2983,7 +2973,7 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
                 <p className="text-[#8ba2c7]"># 1. Inicialize o repositório git (se necessário)</p>
                 <p>git init</p>
                 <p>git add .</p>
-                <p>git commit -m "feat: Gestão de Franquias plataforma de franquias em nuvem"</p>
+                <p>git commit -m "feat: Gestão de Franquias plataforma de franquias"</p>
                 <p className="text-[#8ba2c7] mt-2"># 2. Conecte ao seu repositório no GitHub e faça o push</p>
                 <p>git remote add origin https://github.com/SEU_USUARIO/gestao-franquias.git</p>
                 <p>git branch -M main</p>
@@ -3001,7 +2991,7 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
                 <p>2. Clique em <strong>"Add New... &gt; Project"</strong> e selecione o repositório da Gestão de Franquias.</p>
                 <p>3. O arquivo <code className="bg-[#f0f4f9] px-1.5 py-0.5 rounded font-mono font-bold">vercel.json</code> já está configurado na raiz com as rotas SPA e cabeçalhos de segurança.</p>
                 <p>4. Em <strong>Framework Preset</strong>, selecione <strong>Vite</strong>.</p>
-                <p>5. Clique em <strong>Deploy</strong>. Em cerca de 40 segundos seu site estará online na nuvem!</p>
+                <p>5. Clique em <strong>Deploy</strong>. Em cerca de 40 segundos seu site estará online!</p>
               </div>
             </div>
 

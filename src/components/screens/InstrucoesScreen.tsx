@@ -179,9 +179,9 @@ export const InstrucoesScreen: React.FC<InstrucoesScreenProps> = ({
       screen: "employees" as ScreenType
     },
     {
-      title: "Configurações, Nuvem & Auditoria",
+      title: "Configurações, sistema & Auditoria",
       icon: <Settings className="h-5 w-5 text-slate-700" />,
-      summary: "Painel de controle central com persistência dupla na nuvem e histórico rastreável de todas as modificações.",
+      summary: "Painel de controle central com persistência dupla e histórico rastreável de todas as modificações.",
       details: [
         "Logs de auditoria registrando quem alterou, o que alterou e data/hora exata.",
         "Parâmetros globais de tolerância bancária e regras de corte financeiro.",
@@ -494,7 +494,7 @@ export const InstrucoesScreen: React.FC<InstrucoesScreenProps> = ({
               </span>
               <h4 className="text-sm font-bold text-[#152238]">Rastreabilidade Completa</h4>
               <p className="text-xs text-[#69778c] leading-relaxed">
-                Qualquer reajuste de taxa gera um registro imediato nos logs de auditoria da nuvem, documentando quem fez a alteração, o percentual anterior e o novo percentual.
+                Qualquer reajuste de taxa gera um registro imediato nos logs de auditoria, documentando quem fez a alteração, o percentual anterior e o novo percentual.
               </p>
             </div>
           </div>

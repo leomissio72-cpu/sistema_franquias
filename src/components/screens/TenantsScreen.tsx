@@ -93,7 +93,7 @@ export const TenantsScreen: React.FC<TenantsScreenProps> = ({
       city: f.city || "",
       state: f.state || "",
       address: f.address || "",
-      faturamento: f.faturamento || 50000,
+      faturamento: Number.isFinite(Number(f.faturamento)) ? Number(f.faturamento) : 50000,
       email: f.email || "",
       phone: f.phone || "",
       status: (f.status as any) || "green",
@@ -121,7 +121,7 @@ export const TenantsScreen: React.FC<TenantsScreenProps> = ({
         city: editForm.city.trim(),
         state: editForm.state.trim(),
         address: editForm.address.trim(),
-        faturamento: Number(editForm.faturamento) > 0 ? Number(editForm.faturamento) : f.faturamento,
+        faturamento: Number.isFinite(Number(editForm.faturamento)) ? Number(editForm.faturamento) : f.faturamento,
         email: editForm.email.trim(),
         phone: editForm.phone.trim(),
         status: editForm.status,
@@ -273,7 +273,7 @@ export const TenantsScreen: React.FC<TenantsScreenProps> = ({
       lat: coordinates.lat,
       lng: coordinates.lng,
       coordinatesVerified: true,
-      faturamento: Number(form.faturamento) > 0 ? Number(form.faturamento) : 50000,
+      faturamento: Number.isFinite(Number(form.faturamento)) ? Number(form.faturamento) : 50000,
       pendencias: 0,
       rpDone: 5,
       status: "green",
@@ -737,7 +737,7 @@ export const TenantsScreen: React.FC<TenantsScreenProps> = ({
                     Alterar Informações do Franqueado
                   </h3>
                   <p className="text-[11px] text-[#69778c]">
-                    Edição permanente com sincronização e fixação imediata na nuvem.
+                    Edição permanente com sincronização e fixação imediata.
                   </p>
                 </div>
               </div>

@@ -269,7 +269,7 @@ const defaultConfigs = [
   },
   {
     key: "realtime_sync_enabled",
-    name: "Sincronização em Tempo Real na Nuvem",
+    name: "Sincronização em Tempo Real",
     value: "true",
     type: "boolean",
     category: "Sincronização",
@@ -358,6 +358,7 @@ interface DatabaseState {
   paymentMethods: any[];
   businessRules: Record<string, any>;
   royalties: Record<string, number>;
+  royaltyHistory?: any[];
   permissions: Record<string, any>;
   vtConfigs: Record<string, any>;
   systemSettings?: any;
@@ -495,6 +496,7 @@ function loadDatabase(): DatabaseState {
     paymentMethods: defaultPaymentMethods,
     businessRules: defaultBusinessRules,
     royalties: {},
+    royaltyHistory: [],
     permissions: {},
     vtConfigs: {},
     credentials: {},
@@ -563,6 +565,7 @@ function getFullState(database: DatabaseState) {
     paymentMethods: database.paymentMethods || [],
     businessRules: database.businessRules || {},
     royalties: mergedRoyalties,
+    royaltyHistory: database.royaltyHistory || [],
     permissions: database.permissions || {},
     vtConfigs: database.vtConfigs || {},
     whatsappConfig: getWhatsAppConfigResponse(database),

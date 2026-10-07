@@ -82,8 +82,8 @@ export const DreScreen: React.FC<DreScreenProps> = ({
   manualEntries = [],
   intercompanyRules = [],
 }) => {
-  // Main sub-tab: demonstrativo vs parametros
-  const [activeSubTab, setActiveSubTab] = useState<"demonstrativo" | "parametros">("demonstrativo");
+  // Main sub-tab: demonstrativo vs extrato vs parametros
+  const [activeSubTab, setActiveSubTab] = useState<"demonstrativo" | "extrato" | "parametros">("demonstrativo");
   const [calculationMode, setCalculationMode] = useState<"real" | "projecao">("real");
 
   // -------------------------------------------------------------
@@ -830,6 +830,42 @@ export const DreScreen: React.FC<DreScreenProps> = ({
     URL.revokeObjectURL(url);
   };
 
+  const handleExportExtratoCsv = () => {
+    const scope = getScopeTitle();
+    const period = getPeriodSummary();
+    let csv = `\uFEFF`;
+    csv += `EXTRATO DETALHADO DRE (ENTRADAS, SAÍDAS E DESPESAS)\n`;
+    csv += `Escopo;${scope}\n`;
+    csv += `Período;${period}\n\n`;
+
+    csv += `--- ENTRADAS ---\n`;
+    csv += `Data;Descrição;Apelido;Categoria;Valor (R$)\n`;
+    realEntradas.forEach(e => {
+      csv += `${e.date};${e.desc};${e.apelido || ""};${e.catName || ""};${Number(e.value || 0).toFixed(2)}\n`;
+    });
+    csv += `Total Entradas;;;;${realEntradas.reduce((s, e) => s + Number(e.value || 0), 0).toFixed(2)}\n\n`;
+
+    csv += `--- SAÍDAS E DESPESAS OPERACIONAIS ---\n`;
+    csv += `Data;Descrição;Apelido;Categoria/Despesa;Valor (R$)\n`;
+    realDespesas.forEach(e => {
+      csv += `${e.date};${e.desc};${e.apelido || ""};${e.catName || ""};${Number(e.value || 0).toFixed(2)}\n`;
+    });
+    csv += `Total Saídas/Despesas;;;;${realDespesas.reduce((s, e) => s + Number(e.value || 0), 0).toFixed(2)}\n\n`;
+
+    const totalEntrada = realEntradas.reduce((s, e) => s + Number(e.value || 0), 0);
+    const totalSaida = realDespesas.reduce((s, e) => s + Number(e.value || 0), 0);
+    const saldoLiquido = totalEntrada - totalSaida;
+    csv += `SALDO LÍQUIDO (ENTRADA - SAÍDA);;;;${saldoLiquido.toFixed(2)}\n`;
+
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `Extrato_DRE_${scope.replace(/[^a-zA-Z0-9]/g, "_")}_${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   const handleGeneratePdfReport = () => {
     const scope = getScopeTitle();
     const yearsStr = dateSelection.years?.length ? dateSelection.years.join(", ") : "Todos";
@@ -1031,17 +1067,274 @@ export const DreScreen: React.FC<DreScreenProps> = ({
             DRE e Resultados — {getScopeTitle()}
           </h2>
           <p className="text-xs text-[#69778c] mt-0.5">
-            Apuração contábil em nuvem, controle de margens e gráficos interativos tipo Power BI.
+            Apuração contábil, controle de margens e gráficos interativos tipo Power BI.
           </p>
         </div>
 
 
       </div>
 
-      {/* ------------------------------------------------------------- */}
-      {/* DEMONSTRATIVO & RESULTADOS FINANCEIROS                        */}
-      {/* ------------------------------------------------------------- */}
-      <div className="space-y-6">
+      <>
+      {/* Sub-Tabs Selector */}
+      <div className="flex items-center gap-2 border-b border-[#e5eaf1] pb-3 flex-wrap">
+        <button
+          onClick={() => setActiveSubTab("demonstrativo")}
+          className={`px-4 py-2 text-xs font-bold rounded-xl transition-all cursor-pointer ${
+            activeSubTab === "demonstrativo"
+              ? "bg-[#3c63da] text-white shadow-xs"
+              : "bg-white border border-[#e5eaf1] text-[#69778c] hover:text-[#152238]"
+          }`}
+        >
+          Demonstrativo DRE & Gráficos
+        </button>
+        <button
+          onClick={() => setActiveSubTab("extrato")}
+          className={`px-4 py-2 text-xs font-bold rounded-xl transition-all cursor-pointer ${
+            activeSubTab === "extrato"
+              ? "bg-[#3c63da] text-white shadow-xs"
+              : "bg-white border border-[#e5eaf1] text-[#69778c] hover:text-[#152238]"
+          }`}
+        >
+          Entradas, Saídas & Despesas (Extrato DRE)
+        </button>
+        <button
+          onClick={() => setActiveSubTab("parametros")}
+          className={`px-4 py-2 text-xs font-bold rounded-xl transition-all cursor-pointer ${
+            activeSubTab === "parametros"
+              ? "bg-[#3c63da] text-white shadow-xs"
+              : "bg-white border border-[#e5eaf1] text-[#69778c] hover:text-[#152238]"
+          }`}
+        >
+          Parâmetros do DRE
+        </button>
+      </div>
+
+        {activeSubTab === "extrato" && (
+        <div className="space-y-6">
+          <div className="rounded-2xl border border-[#e5eaf1] bg-white p-5 shadow-xs space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[#e5eaf1]">
+              <div>
+                <h3 className="text-base font-extrabold text-[#152238]">Extrato de Entradas, Saídas e Despesas do DRE</h3>
+                <p className="text-xs text-[#69778c] mt-0.5">
+                  Filtros aplicados: {getPeriodSummary()} | Escopo: {getScopeTitle()}
+                </p>
+              </div>
+              <button
+                onClick={handleExportExtratoCsv}
+                className="flex items-center gap-1.5 rounded-xl border border-emerald-300 bg-emerald-50 px-3 py-2 text-xs font-bold text-emerald-800 hover:bg-emerald-100 transition-all cursor-pointer shadow-2xs"
+              >
+                <FileSpreadsheet className="h-4 w-4 text-emerald-600" />
+                <span>Baixar Extrato (.csv)</span>
+              </button>
+            </div>
+
+            {/* Summary Cards */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="p-4 rounded-xl border border-emerald-200 bg-emerald-50/50">
+                <span className="text-[10px] font-extrabold uppercase text-emerald-800 block">Total de Entradas</span>
+                <strong className="text-xl font-black text-emerald-900 block mt-1">
+                  {formatBrl2(realEntradas.reduce((s, e) => s + Number(e.value || 0), 0))}
+                </strong>
+                <span className="text-[11px] text-emerald-700">{realEntradas.length} lançamento(s) de entrada</span>
+              </div>
+              <div className="p-4 rounded-xl border border-rose-200 bg-rose-50/50">
+                <span className="text-[10px] font-extrabold uppercase text-rose-800 block">Total de Saídas & Despesas</span>
+                <strong className="text-xl font-black text-rose-900 block mt-1">
+                  {formatBrl2(realDespesas.reduce((s, e) => s + Number(e.value || 0), 0))}
+                </strong>
+                <span className="text-[11px] text-rose-700">{realDespesas.length} lançamento(s) de despesa</span>
+              </div>
+              <div className="p-4 rounded-xl border border-indigo-200 bg-indigo-50/50">
+                <span className="text-[10px] font-extrabold uppercase text-indigo-800 block">Saldo Líquido (Entrada - Saída)</span>
+                <strong className="text-xl font-black text-indigo-950 block mt-1">
+                  {formatBrl2(realEntradas.reduce((s, e) => s + Number(e.value || 0), 0) - realDespesas.reduce((s, e) => s + Number(e.value || 0), 0))}
+                </strong>
+                <span className="text-[11px] text-indigo-700">Resultado operacional bruto do extrato</span>
+              </div>
+            </div>
+
+            {/* Entradas Table */}
+            <div className="space-y-2 pt-2">
+              <h4 className="text-xs font-bold text-[#152238] uppercase tracking-wider">Entradas (Receitas) no Período</h4>
+              <div className="max-h-[300px] overflow-y-auto rounded-xl border border-[#e5eaf1]">
+                <table className="w-full text-left text-xs border-collapse">
+                  <thead>
+                    <tr className="bg-[#f8faff] text-[#69778c] uppercase text-[9px] tracking-wider border-b border-[#e5eaf1]">
+                      <th className="p-2.5">Data</th>
+                      <th className="p-2.5">Descrição</th>
+                      <th className="p-2.5">Apelido / Tag</th>
+                      <th className="p-2.5">Categoria</th>
+                      <th className="p-2.5 text-right">Valor (R$)</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-[#e5eaf1]">
+                    {realEntradas.length === 0 ? (
+                      <tr><td colSpan={5} className="p-4 text-center text-[#69778c]">Nenhuma entrada encontrada com estes filtros.</td></tr>
+                    ) : (
+                      realEntradas.map(e => (
+                        <tr key={e.id} className="hover:bg-[#f8faff]">
+                          <td className="p-2.5 text-[#69778c] whitespace-nowrap">{new Date(e.date + "T12:00:00").toLocaleDateString("pt-BR")}</td>
+                          <td className="p-2.5 font-bold text-[#152238]">{e.desc}</td>
+                          <td className="p-2.5"><span className="px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 text-[10px] font-bold">{e.apelido || "—"}</span></td>
+                          <td className="p-2.5 text-[#69778c]">{e.catName || "—"}</td>
+                          <td className="p-2.5 text-right font-mono font-bold text-emerald-700">+ {formatBrl2(e.value)}</td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* Despesas Table */}
+            <div className="space-y-2 pt-2">
+              <h4 className="text-xs font-bold text-[#152238] uppercase tracking-wider">Saídas & Despesas Operacionais no Período</h4>
+              <div className="max-h-[300px] overflow-y-auto rounded-xl border border-[#e5eaf1]">
+                <table className="w-full text-left text-xs border-collapse">
+                  <thead>
+                    <tr className="bg-[#f8faff] text-[#69778c] uppercase text-[9px] tracking-wider border-b border-[#e5eaf1]">
+                      <th className="p-2.5">Data</th>
+                      <th className="p-2.5">Descrição</th>
+                      <th className="p-2.5">Apelido / Tag</th>
+                      <th className="p-2.5">Categoria DRE</th>
+                      <th className="p-2.5 text-right">Valor (R$)</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-[#e5eaf1]">
+                    {realDespesas.length === 0 ? (
+                      <tr><td colSpan={5} className="p-4 text-center text-[#69778c]">Nenhuma despesa encontrada com estes filtros.</td></tr>
+                    ) : (
+                      realDespesas.map(e => (
+                        <tr key={e.id} className="hover:bg-[#f8faff]">
+                          <td className="p-2.5 text-[#69778c] whitespace-nowrap">{new Date(e.date + "T12:00:00").toLocaleDateString("pt-BR")}</td>
+                          <td className="p-2.5 font-bold text-[#152238]">{e.desc}</td>
+                          <td className="p-2.5"><span className="px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 text-[10px] font-bold">{e.apelido || "—"}</span></td>
+                          <td className="p-2.5 text-[#69778c]">{e.catName || "—"}</td>
+                          <td className="p-2.5 text-right font-mono font-bold text-rose-700">- {formatBrl2(e.value)}</td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* Final Net Total */}
+            <div className="p-4 rounded-xl bg-[#152238] text-white flex items-center justify-between font-extrabold text-sm">
+              <span>TOTAL FINAL (ENTRADA - SAÍDA):</span>
+              <span className="font-mono text-base sm:text-lg text-emerald-400">
+                {formatBrl2(realEntradas.reduce((s, e) => s + Number(e.value || 0), 0) - realDespesas.reduce((s, e) => s + Number(e.value || 0), 0))}
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {activeSubTab === "parametros" && (
+        <div className="rounded-2xl border border-[#e5eaf1] bg-white p-6 shadow-xs space-y-6">
+          <div className="flex items-center justify-between pb-4 border-b border-[#e5eaf1]">
+            <div>
+              <h3 className="text-base font-extrabold text-[#152238]">Parâmetros & Alíquotas do DRE ({targetTenantKey})</h3>
+              <p className="text-xs text-[#69778c] mt-0.5">Ajuste os percentuais de impostos, CMV, taxas e despesas para projeções e cálculo contábil.</p>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={handleResetParams}
+                className="px-3 py-2 rounded-xl border border-[#cbd5e1] bg-white text-xs font-bold text-[#64748b] hover:text-[#152238] transition-colors cursor-pointer"
+              >
+                Restaurar Padrão
+              </button>
+              <button
+                type="button"
+                onClick={() => void handleSaveParams()}
+                disabled={isSaving}
+                className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#3c63da] text-xs font-bold text-white hover:bg-[#2f52c0] transition-all cursor-pointer shadow-2xs"
+              >
+                <Save className="h-4 w-4" />
+                <span>{isSaving ? "Salvando..." : "Salvar Parâmetros"}</span>
+              </button>
+            </div>
+          </div>
+
+          {isSaved && (
+            <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-800 font-bold flex items-center gap-2">
+              <Check className="h-4 w-4 text-emerald-600" />
+              <span>Parâmetros salvos com sucesso!</span>
+            </div>
+          )}
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div>
+              <label className="block text-xs font-bold text-[#152238] mb-1">Impostos sobre Vendas (%)</label>
+              <input
+                type="number"
+                step="0.1"
+                value={Number((paramsForm.impostos * 100).toFixed(2))}
+                onChange={(e) => handleGeneralChange("impostos", e.target.value)}
+                className="w-full rounded-xl border border-[#cbd5e1] bg-[#f8faff] px-3.5 py-2 text-xs font-bold text-[#152238]"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-[#152238] mb-1">CMV (%)</label>
+              <input
+                type="number"
+                step="0.1"
+                value={Number((paramsForm.cmv * 100).toFixed(2))}
+                onChange={(e) => handleGeneralChange("cmv", e.target.value)}
+                className="w-full rounded-xl border border-[#cbd5e1] bg-[#f8faff] px-3.5 py-2 text-xs font-bold text-[#152238]"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-[#152238] mb-1">Taxas de Cartão (%)</label>
+              <input
+                type="number"
+                step="0.1"
+                value={Number((paramsForm.fees * 100).toFixed(2))}
+                onChange={(e) => handleGeneralChange("fees", e.target.value)}
+                className="w-full rounded-xl border border-[#cbd5e1] bg-[#f8faff] px-3.5 py-2 text-xs font-bold text-[#152238]"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-[#152238] mb-1">Descontos (%)</label>
+              <input
+                type="number"
+                step="0.1"
+                value={Number((paramsForm.discount * 100).toFixed(2))}
+                onChange={(e) => handleGeneralChange("discount", e.target.value)}
+                className="w-full rounded-xl border border-[#cbd5e1] bg-[#f8faff] px-3.5 py-2 text-xs font-bold text-[#152238]"
+              />
+            </div>
+          </div>
+
+          <div className="space-y-3 pt-4 border-t border-[#e5eaf1]">
+            <h4 className="text-xs font-extrabold uppercase tracking-wider text-[#152238]">Despesas Operacionais Fixas (% s/ Faturamento)</h4>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {dreExpenseDefs.map((def) => {
+                const val = paramsForm.despesas?.[def.id] ?? def.pct;
+                return (
+                  <div key={def.id} className="p-3 rounded-xl border border-[#e5eaf1] bg-[#f8faff] space-y-1">
+                    <label className="block text-xs font-bold text-[#152238]">{def.name}</label>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="number"
+                        step="0.1"
+                        value={Number((val * 100).toFixed(2))}
+                        onChange={(e) => handleExpenseChange(def.id, e.target.value)}
+                        className="w-full rounded-lg border border-[#cbd5e1] bg-white px-3 py-1.5 text-xs font-bold text-[#152238]"
+                      />
+                      <span className="text-xs font-bold text-[#69778c]">%</span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {activeSubTab === "demonstrativo" && (
+        <div className="space-y-6">
           {/* Card Unificado de Filtros com Seletores Granulares (Ano, Mês, Dia, Marca, Unidade) */}
           <div className="rounded-2xl border border-[#e5eaf1] bg-white p-4 sm:p-5 shadow-xs space-y-4">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[#f1f5f9]">
@@ -1554,5 +1847,8 @@ export const DreScreen: React.FC<DreScreenProps> = ({
           </div>
         </div>
       </div>
+      )}
+      </>
+    </div>
   );
 };

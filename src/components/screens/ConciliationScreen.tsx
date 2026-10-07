@@ -550,7 +550,7 @@ export const ConciliationScreen: React.FC<ConciliationScreenProps> = ({
   };
 
   useEffect(() => {
-    // A leitura do arquivo é uma prévia local. O polling da nuvem atualiza
+    // A leitura do arquivo é uma prévia local. O polling atualiza
     // manualEntries periodicamente, mas nunca pode apagar uma prévia que o
     // usuário ainda está revisando. Só a confirmação ou o descarte encerra
     // esse estado pendente.
