@@ -3,8 +3,8 @@ import path from "path";
 import fs from "fs";
 import crypto from "crypto";
 import { get, put } from "@vercel/blob";
-import { initialBills } from "./data/initialData";
-import { cookieOptions, createSignedSessionToken, getCredential, hashPassword, migrateLegacyCredentials, safeUser, setCredential, stripSensitiveFields, verifyPassword, verifySignedSessionToken } from "./serverSecurity";
+import { initialBills } from "./data/initialData.ts";
+import { cookieOptions, createSignedSessionToken, getCredential, hashPassword, migrateLegacyCredentials, safeUser, setCredential, stripSensitiveFields, verifyPassword, verifySignedSessionToken } from "./serverSecurity.ts";
 
 const app = express();
 

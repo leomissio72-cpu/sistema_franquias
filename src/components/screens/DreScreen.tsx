@@ -641,30 +641,42 @@ export const DreScreen: React.FC<DreScreenProps> = ({
     const period = `Ano: ${yearsStr} | Mês: ${monthsStr} | Dias: ${daysStr}`;
     const dateStr = new Date().toLocaleDateString("pt-BR");
 
-    let csv = `DEMONSTRATIVO DO RESULTADO DO EXERCICIO (DRE)\n`;
-    csv += `Escopo: ${scope}\n`;
-    csv += `Periodo: ${period}\n`;
-    csv += `Data de Emissao: ${dateStr}\n\n`;
+    const startYear = Math.min(...(dateSelection.years?.length ? dateSelection.years : [CURRENT_YEAR]));
+    const endYear = Math.max(...(dateSelection.years?.length ? dateSelection.years : [CURRENT_YEAR]));
+    const firstMonth = dateSelection.months?.length ? dateSelection.months[0] : 1;
+    const lastMonth = dateSelection.months?.length ? dateSelection.months[dateSelection.months.length - 1] : 12;
+    const firstDay = dateSelection.days?.length ? Math.min(...dateSelection.days) : 1;
+    const lastDay = dateSelection.days?.length ? Math.max(...dateSelection.days) : 31;
+    const dataInicial = `${String(firstDay).padStart(2, "0")}/${String(firstMonth).padStart(2, "0")}/${startYear}`;
+    const dataFinal = `${String(lastDay).padStart(2, "0")}/${String(lastMonth).padStart(2, "0")}/${endYear}`;
 
-    csv += `Codigo;Conta Contabil / Descricao;Categoria;Valor Nominal (R$);% s/ Faturamento Bruto;% s/ Receita Liquida;Classificacao\n`;
+    let csv = `\uFEFF`; // BOM UTF-8 para compatibilidade perfeita com Microsoft Excel
+    csv += `DEMONSTRATIVO DO RESULTADO DO EXERCÍCIO (DRE)\n`;
+    csv += `Escopo / Unidade;${scope}\n`;
+    csv += `Data Inicial do Período;${dataInicial}\n`;
+    csv += `Data Final do Período;${dataFinal}\n`;
+    csv += `Período Completo;De ${dataInicial} a ${dataFinal} (${period})\n`;
+    csv += `Data e Hora de Emissão;${dateStr} às ${new Date().toLocaleTimeString("pt-BR")}\n\n`;
+
+    csv += `Código;Conta Contábil / Descrição;Categoria;Valor Nominal (R$);% s/ Faturamento Bruto;% s/ Receita Líquida;Classificação\n`;
     csv += `1.00;(=) RECEITA BRUTA OPERACIONAL;Receita Bruta;${dre.fatBruta.toFixed(2)};100.00%;${((dre.fatBruta / (dre.receitaLiquida || 1)) * 100).toFixed(2)}%;Receita\n`;
-    csv += `1.01;(-) Descontos & Cancelamentos;Deducao de Vendas;-${dre.desconto.toFixed(2)};${((dre.desconto / (dre.fatBruta || 1)) * 100).toFixed(2)}%;${((dre.desconto / (dre.receitaLiquida || 1)) * 100).toFixed(2)}%;Deducao\n`;
-    csv += `1.02;(-) Impostos sobre Vendas;Tributos;-${dre.impostos.toFixed(2)};${((dre.impostos / (dre.fatBruta || 1)) * 100).toFixed(2)}%;${((dre.impostos / (dre.receitaAjustada || 1)) * 100).toFixed(2)}%;Deducao\n`;
-    csv += `2.00;(=) RECEITA LIQUIDA OPERACIONAL;Receita Liquida;${dre.receitaLiquida.toFixed(2)};${((dre.receitaLiquida / (dre.fatBruta || 1)) * 100).toFixed(2)}%;100.00%;Subtotal\n`;
-    csv += `2.01;(-) Custo das Mercadorias Vendidas (CMV);Custo Variavel;-${dre.cmv.toFixed(2)};${((dre.cmv / (dre.fatBruta || 1)) * 100).toFixed(2)}%;${((dre.cmv / (dre.receitaLiquida || 1)) * 100).toFixed(2)}%;Custos\n`;
-    csv += `2.02;(-) Taxas de Cartao & Plataforma;Custo Variavel;-${dre.taxasNegocio.toFixed(2)};${((dre.taxasNegocio / (dre.fatBruta || 1)) * 100).toFixed(2)}%;${((dre.taxasNegocio / (dre.receitaLiquida || 1)) * 100).toFixed(2)}%;Custos\n`;
-    csv += `3.00;(=) Lucro Bruto (Margem de Contribuicao);Lucro Bruto;${dre.lucroBruto.toFixed(2)};${((dre.lucroBruto / (dre.fatBruta || 1)) * 100).toFixed(2)}%;${(dre.margemBruta * 100).toFixed(2)}%;Subtotal\n`;
+    csv += `1.01;(-) Descontos & Cancelamentos;Dedução de Vendas;-${dre.desconto.toFixed(2)};${((dre.desconto / (dre.fatBruta || 1)) * 100).toFixed(2)}%;${((dre.desconto / (dre.receitaLiquida || 1)) * 100).toFixed(2)}%;Dedução\n`;
+    csv += `1.02;(-) Impostos sobre Vendas;Tributos;-${dre.impostos.toFixed(2)};${((dre.impostos / (dre.fatBruta || 1)) * 100).toFixed(2)}%;${((dre.impostos / (dre.receitaAjustada || 1)) * 100).toFixed(2)}%;Dedução\n`;
+    csv += `2.00;(=) RECEITA LÍQUIDA OPERACIONAL;Receita Líquida;${dre.receitaLiquida.toFixed(2)};${((dre.receitaLiquida / (dre.fatBruta || 1)) * 100).toFixed(2)}%;100.00%;Subtotal\n`;
+    csv += `2.01;(-) Custo das Mercadorias Vendidas (CMV);Custo Variável;-${dre.cmv.toFixed(2)};${((dre.cmv / (dre.fatBruta || 1)) * 100).toFixed(2)}%;${((dre.cmv / (dre.receitaLiquida || 1)) * 100).toFixed(2)}%;Custos\n`;
+    csv += `2.02;(-) Taxas de Cartão & Meios de Pagamento;Custo Variável;-${dre.taxasNegocio.toFixed(2)};${((dre.taxasNegocio / (dre.fatBruta || 1)) * 100).toFixed(2)}%;${((dre.taxasNegocio / (dre.receitaLiquida || 1)) * 100).toFixed(2)}%;Custos\n`;
+    csv += `3.00;(=) Lucro Bruto (Margem de Contribuição);Lucro Bruto;${dre.lucroBruto.toFixed(2)};${((dre.lucroBruto / (dre.fatBruta || 1)) * 100).toFixed(2)}%;${(dre.margemBruta * 100).toFixed(2)}%;Subtotal\n`;
     
     dre.despesas.forEach((d, idx) => {
       const code = `4.${String(idx + 1).padStart(2, "0")}`;
       csv += `${code};(-) ${d?.name || "Despesa"};Despesa Operacional;-${d.value.toFixed(2)};${((d.value / (dre.fatBruta || 1)) * 100).toFixed(2)}%;${((d.value / (dre.receitaLiquida || 1)) * 100).toFixed(2)}%;Despesa Fixa\n`;
     });
     
-    csv += `5.00;(=) RESULTADO LIQUIDO DO PERIODO;Lucro Liquido;${dre.lucroLiquido.toFixed(2)};${((dre.lucroLiquido / (dre.fatBruta || 1)) * 100).toFixed(2)}%;${(dre.margemLiquida * 100).toFixed(2)}%;Resultado Final\n`;
+    csv += `5.00;(=) RESULTADO LÍQUIDO DO PERÍODO;Lucro Líquido;${dre.lucroLiquido.toFixed(2)};${((dre.lucroLiquido / (dre.fatBruta || 1)) * 100).toFixed(2)}%;${(dre.margemLiquida * 100).toFixed(2)}%;Resultado Final\n`;
 
     if (visibleUnits.length > 1) {
       csv += `\n\nTABELA DISCRIMINADA POR UNIDADE DA REDE\n`;
-      csv += `Codigo Loja;Nome da Unidade;Marca;Cidade/UF;Faturamento Bruto (R$);Lucro Liquido (R$);Margem Liquida (%)\n`;
+      csv += `Código Loja;Nome da Unidade;Marca;Cidade/UF;Faturamento Bruto (R$);Lucro Líquido (R$);Margem Líquida (%)\n`;
       visibleUnits.forEach((u) => {
         const uParams = dreParams[u.id] || dreParams["dono"];
         const uRoy = royalties[u.businessId];
@@ -678,7 +690,7 @@ export const DreScreen: React.FC<DreScreenProps> = ({
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `DRE_TabelaCompleta_${targetTenantKey}_${new Date().toISOString().slice(0, 10)}.csv`;
+    a.download = `DRE_${scope.replace(/[^a-zA-Z0-9]/g, "_")}_${new Date().toISOString().slice(0, 10)}.csv`;
     a.click();
     URL.revokeObjectURL(url);
   };
@@ -693,60 +705,60 @@ export const DreScreen: React.FC<DreScreenProps> = ({
 
     let rowsHtml = `
       <tr style="background:#f8faff;font-weight:bold;">
-        <td style="padding:10px 12px;border-bottom:1px solid #e2e8f0;">(=) RECEITA BRUTA OPERACIONAL</td>
-        <td style="padding:10px 12px;text-align:right;border-bottom:1px solid #e2e8f0;color:#118464;font-family:monospace;">${formatBrl2(dre.fatBruta)}</td>
-        <td style="padding:10px 12px;text-align:right;border-bottom:1px solid #e2e8f0;font-family:monospace;">100,00%</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #e2e8f0;">(=) RECEITA BRUTA OPERACIONAL</td>
+        <td style="padding:8px 12px;text-align:right;border-bottom:1px solid #e2e8f0;color:#118464;font-family:monospace;">${formatBrl2(dre.fatBruta)}</td>
+        <td style="padding:8px 12px;text-align:right;border-bottom:1px solid #e2e8f0;font-family:monospace;">100,00%</td>
       </tr>
       <tr style="color:#64748b;">
-        <td style="padding:8px 12px;padding-left:24px;border-bottom:1px solid #e2e8f0;">(-) Descontos & Cancelamentos</td>
-        <td style="padding:8px 12px;text-align:right;border-bottom:1px solid #e2e8f0;color:#b44b4b;font-family:monospace;">-${formatBrl2(dre.desconto)}</td>
-        <td style="padding:8px 12px;text-align:right;border-bottom:1px solid #e2e8f0;font-family:monospace;">${formatPct2(dre.desconto / (dre.fatBruta || 1))}</td>
+        <td style="padding:7px 12px;padding-left:24px;border-bottom:1px solid #e2e8f0;">(-) Descontos & Cancelamentos</td>
+        <td style="padding:7px 12px;text-align:right;border-bottom:1px solid #e2e8f0;color:#b44b4b;font-family:monospace;">-${formatBrl2(dre.desconto)}</td>
+        <td style="padding:7px 12px;text-align:right;border-bottom:1px solid #e2e8f0;font-family:monospace;">${formatPct2(dre.desconto / (dre.fatBruta || 1))}</td>
       </tr>
       <tr style="color:#64748b;">
-        <td style="padding:8px 12px;padding-left:24px;border-bottom:1px solid #e2e8f0;">(-) Impostos sobre Vendas</td>
-        <td style="padding:8px 12px;text-align:right;border-bottom:1px solid #e2e8f0;color:#b44b4b;font-family:monospace;">-${formatBrl2(dre.impostos)}</td>
-        <td style="padding:8px 12px;text-align:right;border-bottom:1px solid #e2e8f0;font-family:monospace;">${formatPct2(dre.impostos / (dre.receitaAjustada || 1))}</td>
+        <td style="padding:7px 12px;padding-left:24px;border-bottom:1px solid #e2e8f0;">(-) Impostos sobre Vendas</td>
+        <td style="padding:7px 12px;text-align:right;border-bottom:1px solid #e2e8f0;color:#b44b4b;font-family:monospace;">-${formatBrl2(dre.impostos)}</td>
+        <td style="padding:7px 12px;text-align:right;border-bottom:1px solid #e2e8f0;font-family:monospace;">${formatPct2(dre.impostos / (dre.receitaAjustada || 1))}</td>
       </tr>
       <tr style="background:#f1f5f9;font-weight:bold;">
-        <td style="padding:10px 12px;border-bottom:1px solid #cbd5e1;">(=) RECEITA LÍQUIDA OPERACIONAL</td>
-        <td style="padding:10px 12px;text-align:right;border-bottom:1px solid #cbd5e1;font-family:monospace;">${formatBrl2(dre.receitaLiquida)}</td>
-        <td style="padding:10px 12px;text-align:right;border-bottom:1px solid #cbd5e1;font-family:monospace;">100,00%</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #cbd5e1;">(=) RECEITA LÍQUIDA OPERACIONAL</td>
+        <td style="padding:8px 12px;text-align:right;border-bottom:1px solid #cbd5e1;font-family:monospace;">${formatBrl2(dre.receitaLiquida)}</td>
+        <td style="padding:8px 12px;text-align:right;border-bottom:1px solid #cbd5e1;font-family:monospace;">100,00%</td>
       </tr>
       <tr style="color:#64748b;">
-        <td style="padding:8px 12px;padding-left:24px;border-bottom:1px solid #e2e8f0;">(-) Custo das Mercadorias Vendidas (CMV)</td>
-        <td style="padding:8px 12px;text-align:right;border-bottom:1px solid #e2e8f0;color:#b44b4b;font-family:monospace;">-${formatBrl2(dre.cmv)}</td>
-        <td style="padding:8px 12px;text-align:right;border-bottom:1px solid #e2e8f0;font-family:monospace;">${formatPct2(dre.cmv / (dre.receitaLiquida || 1))}</td>
+        <td style="padding:7px 12px;padding-left:24px;border-bottom:1px solid #e2e8f0;">(-) Custo das Mercadorias Vendidas (CMV)</td>
+        <td style="padding:7px 12px;text-align:right;border-bottom:1px solid #e2e8f0;color:#b44b4b;font-family:monospace;">-${formatBrl2(dre.cmv)}</td>
+        <td style="padding:7px 12px;text-align:right;border-bottom:1px solid #e2e8f0;font-family:monospace;">${formatPct2(dre.cmv / (dre.receitaLiquida || 1))}</td>
       </tr>
       <tr style="color:#64748b;">
-        <td style="padding:8px 12px;padding-left:24px;border-bottom:1px solid #e2e8f0;">(-) Taxas de Cartão & Plataforma</td>
-        <td style="padding:8px 12px;text-align:right;border-bottom:1px solid #e2e8f0;color:#b44b4b;font-family:monospace;">-${formatBrl2(dre.taxasNegocio)}</td>
-        <td style="padding:8px 12px;text-align:right;border-bottom:1px solid #e2e8f0;font-family:monospace;">${formatPct2(dre.taxasNegocio / (dre.receitaLiquida || 1))}</td>
+        <td style="padding:7px 12px;padding-left:24px;border-bottom:1px solid #e2e8f0;">(-) Taxas de Cartão & Meios de Pagamento</td>
+        <td style="padding:7px 12px;text-align:right;border-bottom:1px solid #e2e8f0;color:#b44b4b;font-family:monospace;">-${formatBrl2(dre.taxasNegocio)}</td>
+        <td style="padding:7px 12px;text-align:right;border-bottom:1px solid #e2e8f0;font-family:monospace;">${formatPct2(dre.taxasNegocio / (dre.receitaLiquida || 1))}</td>
       </tr>
       <tr style="background:#edf2ff;font-weight:bold;">
-        <td style="padding:10px 12px;border-bottom:1px solid #cbd5e1;color:#1e3a8a;">(=) Margem de Contribuição Bruta (Lucro Bruto)</td>
-        <td style="padding:10px 12px;text-align:right;border-bottom:1px solid #cbd5e1;color:#2563eb;font-family:monospace;">${formatBrl2(dre.lucroBruto)}</td>
-        <td style="padding:10px 12px;text-align:right;border-bottom:1px solid #cbd5e1;font-family:monospace;">${formatPct2(dre.margemBruta)}</td>
+        <td style="padding:8px 12px;border-bottom:1px solid #cbd5e1;color:#1e3a8a;">(=) Lucro Bruto (Margem de Contribuição)</td>
+        <td style="padding:8px 12px;text-align:right;border-bottom:1px solid #cbd5e1;color:#2563eb;font-family:monospace;">${formatBrl2(dre.lucroBruto)}</td>
+        <td style="padding:8px 12px;text-align:right;border-bottom:1px solid #cbd5e1;font-family:monospace;">${formatPct2(dre.margemBruta)}</td>
       </tr>
       <tr style="background:#f8fafc;font-weight:bold;">
-        <td colspan="3" style="padding:8px 12px;text-transform:uppercase;font-size:11px;color:#64748b;letter-spacing:0.05em;border-bottom:1px solid #e2e8f0;">Despesas Operacionais Fixas & Administrativas</td>
+        <td colspan="3" style="padding:6px 12px;text-transform:uppercase;font-size:10px;color:#64748b;letter-spacing:0.05em;border-bottom:1px solid #e2e8f0;">Despesas Operacionais Fixas</td>
       </tr>
     `;
 
     dre.despesas.forEach((d) => {
       rowsHtml += `
         <tr style="color:#64748b;">
-          <td style="padding:7px 12px;padding-left:24px;border-bottom:1px solid #f1f5f9;">${d?.name || "Despesa"}</td>
-          <td style="padding:7px 12px;text-align:right;border-bottom:1px solid #f1f5f9;color:#b44b4b;font-family:monospace;">-${formatBrl2(d.value)}</td>
-          <td style="padding:7px 12px;text-align:right;border-bottom:1px solid #f1f5f9;font-family:monospace;">${formatPct2(d.value / (dre.receitaLiquida || 1))}</td>
+          <td style="padding:6px 12px;padding-left:24px;border-bottom:1px solid #f1f5f9;">${d?.name || "Despesa"}</td>
+          <td style="padding:6px 12px;text-align:right;border-bottom:1px solid #f1f5f9;color:#b44b4b;font-family:monospace;">-${formatBrl2(d.value)}</td>
+          <td style="padding:6px 12px;text-align:right;border-bottom:1px solid #f1f5f9;font-family:monospace;">${formatPct2(d.value / (dre.receitaLiquida || 1))}</td>
         </tr>
       `;
     });
 
     rowsHtml += `
       <tr style="background:#ecfdf5;font-weight:bold;border-top:2px solid #10b981;">
-        <td style="padding:14px 12px;font-size:14px;color:#064e3b;">(=) RESULTADO LÍQUIDO DO PERÍODO</td>
-        <td style="padding:14px 12px;text-align:right;font-size:15px;color:#047857;font-family:monospace;">${formatBrl2(dre.lucroLiquido)}</td>
-        <td style="padding:14px 12px;text-align:right;font-size:15px;color:#047857;font-family:monospace;">${formatPct2(dre.margemLiquida)}</td>
+        <td style="padding:10px 12px;font-size:13px;color:#064e3b;">(=) RESULTADO LÍQUIDO DO PERÍODO</td>
+        <td style="padding:10px 12px;text-align:right;font-size:13px;color:#047857;font-family:monospace;">${formatBrl2(dre.lucroLiquido)}</td>
+        <td style="padding:10px 12px;text-align:right;font-size:13px;color:#047857;font-family:monospace;">${formatPct2(dre.margemLiquida)}</td>
       </tr>
     `;
 
@@ -760,30 +772,30 @@ export const DreScreen: React.FC<DreScreenProps> = ({
         const b = businesses.find(biz => biz.id === u.businessId);
         unitRows += `
           <tr>
-            <td style="padding:7px 10px;border-bottom:1px solid #e2e8f0;">${u.code}</td>
-            <td style="padding:7px 10px;border-bottom:1px solid #e2e8f0;font-weight:600;">${u.name}</td>
-            <td style="padding:7px 10px;border-bottom:1px solid #e2e8f0;">${b?.name || u.businessId}</td>
-            <td style="padding:7px 10px;border-bottom:1px solid #e2e8f0;">${u.city}</td>
-            <td style="padding:7px 10px;text-align:right;border-bottom:1px solid #e2e8f0;font-family:monospace;">${formatBrl2(u.faturamento)}</td>
-            <td style="padding:7px 10px;text-align:right;border-bottom:1px solid #e2e8f0;font-family:monospace;color:#047857;">${formatBrl2(uCalc.lucroLiquido)}</td>
-            <td style="padding:7px 10px;text-align:right;border-bottom:1px solid #e2e8f0;font-family:monospace;">${formatPct2(uCalc.margemLiquida)}</td>
+            <td style="padding:6px 8px;border-bottom:1px solid #e2e8f0;">${u.code}</td>
+            <td style="padding:6px 8px;border-bottom:1px solid #e2e8f0;font-weight:600;">${u.name}</td>
+            <td style="padding:6px 8px;border-bottom:1px solid #e2e8f0;">${b?.name || u.businessId}</td>
+            <td style="padding:6px 8px;border-bottom:1px solid #e2e8f0;">${u.city}</td>
+            <td style="padding:6px 8px;text-align:right;border-bottom:1px solid #e2e8f0;font-family:monospace;">${formatBrl2(u.faturamento)}</td>
+            <td style="padding:6px 8px;text-align:right;border-bottom:1px solid #e2e8f0;font-family:monospace;color:#047857;">${formatBrl2(uCalc.lucroLiquido)}</td>
+            <td style="padding:6px 8px;text-align:right;border-bottom:1px solid #e2e8f0;font-family:monospace;">${formatPct2(uCalc.margemLiquida)}</td>
           </tr>
         `;
       });
 
       unitsTableHtml = `
-        <div style="margin-top:30px;">
-          <h3 style="font-size:14px;font-weight:bold;margin-bottom:8px;color:#1e293b;">Demonstrativo por Unidade da Rede</h3>
-          <table style="width:100%;border-collapse:collapse;font-size:11px;">
+        <div style="margin-top:20px;">
+          <h3 style="font-size:12px;font-weight:bold;margin-bottom:6px;color:#1e293b;">Demonstrativo por Unidade da Rede</h3>
+          <table style="width:100%;border-collapse:collapse;font-size:10px;">
             <thead>
               <tr style="background:#f8fafc;color:#64748b;text-align:left;">
-                <th style="padding:8px 10px;border-bottom:2px solid #cbd5e1;">Código</th>
-                <th style="padding:8px 10px;border-bottom:2px solid #cbd5e1;">Unidade</th>
-                <th style="padding:8px 10px;border-bottom:2px solid #cbd5e1;">Marca</th>
-                <th style="padding:8px 10px;border-bottom:2px solid #cbd5e1;">Cidade</th>
-                <th style="padding:8px 10px;text-align:right;border-bottom:2px solid #cbd5e1;">Faturamento</th>
-                <th style="padding:8px 10px;text-align:right;border-bottom:2px solid #cbd5e1;">Lucro Líquido</th>
-                <th style="padding:8px 10px;text-align:right;border-bottom:2px solid #cbd5e1;">Margem %</th>
+                <th style="padding:6px 8px;border-bottom:2px solid #cbd5e1;">Código</th>
+                <th style="padding:6px 8px;border-bottom:2px solid #cbd5e1;">Unidade</th>
+                <th style="padding:6px 8px;border-bottom:2px solid #cbd5e1;">Marca</th>
+                <th style="padding:6px 8px;border-bottom:2px solid #cbd5e1;">Cidade</th>
+                <th style="padding:6px 8px;text-align:right;border-bottom:2px solid #cbd5e1;">Faturamento</th>
+                <th style="padding:6px 8px;text-align:right;border-bottom:2px solid #cbd5e1;">Lucro Líquido</th>
+                <th style="padding:6px 8px;text-align:right;border-bottom:2px solid #cbd5e1;">Margem %</th>
               </tr>
             </thead>
             <tbody>${unitRows}</tbody>
@@ -798,45 +810,66 @@ export const DreScreen: React.FC<DreScreenProps> = ({
   <meta charset="UTF-8">
   <title>DRE - ${scope}</title>
   <style>
-    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; margin: 25px; color: #1e293b; line-height: 1.4; background:#fff; }
-    .header { border-bottom: 2px solid #3c63da; padding-bottom: 12px; margin-bottom: 20px; }
-    .title { font-size: 20px; font-weight: 800; color: #0f172a; margin: 0; }
-    .subtitle { font-size: 12px; color: #64748b; margin-top: 4px; }
-    table { width: 100%; border-collapse: collapse; font-size: 12px; }
-    th { text-transform: uppercase; font-size: 10px; letter-spacing: 0.05em; }
-    @media print { button { display:none; } }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; margin: 20px; color: #1e293b; line-height: 1.35; background:#fff; }
+    .header { border-bottom: 2px solid #3c63da; padding-bottom: 8px; margin-bottom: 14px; }
+    .title { font-size: 17px; font-weight: 800; color: #0f172a; margin: 0; }
+    .meta-box { font-size: 11px; color: #475569; margin-top: 4px; display: flex; gap: 15px; flex-wrap: wrap; }
+    table { width: 100%; border-collapse: collapse; font-size: 11px; }
+    th { text-transform: uppercase; font-size: 9px; letter-spacing: 0.05em; }
+    @media print {
+      body { margin: 10mm; }
+      @page { size: portrait; margin: 10mm; }
+    }
   </style>
 </head>
 <body>
   <div class="header">
     <h1 class="title">Demonstrativo do Resultado do Exercício (DRE)</h1>
-    <div class="subtitle"><strong>Escopo:</strong> ${scope} · <strong>Período:</strong> ${period}</div>
+    <div class="meta-box">
+      <span><strong>Unidade / Escopo:</strong> ${scope}</span>
+      <span><strong>Período:</strong> ${period}</span>
+      <span><strong>Emissão:</strong> ${dateStr}</span>
+    </div>
   </div>
 
   <table>
     <thead>
       <tr style="background:#f1f5f9;color:#475569;text-align:left;">
-        <th style="padding:9px 12px;border-bottom:2px solid #cbd5e1;">Conta Contábil / Descrição</th>
-        <th style="padding:9px 12px;text-align:right;border-bottom:2px solid #cbd5e1;">Valor Nominal (R$)</th>
-        <th style="padding:9px 12px;text-align:right;border-bottom:2px solid #cbd5e1;">% Sobre Receita</th>
+        <th style="padding:8px 12px;border-bottom:2px solid #cbd5e1;">Conta Contábil / Descrição</th>
+        <th style="padding:8px 12px;text-align:right;border-bottom:2px solid #cbd5e1;">Valor Nominal (R$)</th>
+        <th style="padding:8px 12px;text-align:right;border-bottom:2px solid #cbd5e1;">% Sobre Receita</th>
       </tr>
     </thead>
     <tbody>${rowsHtml}</tbody>
   </table>
 
   ${unitsTableHtml}
-
-  <div style="margin-top:20px;text-align:center;">
-    <button onclick="window.print()" style="padding:8px 16px;background:#3c63da;color:#fff;border:none;border-radius:8px;font-weight:bold;cursor:pointer;">Imprimir / Salvar em PDF</button>
-  </div>
 </body>
 </html>`;
 
-    const blob = new Blob([htmlContent], { type: "text/html;charset=utf-8;" });
-    const win = window.open("", "_blank");
-    if (win) {
-      win.document.write(htmlContent);
-      win.document.close();
+    // Utiliza iframe oculto dedicado: imprime APENAS a tabela, unidade e período, sem a página inteira
+    const oldFrame = document.getElementById("dre-print-iframe");
+    if (oldFrame) oldFrame.remove();
+
+    const iframe = document.createElement("iframe");
+    iframe.id = "dre-print-iframe";
+    iframe.style.position = "fixed";
+    iframe.style.right = "0";
+    iframe.style.bottom = "0";
+    iframe.style.width = "0";
+    iframe.style.height = "0";
+    iframe.style.border = "none";
+    document.body.appendChild(iframe);
+
+    const doc = iframe.contentWindow?.document;
+    if (doc) {
+      doc.open();
+      doc.write(htmlContent);
+      doc.close();
+      setTimeout(() => {
+        iframe.contentWindow?.focus();
+        iframe.contentWindow?.print();
+      }, 350);
     }
   };
 
@@ -867,39 +900,24 @@ export const DreScreen: React.FC<DreScreenProps> = ({
           </p>
         </div>
 
-        {/* Unified Sub-Tabs Toggle: Demonstrativo vs Parâmetros */}
-        <div className="flex items-center gap-1.5 rounded-xl bg-white border border-[#e5eaf1] p-1 shadow-xs">
+        {/* Botão de redirecionamento para configuração centralizada */}
+        <div className="flex items-center gap-2">
           <button
-            onClick={() => setActiveSubTab("demonstrativo")}
-            className={`flex items-center gap-1.5 rounded-lg px-3.5 py-2 text-xs font-bold transition-all cursor-pointer ${
-              activeSubTab === "demonstrativo"
-                ? "bg-[#3c63da] text-white shadow-xs"
-                : "text-[#69778c] hover:bg-[#f4f7fb] hover:text-[#152238]"
-            }`}
+            onClick={() => onNavigate("configuracao")}
+            className="flex items-center gap-2 rounded-xl border border-[#cbd5e1] bg-white px-3.5 py-2 text-xs font-bold text-[#152238] hover:bg-[#f8faff] hover:border-[#3c63da] hover:text-[#3c63da] transition-all cursor-pointer shadow-xs"
+            title="Os parâmetros de alíquotas e despesas do DRE são configurados centralmente em Configurações"
           >
-            <TrendingUp className="h-3.5 w-3.5" />
-            <span>Demonstrativo & Resultados</span>
-          </button>
-
-          <button
-            onClick={() => setActiveSubTab("parametros")}
-            className={`flex items-center gap-1.5 rounded-lg px-3.5 py-2 text-xs font-bold transition-all cursor-pointer ${
-              activeSubTab === "parametros"
-                ? "bg-[#3c63da] text-white shadow-xs"
-                : "text-[#69778c] hover:bg-[#f4f7fb] hover:text-[#152238]"
-            }`}
-          >
-            <SlidersHorizontal className="h-3.5 w-3.5" />
-            <span>Parâmetros do DRE</span>
+            <SlidersHorizontal className="h-3.5 w-3.5 text-[#3c63da]" />
+            <span>Configurar Parâmetros DRE</span>
+            <ArrowRight className="h-3 w-3 text-[#69778c]" />
           </button>
         </div>
       </div>
 
       {/* ------------------------------------------------------------- */}
-      {/* 1. ABA: DEMONSTRATIVO & RESULTADOS                            */}
+      {/* DEMONSTRATIVO & RESULTADOS FINANCEIROS                        */}
       {/* ------------------------------------------------------------- */}
-      {activeSubTab === "demonstrativo" && (
-        <div className="space-y-6">
+      <div className="space-y-6">
           {/* Card Unificado de Filtros com Seletores Granulares (Ano, Mês, Dia, Marca, Unidade) */}
           <div className="rounded-2xl border border-[#e5eaf1] bg-white p-4 sm:p-5 shadow-xs space-y-4">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[#f1f5f9]">
@@ -1378,222 +1396,6 @@ export const DreScreen: React.FC<DreScreenProps> = ({
             </div>
           </div>
         </div>
-      )}
-
-      {/* ------------------------------------------------------------- */}
-      {/* 2. ABA: PARÂMETROS DO DRE UNIFICADOS                          */}
-      {/* ------------------------------------------------------------- */}
-      {activeSubTab === "parametros" && (
-        <div className="space-y-6">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-xl bg-white border border-[#e5eaf1] shadow-xs">
-            <div>
-              <span className="text-[10px] font-extrabold uppercase tracking-widest text-[#3c63da]">
-                Parametrização Centralizada
-              </span>
-              <h3 className="text-base font-bold text-[#152238]">
-                Alíquotas e Despesas — {getScopeTitle()}
-              </h3>
-              <p className="text-xs text-[#69778c]">
-                Ajuste os percentuais aplicados nas apurações financeiras e salve na nuvem.
-              </p>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <button
-                onClick={handleResetParams}
-                className="flex items-center gap-1.5 rounded-lg border border-[#e5eaf1] bg-white px-3 py-2 text-xs font-bold text-[#69778c] hover:bg-[#f4f7fb] cursor-pointer"
-              >
-                <RotateCcw className="h-3.5 w-3.5" />
-                <span>Restaurar Padrões</span>
-              </button>
-
-              <button
-                onClick={handleSaveParams}
-                disabled={isSaving}
-                className="flex items-center gap-1.5 rounded-lg bg-[#3c63da] px-4 py-2 text-xs font-bold text-white hover:bg-[#2f52c0] shadow-sm disabled:opacity-50 cursor-pointer"
-              >
-                {isSaved ? <CheckCircle2 className="h-4 w-4 text-emerald-300" /> : <Save className="h-4 w-4" />}
-                <span>{isSaved ? "Salvo na Nuvem!" : isSaving ? "Salvando..." : "Salvar Parâmetros"}</span>
-              </button>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-            {/* Form Fields: Impostos, CMV, Taxas */}
-            <div className="lg:col-span-2 space-y-5">
-              {/* Contas Gerais */}
-              <div className="rounded-2xl border border-[#e5eaf1] bg-white p-5 shadow-xs space-y-4">
-                <h4 className="text-sm font-bold text-[#152238] border-b border-[#e5eaf1] pb-3 flex items-center gap-2">
-                  <DollarSign className="h-4 w-4 text-[#3c63da]" />
-                  <span>Deduções & Custos Variáveis Principais</span>
-                </h4>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs font-bold text-[#152238] mb-1">
-                      Alíquota de Impostos sobre Vendas (%)
-                    </label>
-                    <div className="relative">
-                      <input
-                        type="number"
-                        step="0.1"
-                        min="0"
-                        max="100"
-                        value={((paramsForm.impostos || 0) * 100).toFixed(1)}
-                        onChange={(e) => handleGeneralChange("impostos", e.target.value)}
-                        className="w-full rounded-xl border border-[#e5eaf1] bg-[#f8faff] px-3 py-2 text-xs font-bold text-[#152238] focus:border-[#3c63da] focus:outline-none"
-                      />
-                      <span className="absolute right-3 top-2 text-xs font-bold text-[#69778c]">%</span>
-                    </div>
-                    <span className="text-[10px] text-[#69778c] mt-0.5 block">Simples Nacional ou presumido</span>
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-bold text-[#152238] mb-1">
-                      Custo de Mercadoria Vendida (CMV) (%)
-                    </label>
-                    <div className="relative">
-                      <input
-                        type="number"
-                        step="0.1"
-                        min="0"
-                        max="100"
-                        value={((paramsForm.cmv || 0) * 100).toFixed(1)}
-                        onChange={(e) => handleGeneralChange("cmv", e.target.value)}
-                        className="w-full rounded-xl border border-[#e5eaf1] bg-[#f8faff] px-3 py-2 text-xs font-bold text-[#152238] focus:border-[#3c63da] focus:outline-none"
-                      />
-                      <span className="absolute right-3 top-2 text-xs font-bold text-[#69778c]">%</span>
-                    </div>
-                    <span className="text-[10px] text-[#69778c] mt-0.5 block">Custo direto dos insumos/produtos</span>
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-bold text-[#152238] mb-1">
-                      Taxas de Cartões & Meios de Pagamento (%)
-                    </label>
-                    <div className="relative">
-                      <input
-                        type="number"
-                        step="0.1"
-                        min="0"
-                        max="100"
-                        value={((paramsForm.fees || 0) * 100).toFixed(1)}
-                        onChange={(e) => handleGeneralChange("fees", e.target.value)}
-                        className="w-full rounded-xl border border-[#e5eaf1] bg-[#f8faff] px-3 py-2 text-xs font-bold text-[#152238] focus:border-[#3c63da] focus:outline-none"
-                      />
-                      <span className="absolute right-3 top-2 text-xs font-bold text-[#69778c]">%</span>
-                    </div>
-                    <span className="text-[10px] text-[#69778c] mt-0.5 block">MDR médio adquirentes e pix</span>
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-bold text-[#152238] mb-1">
-                      Descontos & Cancelamentos Estimados (%)
-                    </label>
-                    <div className="relative">
-                      <input
-                        type="number"
-                        step="0.1"
-                        min="0"
-                        max="100"
-                        value={((paramsForm.discount || 0) * 100).toFixed(1)}
-                        onChange={(e) => handleGeneralChange("discount", e.target.value)}
-                        className="w-full rounded-xl border border-[#e5eaf1] bg-[#f8faff] px-3 py-2 text-xs font-bold text-[#152238] focus:border-[#3c63da] focus:outline-none"
-                      />
-                      <span className="absolute right-3 top-2 text-xs font-bold text-[#69778c]">%</span>
-                    </div>
-                    <span className="text-[10px] text-[#69778c] mt-0.5 block">Promoções e cortesias</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Despesas Fixas Detalhadas */}
-              <div className="rounded-2xl border border-[#e5eaf1] bg-white p-5 shadow-xs space-y-3">
-                <h4 className="text-sm font-bold text-[#152238] border-b border-[#e5eaf1] pb-3 flex items-center gap-2">
-                  <Layers className="h-4 w-4 text-[#3c63da]" />
-                  <span>Despesas Operacionais Fixas Parametrizadas</span>
-                </h4>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {dreExpenseDefs.map((def) => {
-                    const currentVal = paramsForm.despesas[def.id] ?? def.pct;
-                    return (
-                      <div key={def.id} className="p-3 rounded-xl border border-[#e5eaf1] bg-[#f8faff]">
-                        <div className="flex items-center justify-between text-xs font-bold text-[#152238] mb-1">
-                          <span className="truncate">{def.name}</span>
-                          <span className="text-[10px] text-[#69778c] uppercase font-mono">{def.group}</span>
-                        </div>
-                        <div className="relative">
-                          <input
-                            type="number"
-                            step="0.05"
-                            min="0"
-                            max="100"
-                            value={(currentVal * 100).toFixed(2)}
-                            onChange={(e) => handleExpenseChange(def.id, e.target.value)}
-                            className="w-full rounded-lg border border-[#e5eaf1] bg-white px-2.5 py-1.5 text-xs font-bold text-[#152238] focus:border-[#3c63da] focus:outline-none"
-                          />
-                          <span className="absolute right-2.5 top-1.5 text-xs font-bold text-[#69778c]">%</span>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            </div>
-
-            {/* Live Impact Preview Card */}
-            <div className="space-y-4">
-              <div className="rounded-2xl border border-[#e5eaf1] bg-white p-5 shadow-xs sticky top-20 space-y-4">
-                <h4 className="text-sm font-bold text-[#152238] border-b border-[#e5eaf1] pb-2 flex items-center gap-1.5">
-                  <Zap className="h-4 w-4 text-amber-500" />
-                  <span>Simulação de Impacto em Tempo Real</span>
-                </h4>
-
-                <p className="text-xs text-[#69778c]">
-                  Baseado no faturamento atual de <strong>{formatBrl(baseFat)}</strong>:
-                </p>
-
-                <div className="space-y-2.5 text-xs">
-                  <div className="flex justify-between py-1 border-b border-[#e5eaf1]">
-                    <span className="text-[#69778c]">Impostos:</span>
-                    <b className="text-[#b44b4b]">-{formatBrl(previewDre.impostos)}</b>
-                  </div>
-                  <div className="flex justify-between py-1 border-b border-[#e5eaf1]">
-                    <span className="text-[#69778c]">CMV Total:</span>
-                    <b className="text-[#b44b4b]">-{formatBrl(previewDre.cmv)}</b>
-                  </div>
-                  <div className="flex justify-between py-1 border-b border-[#e5eaf1]">
-                    <span className="text-[#69778c]">Lucro Bruto:</span>
-                    <b className="text-[#3c63da]">{formatBrl(previewDre.lucroBruto)}</b>
-                  </div>
-                  <div className="flex justify-between py-1 border-b border-[#e5eaf1]">
-                    <span className="text-[#69778c]">Despesas Fixas:</span>
-                    <b className="text-[#b44b4b]">-{formatBrl(previewDre.totalDesp)}</b>
-                  </div>
-                  <div className="flex justify-between py-2 bg-emerald-50 px-2.5 rounded-lg text-emerald-900 font-extrabold text-sm border border-emerald-200">
-                    <span>Lucro Líquido:</span>
-                    <span>{formatBrl(previewDre.lucroLiquido)}</span>
-                  </div>
-                  <div className="flex justify-between text-xs font-bold text-emerald-700 pt-1">
-                    <span>Margem Líquida Estimada:</span>
-                    <span>{formatPct(previewDre.margemLiquida)}</span>
-                  </div>
-                </div>
-
-                <button
-                  onClick={handleSaveParams}
-                  disabled={isSaving}
-                  className="w-full rounded-xl bg-[#3c63da] py-2.5 text-xs font-bold text-white hover:bg-[#2f52c0] transition-colors shadow-sm disabled:opacity-50 flex items-center justify-center gap-1.5 cursor-pointer"
-                >
-                  <Save className="h-4 w-4" />
-                  <span>{isSaved ? "Salvo com Sucesso!" : isSaving ? "Salvando..." : "Salvar Alterações na Nuvem"}</span>
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
+      </div>
   );
 };

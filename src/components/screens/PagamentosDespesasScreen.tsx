@@ -213,6 +213,9 @@ export const PagamentosDespesasScreen: React.FC<PagamentosDespesasScreenProps> =
             vtConfigs={vtConfigs}
             onSaveVtConfig={onSaveVtConfig}
             onNavigate={onNavigate}
+            userSession={userSession}
+            manualEntries={manualEntries}
+            onCreateEntry={onCreateEntry}
           />
         )}
       </div>

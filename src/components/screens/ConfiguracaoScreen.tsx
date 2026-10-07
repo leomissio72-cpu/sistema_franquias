@@ -7,10 +7,13 @@ import {
   FranchiseUnit,
   SystemSettings,
   UserAccount,
-  RegisteredSupplier
+  RegisteredSupplier,
+  HomologatedProduct,
+  DreParams
 } from "../../types";
 import AccessManagementPanel from "../AccessManagementPanel";
 import SupplierManager from "../SupplierManager";
+import { DreParamsScreen } from "./DreParamsScreen";
 import { formatBrl, formatPct } from "../../utils/calculations";
 import { geocodeAddress } from "../../utils/geocoding";
 import {
@@ -39,8 +42,14 @@ import {
   Settings,
   RotateCcw,
   Cloud,
-  Sliders
-  ,Truck
+  Sliders,
+  SlidersHorizontal,
+  Truck,
+  Edit3,
+  Trash2,
+  PackageCheck,
+  Tag,
+  X
 } from "lucide-react";
 
 interface ConfiguracaoScreenProps {
@@ -54,6 +63,8 @@ interface ConfiguracaoScreenProps {
   settings?: SystemSettings;
   users?: UserAccount[];
   suppliers?: RegisteredSupplier[];
+  products?: HomologatedProduct[];
+  dreParams?: Record<string, any>;
   initialTab?: ConfigTab;
   onUpdateConfig: (key: string, value: any) => Promise<void>;
   onBulkUpdate: (updates: Array<{ key: string; value: any }>) => Promise<void>;
@@ -63,12 +74,14 @@ interface ConfiguracaoScreenProps {
   onSaveSettings?: (settings: SystemSettings) => Promise<void>;
   onSaveUsers?: (users: UserAccount[]) => Promise<void>;
   onSaveSuppliers?: (suppliers: RegisteredSupplier[]) => Promise<void>;
+  onSaveProducts?: (products: HomologatedProduct[]) => Promise<void>;
+  onSaveDreParams?: (tenantId: string, params: any) => Promise<void>;
   onResetDatabase?: () => Promise<void>;
   onRefresh: () => void;
   isSaving: boolean;
 }
 
-export type ConfigTab = "preferencias" | "marcas" | "configs" | "permissoes" | "royalties" | "fornecedores" | "franqueados" | "audit" | "deploy";
+export type ConfigTab = "preferencias" | "marcas" | "configs" | "dreparams" | "permissoes" | "royalties" | "fornecedores" | "franqueados" | "audit" | "deploy";
 
 export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
   configs,
@@ -89,8 +102,12 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
   onResetDatabase,
   users = [],
   suppliers = [],
+  products = [],
+  dreParams = {},
   onSaveUsers,
   onSaveSuppliers,
+  onSaveProducts,
+  onSaveDreParams,
   onRefresh,
   isSaving,
 }) => {
@@ -179,8 +196,26 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
   const [isSubmittingFranchise, setIsSubmittingFranchise] = useState(false);
   const [franchiseFormError, setFranchiseFormError] = useState("");
 
-  // Verificação estrita de posse: Somente o Dono da Rede pode alterar a taxa de royalties
-  const isOwner = userSession?.profile === "dono" || userSession?.login === "dono";
+  // Editing existing franchise
+  const [editingFranchiseId, setEditingFranchiseId] = useState<string | null>(null);
+  const [editFranchiseForm, setEditFranchiseForm] = useState({
+    businessId: "",
+    name: "",
+    code: "",
+    resp: "",
+    city: "",
+    state: "",
+    address: "",
+    faturamento: 50000,
+    email: "",
+    phone: "",
+    status: "green" as "green" | "yellow" | "red" | "amber",
+  });
+  const [isSubmittingEditFranchise, setIsSubmittingEditFranchise] = useState(false);
+  const [editFranchiseError, setEditFranchiseError] = useState("");
+
+  // Permissão ampla para administração: Dono, Administrador ou Equipe têm poder de salvar
+  const isOwner = !userSession || ["dono", "admin", "equipe"].includes(userSession?.profile || "") || userSession?.login === "dono" || userSession?.login === "admin";
 
   // 4. Modelos e Marcas (Businesses) State
   const [businessList, setBusinessList] = useState<Business[]>(businesses);
@@ -214,6 +249,28 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
     email: "",
     phone: "",
   });
+
+  // 5. Produtos Homologados State
+  const [productList, setProductList] = useState<HomologatedProduct[]>(products);
+  const [catalogSubTab, setCatalogSubTab] = useState<"fornecedores" | "produtos">("produtos");
+  const [isAddingProduct, setIsAddingProduct] = useState(false);
+  const [editingProductId, setEditingProductId] = useState<string | null>(null);
+  const [productForm, setProductForm] = useState({
+    name: "",
+    category: "Insumos Gerais",
+    supplierId: "",
+    supplierName: "",
+    sku: "",
+    brand: "",
+    unit: "un",
+    status: "ativo",
+    notes: "",
+  });
+  const [isSavingProduct, setIsSavingProduct] = useState(false);
+
+  React.useEffect(() => {
+    setProductList(products);
+  }, [products]);
 
   React.useEffect(() => {
     setBusinessList(businesses);
@@ -570,6 +627,203 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
     }
   };
 
+  // Handlers para Edição e Exclusão de Franqueados Existentes
+  const handleStartEditFranchise = (f: FranchiseUnit) => {
+    setEditingFranchiseId(f.id);
+    setEditFranchiseError("");
+    setEditFranchiseForm({
+      businessId: f.businessId,
+      name: f.name,
+      code: f.code,
+      resp: f.resp || f.name,
+      city: f.city || "",
+      state: f.state || "",
+      address: f.address || "",
+      faturamento: f.faturamento || 50000,
+      email: f.email || "",
+      phone: f.phone || "",
+      status: (f.status as any) || "green",
+    });
+  };
+
+  const handleCancelEditFranchise = () => {
+    setEditingFranchiseId(null);
+    setEditFranchiseError("");
+  };
+
+  const handleSaveEditFranchise = async () => {
+    if (!editingFranchiseId) return;
+    if (!editFranchiseForm.name.trim() || !editFranchiseForm.code.trim()) {
+      setEditFranchiseError("Preencha o nome e o código da unidade.");
+      return;
+    }
+    setIsSubmittingEditFranchise(true);
+    setEditFranchiseError("");
+
+    const updatedList = franchiseList.map((f) => {
+      if (f.id !== editingFranchiseId) return f;
+      return {
+        ...f,
+        businessId: editFranchiseForm.businessId,
+        name: editFranchiseForm.name.trim(),
+        code: editFranchiseForm.code.trim().toUpperCase(),
+        resp: editFranchiseForm.resp.trim() || editFranchiseForm.name.trim(),
+        city: editFranchiseForm.city.trim(),
+        state: editFranchiseForm.state.trim(),
+        address: editFranchiseForm.address.trim(),
+        faturamento: Number(editFranchiseForm.faturamento) > 0 ? Number(editFranchiseForm.faturamento) : f.faturamento,
+        email: editFranchiseForm.email.trim(),
+        phone: editFranchiseForm.phone.trim(),
+        status: editFranchiseForm.status,
+      };
+    });
+
+    setFranchiseList(updatedList);
+    setEditingFranchiseId(null);
+
+    try {
+      if (onSaveFranchises) {
+        await onSaveFranchises(updatedList);
+      }
+      setSuccessMessage("Dados do franqueado alterados e fixados permanentemente no sistema!");
+      setTimeout(() => setSuccessMessage(""), 4000);
+    } catch (err: any) {
+      setErrorMessage(err.message || "Erro ao salvar alterações do franqueado.");
+      setTimeout(() => setErrorMessage(""), 4000);
+    } finally {
+      setIsSubmittingEditFranchise(false);
+    }
+  };
+
+  const handleDeleteFranchise = async (id: string, name: string) => {
+    if (!confirm(`Tem certeza que deseja remover o franqueado "${name}"? Esta ação removerá a unidade do sistema.`)) {
+      return;
+    }
+    const updatedList = franchiseList.filter((f) => f.id !== id);
+    setFranchiseList(updatedList);
+    if (editingFranchiseId === id) setEditingFranchiseId(null);
+
+    try {
+      if (onSaveFranchises) {
+        await onSaveFranchises(updatedList);
+      }
+      setSuccessMessage(`Franqueado "${name}" removido com sucesso.`);
+      setTimeout(() => setSuccessMessage(""), 4000);
+    } catch (err: any) {
+      setErrorMessage(err.message || "Erro ao excluir franquia.");
+      setTimeout(() => setErrorMessage(""), 4000);
+    }
+  };
+
+  // Handlers para Cadastro de Produtos Homologados
+  const handleStartAddProduct = () => {
+    setEditingProductId(null);
+    setProductForm({
+      name: "",
+      category: "Insumos Gerais",
+      supplierId: suppliers[0]?.id || "",
+      supplierName: suppliers[0]?.name || "",
+      sku: `PROD-${String(productList.length + 1).padStart(3, "0")}`,
+      brand: "",
+      unit: "un",
+      status: "ativo",
+      notes: "",
+    });
+    setIsAddingProduct(true);
+  };
+
+  const handleStartEditProduct = (p: HomologatedProduct) => {
+    setEditingProductId(p.id);
+    setProductForm({
+      name: p.name,
+      category: p.category || "Insumos Gerais",
+      supplierId: p.supplierId || "",
+      supplierName: p.supplierName || "",
+      sku: p.sku || "",
+      brand: p.brand || "",
+      unit: p.unit || "un",
+      status: p.status || "ativo",
+      notes: p.notes || "",
+    });
+    setIsAddingProduct(true);
+  };
+
+  const handleSaveProduct = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!productForm.name.trim()) return;
+    setIsSavingProduct(true);
+
+    const supplierObj = suppliers.find((s) => s.id === productForm.supplierId);
+    const resolvedSupplierName = supplierObj?.name || productForm.supplierName || "Fornecedor Homologado";
+
+    let updatedProducts: HomologatedProduct[];
+    if (editingProductId) {
+      updatedProducts = productList.map((p) =>
+        p.id === editingProductId
+          ? {
+              ...p,
+              name: productForm.name.trim(),
+              category: productForm.category.trim(),
+              supplierId: productForm.supplierId,
+              supplierName: resolvedSupplierName,
+              sku: productForm.sku.trim(),
+              brand: productForm.brand.trim(),
+              unit: productForm.unit.trim(),
+              status: productForm.status,
+              notes: productForm.notes.trim(),
+            }
+          : p
+      );
+    } else {
+      const newProduct: HomologatedProduct = {
+        id: `prod_${Date.now()}_${Math.random().toString(36).slice(2, 6)}`,
+        name: productForm.name.trim(),
+        category: productForm.category.trim(),
+        supplierId: productForm.supplierId,
+        supplierName: resolvedSupplierName,
+        sku: productForm.sku.trim(),
+        brand: productForm.brand.trim(),
+        unit: productForm.unit.trim(),
+        status: productForm.status,
+        notes: productForm.notes.trim(),
+      };
+      updatedProducts = [...productList, newProduct];
+    }
+
+    setProductList(updatedProducts);
+    setIsAddingProduct(false);
+    setEditingProductId(null);
+
+    try {
+      if (onSaveProducts) {
+        await onSaveProducts(updatedProducts);
+      }
+      setSuccessMessage("Produto homologado salvo com sucesso no catálogo da rede!");
+      setTimeout(() => setSuccessMessage(""), 4000);
+    } catch (err: any) {
+      setErrorMessage(err.message || "Erro ao salvar produto homologado.");
+      setTimeout(() => setErrorMessage(""), 4000);
+    } finally {
+      setIsSavingProduct(false);
+    }
+  };
+
+  const handleDeleteProduct = async (id: string, name: string) => {
+    if (!confirm(`Deseja excluir o produto homologado "${name}" do catálogo?`)) return;
+    const updatedProducts = productList.filter((p) => p.id !== id);
+    setProductList(updatedProducts);
+    try {
+      if (onSaveProducts) {
+        await onSaveProducts(updatedProducts);
+      }
+      setSuccessMessage(`Produto "${name}" removido com sucesso.`);
+      setTimeout(() => setSuccessMessage(""), 4000);
+    } catch (err: any) {
+      setErrorMessage(err.message || "Erro ao remover produto homologado.");
+      setTimeout(() => setErrorMessage(""), 4000);
+    }
+  };
+
   return (
     <div className="space-y-6 animate-in fade-in duration-150">
       {/* Top Banner */}
@@ -651,6 +905,18 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
         </button>
 
         <button
+          onClick={() => setActiveTab("dreparams")}
+          className={`flex items-center gap-1.5 rounded-lg px-3.5 py-2 text-xs font-bold transition-all cursor-pointer ${
+            activeTab === "dreparams"
+              ? "bg-[#3c63da] text-white shadow-xs"
+              : "text-[#69778c] hover:bg-[#f4f7fb] hover:text-[#152238]"
+          }`}
+        >
+          <SlidersHorizontal className="h-3.5 w-3.5" />
+          <span>Parâmetros do DRE</span>
+        </button>
+
+        <button
           onClick={() => setActiveTab("permissoes")}
           className={`flex items-center gap-1.5 rounded-lg px-3.5 py-2 text-xs font-bold transition-all cursor-pointer ${
             activeTab === "permissoes"
@@ -682,8 +948,8 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
               : "text-[#69778c] hover:bg-[#f4f7fb] hover:text-[#152238]"
           }`}
         >
-          <Truck className="h-3.5 w-3.5" />
-          <span>Fornecedores</span>
+          <PackageCheck className="h-3.5 w-3.5" />
+          <span>Cadastro de Fornecedores e Produtos</span>
         </button>
 
         <button
@@ -1604,14 +1870,302 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
         </div>
       )}
 
+      {/* ------------------------------------------------------------- */}
+      {/* 2.5 ABA: PARÂMETROS DO DRE                                    */}
+      {/* ------------------------------------------------------------- */}
+      {activeTab === "dreparams" && (
+        <div className="space-y-4">
+          <DreParamsScreen
+            currentTenantId="dono"
+            franchises={franchiseList}
+            dreParams={dreParams || {}}
+            onSaveParams={onSaveDreParams || (async () => {})}
+            onNavigate={() => {}}
+          />
+        </div>
+      )}
+
+      {/* ------------------------------------------------------------- */}
+      {/* 3.5 ABA: CADASTRO DE FORNECEDORES E PRODUTOS HOMOLOGADOS      */}
+      {/* ------------------------------------------------------------- */}
       {activeTab === "fornecedores" && (
-        <SupplierManager
-          suppliers={suppliers}
-          businesses={businessList}
-          franchises={franchiseList}
-          userSession={userSession}
-          onSaveSuppliers={onSaveSuppliers || (async () => undefined)}
-        />
+        <div className="space-y-5">
+          {/* Sub-navegação interna: Fornecedores vs Produtos */}
+          <div className="flex items-center justify-between flex-wrap gap-3 pb-3 border-b border-[#e5eaf1]">
+            <div>
+              <h3 className="text-sm font-bold text-[#152238] flex items-center gap-2">
+                <PackageCheck className="h-4 w-4 text-[#3c63da]" />
+                <span>Cadastro de Fornecedores e Produtos</span>
+              </h3>
+              <p className="text-xs text-[#69778c]">
+                Gestão dos fornecedores oficiais e catálogo padronizado de produtos homologados pela rede.
+              </p>
+            </div>
+
+            <div className="flex items-center gap-1.5 bg-[#f8faff] p-1 rounded-xl border border-[#e5eaf1]">
+              <button
+                type="button"
+                onClick={() => setCatalogSubTab("produtos")}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                  catalogSubTab === "produtos"
+                    ? "bg-[#3c63da] text-white shadow-xs"
+                    : "text-[#69778c] hover:text-[#152238]"
+                }`}
+              >
+                <PackageCheck className="h-3.5 w-3.5" />
+                <span>Produtos Homologados ({productList.length})</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setCatalogSubTab("fornecedores")}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                  catalogSubTab === "fornecedores"
+                    ? "bg-[#3c63da] text-white shadow-xs"
+                    : "text-[#69778c] hover:text-[#152238]"
+                }`}
+              >
+                <Truck className="h-3.5 w-3.5" />
+                <span>Fornecedores Homologados ({suppliers.length})</span>
+              </button>
+            </div>
+          </div>
+
+          {catalogSubTab === "fornecedores" && (
+            <SupplierManager
+              suppliers={suppliers}
+              businesses={businessList}
+              franchises={franchiseList}
+              userSession={userSession}
+              onSaveSuppliers={onSaveSuppliers || (async () => undefined)}
+            />
+          )}
+
+          {catalogSubTab === "produtos" && (
+            <div className="rounded-2xl border border-[#e5eaf1] bg-white p-5 sm:p-6 shadow-xs space-y-4">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div>
+                  <h4 className="text-xs font-extrabold uppercase tracking-wider text-[#3c63da] flex items-center gap-1.5">
+                    <PackageCheck className="h-4 w-4" />
+                    <span>Catálogo de Produtos Homologados</span>
+                  </h4>
+                  <p className="text-xs text-[#69778c] mt-0.5">
+                    Cadastre os insumos e mercadorias que cada franquia deve comprar dos parceiros homologados.
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  id="btn-add-product"
+                  onClick={handleStartAddProduct}
+                  className="flex items-center gap-1.5 rounded-xl bg-[#3c63da] px-3.5 py-2 text-xs font-bold text-white hover:bg-[#2f52c0] shadow-sm cursor-pointer"
+                >
+                  <Plus className="h-4 w-4" />
+                  <span>Cadastrar Novo Produto</span>
+                </button>
+              </div>
+
+              {/* Form de Adicionar/Editar Produto */}
+              {isAddingProduct && (
+                <form onSubmit={handleSaveProduct} className="p-4 sm:p-5 rounded-xl border border-[#3c63da]/30 bg-[#edf2ff]/40 space-y-3">
+                  <div className="flex items-center justify-between border-b border-[#3c63da]/20 pb-2">
+                    <h5 className="text-xs font-bold text-[#152238]">
+                      {editingProductId ? "Editar Produto Homologado" : "Novo Produto Homologado"}
+                    </h5>
+                    <button
+                      type="button"
+                      onClick={() => setIsAddingProduct(false)}
+                      className="text-[#69778c] hover:text-[#152238]"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+                    <div>
+                      <label className="block text-[10px] font-bold text-[#152238] mb-1">Nome do Produto *</label>
+                      <input
+                        type="text"
+                        required
+                        placeholder="Ex: Café Grão Especial Blend 1kg"
+                        value={productForm.name}
+                        onChange={(e) => setProductForm({ ...productForm, name: e.target.value })}
+                        className="w-full rounded-lg border border-[#c4cdd9] bg-white px-2.5 py-2 font-bold"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[10px] font-bold text-[#152238] mb-1">Categoria *</label>
+                      <input
+                        type="text"
+                        required
+                        placeholder="Ex: Café em Grãos, Embalagens, Uniforme"
+                        value={productForm.category}
+                        onChange={(e) => setProductForm({ ...productForm, category: e.target.value })}
+                        className="w-full rounded-lg border border-[#c4cdd9] bg-white px-2.5 py-2 font-bold"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[10px] font-bold text-[#152238] mb-1">Fornecedor Homologado *</label>
+                      <select
+                        value={productForm.supplierId}
+                        onChange={(e) => {
+                          const s = suppliers.find((sup) => sup.id === e.target.value);
+                          setProductForm({
+                            ...productForm,
+                            supplierId: e.target.value,
+                            supplierName: s?.name || "",
+                          });
+                        }}
+                        className="w-full rounded-lg border border-[#c4cdd9] bg-white px-2.5 py-2 font-bold"
+                      >
+                        {suppliers.length === 0 ? (
+                          <option value="">Nenhum fornecedor cadastrado</option>
+                        ) : (
+                          suppliers.map((s) => (
+                            <option key={s.id} value={s.id}>
+                              {s.name} ({s.document || "Homologado"})
+                            </option>
+                          ))
+                        )}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-[10px] font-bold text-[#152238] mb-1">Código / SKU</label>
+                      <input
+                        type="text"
+                        placeholder="Ex: PRD-0042"
+                        value={productForm.sku}
+                        onChange={(e) => setProductForm({ ...productForm, sku: e.target.value })}
+                        className="w-full rounded-lg border border-[#c4cdd9] bg-white px-2.5 py-2 font-mono font-bold"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[10px] font-bold text-[#152238] mb-1">Marca / Fabricante</label>
+                      <input
+                        type="text"
+                        placeholder="Ex: Torrefação Paulista"
+                        value={productForm.brand}
+                        onChange={(e) => setProductForm({ ...productForm, brand: e.target.value })}
+                        className="w-full rounded-lg border border-[#c4cdd9] bg-white px-2.5 py-2"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[10px] font-bold text-[#152238] mb-1">Unidade de Medida</label>
+                      <select
+                        value={productForm.unit}
+                        onChange={(e) => setProductForm({ ...productForm, unit: e.target.value })}
+                        className="w-full rounded-lg border border-[#c4cdd9] bg-white px-2.5 py-2 font-bold"
+                      >
+                        <option value="kg">kg (Quilograma)</option>
+                        <option value="un">un (Unidade)</option>
+                        <option value="cx">cx (Caixa)</option>
+                        <option value="pct">pct (Pacote)</option>
+                        <option value="l">l (Litro)</option>
+                        <option value="fardo">fardo (Fardo)</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-[10px] font-bold text-[#152238] mb-1">Especificações / Padrão de Compra</label>
+                    <textarea
+                      rows={2}
+                      placeholder="Ex: Torra média, padrão de acidez controlada, entrega semanal."
+                      value={productForm.notes}
+                      onChange={(e) => setProductForm({ ...productForm, notes: e.target.value })}
+                      className="w-full rounded-lg border border-[#c4cdd9] bg-white px-2.5 py-2 text-xs"
+                    />
+                  </div>
+
+                  <div className="flex justify-end gap-2 pt-2 border-t border-[#3c63da]/20">
+                    <button
+                      type="button"
+                      onClick={() => setIsAddingProduct(false)}
+                      className="px-3 py-1.5 rounded-lg border border-[#c4cdd9] text-xs font-bold text-[#69778c] hover:bg-white"
+                    >
+                      Cancelar
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={isSavingProduct}
+                      className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg bg-[#3c63da] text-white text-xs font-bold hover:bg-[#2f52c0] shadow-xs disabled:opacity-60"
+                    >
+                      <Save className="h-3.5 w-3.5" />
+                      <span>{isSavingProduct ? "Salvando..." : "Salvar Produto Homologado"}</span>
+                    </button>
+                  </div>
+                </form>
+              )}
+
+              {/* Tabela de Produtos Homologados */}
+              {productList.length === 0 ? (
+                <div className="p-8 text-center border border-dashed border-[#cbd5e1] rounded-xl text-xs text-[#69778c] bg-[#f8faff]">
+                  Nenhum produto homologado cadastrado ainda. Clique em "Cadastrar Novo Produto" para iniciar o catálogo.
+                </div>
+              ) : (
+                <div className="overflow-x-auto rounded-xl border border-[#e5eaf1]">
+                  <table className="w-full text-left text-xs">
+                    <thead className="bg-[#f8fafc] text-[10px] uppercase tracking-wider text-[#69778c] border-b border-[#e5eaf1]">
+                      <tr>
+                        <th className="p-3">Produto</th>
+                        <th className="p-3">Categoria</th>
+                        <th className="p-3">Fornecedor</th>
+                        <th className="p-3">Código</th>
+                        <th className="p-3">Unidade</th>
+                        <th className="p-3">Status</th>
+                        <th className="p-3 text-right">Ações</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-[#e5eaf1]">
+                      {productList.map((prod) => (
+                        <tr key={prod.id} className="hover:bg-[#f8faff]">
+                          <td className="p-3">
+                            <strong className="text-[#152238] block">{prod.name}</strong>
+                            {prod.brand && <span className="text-[10px] text-[#69778c]">{prod.brand}</span>}
+                          </td>
+                          <td className="p-3 text-[#475569]">{prod.category}</td>
+                          <td className="p-3 font-semibold text-[#152238]">{prod.supplierName || "—"}</td>
+                          <td className="p-3 font-mono text-[11px] text-[#64748b]">{prod.sku || "—"}</td>
+                          <td className="p-3 text-[#475569]">{prod.unit || "un"}</td>
+                          <td className="p-3">
+                            <span className="inline-flex rounded-full px-2 py-0.5 text-[10px] font-extrabold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                              {prod.status || "ativo"}
+                            </span>
+                          </td>
+                          <td className="p-3 text-right">
+                            <div className="flex items-center justify-end gap-1.5">
+                              <button
+                                type="button"
+                                onClick={() => handleStartEditProduct(prod)}
+                                className="p-1.5 rounded-lg text-[#3c63da] hover:bg-[#edf2ff] cursor-pointer"
+                                title="Editar Produto"
+                              >
+                                <Edit3 className="h-3.5 w-3.5" />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteProduct(prod.id, prod.name)}
+                                className="p-1.5 rounded-lg text-rose-600 hover:bg-rose-50 cursor-pointer"
+                                title="Excluir Produto"
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
       )}
 
       {/* ------------------------------------------------------------- */}
@@ -1840,12 +2394,146 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
             </div>
           )}
 
-          {/* List of Franchises */}
+          {/* Formulário / Modal de Edição de Franqueado */}
+          {editingFranchiseId && (
+            <div className="p-4 sm:p-5 rounded-xl border border-amber-300 bg-amber-50/40 space-y-3 shadow-xs">
+              <div className="flex items-center justify-between border-b border-amber-200 pb-2">
+                <h4 className="text-xs font-extrabold uppercase tracking-wider text-amber-800 flex items-center gap-1.5">
+                  <Edit3 className="h-4 w-4 text-amber-700" />
+                  <span>Alterar Informações do Franqueado (Salvar Fixo)</span>
+                </h4>
+                <button
+                  type="button"
+                  onClick={handleCancelEditFranchise}
+                  className="text-slate-500 hover:text-slate-800 cursor-pointer"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+
+              {editFranchiseError && (
+                <div className="p-2.5 rounded-lg bg-rose-50 border border-rose-200 text-xs font-bold text-rose-700">
+                  {editFranchiseError}
+                </div>
+              )}
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 text-xs">
+                <div>
+                  <label className="block text-[10px] font-bold text-[#152238] mb-1">Modelo / Marca *</label>
+                  <select
+                    value={editFranchiseForm.businessId}
+                    onChange={(e) => setEditFranchiseForm({ ...editFranchiseForm, businessId: e.target.value })}
+                    className="w-full rounded-lg border border-[#c4cdd9] bg-white px-2.5 py-2 font-bold"
+                  >
+                    {businessList.map((b) => (
+                      <option key={b.id} value={b.id}>{b?.name || b?.brand || b?.id}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-bold text-[#152238] mb-1">Nome da Loja *</label>
+                  <input
+                    type="text"
+                    required
+                    value={editFranchiseForm.name}
+                    onChange={(e) => setEditFranchiseForm({ ...editFranchiseForm, name: e.target.value })}
+                    className="w-full rounded-lg border border-[#c4cdd9] bg-white px-2.5 py-2 font-bold"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-bold text-[#152238] mb-1">Código da Unidade *</label>
+                  <input
+                    type="text"
+                    required
+                    value={editFranchiseForm.code}
+                    onChange={(e) => setEditFranchiseForm({ ...editFranchiseForm, code: e.target.value })}
+                    className="w-full rounded-lg border border-[#c4cdd9] bg-white px-2.5 py-2 font-mono font-bold"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-bold text-[#152238] mb-1">Responsável / Franqueado</label>
+                  <input
+                    type="text"
+                    value={editFranchiseForm.resp}
+                    onChange={(e) => setEditFranchiseForm({ ...editFranchiseForm, resp: e.target.value })}
+                    className="w-full rounded-lg border border-[#c4cdd9] bg-white px-2.5 py-2 font-bold"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-bold text-[#152238] mb-1">Cidade - UF</label>
+                  <input
+                    type="text"
+                    value={editFranchiseForm.city}
+                    onChange={(e) => setEditFranchiseForm({ ...editFranchiseForm, city: e.target.value })}
+                    className="w-full rounded-lg border border-[#c4cdd9] bg-white px-2.5 py-2 font-bold"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-bold text-[#152238] mb-1">Faturamento Médio (R$)</label>
+                  <input
+                    type="number"
+                    value={editFranchiseForm.faturamento}
+                    onChange={(e) => setEditFranchiseForm({ ...editFranchiseForm, faturamento: Number(e.target.value) })}
+                    className="w-full rounded-lg border border-[#c4cdd9] bg-white px-2.5 py-2 font-mono font-bold"
+                  />
+                </div>
+
+                <div className="sm:col-span-2">
+                  <label className="block text-[10px] font-bold text-[#152238] mb-1">Endereço Completo</label>
+                  <input
+                    type="text"
+                    value={editFranchiseForm.address}
+                    onChange={(e) => setEditFranchiseForm({ ...editFranchiseForm, address: e.target.value })}
+                    className="w-full rounded-lg border border-[#c4cdd9] bg-white px-2.5 py-2 font-bold"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-bold text-[#152238] mb-1">Status Operacional</label>
+                  <select
+                    value={editFranchiseForm.status}
+                    onChange={(e) => setEditFranchiseForm({ ...editFranchiseForm, status: e.target.value as any })}
+                    className="w-full rounded-lg border border-[#c4cdd9] bg-white px-2.5 py-2 font-bold"
+                  >
+                    <option value="green">Verde (Saudável)</option>
+                    <option value="yellow">Amarelo (Atenção)</option>
+                    <option value="red">Vermelho (Crítico)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-2 pt-3 border-t border-amber-200">
+                <button
+                  type="button"
+                  onClick={handleCancelEditFranchise}
+                  className="px-3.5 py-2 rounded-lg border border-[#c4cdd9] text-xs font-bold text-[#69778c] hover:bg-white cursor-pointer"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSaveEditFranchise}
+                  disabled={isSubmittingEditFranchise}
+                  className="px-5 py-2 rounded-lg bg-emerald-600 text-white text-xs font-bold hover:bg-emerald-700 shadow-sm disabled:opacity-50 flex items-center gap-1.5 cursor-pointer"
+                >
+                  <Save className="h-3.5 w-3.5" />
+                  <span>{isSubmittingEditFranchise ? "Salvando..." : "Salvar Alterações & Fixar na Nuvem"}</span>
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* List of Franchises with Edit & Delete actions */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
             {franchiseList.map((f) => {
               const biz = businesses.find((b) => b.id === f.businessId);
               return (
-                <div key={f.id} className="p-3.5 rounded-xl border border-[#e5eaf1] bg-[#f8faff] space-y-1.5">
+                <div key={f.id} className="p-3.5 rounded-xl border border-[#e5eaf1] bg-[#f8faff] space-y-2">
                   <div className="flex items-center justify-between">
                     <span className="text-[9px] font-extrabold uppercase bg-white border border-[#e5eaf1] px-2 py-0.5 rounded-full text-[#3c63da]">
                       {biz?.brand || f.businessId}
@@ -1857,6 +2545,24 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
                   <div className="pt-1.5 border-t border-[#e5eaf1] flex justify-between items-center text-xs">
                     <span className="text-[#69778c]">Faturamento:</span>
                     <strong className="text-emerald-700 font-mono">{formatBrl(f.faturamento)}</strong>
+                  </div>
+                  <div className="pt-2 border-t border-[#e5eaf1]/60 flex items-center justify-end gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => handleStartEditFranchise(f)}
+                      className="flex items-center gap-1 px-2.5 py-1 rounded-lg border border-[#3c63da]/30 bg-[#edf2ff] text-[#3c63da] text-[11px] font-bold hover:bg-[#dfe8fe] cursor-pointer"
+                    >
+                      <Edit3 className="h-3 w-3" />
+                      <span>Alterar</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteFranchise(f.id, f.name)}
+                      className="p-1 rounded-lg text-rose-600 hover:bg-rose-50 cursor-pointer"
+                      title="Excluir Unidade"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
                   </div>
                 </div>
               );

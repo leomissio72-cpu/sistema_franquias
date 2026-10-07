@@ -2,7 +2,23 @@ import app from "./src/serverBackend.ts";
 import path from "path";
 import express from "express";
 
-const PORT = Number(process.env.PORT) || 3000;
+function resolvePort(): number {
+  const portArgIndex = process.argv.findIndex((arg) => arg === "--port" || arg === "-p");
+  if (portArgIndex !== -1 && process.argv[portArgIndex + 1]) {
+    const parsed = Number(process.argv[portArgIndex + 1]);
+    if (!Number.isNaN(parsed) && parsed > 0) return parsed;
+  }
+  if (process.env.APP_PORT) {
+    return Number(process.env.APP_PORT);
+  }
+  // Nginx owns port 8080 in the AI Studio container; app server must run on 3000
+  if (process.env.PORT && process.env.PORT !== "8080") {
+    return Number(process.env.PORT);
+  }
+  return 3000;
+}
+
+const PORT = resolvePort();
 
 async function startServer() {
   if (process.env.NODE_ENV !== "production") {
@@ -29,6 +45,9 @@ async function startServer() {
 
   server.on("error", (err: any) => {
     console.error("[Gestão de Franquias Server] Server error:", err);
+    if (err.code === "EADDRINUSE") {
+      process.exit(1);
+    }
   });
 }
 

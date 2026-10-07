@@ -14,7 +14,6 @@ import {
   ArrowLeftRight,
   FileSpreadsheet,
   Cog,
-  FileBarChart,
   Users,
   KeyRound,
   Settings,
@@ -164,9 +163,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   // Todas as áreas continuam visíveis para o dono/equipe mesmo quando o banco está vazio.
   const networkNav: NavItem[] = [
-    { id: "network", label: "Rede e Unidades (com Mapa)", icon: <Building2 className="h-4 w-4" /> },
-    { id: "map", label: "Mapa das Unidades", icon: <MapPin className="h-4 w-4" /> },
-    { id: "reports", label: "Relatórios", icon: <FileBarChart className="h-4 w-4" /> },
+    { id: "network", label: "Rede e Unidades", icon: <Building2 className="h-4 w-4" /> },
   ];
 
   const operationsNav: NavItem[] = [

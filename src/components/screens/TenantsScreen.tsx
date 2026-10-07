@@ -14,7 +14,10 @@ import {
   X,
   CheckCircle2,
   Sparkles,
-  ArrowRight
+  ArrowRight,
+  Edit3,
+  Trash2,
+  Save
 } from "lucide-react";
 
 interface TenantsScreenProps {
@@ -61,6 +64,102 @@ export const TenantsScreen: React.FC<TenantsScreenProps> = ({
     lat: "",
     lng: "",
   });
+
+  // Edit Franchise State
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editingUnitId, setEditingUnitId] = useState<string | null>(null);
+  const [editForm, setEditForm] = useState({
+    businessId: "",
+    name: "",
+    code: "",
+    resp: "",
+    city: "",
+    state: "",
+    address: "",
+    faturamento: 50000,
+    email: "",
+    phone: "",
+    status: "green" as "green" | "yellow" | "red" | "amber",
+  });
+  const [editError, setEditError] = useState("");
+
+  const openEditModal = (f: FranchiseUnit) => {
+    setEditingUnitId(f.id);
+    setEditForm({
+      businessId: f.businessId,
+      name: f.name,
+      code: f.code,
+      resp: f.resp || f.name,
+      city: f.city || "",
+      state: f.state || "",
+      address: f.address || "",
+      faturamento: f.faturamento || 50000,
+      email: f.email || "",
+      phone: f.phone || "",
+      status: (f.status as any) || "green",
+    });
+    setEditError("");
+    setShowEditModal(true);
+  };
+
+  const handleSaveEditUnit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingUnitId) return;
+    if (!editForm.name.trim() || !editForm.code.trim()) {
+      setEditError("Preencha o nome e o código da unidade.");
+      return;
+    }
+
+    const updatedList = franchises.map((f) => {
+      if (f.id !== editingUnitId) return f;
+      return {
+        ...f,
+        businessId: editForm.businessId,
+        name: editForm.name.trim(),
+        code: editForm.code.trim().toUpperCase(),
+        resp: editForm.resp.trim() || editForm.name.trim(),
+        city: editForm.city.trim(),
+        state: editForm.state.trim(),
+        address: editForm.address.trim(),
+        faturamento: Number(editForm.faturamento) > 0 ? Number(editForm.faturamento) : f.faturamento,
+        email: editForm.email.trim(),
+        phone: editForm.phone.trim(),
+        status: editForm.status,
+      };
+    });
+
+    setShowEditModal(false);
+    setEditingUnitId(null);
+    setSuccessMsg(`Informações da franquia "${editForm.name}" alteradas e fixadas com sucesso!`);
+    setTimeout(() => setSuccessMsg(""), 4500);
+
+    try {
+      if (onSaveFranchises) {
+        await onSaveFranchises(updatedList);
+      }
+    } catch (err) {
+      console.error("Erro ao salvar franquia editada:", err);
+    }
+  };
+
+  const handleDeleteUnit = async (id: string, name: string) => {
+    if (!confirm(`Tem certeza que deseja excluir a unidade "${name}"?`)) return;
+    const updatedList = franchises.filter((f) => f.id !== id);
+    if (editingUnitId === id) {
+      setShowEditModal(false);
+      setEditingUnitId(null);
+    }
+    setSuccessMsg(`Unidade "${name}" removida com sucesso.`);
+    setTimeout(() => setSuccessMsg(""), 4500);
+
+    try {
+      if (onSaveFranchises) {
+        await onSaveFranchises(updatedList);
+      }
+    } catch (err) {
+      console.error("Erro ao excluir unidade:", err);
+    }
+  };
 
   const openAddModal = () => {
     const autoCode = `F${String(franchises.length + 1).padStart(3, "0")}`;
@@ -340,17 +439,28 @@ export const TenantsScreen: React.FC<TenantsScreenProps> = ({
                   </b>
                 </div>
 
-                <button
-                  type="button"
-                  onClick={() => {
-                    onSelectTenant(f.id);
-                    onNavigate("dre");
-                  }}
-                  className="flex items-center gap-1 rounded-lg border border-[#e5eaf1] bg-[#f8faff] px-3 py-1.5 text-xs font-bold text-[#3c63da] hover:bg-[#edf2ff] transition-all cursor-pointer"
-                >
-                  <span>Abrir Loja</span>
-                  <ExternalLink className="h-3 w-3" />
-                </button>
+                <div className="flex items-center gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => openEditModal(f)}
+                    className="flex items-center gap-1 rounded-lg border border-[#3c63da]/30 bg-[#edf2ff] px-2.5 py-1.5 text-xs font-bold text-[#3c63da] hover:bg-[#dfe8fe] transition-all cursor-pointer"
+                    title="Editar informações da franquia"
+                  >
+                    <Edit3 className="h-3 w-3" />
+                    <span>Editar</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onSelectTenant(f.id);
+                      onNavigate("dre");
+                    }}
+                    className="flex items-center gap-1 rounded-lg border border-[#e5eaf1] bg-[#f8faff] px-3 py-1.5 text-xs font-bold text-[#152238] hover:bg-[#edf2ff] transition-all cursor-pointer"
+                  >
+                    <span>Abrir</span>
+                    <ExternalLink className="h-3 w-3" />
+                  </button>
+                </div>
               </div>
             </div>
           );
@@ -602,6 +712,204 @@ export const TenantsScreen: React.FC<TenantsScreenProps> = ({
                   <Plus className="h-4 w-4" />
                   <span>{isSubmitting ? "Cadastrando..." : "Cadastrar Novo Franqueado"}</span>
                 </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal: Editar Franqueado Existente (Salvar Fixo) */}
+      {showEditModal && (
+        <div
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-[#152238]/50 backdrop-blur-xs p-4 overflow-y-auto"
+          role="dialog"
+          aria-modal="true"
+        >
+          <div className="w-full max-w-xl rounded-2xl bg-white shadow-2xl border border-[#dbe4ef] overflow-hidden animate-in fade-in zoom-in-95 duration-150 my-8">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-[#e5eaf1] bg-[#f8faff]">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 rounded-xl bg-amber-50 text-amber-700">
+                  <Edit3 className="h-5 w-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-extrabold text-[#152238]">
+                    Alterar Informações do Franqueado
+                  </h3>
+                  <p className="text-[11px] text-[#69778c]">
+                    Edição permanente com sincronização e fixação imediata na nuvem.
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowEditModal(false)}
+                className="p-1.5 rounded-lg text-[#69778c] hover:bg-white hover:text-[#152238] transition-colors cursor-pointer"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveEditUnit} className="p-5 sm:p-6 space-y-4">
+              {editError && (
+                <div className="p-3 rounded-xl bg-rose-50 border border-rose-200 text-xs font-bold text-rose-700">
+                  {editError}
+                </div>
+              )}
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                <div className="sm:col-span-2">
+                  <label className="block text-xs font-bold text-[#152238] mb-1">
+                    Nome da Loja / Franqueado *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={editForm.name}
+                    onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                    className="w-full rounded-xl border border-[#dbe4ef] bg-[#f8faff] px-3.5 py-2.5 text-xs font-bold text-[#152238] focus:border-[#3c63da] focus:bg-white focus:outline-none transition-all"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-[#152238] mb-1">
+                    Modelo / Marca *
+                  </label>
+                  <select
+                    value={editForm.businessId}
+                    onChange={(e) => setEditForm({ ...editForm, businessId: e.target.value })}
+                    className="w-full rounded-xl border border-[#dbe4ef] bg-[#f8faff] px-3 py-2.5 text-xs font-bold text-[#152238] focus:border-[#3c63da] focus:bg-white focus:outline-none"
+                  >
+                    {businesses.map((b) => (
+                      <option key={b.id} value={b.id}>
+                        {b.name || b.brand}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-[#152238] mb-1">
+                    Código da Loja *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={editForm.code}
+                    onChange={(e) => setEditForm({ ...editForm, code: e.target.value })}
+                    className="w-full rounded-xl border border-[#dbe4ef] bg-[#f8faff] px-3.5 py-2.5 text-xs font-mono font-bold text-[#152238] focus:border-[#3c63da] focus:bg-white focus:outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-[#152238] mb-1">
+                    Responsável (Nome)
+                  </label>
+                  <input
+                    type="text"
+                    value={editForm.resp}
+                    onChange={(e) => setEditForm({ ...editForm, resp: e.target.value })}
+                    className="w-full rounded-xl border border-[#dbe4ef] bg-[#f8faff] px-3.5 py-2.5 text-xs font-bold text-[#152238] focus:border-[#3c63da] focus:bg-white focus:outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-[#152238] mb-1">
+                    Cidade - UF
+                  </label>
+                  <input
+                    type="text"
+                    value={editForm.city}
+                    onChange={(e) => setEditForm({ ...editForm, city: e.target.value })}
+                    className="w-full rounded-xl border border-[#dbe4ef] bg-[#f8faff] px-3.5 py-2.5 text-xs font-bold text-[#152238] focus:border-[#3c63da] focus:bg-white focus:outline-none"
+                  />
+                </div>
+
+                <div className="sm:col-span-2">
+                  <label className="block text-xs font-bold text-[#152238] mb-1">
+                    Endereço Completo
+                  </label>
+                  <input
+                    type="text"
+                    value={editForm.address}
+                    onChange={(e) => setEditForm({ ...editForm, address: e.target.value })}
+                    className="w-full rounded-xl border border-[#dbe4ef] bg-[#f8faff] px-3.5 py-2.5 text-xs font-bold text-[#152238] focus:border-[#3c63da] focus:bg-white focus:outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-[#152238] mb-1">
+                    Faturamento Mensal (R$)
+                  </label>
+                  <input
+                    type="number"
+                    value={editForm.faturamento}
+                    onChange={(e) => setEditForm({ ...editForm, faturamento: Number(e.target.value) })}
+                    className="w-full rounded-xl border border-[#dbe4ef] bg-[#f8faff] px-3.5 py-2 text-xs font-mono font-bold text-[#152238] focus:border-[#3c63da] focus:bg-white focus:outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-[#152238] mb-1">
+                    Status da Unidade
+                  </label>
+                  <select
+                    value={editForm.status}
+                    onChange={(e) => setEditForm({ ...editForm, status: e.target.value as any })}
+                    className="w-full rounded-xl border border-[#dbe4ef] bg-[#f8faff] px-3 py-2 text-xs font-bold text-[#152238] focus:border-[#3c63da] focus:bg-white focus:outline-none"
+                  >
+                    <option value="green">Verde (Saudável)</option>
+                    <option value="yellow">Amarelo (Atenção)</option>
+                    <option value="red">Vermelho (Crítico)</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-[#152238] mb-1">E-mail</label>
+                  <input
+                    type="email"
+                    value={editForm.email}
+                    onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
+                    className="w-full rounded-xl border border-[#dbe4ef] bg-[#f8faff] px-3.5 py-2 text-xs font-bold text-[#152238] focus:border-[#3c63da] focus:bg-white focus:outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-[#152238] mb-1">Telefone / WhatsApp</label>
+                  <input
+                    type="text"
+                    value={editForm.phone}
+                    onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })}
+                    className="w-full rounded-xl border border-[#dbe4ef] bg-[#f8faff] px-3.5 py-2 text-xs font-bold text-[#152238] focus:border-[#3c63da] focus:bg-white focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between pt-4 border-t border-[#e5eaf1]">
+                <button
+                  type="button"
+                  onClick={() => editingUnitId && handleDeleteUnit(editingUnitId, editForm.name)}
+                  className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold text-rose-600 hover:bg-rose-50 cursor-pointer"
+                >
+                  <Trash2 className="h-4 w-4" />
+                  <span>Excluir Unidade</span>
+                </button>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowEditModal(false)}
+                    className="rounded-xl border border-[#dbe4ef] px-4 py-2 text-xs font-bold text-[#69778c] hover:bg-[#f8faff] hover:text-[#152238] transition-colors cursor-pointer"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="submit"
+                    className="flex items-center gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 px-5 py-2 text-xs font-bold text-white shadow-sm transition-all cursor-pointer"
+                  >
+                    <Save className="h-4 w-4" />
+                    <span>Salvar & Fixar Alterações</span>
+                  </button>
+                </div>
               </div>
             </form>
           </div>

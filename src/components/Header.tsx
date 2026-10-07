@@ -33,7 +33,6 @@ const screenTitles: Record<ScreenType, string> = {
   vt: "Vale Transporte",
   rp: "Rotinas / RP",
   pagamentos_despesas: "Pagamentos / Despesas",
-  reports: "Relatórios Exportáveis",
   permissoes: "Permissões e Royalties",
   tenants: "Cadastro de Franqueados",
   employees: "Cadastro de Funcionários",

@@ -14,7 +14,8 @@ import {
   CloudState,
   WhatsAppConfig,
   WhatsAppMessageHistory,
-  RegisteredSupplier
+  RegisteredSupplier,
+  HomologatedProduct
 } from "./types";
 import { readFirebaseMirror, writeFirebaseMirror } from "./firebaseState";
 import {
@@ -429,6 +430,10 @@ export async function saveBusinesses(businesses: Business[], userName: string): 
 
 export async function saveSuppliers(suppliers: RegisteredSupplier[], userName: string, actor?: { profile?: string; tenant?: string; login?: string }): Promise<CloudState> {
   return syncStateSection("suppliers", suppliers, userName, actor);
+}
+
+export async function saveProducts(products: HomologatedProduct[], userName: string, actor?: { profile?: string; tenant?: string; login?: string }): Promise<CloudState> {
+  return syncStateSection("products", products, userName, actor);
 }
 
 export async function saveSystemSettings(settings: SystemSettings, userName: string, userId?: string): Promise<CloudState> {

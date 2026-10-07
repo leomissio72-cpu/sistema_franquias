@@ -1,4 +1,4 @@
-import {
+import type {
   Business,
   FranchiseUnit,
   DreExpenseDef,
@@ -13,7 +13,7 @@ import {
   ConciliationItem,
   ConfigItem,
   BillItem
-} from "../types";
+} from "../types.ts";
 
 export const initialBusinesses: Business[] = [
 ];

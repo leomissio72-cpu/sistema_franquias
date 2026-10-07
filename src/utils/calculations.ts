@@ -186,3 +186,73 @@ export function generateMonthlyRevenue(baseMonthly: number, months: number = 12,
   }
   return arr;
 }
+
+export function getBusinessDaysInMonth(year?: number, monthZeroIndexed?: number): {
+  totalDays: number;
+  businessDays: number;
+  monthName: string;
+  year: number;
+  monthIndex: number;
+} {
+  const now = new Date();
+  const y = year ?? now.getFullYear();
+  const m = monthZeroIndexed ?? now.getMonth();
+
+  const monthNames = [
+    "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
+    "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"
+  ];
+
+  const totalDays = new Date(y, m + 1, 0).getDate();
+  let businessDays = 0;
+
+  for (let day = 1; day <= totalDays; day++) {
+    const d = new Date(y, m, day);
+    const dayOfWeek = d.getDay();
+    if (dayOfWeek !== 0 && dayOfWeek !== 6) {
+      businessDays++;
+    }
+  }
+
+  return {
+    totalDays,
+    businessDays,
+    monthName: monthNames[m],
+    year: y,
+    monthIndex: m,
+  };
+}
+
+export function getBusinessDaysRange(startDate: Date, businessDaysCount: number): {
+  startDateStr: string;
+  endDateStr: string;
+  formattedRange: string;
+} {
+  if (businessDaysCount <= 0) {
+    const sStr = startDate.toLocaleDateString("pt-BR");
+    return { startDateStr: sStr, endDateStr: sStr, formattedRange: sStr };
+  }
+
+  let count = 0;
+  const curr = new Date(startDate);
+  while (isWeekend(curr)) {
+    curr.setDate(curr.getDate() + 1);
+  }
+  const startStr = curr.toLocaleDateString("pt-BR");
+
+  const end = new Date(curr);
+  while (count < businessDaysCount - 1) {
+    end.setDate(end.getDate() + 1);
+    if (!isWeekend(end)) {
+      count++;
+    }
+  }
+  const endStr = end.toLocaleDateString("pt-BR");
+
+  return {
+    startDateStr: startStr,
+    endDateStr: endStr,
+    formattedRange: `${startStr} a ${endStr}`,
+  };
+}
+

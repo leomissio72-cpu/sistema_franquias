@@ -17,7 +17,8 @@ import {
   UserAccount,
   Employee,
   BillItem,
-  RegisteredSupplier
+  RegisteredSupplier,
+  HomologatedProduct
 } from "./types";
 import {
   fetchServerState,
@@ -32,6 +33,7 @@ import {
   saveFranchises,
   saveBusinesses,
   saveSuppliers,
+  saveProducts,
   createManualEntry,
   createManualEntriesBulk,
   deleteManualEntry,
@@ -47,7 +49,6 @@ import { LoginModal } from "./components/LoginModal";
 import { HomeScreen } from "./components/screens/HomeScreen";
 import { ConfiguracaoScreen } from "./components/screens/ConfiguracaoScreen";
 import { NetworkScreen } from "./components/screens/NetworkScreen";
-import { MapScreen } from "./components/screens/MapScreen";
 import { DashboardScreen } from "./components/screens/DashboardScreen";
 import { DreScreen } from "./components/screens/DreScreen";
 import { DreParamsScreen } from "./components/screens/DreParamsScreen";
@@ -56,7 +57,6 @@ import { LancamentosScreen } from "./components/screens/LancamentosScreen";
 import { ConciliationScreen } from "./components/screens/ConciliationScreen";
 import { VtScreen } from "./components/screens/VtScreen";
 import { RpScreen } from "./components/screens/RpScreen";
-import { ReportsScreen } from "./components/screens/ReportsScreen";
 import { PermissoesScreen } from "./components/screens/PermissoesScreen";
 import { TenantsScreen } from "./components/screens/TenantsScreen";
 import { EmployeesScreen } from "./components/screens/EmployeesScreen";
@@ -89,7 +89,6 @@ export const App: React.FC = () => {
         "conciliation",
         "vt",
         "rp",
-        "reports",
         "permissoes",
         "tenants",
         "employees",
@@ -339,6 +338,26 @@ export const App: React.FC = () => {
       }));
       const logsRes = await fetchAuditLogs();
       if (logsRes.auditLogs) setAuditLogs(logsRes.auditLogs);
+    } finally {
+      setIsSavingConfig(false);
+    }
+  };
+
+  const handleSaveProducts = async (newProducts: HomologatedProduct[]) => {
+    setIsSavingConfig(true);
+    setServerState((prev) => (prev ? { ...prev, products: newProducts } : prev));
+    try {
+      const actor = { profile: userSession?.profile || "dono", tenant: userSession?.tenant || "dono", login: userSession?.login || "admin" };
+      const updatedState = await saveProducts(newProducts, userSession?.name || "Admin", actor);
+      setServerState((prev) => ({
+        ...updatedState,
+        products: newProducts,
+      }));
+      const logsRes = await fetchAuditLogs();
+      if (logsRes.auditLogs) setAuditLogs(logsRes.auditLogs);
+    } catch (e) {
+      console.error("Erro ao salvar produtos homologados:", e);
+      throw e;
     } finally {
       setIsSavingConfig(false);
     }
@@ -641,6 +660,8 @@ export const App: React.FC = () => {
               settings={systemSettings}
               users={serverState.users}
               suppliers={suppliers}
+              products={products}
+              dreParams={dreParams}
               initialTab="configs"
               onUpdateConfig={handleUpdateConfig}
               onBulkUpdate={handleBulkUpdateConfig}
@@ -650,6 +671,8 @@ export const App: React.FC = () => {
               onSaveSettings={handleSaveSettings}
               onSaveUsers={handleSaveUsers}
               onSaveSuppliers={handleSaveSuppliers}
+              onSaveProducts={handleSaveProducts}
+              onSaveDreParams={handleSaveDreParams}
               onResetDatabase={handleResetDatabase}
               onRefresh={loadState}
               isSaving={isSavingConfig}
@@ -665,7 +688,7 @@ export const App: React.FC = () => {
             />
           )}
 
-          {currentScreen === "network" && (
+          {(currentScreen === "network" || (currentScreen as string) === "map") && (
             <NetworkScreen
               franchises={franchises}
               businesses={businesses}
@@ -675,18 +698,6 @@ export const App: React.FC = () => {
               dreParams={dreParams}
               royalties={royalties}
               onRefreshData={loadState}
-            />
-          )}
-
-          {currentScreen === "map" && (
-            <MapScreen
-              franchises={franchises}
-              businesses={businesses}
-              currentTenantId={currentTenantId}
-              onSelectTenant={handleSelectTenant}
-              onNavigate={setCurrentScreen}
-              dreParams={dreParams}
-              royalties={royalties}
             />
           )}
 
@@ -701,7 +712,6 @@ export const App: React.FC = () => {
               dreParams={dreParams}
               royalties={royalties}
               bills={bills}
-              initialTab="analytics"
               userSession={userSession}
             />
           )}
@@ -786,22 +796,6 @@ export const App: React.FC = () => {
                   ? "rp"
                   : "rp"
               }
-            />
-          )}
-
-          {currentScreen === "reports" && (
-            <DashboardScreen
-              franchises={franchises}
-              businesses={businesses}
-              currentBusinessId={currentBusinessId}
-              currentTenantId={currentTenantId}
-              onSelectTenant={handleSelectTenant}
-              onNavigate={setCurrentScreen}
-              dreParams={dreParams}
-              royalties={royalties}
-              bills={bills}
-              initialTab="reports"
-              userSession={userSession}
             />
           )}
 

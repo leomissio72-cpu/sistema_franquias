@@ -656,6 +656,14 @@ async function saveDatabase(data) {
   await persistDatabaseToBlob(data);
 }
 function getFullState(database) {
+  const mergedRoyalties = { ...database.royalties || {} };
+  if (Array.isArray(database.businesses)) {
+    for (const b of database.businesses) {
+      if (mergedRoyalties[b.id] === void 0 && b.royalty !== void 0) {
+        mergedRoyalties[b.id] = Number(b.royalty);
+      }
+    }
+  }
   return {
     businesses: database.businesses || [],
     franchises: database.franchises || [],
@@ -667,7 +675,7 @@ function getFullState(database) {
     dreParams: database.dreParams || {},
     paymentMethods: database.paymentMethods || [],
     businessRules: database.businessRules || {},
-    royalties: database.royalties || {},
+    royalties: mergedRoyalties,
     permissions: database.permissions || {},
     vtConfigs: database.vtConfigs || {},
     whatsappConfig: database.whatsappConfig || {
@@ -960,7 +968,28 @@ routeBoth("post", "/api/state/sync", requireSession, async (req, res) => {
     if (section === "systemSettings" && data && typeof data === "object") {
       data = { ...data, autoSync: true, syncInterval: Number(data.syncInterval) > 0 ? Number(data.syncInterval) : 30 };
     }
-    db[section] = stripSensitiveFields(data);
+    if (section === "royalties" && data && typeof data === "object") {
+      const cleanData = stripSensitiveFields(data);
+      db.royalties = { ...db.royalties || {}, ...cleanData };
+      if (Array.isArray(db.businesses)) {
+        db.businesses = db.businesses.map((b) => ({
+          ...b,
+          royalty: cleanData[b.id] !== void 0 ? Number(cleanData[b.id]) : b.royalty ?? 0.06
+        }));
+      }
+    } else if (section === "businesses" && Array.isArray(data)) {
+      const cleanBusinesses = data.map((b) => stripSensitiveFields(b));
+      db.businesses = cleanBusinesses;
+      const royUpdates = { ...db.royalties || {} };
+      for (const b of cleanBusinesses) {
+        if (b.id && b.royalty !== void 0) {
+          royUpdates[b.id] = Number(b.royalty);
+        }
+      }
+      db.royalties = royUpdates;
+    } else {
+      db[section] = stripSensitiveFields(data);
+    }
     if (credential?.userId && credential?.password) {
       if (!authenticatedUser || !["dono", "equipe", "admin"].includes(authenticatedUser.perfil)) return res.status(403).json({ error: "Voc\xEA n\xE3o pode alterar esta credencial." });
       Object.assign(db, setCredential(db, String(credential.userId), String(credential.password)));

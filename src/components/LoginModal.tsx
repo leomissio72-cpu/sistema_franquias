@@ -89,7 +89,6 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onSuccess, onClo
             <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center overflow-hidden rounded-2xl border border-[#d7e2fb] bg-[#f0f5ff] shadow-sm"><img src="/login-visual.svg" alt="" className="h-full w-full object-cover object-[50%_42%]" /></div>
             <h1 id="login-title" className="text-2xl font-extrabold tracking-tight text-[#152238]">Gestão de Franquias</h1>
             <div className="mt-1 inline-block rounded-full border border-[#d7e2fb] bg-[#f0f5ff] px-2.5 py-0.5 text-[11px] font-extrabold uppercase tracking-wide text-[#315bc5]">Acesso administrativo</div>
-            <p className="mt-2 text-xs leading-relaxed text-[#69778c]">Plataforma centralizada para organizar pessoas, acessos e unidades da sua operação.</p>
           </div>
 
           {errorMsg && <div className="mb-4 rounded-xl border border-[#f0d0d0] bg-[#fff0f0] p-3 text-xs font-semibold text-[#b44b4b]" role="alert">{errorMsg}</div>}
@@ -97,26 +96,9 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onSuccess, onClo
 
           {!mfaState ? (
             <form onSubmit={handleSubmit} className="space-y-4">
-              <div><label htmlFor="input-login-username" className="mb-1.5 block text-[10px] font-extrabold uppercase tracking-wider text-[#69778c]">Login ou e-mail</label><div className="relative"><User className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#69778c]" /><input id="input-login-username" type="text" value={username} onChange={(event) => setUsername(event.target.value)} placeholder="admin ou leomissio72@gmail.com" className="w-full rounded-xl border border-[#e5eaf1] bg-[#fbfcff] py-2.5 pl-9 pr-3 text-sm font-medium text-[#152238] outline-none transition focus:border-[#3c63da] focus:bg-white focus:ring-4 focus:ring-[#3c63da]/15" autoComplete="username" autoFocus /></div></div>
-              <div><label htmlFor="input-login-password" className="mb-1.5 block text-[10px] font-extrabold uppercase tracking-wider text-[#69778c]">Senha de acesso</label><div className="relative"><BadgeCheck className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#69778c]" /><input id="input-login-password" type="password" value={password} onChange={(event) => setPassword(event.target.value)} placeholder="admin123456" className="w-full rounded-xl border border-[#e5eaf1] bg-[#fbfcff] py-2.5 pl-9 pr-3 text-sm font-medium text-[#152238] outline-none transition focus:border-[#3c63da] focus:bg-white focus:ring-4 focus:ring-[#3c63da]/15" autoComplete="current-password" /></div></div>
+              <div><label htmlFor="input-login-username" className="mb-1.5 block text-[10px] font-extrabold uppercase tracking-wider text-[#69778c]">Login ou e-mail</label><div className="relative"><User className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#69778c]" /><input id="input-login-username" type="text" value={username} onChange={(event) => setUsername(event.target.value)} placeholder="login ou e-mail" className="w-full rounded-xl border border-[#e5eaf1] bg-[#fbfcff] py-2.5 pl-9 pr-3 text-sm font-medium text-[#152238] outline-none transition focus:border-[#3c63da] focus:bg-white focus:ring-4 focus:ring-[#3c63da]/15" autoComplete="username" autoFocus /></div></div>
+              <div><label htmlFor="input-login-password" className="mb-1.5 block text-[10px] font-extrabold uppercase tracking-wider text-[#69778c]">Senha de acesso</label><div className="relative"><BadgeCheck className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#69778c]" /><input id="input-login-password" type="password" value={password} onChange={(event) => setPassword(event.target.value)} placeholder="••••••••" className="w-full rounded-xl border border-[#e5eaf1] bg-[#fbfcff] py-2.5 pl-9 pr-3 text-sm font-medium text-[#152238] outline-none transition focus:border-[#3c63da] focus:bg-white focus:ring-4 focus:ring-[#3c63da]/15" autoComplete="current-password" /></div></div>
               <button id="btn-submit-login" type="submit" disabled={isLoading} className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#3c63da] py-3 text-sm font-bold text-white shadow-md shadow-[#3c63da]/20 transition hover:bg-[#2f52c0] focus:outline-none focus:ring-4 focus:ring-[#3c63da]/30 disabled:cursor-not-allowed disabled:opacity-60">{isLoading ? <span>Entrando...</span> : <><span>Entrar na Gestão de Franquias</span><ArrowRight className="h-4 w-4" /></>}</button>
-
-              <div className="flex items-center justify-between rounded-xl border border-[#d7e2fb] bg-[#f0f5ff] px-3.5 py-2.5 text-xs">
-                <div className="text-[11px] text-[#315bc5]">
-                  <span>Acesso Master: <strong>admin</strong> / <strong>admin123456</strong></span>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setUsername("admin");
-                    setPassword("admin123456");
-                    setErrorMsg("");
-                  }}
-                  className="rounded-lg bg-[#3c63da] text-white px-3 py-1 text-[11px] font-extrabold shadow-2xs hover:bg-[#2f52c0] transition cursor-pointer"
-                >
-                  Preencher
-                </button>
-              </div>
             </form>
           ) : (
             <form onSubmit={handleMfaSubmit} className="space-y-4">
@@ -126,8 +108,6 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onSuccess, onClo
               <button type="button" onClick={() => { setMfaState(null); setMfaCode(""); setErrorMsg(""); setInfoMsg(""); }} className="w-full text-xs font-bold text-[#69778c] hover:text-[#152238]">Voltar ao login</button>
             </form>
           )}
-
-          <div className="mt-6 border-t border-[#e5eaf1] pt-5 text-center"><p className="text-[10px] font-medium leading-5 text-[#8ea1be]">Use o usuário e a senha fornecidos pelo administrador da sua rede.</p><p className="mt-1 text-[10px] text-[#a7b2c0]">Cada acesso visualiza somente as unidades autorizadas para o seu perfil.</p></div>
         </div>
       </div>
     </div>

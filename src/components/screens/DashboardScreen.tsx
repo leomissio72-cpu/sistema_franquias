@@ -16,10 +16,7 @@ import {
   DollarSign,
   PieChart as PieIcon,
   Layers,
-  FileSpreadsheet,
   Download,
-  Printer,
-  FileText,
   ShieldCheck,
   Building2,
   Store,
@@ -65,7 +62,6 @@ interface DashboardScreenProps {
   dreParams: Record<string, any>;
   royalties: Record<string, number>;
   bills?: BillItem[];
-  initialTab?: "analytics" | "reports";
   userSession?: UserSession | null;
 }
 
@@ -82,7 +78,6 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
   dreParams,
   royalties,
   bills = [],
-  initialTab = "analytics",
   userSession,
 }) => {
   // Franqueado permission check
@@ -130,9 +125,6 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
     paid: { count: 0, amount: 0 },
   } as Record<ReturnType<typeof getBillDueStatus>, { count: number; amount: number }>), [scopedBills]);
 
-  // Navigation sub-tabs inside Analítico
-  const [activeTab, setActiveTab] = useState<"analytics" | "reports">(initialTab);
-
   // View mode: consolidated network or individual unit KPIs
   const [viewMode, setViewMode] = useState<"consolidated" | "unit" | string>(() => {
     if (isFranchisee || franchises.some((franchise) => franchise.id === currentTenantId)) {
@@ -162,6 +154,20 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
   const [activeChartFilter, setActiveChartFilter] = useState<ActiveChartType>("all");
   const [showDataLabels, setShowDataLabels] = useState<boolean>(true);
 
+  // Interatividade de Legenda Dinâmica sem precisar de teclado (Contra/Ctrl)
+  const [hiddenMonthlyDatasets, setHiddenMonthlyDatasets] = useState<Record<number, boolean>>({});
+  const toggleMonthlyDataset = (index: number) => {
+    if (!monthlyChartInstance.current) return;
+    const isVisible = monthlyChartInstance.current.isDatasetVisible(index);
+    if (isVisible) {
+      monthlyChartInstance.current.hide(index);
+      setHiddenMonthlyDatasets((prev) => ({ ...prev, [index]: true }));
+    } else {
+      monthlyChartInstance.current.show(index);
+      setHiddenMonthlyDatasets((prev) => ({ ...prev, [index]: false }));
+    }
+  };
+
   // Expanded Chart State
   const [expandedChart, setExpandedChart] = useState<ActiveChartType | null>(null);
   const expandedCanvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -173,6 +179,8 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
   const stackedCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const royaltiesCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const stateCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  const expensePieCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  const marginLineCanvasRef = useRef<HTMLCanvasElement | null>(null);
 
   // Chart Instances
   const monthlyChartInstance = useRef<Chart | null>(null);
@@ -180,6 +188,8 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
   const stackedChartInstance = useRef<Chart | null>(null);
   const royaltiesChartInstance = useRef<Chart | null>(null);
   const stateChartInstance = useRef<Chart | null>(null);
+  const expensePieChartInstance = useRef<Chart | null>(null);
+  const marginLineChartInstance = useRef<Chart | null>(null);
 
   // Dynamic multipliers and days for period calculation
   const numYears = dateSelection.years.length;
@@ -369,8 +379,6 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
 
   // Build Charts
   useEffect(() => {
-    if (activeTab !== "analytics") return;
-
     // Power BI Custom Data Labels Plugin for Dashboard Screen
     const dashboardDataLabelsPlugin = {
       id: "dashboardDataLabels",
@@ -542,7 +550,23 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
           responsive: true,
           maintainAspectRatio: false,
           plugins: {
-            legend: { position: "bottom", labels: { boxWidth: 12, font: { size: 11, weight: 600 } } },
+            legend: {
+              position: "bottom",
+              onClick: (e, legendItem, legend) => {
+                const index = legendItem.datasetIndex;
+                const ci = legend.chart;
+                if (index !== undefined) {
+                  if (ci.isDatasetVisible(index)) {
+                    ci.hide(index);
+                    setHiddenMonthlyDatasets((prev) => ({ ...prev, [index]: true }));
+                  } else {
+                    ci.show(index);
+                    setHiddenMonthlyDatasets((prev) => ({ ...prev, [index]: false }));
+                  }
+                }
+              },
+              labels: { boxWidth: 12, font: { size: 11, weight: 600 } }
+            },
             tooltip: {
               callbacks: {
                 label: (ctx) => `${ctx.dataset.label}: ${formatBrl(Number(ctx.raw))}`,
@@ -821,14 +845,112 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
       });
     }
 
+    // 6. Gráfico de Composição Estrutural de Custos & Despesas (Doughnut)
+    if (expensePieCanvasRef.current) {
+      if (expensePieChartInstance.current) {
+        expensePieChartInstance.current.destroy();
+      }
+
+      expensePieChartInstance.current = new Chart(expensePieCanvasRef.current, {
+        type: "doughnut",
+        data: {
+          labels: ["CMV (Insumos)", "Royalties & FPP", "Despesas Operacionais", "Impostos sobre Vendas", "Lucro Líquido Final"],
+          datasets: [
+            {
+              data: [
+                Math.max(0, totalCmv),
+                Math.max(0, totalRoyalties + totalFpp),
+                Math.max(0, totalDesp),
+                Math.max(0, totalImp),
+                Math.max(0, totalLucro),
+              ],
+              backgroundColor: ["#f43f5e", "#d97706", "#3c63da", "#94a3b8", "#10b981"],
+              borderWidth: 2,
+              borderColor: "#ffffff",
+            },
+          ],
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: {
+              position: "bottom",
+              labels: { boxWidth: 10, font: { size: 10, weight: 600 } },
+              onClick: (e, legendItem, legend) => {
+                const index = legendItem.index;
+                const ci = legend.chart;
+                if (index !== undefined) {
+                  ci.toggleDataVisibility(index);
+                  ci.update();
+                }
+              },
+            },
+            tooltip: {
+              callbacks: {
+                label: (ctx) => `${ctx.label}: ${formatBrl(Number(ctx.raw))} (${((Number(ctx.raw) / (totalFat || 1)) * 100).toFixed(1)}%)`,
+              },
+            },
+          },
+        },
+      });
+    }
+
+    // 7. Gráfico de Margem Líquida % por Unidade (Bar Chart)
+    if (marginLineCanvasRef.current) {
+      if (marginLineChartInstance.current) {
+        marginLineChartInstance.current.destroy();
+      }
+
+      const sortedUnits = [...unitCalculations].sort((a, b) => b.d.margemLiquida - a.d.margemLiquida);
+      const marginLabels = sortedUnits.map((u) => u.f.name.replace("Café ", "").replace("Beleza ", "").replace("EduKids ", ""));
+      const marginData = sortedUnits.map((u) => Number((u.d.margemLiquida * 100).toFixed(1)));
+
+      marginLineChartInstance.current = new Chart(marginLineCanvasRef.current, {
+        type: "bar",
+        data: {
+          labels: marginLabels,
+          datasets: [
+            {
+              label: "Margem Líquida (%)",
+              data: marginData,
+              backgroundColor: sortedUnits.map((u) => u.d.margemLiquida >= 0.15 ? "#10b981" : u.d.margemLiquida >= 0.08 ? "#f59e0b" : "#ef4444"),
+              borderRadius: 6,
+            },
+          ],
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: (ctx) => `Margem Líquida: ${ctx.raw}%`,
+              },
+            },
+          },
+          scales: {
+            y: {
+              grid: { color: "#f1f5f9" },
+              ticks: { callback: (v) => `${v}%` },
+            },
+            x: { grid: { display: false } },
+          },
+        },
+      });
+    }
+
     return () => {
       monthlyChartInstance.current?.destroy();
       unitsChartInstance.current?.destroy();
       stackedChartInstance.current?.destroy();
       royaltiesChartInstance.current?.destroy();
       stateChartInstance.current?.destroy();
+      expensePieChartInstance.current?.destroy();
+      marginLineChartInstance.current?.destroy();
     };
-  }, [totalFat, totalLucro, totalRoyalties, dateSelection, filteredUnits, activeTab, showDataLabels, selectedState, stateRevenueData]);
+  }, [totalFat, totalLucro, totalRoyalties, totalFpp, totalCmv, totalDesp, totalImp, dateSelection, filteredUnits, showDataLabels, selectedState, stateRevenueData]);
 
   // Expanded/Maximized Chart Dialog Lifecycle Hook
   useEffect(() => {
@@ -1259,60 +1381,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
     };
   }, [expandedChart, dateSelection, totalFat, totalLucro, totalRoyalties, showDataLabels, selectedState, stateRevenueData]);
 
-  // Export functions for Reports tab
-  const exportConsolidatedExcel = () => {
-    const rows = [
-      ["RELATÓRIO CONSOLIDADO ANALÍTICO DA REDE DE FRANQUIAS"],
-      ["Data de Emissão", new Date().toLocaleString("pt-BR")],
-      ["Período Selecionado", getPeriodSummary()],
-      [],
-      [
-        "Código",
-        "Unidade",
-        "Rede / Marca",
-        "Responsável",
-        "Cidade/UF",
-        "Faturamento Bruto (R$)",
-        "Alíquota Royalties (%)",
-        "Valor dos Royalties (R$)",
-        "Fundo Propaganda (R$)",
-        "Total Devido Matriz (R$)",
-        "CMV (R$)",
-        "Impostos (R$)",
-        "Despesas Operacionais (R$)",
-        "Lucro Líquido (R$)",
-        "Margem Líquida (%)",
-      ],
-    ];
-
-    unitCalculations.forEach((u) => {
-      rows.push([
-        u.f.code,
-        u.f.name,
-        u.biz?.name || u.f.businessId,
-        u.f.resp,
-        `${u.f.city}/${u.f.state || "SP"}`,
-        u.fat.toFixed(2),
-        (u.royPct * 100).toFixed(1) + "%",
-        u.royValue.toFixed(2),
-        u.fppValue.toFixed(2),
-        u.totalDevidoMatriz.toFixed(2),
-        u.d.cmv.toFixed(2),
-        u.d.impostos.toFixed(2),
-        u.d.totalDesp.toFixed(2),
-        u.d.lucroLiquido.toFixed(2),
-        formatPct(u.d.margemLiquida),
-      ]);
-    });
-
-    const csvContent = "\ufeff" + rows.map((r) => r.map((c) => `"${c}"`).join(";")).join("\n");
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-    const link = document.createElement("a");
-    link.href = URL.createObjectURL(blob);
-    link.download = `Relatorio_Analitico_Franquias_${new Date().toISOString().slice(0, 10)}.csv`;
-    link.click();
-  };
-
+  // Export functions
   const exportRoyaltiesReport = () => {
     const rows = [
       ["RELATÓRIO ESPECÍFICO DE ROYALTIES E FUNDO DE PROPAGANDA"],
@@ -1375,7 +1444,8 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
-            <span className="text-[10px] font-extrabold uppercase tracking-widest text-[#3c63da]">
+            <Sparkles className="h-3 w-3" style={{ color: "#000000" }} />
+            <span className="text-[10px] font-extrabold uppercase tracking-widest" style={{ color: "#030303" }}>
               Módulo de Inteligência Financeira
             </span>
             <span className="px-2 py-0.5 rounded-full bg-[#edf2ff] text-[#3c63da] text-[10px] font-bold border border-[#3c63da]/20">
@@ -1383,40 +1453,12 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
             </span>
           </div>
           <h1 className="text-2xl font-extrabold tracking-tight text-[#152238] flex items-center gap-2 mt-1">
-            <TrendingUp className="h-6 w-6 text-[#3c63da]" />
+            <TrendingUp className="h-6 w-6" style={{ color: "#010101" }} />
             Analítico
           </h1>
           <p className="text-xs text-[#69778c] mt-1">
-            Painel analítico completo: faturamento por unidade e mês, gráficos de colunas empilhadas, valor dos royalties e relatórios integrados.
+            Painel analítico completo: faturamento por unidade e mês, gráficos de colunas empilhadas, valor dos royalties e visão consolidada.
           </p>
-        </div>
-
-        {/* View Switcher Tabs: Painel Analítico vs Central de Relatórios */}
-        <div className="flex items-center gap-1.5 p-1 bg-white border border-[#e5eaf1] rounded-xl shadow-xs self-start md:self-auto">
-          <button
-            id="tab-analitico-painel"
-            onClick={() => setActiveTab("analytics")}
-            className={`flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-extrabold transition-all cursor-pointer ${
-              activeTab === "analytics"
-                ? "bg-[#3c63da] text-white shadow-xs"
-                : "text-[#69778c] hover:text-[#152238] hover:bg-[#f8faff]"
-            }`}
-          >
-            <BarChart3 className="h-4 w-4" />
-            <span>Painel & Gráficos</span>
-          </button>
-          <button
-            id="tab-analitico-relatorios"
-            onClick={() => setActiveTab("reports")}
-            className={`flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-xs font-extrabold transition-all cursor-pointer ${
-              activeTab === "reports"
-                ? "bg-[#3c63da] text-white shadow-xs"
-                : "text-[#69778c] hover:text-[#152238] hover:bg-[#f8faff]"
-            }`}
-          >
-            <FileText className="h-4 w-4" />
-            <span>Central de Relatórios</span>
-          </button>
         </div>
       </div>
 
@@ -1590,10 +1632,9 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
       </div>
 
       {/* ============================================================= */}
-      {/* ABA 1: PAINEL ANALÍTICO & GRÁFICOS                            */}
+      {/* PAINEL ANALÍTICO & GRÁFICOS                                   */}
       {/* ============================================================= */}
-      {activeTab === "analytics" && (
-        <div className="space-y-6">
+      <div className="space-y-6">
           <div className="rounded-2xl border border-[#e5eaf1] bg-white p-4 sm:p-5 shadow-xs">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3">
               <div>
@@ -2686,147 +2727,6 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
             </div>
           </div>
         </div>
-      )}
-
-      {/* ============================================================= */}
-      {/* ABA 2: CENTRAL DE RELATÓRIOS (INTEGRADA DENTRO DO ANALÍTICO)  */}
-      {/* ============================================================= */}
-      {activeTab === "reports" && (
-        <div className="space-y-6">
-          <div className="rounded-2xl border border-[#e5eaf1] bg-white p-5 shadow-xs">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <div>
-                <h2 className="text-lg font-extrabold text-[#152238] flex items-center gap-2">
-                  <FileSpreadsheet className="h-5 w-5 text-emerald-600" />
-                  Central de Relatórios & Livros Fiscais da Rede
-                </h2>
-                <p className="text-xs text-[#69778c] mt-0.5">
-                  Exportação de dados consolidados, balancetes de DRE e apurações financeiras sincronizadas na nuvem.
-                </p>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <button
-                  id="btn-export-excel-consolidado"
-                  onClick={exportConsolidatedExcel}
-                  className="flex items-center gap-1.5 rounded-xl bg-emerald-600 px-4 py-2 text-xs font-bold text-white hover:bg-emerald-700 shadow-xs transition-all cursor-pointer"
-                >
-                  <Download className="h-4 w-4" />
-                  <span>Baixar Planilha (.CSV)</span>
-                </button>
-                <button
-                  onClick={() => window.print()}
-                  className="flex items-center gap-1.5 rounded-xl border border-[#e5eaf1] bg-white px-3 py-2 text-xs font-bold text-[#152238] hover:bg-[#f8faff] shadow-2xs transition-all cursor-pointer"
-                >
-                  <Printer className="h-4 w-4 text-[#3c63da]" />
-                  <span>Imprimir</span>
-                </button>
-              </div>
-            </div>
-          </div>
-
-          {/* Cards de Tipos de Relatórios Prontos */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-            {/* Relatório 1: Consolidado da Rede */}
-            <div className="rounded-2xl border border-[#e5eaf1] bg-white p-5 shadow-xs flex flex-col justify-between space-y-4">
-              <div className="space-y-2.5">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-50 text-emerald-600">
-                  <FileSpreadsheet className="h-5 w-5" />
-                </div>
-                <h3 className="text-sm font-bold text-[#152238]">Consolidado Geral da Rede</h3>
-                <p className="text-xs text-[#69778c] leading-relaxed">
-                  Planilha detalhada contendo faturamento, CMV, impostos fiscais, despesas operacionais, royalties apurados e margem líquida de todas as unidades da rede.
-                </p>
-              </div>
-              <button
-                onClick={exportConsolidatedExcel}
-                className="w-full flex items-center justify-center gap-1.5 rounded-xl bg-emerald-600 py-2.5 text-xs font-bold text-white hover:bg-emerald-700 transition-all cursor-pointer shadow-xs"
-              >
-                <Download className="h-3.5 w-3.5" />
-                <span>Exportar Planilha Completa</span>
-              </button>
-            </div>
-
-            {/* Relatório 2: DRE em PDF */}
-            <div className="rounded-2xl border border-[#e5eaf1] bg-white p-5 shadow-xs flex flex-col justify-between space-y-4">
-              <div className="space-y-2.5">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#edf2ff] text-[#3c63da]">
-                  <Printer className="h-5 w-5" />
-                </div>
-                <h3 className="text-sm font-bold text-[#152238]">DRE Gerencial Consolidado</h3>
-                <p className="text-xs text-[#69778c] leading-relaxed">
-                  Demonstrativo do Resultado do Exercício formatado e padronizado para apresentação à diretoria e conselho de franqueados.
-                </p>
-              </div>
-              <button
-                onClick={() => {
-                  onNavigate("dre");
-                  setTimeout(() => window.print(), 400);
-                }}
-                className="w-full flex items-center justify-center gap-1.5 rounded-xl bg-[#3c63da] py-2.5 text-xs font-bold text-white hover:bg-[#2f52c0] transition-all cursor-pointer shadow-xs"
-              >
-                <Printer className="h-3.5 w-3.5" />
-                <span>Gerar DRE / Imprimir</span>
-              </button>
-            </div>
-
-            {/* Relatório 3: Mapa e Apuração de Royalties */}
-            <div className="rounded-2xl border border-[#e5eaf1] bg-white p-5 shadow-xs flex flex-col justify-between space-y-4">
-              <div className="space-y-2.5">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-50 text-amber-700">
-                  <Coins className="h-5 w-5" />
-                </div>
-                <h3 className="text-sm font-bold text-[#152238]">Relatório de Royalties & FPP</h3>
-                <p className="text-xs text-[#69778c] leading-relaxed">
-                  Demonstrativo específico das taxas de franquia e fundo de propaganda para conferência, conciliação e emissão de notas fiscais de royalties.
-                </p>
-              </div>
-              <button
-                onClick={exportRoyaltiesReport}
-                className="w-full flex items-center justify-center gap-1.5 rounded-xl bg-amber-600 py-2.5 text-xs font-bold text-white hover:bg-amber-700 transition-all cursor-pointer shadow-xs"
-              >
-                <Download className="h-3.5 w-3.5" />
-                <span>Exportar Relatório de Royalties</span>
-              </button>
-            </div>
-          </div>
-
-          {/* Tabela de Amostra e Visualização dos Dados */}
-          <div className="rounded-2xl border border-[#e5eaf1] bg-white p-5 shadow-xs">
-            <h3 className="text-sm font-extrabold text-[#152238] mb-3">
-              Pré-visualização do Relatório Consolidado
-            </h3>
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs">
-                <thead>
-                  <tr className="border-b border-[#e5eaf1] text-[10px] font-extrabold uppercase tracking-wider text-[#69778c]">
-                    <th className="pb-2">Unidade</th>
-                    <th className="pb-2">Faturamento</th>
-                    <th className="pb-2">Royalties</th>
-                    <th className="pb-2">CMV</th>
-                    <th className="pb-2">Despesas</th>
-                    <th className="pb-2">Lucro Líquido</th>
-                    <th className="pb-2 text-center">Margem</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-[#f0f4f8]">
-                  {unitCalculations.map((u) => (
-                    <tr key={u.f.id} className="hover:bg-[#f8faff]">
-                      <td className="py-2.5 font-bold text-[#152238]">{u.f.name}</td>
-                      <td className="py-2.5 font-medium">{formatBrl(u.fat)}</td>
-                      <td className="py-2.5 text-amber-800 font-extrabold">{formatBrl(u.royValue)}</td>
-                      <td className="py-2.5 text-[#b44b4b]">{formatBrl(u.d.cmv)}</td>
-                      <td className="py-2.5 text-[#294285]">{formatBrl(u.d.totalDesp)}</td>
-                      <td className="py-2.5 font-black text-[#118464]">{formatBrl(u.d.lucroLiquido)}</td>
-                      <td className="py-2.5 text-center font-bold">{formatPct(u.d.margemLiquida)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* ------------------------------------------------------------- */}
       {/* MODAL DE GRÁFICO AMPLIADO / MAXIMIZADO                       */}

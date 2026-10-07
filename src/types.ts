@@ -12,7 +12,6 @@ export type ScreenType =
   | "vt"
   | "rp"
   | "pagamentos_despesas"
-  | "reports"
   | "permissoes"
   | "tenants"
   | "employees"
@@ -72,7 +71,7 @@ export interface FranchiseUnit {
   faturamento: number;
   pendencias: number;
   rpDone: number;
-  status: "green" | "amber" | "red";
+  status: "green" | "amber" | "red" | "yellow";
   email?: string;
   phone?: string;
 }
@@ -203,6 +202,20 @@ export interface UserSession {
   expiresAt?: number;
 }
 
+export interface VTPaymentRecord {
+  id: string;
+  data: string;
+  dias: number;
+  valor: number;
+  periodoRef: string;
+  dataInicio?: string;
+  dataFim?: string;
+  metodo?: string;
+  observacao?: string;
+  descontoCltAbatido?: number;
+  registradoPor?: string;
+}
+
 export interface VTEmployeeItem {
   id: string;
   nome: string;
@@ -217,6 +230,9 @@ export interface VTEmployeeItem {
   salarioBase: number;
   uberAdicional?: number;
   statusRecarga?: "pendente" | "processado" | "creditado" | "pago_pix";
+  quantoJaFoiPagoNoMes?: number;
+  diasPagosNoMes?: number;
+  historicoPagamentos?: VTPaymentRecord[];
 }
 
 export interface VTConfig {
@@ -231,6 +247,7 @@ export interface VTConfig {
   tenant: string;
   periodoTipo?: "semanal" | "quinzenal" | "mensal";
   descontoCltPct?: number;
+  diasUteisCalculados?: number;
   employees?: VTEmployeeItem[];
 }
 
