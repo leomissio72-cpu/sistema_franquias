@@ -74,7 +74,7 @@ export const DreParamsScreen: React.FC<DreParamsScreenProps> = ({
       expMap[e.id] = (val * 100).toFixed(2);
     });
     setRawExpenses(expMap);
-  }, [activeTenant]);
+  }, [activeTenant, dreParams]);
 
   const sampleFat = currentUnit ? currentUnit.faturamento : 100000;
   const previewDre = calculateDre(sampleFat, form);

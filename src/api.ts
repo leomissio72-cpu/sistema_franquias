@@ -208,6 +208,22 @@ function mergeNonEmptyCollections(primary: CloudState, mirror: CloudState | null
   return formatCloudState(merged);
 }
 
+function stateTimestamp(state: CloudState | null | undefined): number {
+  const timestamp = state?.lastUpdated ? Date.parse(state.lastUpdated) : NaN;
+  return Number.isFinite(timestamp) ? timestamp : 0;
+}
+
+/**
+ * A API é a fonte autoritativa quando acabou de responder uma gravação. O
+ * espelho Firebase pode estar alguns milissegundos atrasado em outro aparelho;
+ * escolher sempre o espelho fazia exclusões e alterações voltarem à tela.
+ */
+function chooseAuthoritativeState(apiState: CloudState, mirror: CloudState | null): CloudState {
+  if (!mirror) return formatCloudState(apiState);
+  if (stateTimestamp(mirror) > stateTimestamp(apiState)) return formatCloudState(mirror);
+  return formatCloudState(apiState);
+}
+
 function getLocalFallbackState(): CloudState {
   try {
     const cached = localStorage.getItem("gestaofranquias_cloud_state") || localStorage.getItem("sofiacfo_cloud_state");
@@ -255,21 +271,13 @@ function getLocalFallbackState(): CloudState {
 export async function fetchServerState(): Promise<CloudState> {
   try {
     const mirroredState = await readFirebaseMirror();
-    if (mirroredState && (Array.isArray(mirroredState.businesses) || Array.isArray(mirroredState.franchises) || Array.isArray(mirroredState.manualEntries))) {
-      const state = formatCloudState(mirroredState);
-      try {
-        localStorage.setItem("gestaofranquias_cloud_state", JSON.stringify(sanitizeClientValue(state)));
-      } catch (e) {}
-      return state;
-    }
-
     const res = await fetchWithTimeout("/api/state", {}, 15000);
     const data = await safeResponseJSON(res, "Failed to load server state");
-    let state = mergeNonEmptyCollections(formatCloudState(data), mirroredState);
+    let state = chooseAuthoritativeState(formatCloudState(data), mirroredState);
 
-    // Seed Firebase when the mirror is empty. Later loads use this durable
-    // state instead of a new serverless instance's ephemeral /tmp file.
-    if (state.businesses && state.businesses.length > 0) {
+    // Atualiza o espelho somente com o estado escolhido por timestamp. Isso
+    // evita que uma leitura velha do Firebase sobrescreva uma exclusão nova.
+    if (!mirroredState || stateTimestamp(state) >= stateTimestamp(mirroredState)) {
       await writeFirebaseMirror(state);
     }
 
@@ -366,8 +374,9 @@ export async function syncStateSection(section: string, data: any, user?: string
     }
     const result = await safeResponseJSON(res, "Failed to parse sync response");
     if (result?.state) {
-      const mirror = await readFirebaseMirror();
-      const state = mergeNonEmptyCollections(formatCloudState(result.state), mirror, section);
+      // O backend acabou de confirmar a gravação; não mesclar uma leitura
+      // antiga do Firebase por cima da resposta, especialmente em exclusões.
+      const state = formatCloudState(result.state);
       await writeFirebaseMirror(state);
       try {
         localStorage.setItem("gestaofranquias_cloud_state", JSON.stringify(sanitizeClientValue(state)));

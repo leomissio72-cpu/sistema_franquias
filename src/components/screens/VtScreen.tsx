@@ -189,6 +189,7 @@ export const VtScreen: React.FC<VtScreenProps> = ({
   // Calculated business days in current month
   const businessDaysInfo = getBusinessDaysInMonth();
 
+  const hasSavedConfig = Object.prototype.hasOwnProperty.call(vtConfigs, currentTenantId);
   const currentConfig: VTConfig = vtConfigs[currentTenantId] || {
     title: "Planilha VT Mensal - Benefício e Recarga",
     period: "Mês Vigente",
@@ -202,14 +203,12 @@ export const VtScreen: React.FC<VtScreenProps> = ({
     periodoTipo: "mensal",
     descontoCltPct: 0.06,
     diasUteisCalculados: businessDaysInfo.businessDays,
-    employees: defaultEmployees,
+    employees: [],
   };
 
   const [form, setForm] = useState<VTConfig>(currentConfig);
   const [employees, setEmployees] = useState<VTEmployeeItem[]>(
-    currentConfig.employees && currentConfig.employees.length > 0
-      ? currentConfig.employees
-      : defaultEmployees
+    currentConfig.employees ?? []
   );
   const [isSaved, setIsSaved] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
@@ -275,15 +274,13 @@ export const VtScreen: React.FC<VtScreenProps> = ({
 
   // Keep state synced when tenant changes
   useEffect(() => {
-    const config = vtConfigs[currentTenantId] || {
+    const config = hasSavedConfig ? vtConfigs[currentTenantId] : {
       ...currentConfig,
-      employees: defaultEmployees,
+      employees: [],
     };
     setForm(config);
-    if (config.employees && config.employees.length > 0) {
-      setEmployees(config.employees);
-    }
-  }, [currentTenantId, vtConfigs]);
+    setEmployees(config.employees ?? []);
+  }, [currentTenantId, vtConfigs, hasSavedConfig]);
 
   // Calculate detailed financial values for an employee
   const calculateEmpValues = (emp: VTEmployeeItem) => {
@@ -586,7 +583,7 @@ export const VtScreen: React.FC<VtScreenProps> = ({
   };
 
   // Add or edit employee
-  const handleSaveEmployee = (e: React.FormEvent) => {
+  const handleSaveEmployee = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!empForm.nome?.trim()) return;
 
@@ -622,7 +619,13 @@ export const VtScreen: React.FC<VtScreenProps> = ({
     }
 
     setEmployees(updatedList);
-    handleSave(updatedList);
+    try {
+      await handleSave(updatedList);
+    } catch (error) {
+      console.error("Erro ao salvar colaborador de VT:", error);
+      setEmployees(employees);
+      return;
+    }
     setIsAddModalOpen(false);
 
     setEmpForm({
@@ -647,20 +650,25 @@ export const VtScreen: React.FC<VtScreenProps> = ({
     setIsAddModalOpen(true);
   };
 
-  const handleDeleteEmployee = (id: string) => {
+  const handleDeleteEmployee = async (id: string) => {
     if (confirm("Deseja remover este colaborador da folha de Vale Transporte?")) {
       const updated = employees.filter((e) => e.id !== id);
       setEmployees(updated);
-      handleSave(updated);
+      try {
+        await handleSave(updated);
+      } catch (error) {
+        console.error("Erro ao excluir colaborador de VT:", error);
+        setEmployees(employees);
+      }
     }
   };
 
   // Batch actions
-  const applyBatchDays = () => {
+  const applyBatchDays = async () => {
     const updated = employees.map((e) => ({ ...e, diasPrevistos: batchDaysValue }));
     setEmployees(updated);
     setForm((prev) => ({ ...prev, days: batchDaysValue }));
-    handleSave(updated);
+    await handleSave(updated);
     setIsBatchDaysModalOpen(false);
   };
 

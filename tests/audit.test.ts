@@ -485,6 +485,56 @@ test("AUDITORIA 12: Limpeza operacional exige Dono e preserva usuários, regras 
   await saveDatabase(db);
 });
 
+test("AUDITORIA 13: VT aceita lista vazia e parâmetros do DRE permanecem no estado confirmado", async () => {
+  const snapshot = JSON.parse(JSON.stringify(db));
+  const dono = db.users.find((user: any) => user.perfil === "dono")!;
+  const credential = getCredential(db, dono.id)!;
+  const token = createSignedSessionToken(dono.id, credential.version, true);
+
+  const vtConfig = {
+    title: "VT teste",
+    period: "Mês Vigente",
+    rate: 10,
+    days: 22,
+    format: "both",
+    prefix: "VT",
+    pix: true,
+    notes: true,
+    tenant: "dono",
+    employees: [{ id: "vt_regression", nome: "Colaborador", mat: "1", setor: "Teste", operadora: "PIX", tarifaIda: 5, tarifaVolta: 5, diasPrevistos: 22, faltas: 0, salarioBase: 2000 }],
+  };
+
+  const first = await appRequest(
+    "POST",
+    "/api/state/sync",
+    { Cookie: `gestao_session=${encodeURIComponent(token)}` },
+    { section: "vtConfigs", data: { dono: vtConfig } },
+  );
+  assert.equal(first.status, 200);
+  assert.equal(first.body.state.vtConfigs.dono.employees.length, 1);
+
+  const deleted = await appRequest(
+    "POST",
+    "/api/state/sync",
+    { Cookie: `gestao_session=${encodeURIComponent(token)}` },
+    { section: "vtConfigs", data: { dono: { ...vtConfig, employees: [] } } },
+  );
+  assert.equal(deleted.status, 200);
+  assert.deepEqual(deleted.body.state.vtConfigs.dono.employees, []);
+
+  const dre = await appRequest(
+    "POST",
+    "/api/state/sync",
+    { Cookie: `gestao_session=${encodeURIComponent(token)}` },
+    { section: "dreParams", data: { dono: { impostos: 0.1, cmv: 0.2, fees: 0.03, discount: 0, despesas: { aluguel: 0.04 } } } },
+  );
+  assert.equal(dre.status, 200);
+  assert.equal(dre.body.state.dreParams.dono.impostos, 0.1);
+
+  Object.assign(db, snapshot);
+  await saveDatabase(db);
+});
+
 after(() => {
   // Limpar resíduos de testes para manter a base limpa
   db.auditLogs = [];
