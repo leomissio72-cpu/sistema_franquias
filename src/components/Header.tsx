@@ -37,7 +37,6 @@ const screenTitles: Record<ScreenType, string> = {
   tenants: "Cadastro de Franqueados",
   employees: "Cadastro de Funcionários",
   users: "Acessos e Logins",
-  whatsapp: "Disparo WhatsApp",
   configuracao: "Configurações",
   settings: "Preferências do Usuário",
   produtos: "Fornecedores e Produtos Homologados",

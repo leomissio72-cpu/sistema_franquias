@@ -15,7 +15,6 @@
 5. [Manual de cada página](#5-manual-de-cada-página)
 6. [Conciliação bancária](#6-conciliação-bancária)
 7. [Transferências entre empresas](#7-transferências-entre-empresas)
-8. [WhatsApp oficial](#8-whatsapp-oficial)
 9. [Persistência, sincronização e auditoria](#9-persistência-sincronização-e-auditoria)
 10. [Uso em celular](#10-uso-em-celular)
 11. [Problemas comuns](#11-problemas-comuns)
@@ -57,12 +56,9 @@ O sistema é um painel multiempresa e multiunidade. O usuário trabalha sempre d
 4. O sistema cria uma sessão assinada com validade limitada. O token não deve ser copiado para planilhas, mensagens ou código.
 5. Para sair, use **Sair** no cabeçalho. Isso encerra a sessão no navegador e revoga o uso local do token.
 
-As rotas administrativas e de WhatsApp exigem sessão válida. O sistema não deve aceitar perfil enviado apenas por cabeçalho do navegador ou escolher automaticamente o usuário dono quando não existe sessão.
-
 ### Segurança operacional
 
 - Credenciais de usuários são armazenadas no backend em formato derivado; não use senha fixa em código, Firestore, `localStorage` ou Git.
-- Tokens da Meta para WhatsApp ficam somente nas variáveis de ambiente do Vercel.
 - Perfis de unidade não devem receber acesso ao escopo de outra unidade.
 - Ações administrativas devem ser feitas por **Dono**, **Equipe** ou **Admin** conforme a tabela de permissões.
 - O histórico e os logs servem para rastrear alterações; apagar uma regra intercompany não apaga lançamentos já importados.
@@ -71,13 +67,13 @@ As rotas administrativas e de WhatsApp exigem sessão válida. O sistema não de
 
 ## 3. Perfis e escopos de acesso
 
-| Perfil | Escopo padrão | Pode editar configurações | Pode configurar/disparar WhatsApp | Observação |
+| Perfil | Escopo padrão | Pode editar configurações Observação |
 |---|---|---:|---:|---|
-| **Dono** | Toda a rede | Sim | Sim | Controle master da operação. |
-| **Equipe** | Toda a rede | Sim | Sim | Administração operacional da matriz. |
-| **Admin** | Empresa/marca autorizada | Sim, dentro do escopo | Sim | Deve respeitar a empresa vinculada. |
-| **Franqueado** | Unidade vinculada | Não na área administrativa | Não | Consulta e operação permitida somente na própria unidade. |
-| **Operador** | Unidade vinculada | Não na área administrativa | Não | Executa rotinas operacionais autorizadas. |
+| **Dono** | Toda a rede | Sim | Controle master da operação. |
+| **Equipe** | Toda a rede | Sim | Administração operacional da matriz. |
+| **Admin** | Empresa/marca autorizada | Sim, dentro do escopo | Deve respeitar a empresa vinculada. |
+| **Franqueado** | Unidade vinculada | Não na área administrativa | Consulta e operação permitida somente na própria unidade. |
+| **Operador** | Unidade vinculada | Não na área administrativa | Executa rotinas operacionais autorizadas. |
 
 O perfil é diferente da unidade selecionada. Mesmo com uma unidade selecionada no menu, o usuário não pode acessar outra unidade sem autorização compatível.
 
@@ -110,7 +106,6 @@ O perfil é diferente da unidade selecionada. Mesmo com uma unidade selecionada 
 4. Registre entradas e despesas não encontradas no extrato em **Lançamentos**.
 5. Confirme os itens que devem compor o DRE; marque transferências entre empresas conforme as regras.
 6. Revise o **Analítico** e o **DRE e Resultados**.
-7. Use o histórico do WhatsApp somente quando o provedor estiver conectado e o destinatário tiver consentimento.
 
 ---
 
@@ -315,19 +310,7 @@ Use a busca e o filtro **Todas / Ativas / Inativas** para localizar unidades. O 
 4. Confira o modo somente leitura quando aplicável.
 5. Desative acessos antigos em vez de compartilhar o login master.
 
-### 5.18 Disparo WhatsApp
-
-**Finalidade:** enviar mensagens somente pela WhatsApp Cloud API oficial da Meta.
-
-A tela **não simula envio**. Sem as credenciais de produção, deve informar desconectado e não marcar a mensagem como enviada.
-
-- Apenas sessão válida e perfis Dono, Equipe e Admin podem configurar/disparar.
-- A mensagem só é marcada como enviada após resposta HTTP de sucesso da Meta.
-- O histórico guarda o identificador retornado pelo provedor quando disponível.
-- Fora da janela de atendimento de 24 horas, a Meta pode exigir template aprovado.
-- Envie somente para destinatário com consentimento/opt-in.
-
-### 5.19 Configurações
+## 5.19 Configurações
 
 **Abas principais:**
 
@@ -432,51 +415,6 @@ As regras iniciais fornecidas para esta rede foram cadastradas para: **LAVO Vila
 
 ---
 
-## 8. WhatsApp oficial
-
-### Situação atual do código
-
-O backend usa a WhatsApp Cloud API oficial da Meta. Sem as variáveis de produção, o endpoint deve retornar indisponível/configuração ausente; isso é comportamento correto e evita falso positivo.
-
-### Configuração no Vercel
-
-No **mesmo projeto Vercel** do sistema:
-
-1. Abra **Settings → Environment Variables**.
-2. Escolha **Production**.
-3. Cadastre:
-   - `WHATSAPP_ACCESS_TOKEN`: token de acesso do System User da Meta.
-   - `WHATSAPP_PHONE_NUMBER_ID`: ID do número de telefone da WhatsApp Cloud API.
-   - `WHATSAPP_API_VERSION`: versão Graph API suportada pelo projeto, por exemplo `v23.0`.
-   - `WHATSAPP_WEBHOOK_VERIFY_TOKEN`: uma frase aleatória criada por você para a verificação do webhook.
-   - `WHATSAPP_APP_SECRET`: App Secret em Meta Developers → Configurações básicas.
-4. Salve e faça redeploy do mesmo projeto.
-5. Faça login novamente.
-6. Abra a tela WhatsApp e confirme `providerReady: true`/conectado.
-7. Faça um teste controlado para número autorizado e com opt-in.
-
-### Configurar o webhook na Meta
-
-No painel do app da Meta, em **WhatsApp → Configuração** (ou **Casos de uso → Personalizar → Configuração**):
-
-1. Use como Callback URL: `https://sistema-franquias-zeta.vercel.app/api/whatsapp/webhook`.
-2. Use no campo Verify token exatamente o valor de `WHATSAPP_WEBHOOK_VERIFY_TOKEN`.
-3. Salve a configuração e assine o campo **messages**.
-4. A Meta validará o GET e enviará POSTs com `X-Hub-Signature-256`.
-5. O sistema valida a assinatura com `WHATSAPP_APP_SECRET` e atualiza o histórico para **Enviado**, **Entregue**, **Lido** ou **Falhou**.
-
-### Texto livre ou template
-
-- **Texto livre:** use somente quando a janela de atendimento de 24 horas estiver aberta após uma mensagem/ligação do usuário.
-- **Template aprovado:** na tela WhatsApp, selecione **Template aprovado**, informe o nome exato aprovado no WhatsApp Manager, o idioma (por exemplo `pt_BR`) e os parâmetros na ordem aprovada.
-- Mensagens só podem ser enviadas para pessoas que deram opt-in. A aceitação HTTP da Meta não significa entrega; a confirmação vem pelo webhook.
-
-O guia enviado também informa as permissões do token permanente: `business_management`, `whatsapp_business_messaging` e `whatsapp_business_management`. Gere o token em **Configurações do negócio → Usuários do sistema**, atribua o app e a conta WhatsApp Business e guarde-o somente no Vercel.
-
-Nunca coloque qualquer token, App Secret ou Verify Token no frontend, GitHub, Firestore, manual ou conversa. Se a Meta retornar erro de template/janela de 24 horas, use o template aprovado; não altere o sistema para fingir sucesso.
-
----
-
 ## 9. Persistência, sincronização e auditoria
 
 - A API autenticada é a fonte operacional principal.
@@ -522,9 +460,6 @@ Nunca coloque qualquer token, App Secret ou Verify Token no frontend, GitHub, Fi
 | CSV mostra `Ã£` | Reenvie em UTF-8/Windows-1252; a versão atual corrige esses marcadores na leitura. |
 | Duplicidade na conciliação | Confira data, valor, descrição e arquivo; a identidade é normalizada por tenant. |
 | Item não entra no DRE | Verifique se está marcado como intercompany ou se a categoria foi alterada. |
-| WhatsApp desconectado | Configure as variáveis Meta no Vercel Production e faça redeploy; não envie token pelo chat. |
-| WhatsApp retorna 403 | O perfil precisa ser Dono, Equipe ou Admin e a sessão deve estar válida. |
-| WhatsApp retorna erro de template | A Meta exige template aprovado fora da janela de atendimento. |
 | Tela vazia | Confira o escopo, permissões e se a base realmente não possui registros. Cadastros vazios continuam navegáveis. |
 
 ---
@@ -556,4 +491,3 @@ Nunca coloque qualquer token, App Secret ou Verify Token no frontend, GitHub, Fi
 - [ ] Tokens não estão no código ou no frontend.
 - [ ] Uma alteração foi conferida em outro dispositivo autorizado.
 - [ ] O domínio e o projeto Vercel são os mesmos, sem deploy paralelo.
-- [ ] O WhatsApp foi considerado conectado somente após retorno real da Meta.

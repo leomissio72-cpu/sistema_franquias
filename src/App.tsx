@@ -65,7 +65,6 @@ import { PermissoesScreen } from "./components/screens/PermissoesScreen";
 import { TenantsScreen } from "./components/screens/TenantsScreen";
 import { EmployeesScreen } from "./components/screens/EmployeesScreen";
 import { UsersScreen } from "./components/screens/UsersScreen";
-import { WhatsAppScreen } from "./components/screens/WhatsAppScreen";
 import { SettingsScreen } from "./components/screens/SettingsScreen";
 import { ProdutosHomologadosScreen } from "./components/screens/ProdutosHomologadosScreen";
 import { PagamentosDespesasScreen, PagamentoSubTab } from "./components/screens/PagamentosDespesasScreen";
@@ -519,7 +518,7 @@ export const App: React.FC = () => {
   // Unidades franqueadas têm acesso SOMENTE a lançamentos e relatórios (+ início)
   useEffect(() => {
     if (isFranchisee) {
-      const allowedScreens: ScreenType[] = ["home", "dashboard", "fees", "pagamentos_despesas", "lancamentos", "import_base", "produtos", "employees", "users", "whatsapp"];
+      const allowedScreens: ScreenType[] = ["home", "dashboard", "fees", "pagamentos_despesas", "lancamentos", "import_base", "produtos", "employees", "users"];
       if (!allowedScreens.includes(currentScreen)) {
         setCurrentScreen("home");
       }
@@ -897,9 +896,6 @@ export const App: React.FC = () => {
             />
           )}
 
-          {currentScreen === "whatsapp" && (
-            <WhatsAppScreen onNavigate={setCurrentScreen} />
-          )}
         </main>
       </div>
 

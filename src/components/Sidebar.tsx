@@ -21,7 +21,6 @@ import {
   UploadCloud,
   PackageCheck,
   Building2,
-  MessageSquare
 } from "lucide-react";
 
 interface SidebarProps {
@@ -73,7 +72,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const canAccessScreen = (screen: ScreenType): boolean => {
     // Unidades franqueadas têm acesso estritamente a Início, Analítico, Lançamentos e Taxas (consulta)
     if (isFranchisee) {
-      return ["home", "dashboard", "fees", "pagamentos_despesas", "lancamentos", "import_base", "produtos", "employees", "users", "whatsapp"].includes(screen);
+      return ["home", "dashboard", "fees", "pagamentos_despesas", "lancamentos", "import_base", "produtos", "employees", "users"].includes(screen);
     }
     if (screen === "home") return true;
     if (userProfile === "dono" || userProfile === "equipe") return true;

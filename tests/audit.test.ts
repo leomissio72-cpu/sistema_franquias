@@ -335,80 +335,6 @@ test("AUDITORIA 8: Importação ignora duplicidades e operador não exclui conci
   saveDatabase(db);
 });
 
-test("AUDITORIA 9: WhatsApp exige sessão assinada e perfil autorizado", async () => {
-  const unauthenticatedConfig = await appRequest("GET", "/api/whatsapp/config");
-  assert.equal(unauthenticatedConfig.status, 401);
-
-  const unauthenticatedSend = await appRequest("POST", "/api/whatsapp/send", {}, {
-    recipientPhone: "+5511999999999",
-    message: "Teste de segurança",
-  });
-  assert.equal(unauthenticatedSend.status, 401);
-
-  const operator = {
-    id: "u_op_whatsapp_test",
-    nome: "Operador WhatsApp",
-    email: "operador-whatsapp@teste.com",
-    login: "op_whatsapp_test",
-    perfil: "operador",
-    unidade: "dono",
-    status: "ativo",
-  };
-  db.users.push(operator);
-  Object.assign(db, setCredential(db, operator.id, "SenhaOperadorWhatsApp2026!"));
-  const credential = getCredential(db, operator.id)!;
-  const token = createSignedSessionToken(operator.id, credential.version, false);
-
-  const authenticatedConfig = await appRequest("GET", "/api/whatsapp/config", {
-    Cookie: `gestao_session=${encodeURIComponent(token)}`,
-  });
-  assert.equal(authenticatedConfig.status, 200);
-  assert.equal(Object.prototype.hasOwnProperty.call(authenticatedConfig.body, "accessToken"), false);
-  assert.equal(Object.prototype.hasOwnProperty.call(authenticatedConfig.body, "phoneNumberId"), false);
-
-  const forbiddenSend = await appRequest("POST", "/api/whatsapp/send", {
-    Cookie: `gestao_session=${encodeURIComponent(token)}`,
-  }, {
-    recipientPhone: "+5511999999999",
-    message: "Teste de autorização",
-  });
-  assert.equal(forbiddenSend.status, 403);
-
-  db.users = db.users.filter((user: any) => user.id !== operator.id);
-  if (db.credentials) delete db.credentials[operator.id];
-  await saveDatabase(db);
-});
-
-test("AUDITORIA 9B: Webhook WhatsApp valida desafio e assinatura antes de atualizar entrega", async () => {
-  const previousVerifyToken = process.env.WHATSAPP_WEBHOOK_VERIFY_TOKEN;
-  const previousAppSecret = process.env.WHATSAPP_APP_SECRET;
-  process.env.WHATSAPP_WEBHOOK_VERIFY_TOKEN = "verify-auditoria-2026";
-  process.env.WHATSAPP_APP_SECRET = "app-secret-auditoria-2026";
-
-  const challenge = await appRequest("GET", "/api/whatsapp/webhook?hub.mode=subscribe&hub.verify_token=verify-auditoria-2026&hub.challenge=123456");
-  assert.equal(challenge.status, 200);
-  assert.equal(String(challenge.body), "123456");
-
-  const providerMessageId = "wamid.audit-webhook-2026";
-  const payload = {
-    object: "whatsapp_business_account",
-    entry: [{ changes: [{ value: { statuses: [{ id: providerMessageId, status: "delivered", recipient_id: "5511999999999" }] } }] }],
-  };
-  const serializedPayload = JSON.stringify(payload);
-  const signature = crypto.createHmac("sha256", process.env.WHATSAPP_APP_SECRET).update(serializedPayload).digest("hex");
-  const webhook = await appRequest("POST", "/api/whatsapp/webhook", { "X-Hub-Signature-256": `sha256=${signature}` }, payload);
-  assert.equal(webhook.status, 200);
-  assert.equal(webhook.body.updated, 1);
-  assert.equal((db.whatsappHistory || []).find((item: any) => item.providerMessageId === providerMessageId)?.providerStatus, "delivered");
-
-  db.whatsappHistory = (db.whatsappHistory || []).filter((item: any) => item.providerMessageId !== providerMessageId);
-  if (previousVerifyToken === undefined) delete process.env.WHATSAPP_WEBHOOK_VERIFY_TOKEN;
-  else process.env.WHATSAPP_WEBHOOK_VERIFY_TOKEN = previousVerifyToken;
-  if (previousAppSecret === undefined) delete process.env.WHATSAPP_APP_SECRET;
-  else process.env.WHATSAPP_APP_SECRET = previousAppSecret;
-  await saveDatabase(db);
-});
-
 test("AUDITORIA 10: Regra intercompany preserva a linha e exclui o lançamento do DRE", async () => {
   const dono = db.users.find((user: any) => user.perfil === "dono")!;
   const credential = getCredential(db, dono.id)!;
@@ -549,7 +475,5 @@ after(() => {
     delete db.credentials["u_op_test"];
   }
   db.users = (db.users || []).filter((u: any) => u.id !== "u_op_test");
-  db.users = (db.users || []).filter((u: any) => u.id !== "u_op_whatsapp_test");
-  if (db.credentials) delete db.credentials["u_op_whatsapp_test"];
   saveDatabase(db);
 });

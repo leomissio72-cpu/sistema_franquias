@@ -25,7 +25,6 @@ import {
   Mail,
   X,
   ExternalLink,
-  MessageSquare,
   BarChart3,
   SlidersHorizontal,
   Table as TableIcon,
@@ -810,7 +809,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                     </span>
                   </div>
                   <p className="text-xs text-[#69778c]">
-                    Indicadores em tempo real, DRE individual, contatos com WhatsApp e alternância imediata de visão da loja.
+                    Indicadores em tempo real, DRE individual e alternância imediata de visão da loja.
                   </p>
                 </div>
               </div>
@@ -1066,17 +1065,6 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                                   <Phone className="h-3 w-3 text-[#69778c] flex-shrink-0" />
                                   <span>{f.phone}</span>
                                 </span>
-                                {cleanPhone && (
-                                  <a
-                                    href={`https://wa.me/55${cleanPhone}`}
-                                    target="_blank"
-                                    rel="noreferrer"
-                                    className="text-emerald-700 hover:text-emerald-800 font-bold flex items-center gap-0.5 hover:underline"
-                                  >
-                                    <MessageSquare className="h-3 w-3" />
-                                    <span>WhatsApp</span>
-                                  </a>
-                                )}
                               </div>
                             )}
                             {f.email && (

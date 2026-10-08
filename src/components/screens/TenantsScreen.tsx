@@ -685,7 +685,7 @@ export const TenantsScreen: React.FC<TenantsScreenProps> = ({
 
                 {/* Telefone */}
                 <div>
-                  <label className="block text-xs font-bold text-[#152238] mb-1">Telefone / WhatsApp</label>
+                  <label className="block text-xs font-bold text-[#152238] mb-1">Telefone</label>
                   <input
                     type="text"
                     placeholder="(11) 98765-4321"
@@ -875,7 +875,7 @@ export const TenantsScreen: React.FC<TenantsScreenProps> = ({
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-[#152238] mb-1">Telefone / WhatsApp</label>
+                  <label className="block text-xs font-bold text-[#152238] mb-1">Telefone</label>
                   <input
                     type="text"
                     value={editForm.phone}

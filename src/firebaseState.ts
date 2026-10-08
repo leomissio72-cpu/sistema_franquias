@@ -37,8 +37,6 @@ const STATE_KEYS: Array<keyof CloudState> = [
   "products",
   "suppliers",
   "intercompanyRules",
-  "whatsappConfig",
-  "whatsappHistory",
 ];
 
 let mirrorWriteChain: Promise<void> = Promise.resolve();
@@ -93,7 +91,7 @@ export async function writeFirebaseMirror(state: CloudState, options: { allowEmp
       if (!(await ensureFirebaseSession())) return false;
       const existing = await readFirebaseMirror();
       const operationalKeys: Array<keyof CloudState> = [
-        "businesses", "franchises", "employees", "manualEntries", "bills", "products", "suppliers", "whatsappHistory", "intercompanyRules",
+        "businesses", "franchises", "employees", "manualEntries", "bills", "products", "suppliers", "intercompanyRules",
       ];
       const incomingIsGloballyEmpty = operationalKeys.every((key) => Array.isArray(state[key]) && state[key].length === 0);
       const existingHasRecords = Boolean(existing && operationalKeys.some((key) => Array.isArray(existing[key]) && existing[key].length > 0));

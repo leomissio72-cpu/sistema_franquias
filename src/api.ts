@@ -12,8 +12,6 @@ import {
   VTConfig,
   SystemSettings,
   CloudState,
-  WhatsAppConfig,
-  WhatsAppMessageHistory,
   RegisteredSupplier,
   HomologatedProduct,
   IntercompanyRule,
@@ -694,68 +692,4 @@ export function subscribeToEvents(onUpdate: (state: CloudState) => void): () => 
       clearInterval(pollInterval);
     }
   };
-}
-
-export async function fetchWhatsAppConfig(): Promise<WhatsAppConfig> {
-  try {
-    const state = await fetchServerState();
-    if (state.whatsappConfig) return state.whatsappConfig;
-    throw new Error("Configuração do WhatsApp não encontrada");
-  } catch (e) {
-    return {
-      senderPhone: "",
-      connectionStatus: "desconectado",
-      minInterval: 3,
-      maxInterval: 8,
-      provider: "meta_cloud_api",
-      providerReady: false,
-      providerMessage: "Não foi possível carregar a configuração do WhatsApp.",
-    };
-  }
-}
-
-export async function saveWhatsAppConfig(config: Partial<WhatsAppConfig>): Promise<WhatsAppConfig> {
-  const current = await fetchWhatsAppConfig();
-  const state = await syncStateSection("whatsappConfig", { ...current, ...config }, "WhatsApp");
-  return state.whatsappConfig || { ...current, ...config } as WhatsAppConfig;
-}
-
-export async function fetchWhatsAppHistory(): Promise<WhatsAppMessageHistory[]> {
-  try {
-    const state = await fetchServerState();
-    return state.whatsappHistory || [];
-  } catch (e) {
-    return [];
-  }
-}
-
-export async function sendWhatsAppMessageAPI(payload: {
-  senderPhone: string;
-  recipientPhone: string;
-  recipientName: string;
-  message: string;
-  company?: string;
-  messageMode?: "text" | "template";
-  templateName?: string;
-  templateLanguage?: string;
-  templateParameters?: string[];
-}): Promise<{
-  success: boolean;
-  status: "enviado" | "erro";
-  errorReason?: string;
-  providerMessageId?: string;
-  messageMode?: "text" | "template";
-  acceptedByMeta?: boolean;
-  configured?: boolean;
-}> {
-  const res = await fetchWithTimeout("/api/whatsapp/send", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-  });
-  return safeResponseJSON(res, "Falha ao disparar mensagem");
-}
-
-export async function saveWhatsAppHistory(history: WhatsAppMessageHistory[]): Promise<void> {
-  await syncStateSection("whatsappHistory", history, "WhatsApp");
 }
