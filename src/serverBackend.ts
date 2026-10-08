@@ -869,7 +869,7 @@ routeBoth("get", "/api/config/audit", (req: Request, res: ExpressResponse) => {
 });
 
 // 5. Central State
-routeBoth("get", "/api/state", (req: Request, res: ExpressResponse) => {
+routeBoth("get", "/api/state", requireSession, (req: Request, res: ExpressResponse) => {
   res.json(getFullState(db));
 });
 

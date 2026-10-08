@@ -89,6 +89,11 @@ test("AUDITORIA 2: Usuários públicos nunca expõem senhas ou credenciais hash"
   assert.equal("passwordHash" in donoUser, false, "Campo passwordHash não pode existir no objeto do usuário");
 });
 
+test("AUDITORIA 2B: Estado central não fica disponível sem sessão", async () => {
+  const res = await appRequest("GET", "/api/state");
+  assert.equal(res.status, 401);
+});
+
 test("AUDITORIA 3: Sessão autenticada permite ler o estado central /api/state", async () => {
   // Criar token para dono autenticado com MFA
   const dono = db.users.find((u: any) => u.perfil === "dono");

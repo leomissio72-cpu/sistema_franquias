@@ -1042,7 +1042,7 @@ routeBoth("post", "/api/config/bulk", requireSession, requireAdminRole, async (r
 routeBoth("get", "/api/config/audit", (req, res) => {
   res.json({ auditLogs: db.auditLogs.slice(0, 50) });
 });
-routeBoth("get", "/api/state", (req, res) => {
+routeBoth("get", "/api/state", requireSession, (req, res) => {
   res.json(getFullState(db));
 });
 routeBoth("post", "/api/state/sync", requireSession, async (req, res) => {
