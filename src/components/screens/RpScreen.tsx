@@ -133,7 +133,10 @@ export const RpScreen: React.FC<RpScreenProps> = ({ bills: incomingBills, curren
   const scopedBills = useMemo(() => {
     const globalScope = currentTenantId === "dono" || currentTenantId === "equipe";
     return (bills || [])
-      .filter((bill) => globalScope || !bill.tenantId || bill.tenantId === "dono" || bill.tenantId === currentTenantId)
+      .filter((bill) => globalScope
+        || (currentTenantId.startsWith("biz")
+          ? bill.businessId === currentTenantId
+          : bill.tenantId === currentTenantId))
       .sort((a, b) => a.vencimento.localeCompare(b.vencimento));
   }, [bills, currentTenantId]);
 
@@ -558,12 +561,6 @@ export const RpScreen: React.FC<RpScreenProps> = ({ bills: incomingBills, curren
             <span className="text-[11px] text-emerald-700">{counts.scheduled} agendado(s) · {counts.paid} pago(s)</span>
           </div>
         </div>
-      </div>
-
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="rounded-xl border border-[#e5eaf1] bg-white p-4 shadow-xs"><span className="text-[10px] font-extrabold uppercase tracking-wider text-[#69778c] block">Em aberto</span><strong className="text-2xl font-extrabold text-[#b44b4b] block mt-1">{formatBrl2(openAmount)}</strong><small className="text-[11px] text-[#69778c] block mt-0.5">Inclui vencidas e a vencer</small></div>
-        <div className="rounded-xl border border-[#e5eaf1] bg-white p-4 shadow-xs"><span className="text-[10px] font-extrabold uppercase tracking-wider text-[#69778c] block">Já pago</span><strong className="text-2xl font-extrabold text-[#118464] block mt-1">{formatBrl2(amounts.paid)}</strong><small className="text-[11px] text-[#69778c] block mt-0.5">Baixas confirmadas</small></div>
-        <div className="rounded-xl border border-[#e5eaf1] bg-white p-4 shadow-xs"><span className="text-[10px] font-extrabold uppercase tracking-wider text-[#69778c] block">Total previsto</span><strong className="text-2xl font-extrabold text-[#152238] block mt-1">{formatBrl2(openAmount + amounts.paid)}</strong><small className="text-[11px] text-[#69778c] block mt-0.5">Compromissos no escopo atual</small></div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">

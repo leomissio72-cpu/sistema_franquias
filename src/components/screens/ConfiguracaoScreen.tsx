@@ -58,6 +58,7 @@ interface ConfiguracaoScreenProps {
   configs: ConfigItem[];
   auditLogs: AuditLog[];
   userSession: UserSession | null;
+  currentTenantId?: string;
   businesses?: Business[];
   franchises?: FranchiseUnit[];
   royalties?: Record<string, number>;
@@ -92,6 +93,7 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
   configs,
   auditLogs,
   userSession,
+  currentTenantId = "dono",
   businesses = [],
   franchises = [],
   royalties = {},
@@ -2175,7 +2177,7 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
       {activeTab === "dreparams" && (
         <div className="space-y-4">
           <DreParamsScreen
-            currentTenantId="dono"
+            currentTenantId={currentTenantId}
             franchises={franchiseList}
             dreParams={dreParams || {}}
             onSaveParams={onSaveDreParams || (async () => {})}

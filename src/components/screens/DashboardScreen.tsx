@@ -107,8 +107,13 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
 
   const scopedBills = useMemo(() => bills.filter((bill) => {
     const isConsolidated = currentTenantId === "dono" || currentTenantId === "equipe";
-    const matchesUnit = isConsolidated || !bill.tenantId || bill.tenantId === "dono" || bill.tenantId === currentTenantId;
-    const matchesBusiness = currentBusinessId === "all" || !bill.businessId || bill.businessId === currentBusinessId;
+    const matchesUnit = isConsolidated
+      || (currentTenantId.startsWith("biz")
+        ? bill.businessId === currentTenantId
+        : bill.tenantId === currentTenantId);
+    const matchesBusiness = currentBusinessId === "all"
+      || bill.businessId === currentBusinessId
+      || (isConsolidated && !bill.businessId);
     return matchesUnit && matchesBusiness;
   }), [bills, currentBusinessId, currentTenantId]);
 

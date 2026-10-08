@@ -378,8 +378,9 @@ export const ConciliationScreen: React.FC<ConciliationScreenProps> = ({
     const currentItemsList = overrideItems || items;
     const currentBillsList = overrideBills || bills || [];
 
+    const globalScope = currentTenantId === "dono" || currentTenantId === "equipe";
     const openBills = currentBillsList.filter(
-      (b) => b.status === "open" && (!b.tenantId || b.tenantId === "dono" || b.tenantId === currentTenantId)
+      (b) => b.status === "open" && (globalScope || b.tenantId === currentTenantId)
     );
 
     const updatedBills = [...currentBillsList];

@@ -52,6 +52,11 @@ export const DreParamsScreen: React.FC<DreParamsScreenProps> = ({
 
   const [isSaved, setIsSaved] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [saveError, setSaveError] = useState("");
+
+  React.useEffect(() => {
+    if (currentTenantId) setActiveTenant(currentTenantId);
+  }, [currentTenantId]);
 
   React.useEffect(() => {
     const p = dreParams[activeTenant] || dreParams["dono"] || defaultDreParams;
@@ -106,6 +111,7 @@ export const DreParamsScreen: React.FC<DreParamsScreenProps> = ({
 
   const handleSave = async () => {
     setIsSaving(true);
+    setSaveError("");
     try {
       const finalForm: DreParams = { ...form };
       ["impostos", "cmv", "fees", "discount"].forEach((k) => {
@@ -132,8 +138,9 @@ export const DreParamsScreen: React.FC<DreParamsScreenProps> = ({
       await onSaveParams(activeTenant, finalForm);
       setIsSaved(true);
       setTimeout(() => setIsSaved(false), 3000);
-    } catch (e) {
-      console.error(e);
+    } catch (e: any) {
+      console.error("Erro ao salvar parâmetros do DRE:", e);
+      setSaveError(e?.message || "Não foi possível salvar os parâmetros do DRE.");
     } finally {
       setIsSaving(false);
     }
@@ -205,6 +212,11 @@ export const DreParamsScreen: React.FC<DreParamsScreenProps> = ({
           </button>
         </div>
       </div>
+      {saveError && (
+        <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-xs font-semibold text-rose-800" role="alert">
+          {saveError}
+        </div>
+      )}
 
       {/* Main Grid Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">

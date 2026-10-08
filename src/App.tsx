@@ -696,6 +696,7 @@ export const App: React.FC = () => {
               configs={configs}
               auditLogs={auditLogs}
               userSession={userSession}
+              currentTenantId={currentTenantId}
               businesses={businesses}
               franchises={franchises}
               royalties={royalties}
