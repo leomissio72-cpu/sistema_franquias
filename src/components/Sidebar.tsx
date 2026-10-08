@@ -142,12 +142,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   // 3. Configurações & Gestão
   const managementNav: NavItem[] = isFranchisee
-    ? [
+      ? [
+        { id: "produtos", label: "Fornecedores e Produtos", icon: <PackageCheck className="h-4 w-4" /> },
         { id: "employees", label: "Funcionários", icon: <Users className="h-4 w-4" /> },
         { id: "users", label: "Acessos e Logins", icon: <KeyRound className="h-4 w-4" /> },
       ]
     : [
         { id: "configuracao", label: "Configurações", icon: <Settings className="h-4 w-4" /> },
+        { id: "produtos", label: "Fornecedores e Produtos", icon: <PackageCheck className="h-4 w-4" /> },
         { id: "employees", label: "Funcionários", icon: <Users className="h-4 w-4" /> },
         { id: "users", label: "Acessos e Logins", icon: <KeyRound className="h-4 w-4" /> },
       ];

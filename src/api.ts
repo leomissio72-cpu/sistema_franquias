@@ -268,10 +268,19 @@ function getLocalFallbackState(): CloudState {
 
 export async function fetchServerState(): Promise<CloudState> {
   try {
-    const mirroredState = await readFirebaseMirror();
+    const [mirroredState, health] = await Promise.all([
+      readFirebaseMirror(),
+      fetchHealth(),
+    ]);
     const res = await fetchWithTimeout("/api/state", {}, 15000);
     const data = await safeResponseJSON(res, "Failed to load server state");
-    let state = chooseAuthoritativeState(formatCloudState(data), mirroredState);
+    const apiState = formatCloudState(data);
+    // Em Vercel sem BLOB_READ_WRITE_TOKEN, a instância pode voltar ao estado
+    // inicial após um cold start. O espelho Firebase é a cópia durável criada
+    // após cada salvamento e deve prevalecer nesse modo, quando disponível.
+    let state = health?.storage === "ephemeral-fallback" && mirroredState
+      ? formatCloudState(mirroredState)
+      : chooseAuthoritativeState(apiState, mirroredState);
 
     // Atualiza o espelho somente com o estado escolhido por timestamp. Isso
     // evita que uma leitura velha do Firebase sobrescreva uma exclusão nova.
