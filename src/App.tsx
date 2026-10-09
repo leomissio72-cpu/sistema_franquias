@@ -271,7 +271,8 @@ export const App: React.FC = () => {
   };
 
   const handleSaveDreParams = async (tenantId: string, params: DreParams) => {
-    const updatedState = await saveDreParams(tenantId, params, userSession?.name || "Admin");
+    const currentDreParams = serverState?.dreParams || {};
+    const updatedState = await saveDreParams(tenantId, params, userSession?.name || "Admin", userSession?.login, currentDreParams);
     setServerState(updatedState);
   };
 

@@ -420,10 +420,10 @@ export async function syncStateSection(section: string, data: any, user?: string
   return queuedOperation;
 }
 
-export async function saveDreParams(tenantId: string, params: DreParams, userName: string, userId?: string): Promise<CloudState> {
-  const currentState = await fetchServerState();
+export async function saveDreParams(tenantId: string, params: DreParams, userName: string, userId?: string, baseDreParams?: Record<string, DreParams>): Promise<CloudState> {
+  const currentDreParams = baseDreParams || (await fetchServerState()).dreParams;
   const updatedDreParams = {
-    ...currentState.dreParams,
+    ...currentDreParams,
     [tenantId]: params,
   };
   return syncStateSection("dreParams", updatedDreParams, userName);

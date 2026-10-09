@@ -53,12 +53,19 @@ export const DreParamsScreen: React.FC<DreParamsScreenProps> = ({
   const [isSaved, setIsSaved] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState("");
+  const [isDirty, setIsDirty] = useState(false);
 
   React.useEffect(() => {
-    if (currentTenantId) setActiveTenant(currentTenantId);
-  }, [currentTenantId]);
+    if (currentTenantId && currentTenantId !== activeTenant) {
+      setActiveTenant(currentTenantId);
+      setIsDirty(false);
+    }
+  }, [currentTenantId, activeTenant]);
 
   React.useEffect(() => {
+    // O polling global atualiza dreParams periodicamente. Enquanto o usuário
+    // digita, a leitura intermediária não pode substituir o conteúdo local.
+    if (isDirty) return;
     const p = dreParams[activeTenant] || dreParams["dono"] || defaultDreParams;
     setForm({
       impostos: p.impostos,
@@ -79,7 +86,7 @@ export const DreParamsScreen: React.FC<DreParamsScreenProps> = ({
       expMap[e.id] = (val * 100).toFixed(2);
     });
     setRawExpenses(expMap);
-  }, [activeTenant, dreParams]);
+  }, [activeTenant, dreParams, isDirty]);
 
   const sampleFat = currentUnit ? currentUnit.faturamento : 100000;
   const previewDre = calculateDre(sampleFat, form);
@@ -96,6 +103,7 @@ export const DreParamsScreen: React.FC<DreParamsScreenProps> = ({
       },
     }));
     setIsSaved(false);
+    setIsDirty(true);
   };
 
   const handleGeneralChange = (field: keyof DreParams, valueStr: string) => {
@@ -107,6 +115,7 @@ export const DreParamsScreen: React.FC<DreParamsScreenProps> = ({
       [field]: val,
     }));
     setIsSaved(false);
+    setIsDirty(true);
   };
 
   const handleSave = async () => {
@@ -136,6 +145,7 @@ export const DreParamsScreen: React.FC<DreParamsScreenProps> = ({
       finalForm.despesas = finalDesp;
 
       await onSaveParams(activeTenant, finalForm);
+      setIsDirty(false);
       setIsSaved(true);
       setTimeout(() => setIsSaved(false), 3000);
     } catch (e: any) {
@@ -160,6 +170,7 @@ export const DreParamsScreen: React.FC<DreParamsScreenProps> = ({
     });
     setRawExpenses(expMap);
     setIsSaved(false);
+    setIsDirty(true);
   };
 
   return (
