@@ -34,6 +34,7 @@ import {
 import L from "leaflet";
 import {
   DateMultiFilter,
+  monthsWithEntries,
   DateFilterSelection,
   AVAILABLE_DAYS,
   AVAILABLE_MONTHS,
@@ -428,7 +429,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
         {/* Filters Controls */}
         <div className="mt-4 pt-4 border-t border-[#e5eaf1] space-y-4">
           {/* Seletor Temporal Separado: Ano, Mês e Dia */}
-          <DateMultiFilter selection={dateSelection} onChange={setDateSelection} />
+          <DateMultiFilter selection={dateSelection} onChange={setDateSelection} activeMonths={monthsWithEntries(manualEntries)} />
 
           {/* Filtros Operacionais */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-3 border-t border-[#f1f5f9]">
