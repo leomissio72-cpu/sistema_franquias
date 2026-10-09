@@ -168,7 +168,16 @@ export const PagamentosDespesasScreen: React.FC<PagamentosDespesasScreenProps> =
           <div className="flex items-center gap-2 self-start lg:self-auto">
             <span className="text-xs text-[#69778c] flex items-center gap-1.5 bg-[#f8faff] border border-[#e5eaf1] px-3 py-1.5 rounded-xl font-medium">
               <Building2 className="h-3.5 w-3.5 text-[#3c63da]" />
-              <span>Unidade: <strong className="uppercase">{currentTenantId}</strong></span>
+              <span>
+                Unidade:{" "}
+                <strong className="text-[#152238]">
+                  {franchises.find((f) => f.id === currentTenantId)?.name
+                    ? `${franchises.find((f) => f.id === currentTenantId)?.name} (${franchises.find((f) => f.id === currentTenantId)?.code})`
+                    : currentTenantId === "dono" || currentTenantId === "all"
+                    ? "Rede Consolidada"
+                    : currentTenantId}
+                </strong>
+              </span>
             </span>
           </div>
         </div>
@@ -200,6 +209,8 @@ export const PagamentosDespesasScreen: React.FC<PagamentosDespesasScreenProps> =
             onSaveBills={onSaveBills}
             onCreateEntry={onCreateEntry}
             franchises={franchises}
+            onSelectTenant={onSelectTenant}
+            onSelectBusiness={onSelectBusiness}
           />
         )}
 

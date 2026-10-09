@@ -112,8 +112,33 @@ export const App: React.FC = () => {
   });
 
   // User & Tenant State
-  const [currentBusinessId, setCurrentBusinessId] = useState<string>("all");
-  const [currentTenantId, setCurrentTenantId] = useState<string>("dono");
+  const [currentBusinessId, setCurrentBusinessId] = useState<string>(() => {
+    try {
+      return localStorage.getItem("gestao_current_business_id") || "all";
+    } catch {
+      return "all";
+    }
+  });
+  const [currentTenantId, setCurrentTenantId] = useState<string>(() => {
+    try {
+      return localStorage.getItem("gestao_current_tenant_id") || "dono";
+    } catch {
+      return "dono";
+    }
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem("gestao_current_business_id", currentBusinessId);
+    } catch {}
+  }, [currentBusinessId]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem("gestao_current_tenant_id", currentTenantId);
+    } catch {}
+  }, [currentTenantId]);
+
   const [userSession, setUserSession] = useState<UserSession | null>(() => {
     try {
       const stored = sessionStorage.getItem("gestao_user_session") || localStorage.getItem("gestao_user_session");
@@ -148,7 +173,18 @@ export const App: React.FC = () => {
   const [loadError, setLoadError] = useState<string>("");
 
   // Server State & Audit Logs
-  const [serverState, setServerState] = useState<CloudState | null>(null);
+  const [serverState, setServerState] = useState<CloudState | null>(() => {
+    try {
+      const cached = localStorage.getItem("gestaofranquias_cloud_state");
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (parsed && Array.isArray(parsed.businesses) && parsed.businesses.length > 0) {
+          return parsed;
+        }
+      }
+    } catch {}
+    return null;
+  });
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
 
   // Keep URL hash synchronized
@@ -205,10 +241,9 @@ export const App: React.FC = () => {
       return;
     }
 
-    setServerState(null);
     setLoadError("");
     setAuditLogs([]);
-    setIsLoading(true);
+    setIsLoading(!serverState);
     void loadState();
 
     // Subscribe only while the current authenticated account is active.

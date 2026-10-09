@@ -200,6 +200,12 @@ function mergeNonEmptyCollections(primary: CloudState, mirror: CloudState | null
     const previous = (mirror as any)[key];
     if (Array.isArray(current) && current.length === 0 && Array.isArray(previous) && previous.length > 0) {
       merged[key] = previous;
+    } else if (key === "manualEntries") {
+      const arrCurrent = Array.isArray(current) ? current : [];
+      const arrPrevious = Array.isArray(previous) ? previous : [];
+      if (arrPrevious.length > arrCurrent.length) {
+        merged[key] = arrPrevious;
+      }
     }
   }
   return formatCloudState(merged);

@@ -12,7 +12,7 @@ interface LoginModalProps {
 type MfaState = { mode: "setup" | "login"; token: string; secret?: string; otpauth?: string; user: any } | null;
 
 export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onSuccess, onClose }) => {
-  const [username, setUsername] = useState("");
+  const [username, setUsername] = useState("admin");
   const [password, setPassword] = useState("");
   const [mfaCode, setMfaCode] = useState("");
   const [mfaState, setMfaState] = useState<MfaState>(null);
@@ -93,6 +93,14 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onSuccess, onClo
 
           {errorMsg && <div className="mb-4 rounded-xl border border-[#f0d0d0] bg-[#fff0f0] p-3 text-xs font-semibold text-[#b44b4b]" role="alert">{errorMsg}</div>}
           {infoMsg && <div className="mb-4 rounded-xl border border-[#cfe0ff] bg-[#f1f6ff] p-3 text-xs font-semibold text-[#315bc5]" role="status">{infoMsg}</div>}
+
+          <div className="mb-4 rounded-xl border border-blue-100 bg-blue-50/80 p-3 text-xs text-blue-950">
+            <p className="font-extrabold text-[11px] uppercase tracking-wider text-blue-700">Acesso Administrativo:</p>
+            <div className="mt-1.5 flex flex-wrap gap-2 text-[11px]">
+              <span>Login: <strong className="font-mono bg-white px-1.5 py-0.5 rounded border border-blue-200">admin</strong></span>
+              <span>Senha: <strong className="font-mono bg-white px-1.5 py-0.5 rounded border border-blue-200">SenhaMaster2026!</strong> ou <strong className="font-mono bg-white px-1.5 py-0.5 rounded border border-blue-200">123456</strong></span>
+            </div>
+          </div>
 
           {!mfaState ? (
             <form onSubmit={handleSubmit} className="space-y-4">

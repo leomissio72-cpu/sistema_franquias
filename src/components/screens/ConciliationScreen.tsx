@@ -81,6 +81,8 @@ interface ConciliationScreenProps {
   onSaveBills?: (bills: BillItem[]) => Promise<void>;
   onCreateEntry?: (entry: Partial<ManualEntry>) => Promise<void>;
   franchises?: FranchiseUnit[];
+  onSelectTenant?: (tenantId: string) => void;
+  onSelectBusiness?: (bizId: string) => void;
 }
 
 const parseAmount = (value: unknown) => {
@@ -252,11 +254,17 @@ function reconciliationIdentity(item: Pick<ConciliationItem, "date" | "desc" | "
 }
 
 function removeDuplicateItems(items: ConciliationItem[], tenantId: string): ConciliationItem[] {
-  const seen = new Set<string>();
+  const seenIds = new Set<string>();
+  const seenIdentities = new Set<string>();
   return items.filter((item) => {
+    if (item.entryId) {
+      if (seenIds.has(item.entryId)) return false;
+      seenIds.add(item.entryId);
+      return true;
+    }
     const identity = reconciliationIdentity(item, tenantId);
-    if (seen.has(identity)) return false;
-    seen.add(identity);
+    if (seenIdentities.has(identity)) return false;
+    seenIdentities.add(identity);
     return true;
   });
 }
@@ -344,7 +352,9 @@ export const ConciliationScreen: React.FC<ConciliationScreenProps> = ({
   onSaveBills,
   onCreateEntry,
   franchises = [],
-  }) => {
+  onSelectTenant,
+  onSelectBusiness,
+}) => {
   const scopedEntries = () => removeDuplicateItems(
     manualEntries
       .filter((entry) => isEntryInScope(entry.tenant, currentTenantId, franchises))
@@ -1070,25 +1080,23 @@ export const ConciliationScreen: React.FC<ConciliationScreenProps> = ({
         {/* Destino da unidade para conciliação */}
         <div className="mt-3 flex items-center justify-center gap-2 flex-wrap">
           <span className="text-xs font-semibold text-[#69778c]">Destino dos lançamentos:</span>
-          {isSpecificUnit && activeUnit ? (
-            <span className="text-xs font-bold text-[#152238] bg-[#eff6ff] px-2.5 py-1 rounded-md border border-[#bfdbfe]">
-              {activeUnit.name} ({activeUnit.code})
-            </span>
-          ) : (
-            <select
-              value={importTargetUnit}
-              onChange={(e) => setImportTargetUnit(e.target.value)}
-              className="rounded-lg border border-[#cbd5e1] bg-white px-2.5 py-1 text-xs font-bold text-[#152238] shadow-xs cursor-pointer focus:outline-none focus:border-[#3c63da]"
-            >
-              {franchises
-                .filter((f) => currentBusinessId === "all" || f.businessId === currentBusinessId)
-                .map((f) => (
-                  <option key={f.id} value={f.id}>
-                    {f.name} ({f.code})
-                  </option>
-                ))}
-            </select>
-          )}
+          <select
+            value={isSpecificUnit ? currentTenantId : (importTargetUnit || franchises[0]?.id || "")}
+            onChange={(e) => {
+              const newUnitId = e.target.value;
+              setImportTargetUnit(newUnitId);
+              if (onSelectTenant) onSelectTenant(newUnitId);
+            }}
+            className="rounded-lg border border-[#cbd5e1] bg-white px-3 py-1.5 text-xs font-bold text-[#152238] shadow-xs cursor-pointer focus:outline-none focus:border-[#3c63da]"
+          >
+            {franchises
+              .filter((f) => currentBusinessId === "all" || f.businessId === currentBusinessId)
+              .map((f) => (
+                <option key={f.id} value={f.id}>
+                  {f.name} ({f.code})
+                </option>
+              ))}
+          </select>
         </div>
         {items.some(item => item.isImportPreview) && (
           <div className="mt-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-xl border border-indigo-200 bg-indigo-50/60 p-3">
