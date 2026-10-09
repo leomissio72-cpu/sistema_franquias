@@ -329,6 +329,7 @@ function configureSessionSecretFallback(passwordHashes) {
 function sessionSecret() {
   const configured = process.env.FRANQUIAS_SESSION_SECRET;
   if (configured && configured.length >= 32) return configured;
+  if (persistedCredentialSecret) return persistedCredentialSecret;
   return developmentSessionSecret;
 }
 function encode(value) {
@@ -498,6 +499,58 @@ function getCredential(database, userId) {
   return credential && !credential.revokedAt && !credential.mustReset && credential.passwordHash ? credential : null;
 }
 
+// src/serverGuard.ts
+var WINDOW_MS = 5 * 60 * 1e3;
+var MAX_REQUESTS = 900;
+var BLOCK_MS = 15 * 60 * 1e3;
+var hits = /* @__PURE__ */ new Map();
+var blocked = /* @__PURE__ */ new Map();
+var AUTOMATION = /(bot|crawler|spider|scrapy|python|curl|wget|httpclient|okhttp|go-http|java\/|libwww|aiohttp|httpx|axios|node-fetch|postman|insomnia|gptbot|claudebot|ccbot|bytespider|perplexity|headless|phantomjs|selenium|puppeteer|playwright)/i;
+var BAIT = /^\/(wp-|wordpress|xmlrpc|phpmyadmin|admin\.php|administrator|\.env|\.git|\.aws|config\.(php|json|yml)|backup|vendor\/|cgi-bin|shell|actuator|server-status)/i;
+function clientAddress(req) {
+  const forwarded = String(req.headers["x-forwarded-for"] || "").split(",")[0].trim();
+  return forwarded || req.ip || req.socket?.remoteAddress || "desconhecido";
+}
+function sweep(now) {
+  if (hits.size > 5e3) {
+    for (const [key, value] of hits) if (value.resetAt <= now) hits.delete(key);
+  }
+  if (blocked.size > 5e3) {
+    for (const [key, until] of blocked) if (until <= now) blocked.delete(key);
+  }
+}
+function apiGuard(req, res, next) {
+  const now = Date.now();
+  const address = clientAddress(req);
+  const path2 = req.path || "";
+  sweep(now);
+  const blockedUntil = blocked.get(address) || 0;
+  if (blockedUntil > now) {
+    res.setHeader("Retry-After", String(Math.ceil((blockedUntil - now) / 1e3)));
+    return res.status(429).json({ error: "Muitas requisi\xE7\xF5es. Tente novamente mais tarde." });
+  }
+  if (BAIT.test(path2) || BAIT.test(path2.replace(/^\/api/, ""))) {
+    blocked.set(address, now + BLOCK_MS);
+    return res.status(404).json({ error: "N\xE3o encontrado." });
+  }
+  if (!path2.startsWith("/api/")) return next();
+  if (path2 !== "/api/health") {
+    const agent = String(req.headers["user-agent"] || "");
+    if (!agent || AUTOMATION.test(agent)) {
+      return res.status(403).json({ error: "Acesso automatizado n\xE3o permitido." });
+    }
+  }
+  const entry = hits.get(address);
+  if (!entry || entry.resetAt <= now) {
+    hits.set(address, { count: 1, resetAt: now + WINDOW_MS });
+  } else if (++entry.count > MAX_REQUESTS) {
+    blocked.set(address, now + BLOCK_MS);
+    res.setHeader("Retry-After", String(Math.ceil(BLOCK_MS / 1e3)));
+    return res.status(429).json({ error: "Muitas requisi\xE7\xF5es. Tente novamente mais tarde." });
+  }
+  next();
+}
+
 // src/utils/intercompany.ts
 function normalizeIntercompanyText(value) {
   return String(value ?? "").trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, " ");
@@ -532,23 +585,27 @@ app.use(import_express.default.json({
 }));
 var SESSION_TTL_MS2 = 8 * 60 * 60 * 1e3;
 var loginAttempts = /* @__PURE__ */ new Map();
+var MASTER_PASSWORD_HASH = process.env.FRANQUIAS_MASTER_PASSWORD_HASH || "scrypt$d901cc03f9c27696ce3b013f37d1afb9$624d14522045ff29106f38cad28c294b666fb10b98730adc7722c6ea8fbf4fc53b90ced240b69896e3a68264477d308ef66560d27b68b9212182a484d39f2c71";
 var isProductionRuntime = process.env.VERCEL === "1" || process.env.NODE_ENV === "production";
 app.disable("x-powered-by");
 app.use((req, res, next) => {
   res.setHeader("X-Content-Type-Options", "nosniff");
   res.setHeader("X-Frame-Options", "DENY");
   res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
-  res.setHeader("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
+  res.setHeader("Permissions-Policy", "camera=(), microphone=(), geolocation=(), payment=(), usb=()");
+  res.setHeader("X-Robots-Tag", "noindex, nofollow, noarchive, noai, noimageai");
+  res.setHeader("Cross-Origin-Opener-Policy", "same-origin");
   if (isProductionRuntime) {
     res.setHeader("Strict-Transport-Security", "max-age=63072000; includeSubDomains; preload");
     res.setHeader(
       "Content-Security-Policy",
-      "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; worker-src 'self' blob:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://unpkg.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https:; connect-src 'self' https://*.googleapis.com https://*.firebaseio.com https://*.firebaseapp.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://nominatim.openstreetmap.org"
+      "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; worker-src 'self' blob:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https:; connect-src 'self' https://*.googleapis.com https://*.firebaseio.com https://*.firebaseapp.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://nominatim.openstreetmap.org"
     );
   }
   res.setHeader("Cache-Control", req.path.startsWith("/api/") ? "no-store" : "public, max-age=0, must-revalidate");
   next();
 });
+app.use(apiGuard);
 function parseCookies(req) {
   return Object.fromEntries((req.header("cookie") || "").split(";").filter(Boolean).map((part) => {
     const [key, ...value] = part.trim().split("=");
@@ -1077,7 +1134,7 @@ routeBoth("post", "/api/auth/login", async (req, res) => {
     return failLogin();
   }
   const credential = db.credentials?.[user.id];
-  const isMasterDevPassword = cleanUsername === "admin" && cleanPassword === "1234";
+  const isMasterDevPassword = cleanUsername === "admin" && verifyPassword(cleanPassword, MASTER_PASSWORD_HASH);
   const passwordMatches = Boolean(
     credential?.passwordHash && verifyPassword(cleanPassword, credential.passwordHash) || isMasterDevPassword
   );

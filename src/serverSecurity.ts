@@ -61,6 +61,8 @@ export function configureSessionSecretFallback(passwordHashes: unknown): void {
 function sessionSecret(): string {
   const configured = process.env.FRANQUIAS_SESSION_SECRET;
   if (configured && configured.length >= 32) return configured;
+  // Sem a variável de ambiente, usa o segredo derivado das credenciais salvas.
+  if (persistedCredentialSecret) return persistedCredentialSecret;
   return developmentSessionSecret;
 }
 

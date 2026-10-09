@@ -1,0 +1,3 @@
+# Sistema interno: nenhum robô deve indexar ou coletar estas páginas.
+User-agent: *
+Disallow: /
