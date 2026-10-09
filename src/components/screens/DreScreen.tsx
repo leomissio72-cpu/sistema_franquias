@@ -979,22 +979,6 @@ export const DreScreen: React.FC<DreScreenProps> = ({
   return (
     <div className="space-y-6 animate-in fade-in duration-150">
       {/* Header & Unified Sub-Tab Selector */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <div className="text-[10px] font-extrabold uppercase tracking-widest text-[#3c63da]">
-            Demonstrativo Financeiro do Exercício (DRE)
-          </div>
-          <h2 className="text-xl sm:text-2xl font-extrabold tracking-tight text-[#152238] flex items-center gap-2 mt-0.5">
-            <TrendingUp className="h-6 w-6 text-[#3c63da]" />
-            DRE e Resultados — {getScopeTitle()}
-          </h2>
-          <p className="text-xs text-[#69778c] mt-0.5">
-            Apuração contábil e controle de margens.
-          </p>
-        </div>
-
-
-      </div>
 
       <div className="space-y-6">
         {/* Sub-Tabs Selector */}
