@@ -20,7 +20,12 @@ import {
   Layers,
   Lock,
   ShieldCheck,
-  Info
+  Info,
+  Banknote,
+  QrCode,
+  CreditCard,
+  Wallet,
+  ArrowLeftRight,
 } from "lucide-react";
 
 interface FeesScreenProps {
@@ -34,6 +39,20 @@ interface FeesScreenProps {
   onNavigate: (screen: ScreenType) => void;
   userSession?: UserSession | null;
 }
+
+// Os meios de pagamento guardam o nome do ícone; aqui ele vira o desenho.
+const METHOD_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
+  Banknote,
+  QrCode,
+  CreditCard,
+  Wallet,
+  ArrowLeftRight,
+};
+const MethodIcon: React.FC<{ name?: string }> = ({ name }) => {
+  const Icon = name ? METHOD_ICONS[name] : undefined;
+  if (Icon) return <Icon className="h-4 w-4 text-[#0f4c5c]" />;
+  return <span className="text-base">{name}</span>;
+};
 
 export const FeesScreen: React.FC<FeesScreenProps> = ({
   currentTenantId,
@@ -125,14 +144,14 @@ export const FeesScreen: React.FC<FeesScreenProps> = ({
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <div className="text-[10px] font-extrabold uppercase tracking-widest text-[#3c63da]">
+          <div className="text-[10px] font-extrabold text-[#0f4c5c]">
             Regras Financeiras & Adquirentes
           </div>
-          <h2 className="text-2xl font-extrabold tracking-tight text-[#152238] flex items-center gap-2 mt-1">
-            <Percent className="h-6 w-6 text-[#3c63da]" />
+          <h2 className="text-2xl font-extrabold tracking-tight text-[#17211f] flex items-center gap-2 mt-1">
+            <Percent className="h-6 w-6 text-[#0f4c5c]" />
             Taxas e Recebimentos
           </h2>
-          <p className="text-xs text-[#69778c] mt-1">
+          <p className="text-xs text-[#5e6b67] mt-1">
             Taxas por meio de pagamento, prazos de liquidação, horário de corte bancário e simulador de recebíveis.
           </p>
         </div>
@@ -141,7 +160,7 @@ export const FeesScreen: React.FC<FeesScreenProps> = ({
           <button
             onClick={handleSave}
             disabled={isSaving}
-            className="flex items-center gap-1.5 rounded-lg bg-[#3c63da] px-4 py-2 text-xs font-bold text-white hover:bg-[#2f52c0] shadow-sm disabled:opacity-50 cursor-pointer"
+            className="flex items-center gap-1.5 rounded-lg bg-[#0f4c5c] px-4 py-2 text-xs font-bold text-white hover:bg-[#0b3b48] shadow-sm disabled:opacity-50 cursor-pointer"
           >
             <Save className="h-3.5 w-3.5" />
             <span>{isSaved ? "Regras Salvas!" : isSaving ? "Salvando..." : "Salvar Regras"}</span>
@@ -172,9 +191,9 @@ export const FeesScreen: React.FC<FeesScreenProps> = ({
       )}
 
       {/* Methods Table */}
-      <div className="rounded-2xl border border-[#e5eaf1] bg-white p-5 sm:p-6 shadow-xs space-y-4">
-        <div className="flex items-center justify-between border-b border-[#e5eaf1] pb-3">
-          <h3 className="text-sm font-bold text-[#152238]">
+      <div className="rounded-2xl border border-[#dfe4df] bg-white p-5 sm:p-6 shadow-xs space-y-4">
+        <div className="flex items-center justify-between border-b border-[#dfe4df] pb-3">
+          <h3 className="text-sm font-bold text-[#17211f]">
             Tabela de Meios de Pagamento & Prazos
           </h3>
           {!isOwner && (
@@ -187,7 +206,7 @@ export const FeesScreen: React.FC<FeesScreenProps> = ({
         <div className="overflow-x-auto">
           <table className="w-full text-xs border-collapse">
             <thead>
-              <tr className="bg-[#f8f9fc] text-[#69778c] uppercase text-[9px] tracking-wider border-b border-[#e5eaf1]">
+              <tr className="bg-[#f7f9f7] text-[#5e6b67] text-[9px]  border-b border-[#dfe4df]">
                 <th className="p-3 text-left">Método de Pagamento</th>
                 <th className="p-3 text-left">Taxa (%)</th>
                 <th className="p-3 text-left">Prazo (Dias Úteis)</th>
@@ -196,17 +215,17 @@ export const FeesScreen: React.FC<FeesScreenProps> = ({
                 <th className="p-3 text-right">Status</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-[#e5eaf1]">
+            <tbody className="divide-y divide-[#dfe4df]">
               {methods.map((m) => {
                 const sett = calculateSettlement(m, new Date(), 1);
                 return (
-                  <tr key={m.id} className="hover:bg-[#f8faff] transition-colors">
+                  <tr key={m.id} className="hover:bg-[#f7f9f7] transition-colors">
                     <td className="p-3">
                       <div className="flex items-center gap-2">
-                        <span className="text-base">{m.icon}</span>
+                        <MethodIcon name={m.icon} />
                         <div>
-                          <b className="text-[#152238] block">{m.name}</b>
-                          <span className="text-[10px] text-[#69778c]">
+                          <b className="text-[#17211f] block">{m.name}</b>
+                          <span className="text-[10px] text-[#5e6b67]">
                             {m.bandeira || "Direto na conta"}
                           </span>
                         </div>
@@ -223,9 +242,9 @@ export const FeesScreen: React.FC<FeesScreenProps> = ({
                           disabled={!isOwner}
                           value={(m.fee * 100).toFixed(2)}
                           onChange={(e) => handleMethodChange(m.id, "fee", e.target.value)}
-                          className="w-full rounded-md border border-[#e5eaf1] px-2 py-1 text-xs font-mono font-bold text-[#152238] focus:border-[#3c63da] focus:outline-none disabled:bg-[#f1f5f9] disabled:text-[#475569] disabled:cursor-not-allowed"
+                          className="w-full rounded-md border border-[#dfe4df] px-2 py-1 text-xs font-mono font-bold text-[#17211f] focus:border-[#0f4c5c] focus:outline-none disabled:bg-[#f0f3f0] disabled:text-[#3a4743] disabled:cursor-not-allowed"
                         />
-                        <span className="absolute right-2 top-1 text-[11px] font-bold text-[#69778c]">%</span>
+                        <span className="absolute right-2 top-1 text-[11px] font-bold text-[#5e6b67]">%</span>
                       </div>
                     </td>
 
@@ -239,9 +258,9 @@ export const FeesScreen: React.FC<FeesScreenProps> = ({
                           disabled={!isOwner}
                           value={m.prazoDias}
                           onChange={(e) => handleMethodChange(m.id, "prazoDias", e.target.value)}
-                          className="w-full rounded-md border border-[#e5eaf1] px-2 py-1 text-xs font-mono font-bold text-[#152238] focus:border-[#3c63da] focus:outline-none disabled:bg-[#f1f5f9] disabled:text-[#475569] disabled:cursor-not-allowed"
+                          className="w-full rounded-md border border-[#dfe4df] px-2 py-1 text-xs font-mono font-bold text-[#17211f] focus:border-[#0f4c5c] focus:outline-none disabled:bg-[#f0f3f0] disabled:text-[#3a4743] disabled:cursor-not-allowed"
                         />
-                        <span className="absolute right-2 top-1 text-[11px] text-[#69778c]">dias</span>
+                        <span className="absolute right-2 top-1 text-[11px] text-[#5e6b67]">dias</span>
                       </div>
                     </td>
 
@@ -255,13 +274,13 @@ export const FeesScreen: React.FC<FeesScreenProps> = ({
                           disabled={!isOwner}
                           value={m.cutoffHour}
                           onChange={(e) => handleMethodChange(m.id, "cutoffHour", e.target.value)}
-                          className="w-full rounded-md border border-[#e5eaf1] px-2 py-1 text-xs font-mono font-bold text-[#152238] focus:border-[#3c63da] focus:outline-none disabled:bg-[#f1f5f9] disabled:text-[#475569] disabled:cursor-not-allowed"
+                          className="w-full rounded-md border border-[#dfe4df] px-2 py-1 text-xs font-mono font-bold text-[#17211f] focus:border-[#0f4c5c] focus:outline-none disabled:bg-[#f0f3f0] disabled:text-[#3a4743] disabled:cursor-not-allowed"
                         />
-                        <span className="absolute right-2 top-1 text-[11px] text-[#69778c]">h</span>
+                        <span className="absolute right-2 top-1 text-[11px] text-[#5e6b67]">h</span>
                       </div>
                     </td>
 
-                    <td className="p-3 font-mono font-semibold text-[#152238]">
+                    <td className="p-3 font-mono font-semibold text-[#17211f]">
                       {sett.label} ({sett.date.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" })})
                     </td>
 
@@ -289,15 +308,15 @@ export const FeesScreen: React.FC<FeesScreenProps> = ({
       {/* Simulator & Business Rules */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
         {/* Simulator */}
-        <div className="lg:col-span-2 rounded-2xl border border-[#e5eaf1] bg-white p-5 sm:p-6 shadow-xs space-y-4">
-          <h3 className="text-sm font-bold text-[#152238] flex items-center gap-2 border-b border-[#e5eaf1] pb-3">
-            <Calculator className="h-4 w-4 text-[#3c63da]" />
+        <div className="lg:col-span-2 rounded-2xl border border-[#dfe4df] bg-white p-5 sm:p-6 shadow-xs space-y-4">
+          <h3 className="text-sm font-bold text-[#17211f] flex items-center gap-2 border-b border-[#dfe4df] pb-3">
+            <Calculator className="h-4 w-4 text-[#0f4c5c]" />
             Simulador de Venda & Liquidação Líquida
           </h3>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-[10px] font-extrabold uppercase text-[#69778c] mb-1">
+              <label className="block text-[10px] font-extrabold text-[#5e6b67] mb-1">
                 Valor Bruto da Venda (R$)
               </label>
               <input
@@ -306,29 +325,29 @@ export const FeesScreen: React.FC<FeesScreenProps> = ({
                 min="0"
                 value={simValue}
                 onChange={(e) => setSimValue(parseFloat(e.target.value || "0"))}
-                className="w-full rounded-lg border border-[#e5eaf1] px-3 py-2 text-xs font-mono font-bold text-[#152238] focus:border-[#3c63da] focus:outline-none"
+                className="w-full rounded-lg border border-[#dfe4df] px-3 py-2 text-xs font-mono font-bold text-[#17211f] focus:border-[#0f4c5c] focus:outline-none"
               />
             </div>
 
             <div>
-              <label className="block text-[10px] font-extrabold uppercase text-[#69778c] mb-1">
+              <label className="block text-[10px] font-extrabold text-[#5e6b67] mb-1">
                 Meio de Pagamento
               </label>
               <select
                 value={simMethodId}
                 onChange={(e) => setSimMethodId(e.target.value)}
-                className="w-full rounded-lg border border-[#e5eaf1] px-3 py-2 text-xs font-semibold text-[#152238] bg-white focus:border-[#3c63da] focus:outline-none"
+                className="w-full rounded-lg border border-[#dfe4df] px-3 py-2 text-xs font-semibold text-[#17211f] bg-white focus:border-[#0f4c5c] focus:outline-none"
               >
                 {methods.map((m) => (
                   <option key={m.id} value={m.id}>
-                    {m.icon} {m.name} ({(m.fee * 100).toFixed(2)}%)
+                    {METHOD_ICONS[m.icon] ? "" : `${m.icon} `}{m.name} ({(m.fee * 100).toFixed(2)}%)
                   </option>
                 ))}
               </select>
             </div>
 
             <div>
-              <label className="block text-[10px] font-extrabold uppercase text-[#69778c] mb-1">
+              <label className="block text-[10px] font-extrabold text-[#5e6b67] mb-1">
                 Desconto Concedido (%)
               </label>
               <input
@@ -338,18 +357,18 @@ export const FeesScreen: React.FC<FeesScreenProps> = ({
                 max="100"
                 value={simDiscount}
                 onChange={(e) => setSimDiscount(parseFloat(e.target.value || "0"))}
-                className="w-full rounded-lg border border-[#e5eaf1] px-3 py-2 text-xs font-mono font-bold text-[#152238] focus:border-[#3c63da] focus:outline-none"
+                className="w-full rounded-lg border border-[#dfe4df] px-3 py-2 text-xs font-mono font-bold text-[#17211f] focus:border-[#0f4c5c] focus:outline-none"
               />
             </div>
 
             <div>
-              <label className="block text-[10px] font-extrabold uppercase text-[#69778c] mb-1">
+              <label className="block text-[10px] font-extrabold text-[#5e6b67] mb-1">
                 Parcelamento (se cartão)
               </label>
               <select
                 value={simInstallments}
                 onChange={(e) => setSimInstallments(parseInt(e.target.value, 10))}
-                className="w-full rounded-lg border border-[#e5eaf1] px-3 py-2 text-xs font-semibold text-[#152238] bg-white focus:border-[#3c63da] focus:outline-none"
+                className="w-full rounded-lg border border-[#dfe4df] px-3 py-2 text-xs font-semibold text-[#17211f] bg-white focus:border-[#0f4c5c] focus:outline-none"
               >
                 <option value={1}>À vista (1x)</option>
                 <option value={2}>2x</option>
@@ -378,30 +397,30 @@ export const FeesScreen: React.FC<FeesScreenProps> = ({
           )}
 
           {/* Simulation Output Card */}
-          <div className="rounded-xl border border-[#e5eaf1] bg-[#f8faff] p-4 text-xs space-y-2">
+          <div className="rounded-xl border border-[#dfe4df] bg-[#f7f9f7] p-4 text-xs space-y-2">
             <div className="flex justify-between font-semibold">
-              <span className="text-[#69778c]">Valor Bruto:</span>
-              <span className="font-mono font-bold text-[#152238]">{formatBrl2(simValue)}</span>
+              <span className="text-[#5e6b67]">Valor Bruto:</span>
+              <span className="font-mono font-bold text-[#17211f]">{formatBrl2(simValue)}</span>
             </div>
             {discountAmount > 0 && (
               <div className="flex justify-between">
-                <span className="text-[#69778c]">(-) Desconto ({simDiscount}%):</span>
-                <span className="font-mono text-[#b44b4b]">- {formatBrl2(discountAmount)}</span>
+                <span className="text-[#5e6b67]">(-) Desconto ({simDiscount}%):</span>
+                <span className="font-mono text-[#b93a48]">- {formatBrl2(discountAmount)}</span>
               </div>
             )}
             <div className="flex justify-between">
-              <span className="text-[#69778c]">
+              <span className="text-[#5e6b67]">
                 (-) Taxa {selectedMethod?.name || "Taxa"} ({(((selectedMethod?.fee ?? 0)) * 100).toFixed(2)}%):
               </span>
-              <span className="font-mono text-[#b44b4b]">- {formatBrl2(feeAmount)}</span>
+              <span className="font-mono text-[#b93a48]">- {formatBrl2(feeAmount)}</span>
             </div>
-            <div className="flex justify-between pt-2 border-t border-[#e5eaf1] font-extrabold text-sm text-emerald-800">
+            <div className="flex justify-between pt-2 border-t border-[#dfe4df] font-extrabold text-sm text-emerald-800">
               <span>= Líquido a Receber:</span>
               <span className="font-mono text-base">{formatBrl2(netAmount)}</span>
             </div>
-            <div className="flex justify-between pt-1 text-[11px] text-[#69778c]">
+            <div className="flex justify-between pt-1 text-[11px] text-[#5e6b67]">
               <span>Data de Liquidação Prevista:</span>
-              <b className="text-[#3c63da]">
+              <b className="text-[#0f4c5c]">
                 {settlement.date.toLocaleDateString("pt-BR")} ({settlement.label})
               </b>
             </div>
@@ -409,9 +428,9 @@ export const FeesScreen: React.FC<FeesScreenProps> = ({
         </div>
 
         {/* Business Rules Box */}
-        <div className="rounded-2xl border border-[#e5eaf1] bg-white p-5 shadow-xs space-y-4">
-          <div className="flex items-center justify-between border-b border-[#e5eaf1] pb-2">
-            <h3 className="text-sm font-bold text-[#152238]">
+        <div className="rounded-2xl border border-[#dfe4df] bg-white p-5 shadow-xs space-y-4">
+          <div className="flex items-center justify-between border-b border-[#dfe4df] pb-2">
+            <h3 className="text-sm font-bold text-[#17211f]">
               Limites & Políticas Comerciais
             </h3>
             {!isOwner && (
@@ -423,7 +442,7 @@ export const FeesScreen: React.FC<FeesScreenProps> = ({
 
           <div className="space-y-3">
             <div>
-              <label className="block text-[10px] font-extrabold uppercase text-[#69778c] mb-1">
+              <label className="block text-[10px] font-extrabold text-[#5e6b67] mb-1">
                 Desconto Máximo Permitido (%)
               </label>
               <input
@@ -434,12 +453,12 @@ export const FeesScreen: React.FC<FeesScreenProps> = ({
                 onChange={(e) =>
                   setRules((prev) => ({ ...prev, maxDiscount: parseFloat(e.target.value || "0") }))
                 }
-                className="w-full rounded-lg border border-[#e5eaf1] px-3 py-2 text-xs font-mono font-bold text-[#152238] focus:border-[#3c63da] focus:outline-none disabled:bg-[#f1f5f9] disabled:text-[#475569] disabled:cursor-not-allowed"
+                className="w-full rounded-lg border border-[#dfe4df] px-3 py-2 text-xs font-mono font-bold text-[#17211f] focus:border-[#0f4c5c] focus:outline-none disabled:bg-[#f0f3f0] disabled:text-[#3a4743] disabled:cursor-not-allowed"
               />
             </div>
 
             <div>
-              <label className="block text-[10px] font-extrabold uppercase text-[#69778c] mb-1">
+              <label className="block text-[10px] font-extrabold text-[#5e6b67] mb-1">
                 Ticket Mínimo (R$)
               </label>
               <input
@@ -450,12 +469,12 @@ export const FeesScreen: React.FC<FeesScreenProps> = ({
                 onChange={(e) =>
                   setRules((prev) => ({ ...prev, minTicket: parseFloat(e.target.value || "0") }))
                 }
-                className="w-full rounded-lg border border-[#e5eaf1] px-3 py-2 text-xs font-mono font-bold text-[#152238] focus:border-[#3c63da] focus:outline-none disabled:bg-[#f1f5f9] disabled:text-[#475569] disabled:cursor-not-allowed"
+                className="w-full rounded-lg border border-[#dfe4df] px-3 py-2 text-xs font-mono font-bold text-[#17211f] focus:border-[#0f4c5c] focus:outline-none disabled:bg-[#f0f3f0] disabled:text-[#3a4743] disabled:cursor-not-allowed"
               />
             </div>
 
             <div>
-              <label className="block text-[10px] font-extrabold uppercase text-[#69778c] mb-1">
+              <label className="block text-[10px] font-extrabold text-[#5e6b67] mb-1">
                 Antecipação Automática de Recebíveis
               </label>
               <select
@@ -464,14 +483,14 @@ export const FeesScreen: React.FC<FeesScreenProps> = ({
                 onChange={(e) =>
                   setRules((prev) => ({ ...prev, advance: e.target.value === "on" }))
                 }
-                className="w-full rounded-lg border border-[#e5eaf1] px-3 py-2 text-xs font-semibold text-[#152238] bg-white focus:border-[#3c63da] focus:outline-none disabled:bg-[#f1f5f9] disabled:text-[#475569] disabled:cursor-not-allowed"
+                className="w-full rounded-lg border border-[#dfe4df] px-3 py-2 text-xs font-semibold text-[#17211f] bg-white focus:border-[#0f4c5c] focus:outline-none disabled:bg-[#f0f3f0] disabled:text-[#3a4743] disabled:cursor-not-allowed"
               >
                 <option value="off">Desativada (prazos normais D+30)</option>
                 <option value="on">Ativada (liquidação D+1 com taxa extra)</option>
               </select>
             </div>
 
-            <div className="pt-2 border-t border-[#e5eaf1] text-[11px] text-[#69778c] leading-relaxed">
+            <div className="pt-2 border-t border-[#dfe4df] text-[11px] text-[#5e6b67] leading-relaxed">
               Vendas realizadas após o horário de corte configurado entram no próximo ciclo de compensação bancária.
             </div>
           </div>

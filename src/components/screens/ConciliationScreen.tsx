@@ -975,11 +975,11 @@ export const ConciliationScreen: React.FC<ConciliationScreenProps> = ({
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
         <div>
-          <h3 className="text-base font-extrabold text-[#152238] flex items-center gap-2">
-            <ArrowLeftRight className="h-4.5 w-4.5 text-[#3c63da]" />
+          <h3 className="text-base font-extrabold text-[#17211f] flex items-center gap-2">
+            <ArrowLeftRight className="h-4.5 w-4.5 text-[#0f4c5c]" />
             Conciliação Bancária
           </h3>
-          <p className="text-xs text-[#69778c]">
+          <p className="text-xs text-[#5e6b67]">
             Aceita OFX, CSV, TXT, PDF, Excel e Word. A prévia fica protegida até sua confirmação.
           </p>
         </div>
@@ -1006,36 +1006,36 @@ export const ConciliationScreen: React.FC<ConciliationScreenProps> = ({
 
       {/* KPI Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-        <div className="rounded-xl border border-[#e5eaf1] bg-white p-4.5 shadow-xs">
-          <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#69778c] block">
+        <div className="rounded-xl border border-[#dfe4df] bg-white p-4.5 shadow-xs">
+          <span className="text-[10px] font-extrabold text-[#5e6b67] block">
             Movimentações Lidas
           </span>
-          <strong className="text-2xl font-extrabold text-[#152238] block mt-1">{items.length}</strong>
-          <small className="text-[11px] text-[#69778c] block mt-0.5">Extrato em conferência</small>
+          <strong className="text-2xl font-extrabold text-[#17211f] block mt-1">{items.length}</strong>
+          <small className="text-[11px] text-[#5e6b67] block mt-0.5">Extrato em conferência</small>
         </div>
 
-        <div className="rounded-xl border border-[#e5eaf1] bg-white p-4.5 shadow-xs">
-          <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#69778c] block">
+        <div className="rounded-xl border border-[#dfe4df] bg-white p-4.5 shadow-xs">
+          <span className="text-[10px] font-extrabold text-[#5e6b67] block">
             Correspondências
           </span>
-          <strong className="text-2xl font-extrabold text-[#118464] block mt-1">{matchCount}</strong>
-          <small className="text-[11px] text-[#69778c] block mt-0.5">Cruzadas com o sistema</small>
+          <strong className="text-2xl font-extrabold text-[#1a7f5a] block mt-1">{matchCount}</strong>
+          <small className="text-[11px] text-[#5e6b67] block mt-0.5">Cruzadas com o sistema</small>
         </div>
 
-        <div className="rounded-xl border border-[#e5eaf1] bg-white p-4.5 shadow-xs">
-          <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#69778c] block">
+        <div className="rounded-xl border border-[#dfe4df] bg-white p-4.5 shadow-xs">
+          <span className="text-[10px] font-extrabold text-[#5e6b67] block">
             Para Revisar
           </span>
           <strong className="text-2xl font-extrabold text-[#a86a08] block mt-1">{reviewCount}</strong>
-          <small className="text-[11px] text-[#69778c] block mt-0.5">Exigem confirmação</small>
+          <small className="text-[11px] text-[#5e6b67] block mt-0.5">Exigem confirmação</small>
         </div>
 
-        <div className="rounded-xl border border-[#e5eaf1] bg-white p-4.5 shadow-xs">
-          <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#69778c] block">
+        <div className="rounded-xl border border-[#dfe4df] bg-white p-4.5 shadow-xs">
+          <span className="text-[10px] font-extrabold text-[#5e6b67] block">
             Despesas → DRE
           </span>
-          <strong className="text-2xl font-extrabold text-[#3c63da] block mt-1">{dreCount}</strong>
-          <small className="text-[11px] text-[#69778c] block mt-0.5">Auto-categorizadas</small>
+          <strong className="text-2xl font-extrabold text-[#0f4c5c] block mt-1">{dreCount}</strong>
+          <small className="text-[11px] text-[#5e6b67] block mt-0.5">Auto-categorizadas</small>
         </div>
       </div>
 
@@ -1051,22 +1051,22 @@ export const ConciliationScreen: React.FC<ConciliationScreenProps> = ({
           setIsDragOver(false);
           if (e.dataTransfer.files?.[0]) handleFileUpload(e.dataTransfer.files[0]);
         }}
-        className={`rounded-2xl border-2 border-dashed p-6 text-center transition-all bg-[#fbfcff] ${
-          isDragOver ? "border-[#3c63da] bg-[#edf2ff]" : "border-[#b7c5e0]"
+        className={`rounded-2xl border-2 border-dashed p-6 text-center transition-all bg-[#f7f9f7] ${
+          isDragOver ? "border-[#0f4c5c] bg-[#e3eff1]" : "border-[#c9d1cb]"
         }`}
       >
-        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-[#edf2ff] text-[#3c63da] mb-3">
+        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-[#e3eff1] text-[#0f4c5c] mb-3">
           <UploadCloud className="h-6 w-6" />
         </div>
-        <h3 className="text-sm font-bold text-[#152238]">
+        <h3 className="text-sm font-bold text-[#17211f]">
           Arraste seu arquivo de extrato ou selecione no dispositivo
         </h3>
-        <p className="text-xs text-[#69778c] mt-1 max-w-md mx-auto">
+        <p className="text-xs text-[#5e6b67] mt-1 max-w-md mx-auto">
             Formatos compatíveis: <b>Excel</b> (.xlsx/.xls), <b>Word</b> (.docx com OFX), <b>CSV</b>, <b>PDF</b>, OFX e TXT. Acentos de arquivos UTF-8, Windows-1252 e ISO-8859-1 são normalizados. Para Word antigo (.doc), salve como .docx. A gravação só acontece após sua confirmação.
         </p>
 
         <div className="mt-4 flex items-center justify-center gap-3">
-          <label className="rounded-lg bg-[#3c63da] px-4 py-2 text-xs font-bold text-white hover:bg-[#2f52c0] shadow-xs cursor-pointer transition-all">
+          <label className="rounded-lg bg-[#0f4c5c] px-4 py-2 text-xs font-bold text-white hover:bg-[#0b3b48] shadow-xs cursor-pointer transition-all">
             {isReadingFile ? "Lendo arquivo..." : "Selecionar base"}
             <input
               type="file"
@@ -1082,7 +1082,7 @@ export const ConciliationScreen: React.FC<ConciliationScreenProps> = ({
             />
           </label>
           {uploadedFileName && hasPreviewRows && (
-            <span className="text-xs font-semibold text-[#152238] bg-white px-3 py-1.5 rounded-lg border border-[#e5eaf1]">
+            <span className="text-xs font-semibold text-[#17211f] bg-white px-3 py-1.5 rounded-lg border border-[#dfe4df]">
               Arquivo atual: <b>{uploadedFileName}</b>
             </span>
           )}
@@ -1090,7 +1090,7 @@ export const ConciliationScreen: React.FC<ConciliationScreenProps> = ({
 
         {/* Destino da unidade para conciliação */}
         <div className="mt-3 flex items-center justify-center gap-2 flex-wrap">
-          <span className="text-xs font-semibold text-[#69778c]">Destino dos lançamentos:</span>
+          <span className="text-xs font-semibold text-[#5e6b67]">Destino dos lançamentos:</span>
           <select
             value={isSpecificUnit ? currentTenantId : (importTargetUnit || franchises[0]?.id || "")}
             onChange={(e) => {
@@ -1098,7 +1098,7 @@ export const ConciliationScreen: React.FC<ConciliationScreenProps> = ({
               setImportTargetUnit(newUnitId);
               if (onSelectTenant) onSelectTenant(newUnitId);
             }}
-            className="rounded-lg border border-[#cbd5e1] bg-white px-3 py-1.5 text-xs font-bold text-[#152238] shadow-xs cursor-pointer focus:outline-none focus:border-[#3c63da]"
+            className="rounded-lg border border-[#c9d1cb] bg-white px-3 py-1.5 text-xs font-bold text-[#17211f] shadow-xs cursor-pointer focus:outline-none focus:border-[#0f4c5c]"
           >
             {franchises
               .filter((f) => currentBusinessId === "all" || f.businessId === currentBusinessId)
@@ -1120,21 +1120,21 @@ export const ConciliationScreen: React.FC<ConciliationScreenProps> = ({
                 {selectedIds.length > 1 ? `Editar em Lote (${selectedIds.length})` : "Editar"}
               </button>
               <button type="button" onClick={handleDiscardImport} disabled={isImporting} className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-bold text-slate-700 hover:bg-slate-100 disabled:opacity-60 cursor-pointer">Descartar</button>
-              <button type="button" onClick={() => void handleImportEntries()} disabled={isImporting} className="rounded-lg bg-[#3c63da] px-4 py-2 text-xs font-bold text-white hover:bg-[#2f52c0] disabled:opacity-60 cursor-pointer shadow-2xs">{isImporting ? "Enviando para a Caixa..." : "Finalizar e enviar à Caixa"}</button>
+              <button type="button" onClick={() => void handleImportEntries()} disabled={isImporting} className="rounded-lg bg-[#0f4c5c] px-4 py-2 text-xs font-bold text-white hover:bg-[#0b3b48] disabled:opacity-60 cursor-pointer shadow-2xs">{isImporting ? "Enviando para a Caixa..." : "Finalizar e enviar à Caixa"}</button>
             </div>
           </div>
         )}
       </div>
 
       {/* SEÇÃO GUI: BAIXAS AUTOMÁTICAS POR RECORRÊNCIA */}
-      <div className="rounded-2xl border border-indigo-100 bg-gradient-to-r from-[#f7f9ff] via-white to-[#f5f8ff] p-4.5 shadow-xs space-y-3.5">
+      <div className="rounded-2xl border border-indigo-100 bg-gradient-to-r from-[#f7f9f7] via-white to-[#f7f9f7] p-4.5 shadow-xs space-y-3.5">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="flex items-center gap-2.5">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#3c63da]/10 text-[#3c63da]">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#0f4c5c]/10 text-[#0f4c5c]">
               <Sparkles className="h-5 w-5" />
             </div>
             <div>
-              <h4 className="text-sm font-extrabold text-[#152238] flex items-center gap-2">
+              <h4 className="text-sm font-extrabold text-[#17211f] flex items-center gap-2">
                 Baixas Automáticas por Recorrência
                 {clearedRecurrences.length > 0 && (
                   <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-extrabold text-emerald-800">
@@ -1143,7 +1143,7 @@ export const ConciliationScreen: React.FC<ConciliationScreenProps> = ({
                   </span>
                 )}
               </h4>
-              <p className="text-xs text-[#69778c]">
+              <p className="text-xs text-[#5e6b67]">
                 Identifica automaticamente aluguéis, licenças, folha de pagamento e contas fixas no extrato e dá baixa no Contas a Pagar.
               </p>
             </div>
@@ -1154,16 +1154,16 @@ export const ConciliationScreen: React.FC<ConciliationScreenProps> = ({
               type="button"
               onClick={() => void runRecurrenceScan()}
               disabled={isScanningRecurrences}
-              className="flex items-center gap-1.5 rounded-xl border border-[#cbd5e1] bg-white px-3.5 py-2 text-xs font-bold text-[#152238] hover:bg-slate-50 shadow-xs cursor-pointer transition disabled:opacity-50"
+              className="flex items-center gap-1.5 rounded-xl border border-[#c9d1cb] bg-white px-3.5 py-2 text-xs font-bold text-[#17211f] hover:bg-slate-50 shadow-xs cursor-pointer transition disabled:opacity-50"
             >
-              <RefreshCw className={`h-3.5 w-3.5 text-[#3c63da] ${isScanningRecurrences ? "animate-spin" : ""}`} />
+              <RefreshCw className={`h-3.5 w-3.5 text-[#0f4c5c] ${isScanningRecurrences ? "animate-spin" : ""}`} />
               <span>{isScanningRecurrences ? "Verificando..." : "Varredura de Recorrências"}</span>
             </button>
 
             <button
               type="button"
               onClick={() => setIsAddingRecurrence(true)}
-              className="flex items-center gap-1.5 rounded-xl bg-[#3c63da] px-3.5 py-2 text-xs font-bold text-white hover:bg-[#2f52c0] shadow-xs cursor-pointer transition"
+              className="flex items-center gap-1.5 rounded-xl bg-[#0f4c5c] px-3.5 py-2 text-xs font-bold text-white hover:bg-[#0b3b48] shadow-xs cursor-pointer transition"
             >
               <PlusCircle className="h-3.5 w-3.5" />
               <span>+ Nova Recorrência</span>
@@ -1197,10 +1197,10 @@ export const ConciliationScreen: React.FC<ConciliationScreenProps> = ({
                       <span className="inline-flex items-center gap-1 rounded-md bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-800">
                         <CheckCircle2 className="h-3 w-3" /> Baixa Concluída
                       </span>
-                      <strong className="text-xs font-extrabold text-[#152238]">{item.billDesc}</strong>
-                      <span className="text-[10px] text-[#69778c] bg-slate-100 px-2 py-0.5 rounded-md">{item.category}</span>
+                      <strong className="text-xs font-extrabold text-[#17211f]">{item.billDesc}</strong>
+                      <span className="text-[10px] text-[#5e6b67] bg-slate-100 px-2 py-0.5 rounded-md">{item.category}</span>
                     </div>
-                    <div className="text-xs text-[#526078] flex flex-wrap items-center gap-3">
+                    <div className="text-xs text-[#4a5753] flex flex-wrap items-center gap-3">
                       <span>📄 Extrato: <strong>{item.extratoDesc}</strong></span>
                       <span>📅 Data: <strong>{item.extratoDate}</strong></span>
                       <span>⏰ Baixado às <strong>{item.clearedAt}</strong></span>
@@ -1226,14 +1226,14 @@ export const ConciliationScreen: React.FC<ConciliationScreenProps> = ({
             </div>
           </div>
         ) : (
-          <div className="rounded-xl border border-slate-200/80 bg-white p-3.5 text-xs text-[#526078] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div className="rounded-xl border border-slate-200/80 bg-white p-3.5 text-xs text-[#4a5753] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div className="flex items-center gap-2.5">
-              <SearchCheck className="h-4.5 w-4.5 text-[#3c63da] shrink-0" />
+              <SearchCheck className="h-4.5 w-4.5 text-[#0f4c5c] shrink-0" />
               <span>
                 Nenhuma baixa por recorrência realizada nesta sessão. As contas a pagar abertas serão comparadas e baixadas automaticamente ao importar o extrato.
               </span>
             </div>
-            <span className="text-[11px] font-bold text-[#3c63da] bg-[#edf2ff] px-2.5 py-1 rounded-lg shrink-0">
+            <span className="text-[11px] font-bold text-[#0f4c5c] bg-[#e3eff1] px-2.5 py-1 rounded-lg shrink-0">
               {(bills || []).filter((b) => b.status === "open").length} conta(s) aberta(s) no radar
             </span>
           </div>
@@ -1241,18 +1241,18 @@ export const ConciliationScreen: React.FC<ConciliationScreenProps> = ({
       </div>
 
       {/* Review Table */}
-      <div className="rounded-2xl border border-[#e5eaf1] bg-white p-5 sm:p-6 shadow-xs space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[#e5eaf1]">
+      <div className="rounded-2xl border border-[#dfe4df] bg-white p-5 sm:p-6 shadow-xs space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[#dfe4df]">
           <div>
-            <h3 className="text-sm font-bold text-[#152238]">Movimentações e Correspondências</h3>
-            <p className="text-[11px] text-[#69778c]">Extrato e lançamentos sincronizados no sistema. Transferências entre empresas continuam registradas para auditoria, mas não entram no DRE.</p>
+            <h3 className="text-sm font-bold text-[#17211f]">Movimentações e Correspondências</h3>
+            <p className="text-[11px] text-[#5e6b67]">Extrato e lançamentos sincronizados no sistema. Transferências entre empresas continuam registradas para auditoria, mas não entram no DRE.</p>
           </div>
 
-          <div className="flex items-center gap-1 bg-[#f8faff] p-1 rounded-lg border border-[#e5eaf1]">
+          <div className="flex items-center gap-1 bg-[#f7f9f7] p-1 rounded-lg border border-[#dfe4df]">
             <button
               onClick={() => setFilter("all")}
               className={`rounded px-2.5 py-1 text-xs font-bold transition-all cursor-pointer ${
-                filter === "all" ? "bg-[#3c63da] text-white" : "text-[#69778c] hover:text-[#152238]"
+                filter === "all" ? "bg-[#0f4c5c] text-white" : "text-[#5e6b67] hover:text-[#17211f]"
               }`}
             >
               Todos ({items.length})
@@ -1260,7 +1260,7 @@ export const ConciliationScreen: React.FC<ConciliationScreenProps> = ({
             <button
               onClick={() => setFilter("match")}
               className={`rounded px-2.5 py-1 text-xs font-bold transition-all cursor-pointer ${
-                filter === "match" ? "bg-emerald-600 text-white" : "text-[#69778c] hover:text-[#152238]"
+                filter === "match" ? "bg-emerald-600 text-white" : "text-[#5e6b67] hover:text-[#17211f]"
               }`}
             >
               Conciliados ({matchCount})
@@ -1268,7 +1268,7 @@ export const ConciliationScreen: React.FC<ConciliationScreenProps> = ({
             <button
               onClick={() => setFilter("review")}
               className={`rounded px-2.5 py-1 text-xs font-bold transition-all cursor-pointer ${
-                filter === "review" ? "bg-amber-600 text-white" : "text-[#69778c] hover:text-[#152238]"
+                filter === "review" ? "bg-amber-600 text-white" : "text-[#5e6b67] hover:text-[#17211f]"
               }`}
             >
               Pendentes ({reviewCount})
@@ -1306,13 +1306,13 @@ export const ConciliationScreen: React.FC<ConciliationScreenProps> = ({
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs border-collapse">
             <thead>
-              <tr className="bg-[#f8f9fc] text-[#69778c] uppercase text-[9px] tracking-wider border-b border-[#e5eaf1]">
+              <tr className="bg-[#f7f9f7] text-[#5e6b67] text-[9px]  border-b border-[#dfe4df]">
                 <th className="p-3 w-10">
                   <input
                     type="checkbox"
                     checked={selectedIds.length === filteredItems.length && filteredItems.length > 0}
                     onChange={(e) => handleSelectAll(e.target.checked)}
-                    className="rounded border-[#cbd3df] text-[#3c63da] focus:ring-[#3c63da]"
+                    className="rounded border-[#c9d1cb] text-[#0f4c5c] focus:ring-[#0f4c5c]"
                   />
                 </th>
                 <th className="p-3">Data / Descrição</th>
@@ -1324,15 +1324,15 @@ export const ConciliationScreen: React.FC<ConciliationScreenProps> = ({
                 <th className="p-3 text-right">Ações</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-[#e5eaf1]">
+            <tbody className="divide-y divide-[#dfe4df]">
               {filteredItems.map((item, idx) => {
                 const isSelected = selectedIds.includes(idx);
                 const isPositive = item.numericValue > 0;
                 return (
                   <tr
                     key={idx}
-                    className={`hover:bg-[#f8faff] transition-colors ${
-                      isSelected ? "bg-[#edf2ff]/50" : ""
+                    className={`hover:bg-[#f7f9f7] transition-colors ${
+                      isSelected ? "bg-[#e3eff1]/50" : ""
                     }`}
                   >
                     <td className="p-3">
@@ -1340,13 +1340,13 @@ export const ConciliationScreen: React.FC<ConciliationScreenProps> = ({
                         type="checkbox"
                         checked={isSelected}
                         onChange={() => handleToggleRow(idx)}
-                        className="rounded border-[#cbd3df] text-[#3c63da] focus:ring-[#3c63da]"
+                        className="rounded border-[#c9d1cb] text-[#0f4c5c] focus:ring-[#0f4c5c]"
                       />
                     </td>
                     <td className="p-3">
-                      <b className="text-[#152238] block">{item.desc}</b>
-                      <span className="text-[10px] text-[#69778c]">{item.date}</span>
-                      {item.sourceFile && <span className="block max-w-[240px] truncate text-[10px] text-[#3c63da]" title={item.sourceFile}>Arquivo: {item.sourceFile}</span>}
+                      <b className="text-[#17211f] block">{item.desc}</b>
+                      <span className="text-[10px] text-[#5e6b67]">{item.date}</span>
+                      {item.sourceFile && <span className="block max-w-[240px] truncate text-[10px] text-[#0f4c5c]" title={item.sourceFile}>Arquivo: {item.sourceFile}</span>}
                     </td>
                     <td className="p-3">
                       <span className="inline-flex items-center rounded-md bg-indigo-50 border border-indigo-200/60 px-2 py-0.5 text-[10px] font-extrabold text-indigo-700 whitespace-nowrap">
@@ -1355,7 +1355,7 @@ export const ConciliationScreen: React.FC<ConciliationScreenProps> = ({
                     </td>
                     <td
                       className={`p-3 font-mono font-bold whitespace-nowrap ${
-                        isPositive ? "text-emerald-700" : "text-[#152238]"
+                        isPositive ? "text-emerald-700" : "text-[#17211f]"
                       }`}
                     >
                       {item.value}
@@ -1363,13 +1363,13 @@ export const ConciliationScreen: React.FC<ConciliationScreenProps> = ({
                     <td className="p-3">
                       <span
                         className={`px-2 py-0.5 text-[10px] font-bold rounded-full ${
-                          item.toDre ? "bg-[#edf2ff] text-[#3c63da]" : "bg-[#f4f7fb] text-[#69778c]"
+                          item.toDre ? "bg-[#e3eff1] text-[#0f4c5c]" : "bg-[#f0f3f0] text-[#5e6b67]"
                         }`}
                       >
                         {item.categoria}
                       </span>
                     </td>
-                    <td className="p-3 text-[#69778c]">{item.match}</td>
+                    <td className="p-3 text-[#5e6b67]">{item.match}</td>
                     <td className="p-3 text-right">
                       <span
                         className={`px-2 py-0.5 text-[10px] font-bold rounded-full ${
@@ -1390,7 +1390,7 @@ export const ConciliationScreen: React.FC<ConciliationScreenProps> = ({
                         disabled={isImporting}
                         title="Editar esta movimentação"
                         aria-label={`Editar ${item.desc}`}
-                        className="mr-1 rounded-lg p-1.5 text-[#3c63da] transition hover:bg-[#edf2ff] hover:text-[#2f52c0] disabled:cursor-not-allowed disabled:opacity-35"
+                        className="mr-1 rounded-lg p-1.5 text-[#0f4c5c] transition hover:bg-[#e3eff1] hover:text-[#0b3b48] disabled:cursor-not-allowed disabled:opacity-35"
                       >
                         <Edit3 className="h-3.5 w-3.5" aria-hidden="true" />
                       </button>
@@ -1416,14 +1416,14 @@ export const ConciliationScreen: React.FC<ConciliationScreenProps> = ({
       {/* Modal de Edição de Linha Única */}
       {editingItem && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-xs animate-in fade-in duration-150">
-          <div className="w-full max-w-xl rounded-2xl border border-[#cbd5e1] bg-white p-5 sm:p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between border-b border-[#e2e8f0] pb-3">
+          <div className="w-full max-w-xl rounded-2xl border border-[#c9d1cb] bg-white p-5 sm:p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between border-b border-[#dfe4df] pb-3">
               <div>
-                <h3 className="text-base font-extrabold text-[#152238] flex items-center gap-2">
-                  <Edit3 className="h-4.5 w-4.5 text-[#3c63da]" />
+                <h3 className="text-base font-extrabold text-[#17211f] flex items-center gap-2">
+                  <Edit3 className="h-4.5 w-4.5 text-[#0f4c5c]" />
                   Editar Movimentação Bancária
                 </h3>
-                <p className="text-xs text-[#69778c]">Classifique e ajuste as informações antes de aprovar a conciliação.</p>
+                <p className="text-xs text-[#5e6b67]">Classifique e ajuste as informações antes de aprovar a conciliação.</p>
               </div>
               <button
                 type="button"
@@ -1437,20 +1437,20 @@ export const ConciliationScreen: React.FC<ConciliationScreenProps> = ({
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
               <div className="sm:col-span-2">
-                <label className="text-[11px] font-extrabold uppercase tracking-wider text-[#475569] block mb-1">
+                <label className="text-[11px] font-extrabold text-[#3a4743] block mb-1">
                   Descrição do Extrato
                 </label>
                 <input
                   type="text"
                   value={editDraft.desc}
                   onChange={(e) => setEditDraft((d) => ({ ...d, desc: e.target.value }))}
-                  className="w-full rounded-xl border border-[#cbd5e1] bg-slate-50 px-3.5 py-2 text-xs font-semibold text-[#152238] focus:bg-white focus:border-[#3c63da] focus:ring-1 focus:ring-[#3c63da] outline-none"
+                  className="w-full rounded-xl border border-[#c9d1cb] bg-slate-50 px-3.5 py-2 text-xs font-semibold text-[#17211f] focus:bg-white focus:border-[#0f4c5c] focus:ring-1 focus:ring-[#0f4c5c] outline-none"
                   placeholder="Ex: Aluguel Loja Centro - Mês Setembro"
                 />
               </div>
 
               <div className="sm:col-span-2">
-                <label className="text-[11px] font-extrabold uppercase tracking-wider text-[#475569] block mb-1 flex items-center justify-between">
+                <label className="text-[11px] font-extrabold text-[#3a4743] block mb-1 flex items-center justify-between">
                   <span>Apelido / Identificador Rápido</span>
                   <span className="text-[10px] text-indigo-600 font-bold">Auto-detectado</span>
                 </label>
@@ -1458,19 +1458,19 @@ export const ConciliationScreen: React.FC<ConciliationScreenProps> = ({
                   type="text"
                   value={editDraft.apelido}
                   onChange={(e) => setEditDraft((d) => ({ ...d, apelido: e.target.value }))}
-                  className="w-full rounded-xl border border-indigo-200 bg-indigo-50/40 px-3.5 py-2 text-xs font-bold text-indigo-950 focus:bg-white focus:border-[#3c63da] focus:ring-1 focus:ring-[#3c63da] outline-none"
+                  className="w-full rounded-xl border border-indigo-200 bg-indigo-50/40 px-3.5 py-2 text-xs font-bold text-indigo-950 focus:bg-white focus:border-[#0f4c5c] focus:ring-1 focus:ring-[#0f4c5c] outline-none"
                   placeholder="Ex: Contas de Água, Energia Elétrica, Sabesp, Enel, Aluguel"
                 />
               </div>
 
               <div>
-                <label className="text-[11px] font-extrabold uppercase tracking-wider text-[#475569] block mb-1">
+                <label className="text-[11px] font-extrabold text-[#3a4743] block mb-1">
                   Categoria DRE / Despesa
                 </label>
                 <select
                   value={editDraft.category}
                   onChange={(e) => setEditDraft((d) => ({ ...d, category: e.target.value }))}
-                  className="w-full rounded-xl border border-[#cbd5e1] bg-white px-3.5 py-2 text-xs font-semibold text-[#152238] focus:border-[#3c63da] focus:ring-1 focus:ring-[#3c63da] outline-none"
+                  className="w-full rounded-xl border border-[#c9d1cb] bg-white px-3.5 py-2 text-xs font-semibold text-[#17211f] focus:border-[#0f4c5c] focus:ring-1 focus:ring-[#0f4c5c] outline-none"
                 >
                   {FINANCIAL_CATEGORIES.map((cat) => (
                     <option key={cat} value={cat}>
@@ -1481,13 +1481,13 @@ export const ConciliationScreen: React.FC<ConciliationScreenProps> = ({
               </div>
 
               <div>
-                <label className="text-[11px] font-extrabold uppercase tracking-wider text-[#475569] block mb-1">
+                <label className="text-[11px] font-extrabold text-[#3a4743] block mb-1">
                   Tipo de Movimentação
                 </label>
                 <select
                   value={editDraft.type}
                   onChange={(e) => setEditDraft((d) => ({ ...d, type: e.target.value as "entrada" | "despesa" }))}
-                  className="w-full rounded-xl border border-[#cbd5e1] bg-white px-3.5 py-2 text-xs font-semibold text-[#152238] focus:border-[#3c63da] focus:ring-1 focus:ring-[#3c63da] outline-none"
+                  className="w-full rounded-xl border border-[#c9d1cb] bg-white px-3.5 py-2 text-xs font-semibold text-[#17211f] focus:border-[#0f4c5c] focus:ring-1 focus:ring-[#0f4c5c] outline-none"
                 >
                   <option value="despesa">Despesa (Débito / Saída)</option>
                   <option value="entrada">Entrada (Crédito / Receita)</option>
@@ -1495,19 +1495,19 @@ export const ConciliationScreen: React.FC<ConciliationScreenProps> = ({
               </div>
 
               <div>
-                <label className="text-[11px] font-extrabold uppercase tracking-wider text-[#475569] block mb-1">
+                <label className="text-[11px] font-extrabold text-[#3a4743] block mb-1">
                   Data
                 </label>
                 <input
                   type="date"
                   value={editDraft.date}
                   onChange={(e) => setEditDraft((d) => ({ ...d, date: e.target.value }))}
-                  className="w-full rounded-xl border border-[#cbd5e1] bg-white px-3.5 py-2 text-xs font-semibold text-[#152238] focus:border-[#3c63da] focus:ring-1 focus:ring-[#3c63da] outline-none"
+                  className="w-full rounded-xl border border-[#c9d1cb] bg-white px-3.5 py-2 text-xs font-semibold text-[#17211f] focus:border-[#0f4c5c] focus:ring-1 focus:ring-[#0f4c5c] outline-none"
                 />
               </div>
 
               <div>
-                <label className="text-[11px] font-extrabold uppercase tracking-wider text-[#475569] block mb-1">
+                <label className="text-[11px] font-extrabold text-[#3a4743] block mb-1">
                   Valor (R$)
                 </label>
                 <input
@@ -1515,37 +1515,37 @@ export const ConciliationScreen: React.FC<ConciliationScreenProps> = ({
                   inputMode="decimal"
                   value={editDraft.value}
                   onChange={(e) => setEditDraft((d) => ({ ...d, value: e.target.value }))}
-                  className="w-full rounded-xl border border-[#cbd5e1] bg-white px-3.5 py-2 text-xs font-semibold text-[#152238] focus:border-[#3c63da] focus:ring-1 focus:ring-[#3c63da] outline-none"
+                  className="w-full rounded-xl border border-[#c9d1cb] bg-white px-3.5 py-2 text-xs font-semibold text-[#17211f] focus:border-[#0f4c5c] focus:ring-1 focus:ring-[#0f4c5c] outline-none"
                   placeholder="0,00"
                 />
               </div>
 
               <div className="sm:col-span-2">
-                <label className="text-[11px] font-extrabold uppercase tracking-wider text-[#475569] block mb-1">
+                <label className="text-[11px] font-extrabold text-[#3a4743] block mb-1">
                   Fornecedor / Favorecido / Documento (Opcional)
                 </label>
                 <input
                   type="text"
                   value={editDraft.counterparty}
                   onChange={(e) => setEditDraft((d) => ({ ...d, counterparty: e.target.value }))}
-                  className="w-full rounded-xl border border-[#cbd5e1] bg-white px-3.5 py-2 text-xs font-semibold text-[#152238] focus:border-[#3c63da] focus:ring-1 focus:ring-[#3c63da] outline-none"
+                  className="w-full rounded-xl border border-[#c9d1cb] bg-white px-3.5 py-2 text-xs font-semibold text-[#17211f] focus:border-[#0f4c5c] focus:ring-1 focus:ring-[#0f4c5c] outline-none"
                   placeholder="CNPJ, CPF ou Razão Social do fornecedor/favorecido"
                 />
               </div>
             </div>
 
-            <div className="flex items-center justify-end gap-2 pt-3 border-t border-[#e2e8f0]">
+            <div className="flex items-center justify-end gap-2 pt-3 border-t border-[#dfe4df]">
               <button
                 type="button"
                 onClick={() => setEditingItem(null)}
-                className="rounded-xl border border-[#cbd5e1] bg-white px-4 py-2 text-xs font-bold text-[#475569] hover:bg-slate-50 transition cursor-pointer"
+                className="rounded-xl border border-[#c9d1cb] bg-white px-4 py-2 text-xs font-bold text-[#3a4743] hover:bg-slate-50 transition cursor-pointer"
               >
                 Cancelar
               </button>
               <button
                 type="button"
                 onClick={() => void saveEditedItem()}
-                className="rounded-xl bg-[#3c63da] px-5 py-2 text-xs font-bold text-white hover:bg-[#2f52c0] shadow-xs transition cursor-pointer"
+                className="rounded-xl bg-[#0f4c5c] px-5 py-2 text-xs font-bold text-white hover:bg-[#0b3b48] shadow-xs transition cursor-pointer"
               >
                 Salvar Alterações
               </button>
@@ -1557,14 +1557,14 @@ export const ConciliationScreen: React.FC<ConciliationScreenProps> = ({
       {/* Modal de Edição em Lote */}
       {isBatchEditing && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-xs animate-in fade-in duration-150">
-          <div className="w-full max-w-lg rounded-2xl border border-[#cbd5e1] bg-white p-5 sm:p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between border-b border-[#e2e8f0] pb-3">
+          <div className="w-full max-w-lg rounded-2xl border border-[#c9d1cb] bg-white p-5 sm:p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between border-b border-[#dfe4df] pb-3">
               <div>
-                <h3 className="text-base font-extrabold text-[#152238] flex items-center gap-2">
-                  <Layers className="h-4.5 w-4.5 text-[#3c63da]" />
+                <h3 className="text-base font-extrabold text-[#17211f] flex items-center gap-2">
+                  <Layers className="h-4.5 w-4.5 text-[#0f4c5c]" />
                   Edição em Lote ({selectedIds.length} selecionados)
                 </h3>
-                <p className="text-xs text-[#69778c]">Aplique a mesma categoria ou tipo para todas as movimentações marcadas.</p>
+                <p className="text-xs text-[#5e6b67]">Aplique a mesma categoria ou tipo para todas as movimentações marcadas.</p>
               </div>
               <button
                 type="button"
@@ -1578,13 +1578,13 @@ export const ConciliationScreen: React.FC<ConciliationScreenProps> = ({
 
             <div className="space-y-3.5">
               <div>
-                <label className="text-[11px] font-extrabold uppercase tracking-wider text-[#475569] block mb-1">
+                <label className="text-[11px] font-extrabold text-[#3a4743] block mb-1">
                   Definir Categoria DRE para Selecionados
                 </label>
                 <select
                   value={batchEditDraft.category}
                   onChange={(e) => setBatchEditDraft((d) => ({ ...d, category: e.target.value }))}
-                  className="w-full rounded-xl border border-[#cbd5e1] bg-white px-3.5 py-2 text-xs font-semibold text-[#152238] focus:border-[#3c63da] focus:ring-1 focus:ring-[#3c63da] outline-none"
+                  className="w-full rounded-xl border border-[#c9d1cb] bg-white px-3.5 py-2 text-xs font-semibold text-[#17211f] focus:border-[#0f4c5c] focus:ring-1 focus:ring-[#0f4c5c] outline-none"
                 >
                   <option value="">-- Manter categorias atuais --</option>
                   {FINANCIAL_CATEGORIES.map((cat) => (
@@ -1596,13 +1596,13 @@ export const ConciliationScreen: React.FC<ConciliationScreenProps> = ({
               </div>
 
               <div>
-                <label className="text-[11px] font-extrabold uppercase tracking-wider text-[#475569] block mb-1">
+                <label className="text-[11px] font-extrabold text-[#3a4743] block mb-1">
                   Tipo de Movimentação
                 </label>
                 <select
                   value={batchEditDraft.type}
                   onChange={(e) => setBatchEditDraft((d) => ({ ...d, type: e.target.value as "keep" | "despesa" | "entrada" }))}
-                  className="w-full rounded-xl border border-[#cbd5e1] bg-white px-3.5 py-2 text-xs font-semibold text-[#152238] focus:border-[#3c63da] focus:ring-1 focus:ring-[#3c63da] outline-none"
+                  className="w-full rounded-xl border border-[#c9d1cb] bg-white px-3.5 py-2 text-xs font-semibold text-[#17211f] focus:border-[#0f4c5c] focus:ring-1 focus:ring-[#0f4c5c] outline-none"
                 >
                   <option value="keep">-- Manter tipo de cada movimentação --</option>
                   <option value="despesa">Alterar todos para Despesa (Débito)</option>
@@ -1611,31 +1611,31 @@ export const ConciliationScreen: React.FC<ConciliationScreenProps> = ({
               </div>
 
               <div>
-                <label className="text-[11px] font-extrabold uppercase tracking-wider text-[#475569] block mb-1">
+                <label className="text-[11px] font-extrabold text-[#3a4743] block mb-1">
                   Fornecedor / Contraparte (Opcional)
                 </label>
                 <input
                   type="text"
                   value={batchEditDraft.supplier}
                   onChange={(e) => setBatchEditDraft((d) => ({ ...d, supplier: e.target.value }))}
-                  className="w-full rounded-xl border border-[#cbd5e1] bg-white px-3.5 py-2 text-xs font-semibold text-[#152238] focus:border-[#3c63da] focus:ring-1 focus:ring-[#3c63da] outline-none"
+                  className="w-full rounded-xl border border-[#c9d1cb] bg-white px-3.5 py-2 text-xs font-semibold text-[#17211f] focus:border-[#0f4c5c] focus:ring-1 focus:ring-[#0f4c5c] outline-none"
                   placeholder="Aplicar mesmo CNPJ/CPF/Fornecedor aos selecionados"
                 />
               </div>
             </div>
 
-            <div className="flex items-center justify-end gap-2 pt-3 border-t border-[#e2e8f0]">
+            <div className="flex items-center justify-end gap-2 pt-3 border-t border-[#dfe4df]">
               <button
                 type="button"
                 onClick={() => setIsBatchEditing(false)}
-                className="rounded-xl border border-[#cbd5e1] bg-white px-4 py-2 text-xs font-bold text-[#475569] hover:bg-slate-50 transition cursor-pointer"
+                className="rounded-xl border border-[#c9d1cb] bg-white px-4 py-2 text-xs font-bold text-[#3a4743] hover:bg-slate-50 transition cursor-pointer"
               >
                 Cancelar
               </button>
               <button
                 type="button"
                 onClick={() => void saveBatchEdit()}
-                className="rounded-xl bg-[#3c63da] px-5 py-2 text-xs font-bold text-white hover:bg-[#2f52c0] shadow-xs transition cursor-pointer"
+                className="rounded-xl bg-[#0f4c5c] px-5 py-2 text-xs font-bold text-white hover:bg-[#0b3b48] shadow-xs transition cursor-pointer"
               >
                 Aplicar a {selectedIds.length} Itens
               </button>
@@ -1647,14 +1647,14 @@ export const ConciliationScreen: React.FC<ConciliationScreenProps> = ({
       {/* Modal para Cadastrar Recorrência / Conta Prevista */}
       {isAddingRecurrence && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-xs animate-in fade-in duration-150">
-          <div className="w-full max-w-md rounded-2xl border border-[#cbd5e1] bg-white p-5 sm:p-6 shadow-2xl space-y-4">
-            <div className="flex items-center justify-between border-b border-[#e2e8f0] pb-3">
+          <div className="w-full max-w-md rounded-2xl border border-[#c9d1cb] bg-white p-5 sm:p-6 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between border-b border-[#dfe4df] pb-3">
               <div>
-                <h3 className="text-base font-extrabold text-[#152238] flex items-center gap-2">
-                  <Sparkles className="h-4.5 w-4.5 text-[#3c63da]" />
+                <h3 className="text-base font-extrabold text-[#17211f] flex items-center gap-2">
+                  <Sparkles className="h-4.5 w-4.5 text-[#0f4c5c]" />
                   Cadastrar Recorrência Prevista
                 </h3>
-                <p className="text-xs text-[#69778c]">Lance despesas fixas para dar baixa automática na conciliação.</p>
+                <p className="text-xs text-[#5e6b67]">Lance despesas fixas para dar baixa automática na conciliação.</p>
               </div>
               <button
                 type="button"
@@ -1667,7 +1667,7 @@ export const ConciliationScreen: React.FC<ConciliationScreenProps> = ({
 
             <div className="space-y-3">
               <div>
-                <label className="text-[11px] font-extrabold uppercase tracking-wider text-[#475569] block mb-1">
+                <label className="text-[11px] font-extrabold text-[#3a4743] block mb-1">
                   Descrição da Recorrência / Fornecedor
                 </label>
                 <input
@@ -1675,13 +1675,13 @@ export const ConciliationScreen: React.FC<ConciliationScreenProps> = ({
                   value={newRecurrenceDraft.desc}
                   onChange={(e) => setNewRecurrenceDraft((d) => ({ ...d, desc: e.target.value }))}
                   placeholder="Ex: Aluguel Loja Centro, Licença ERP, Contabilidade"
-                  className="w-full rounded-xl border border-[#cbd5e1] bg-white px-3.5 py-2 text-xs font-semibold text-[#152238] focus:border-[#3c63da] outline-none"
+                  className="w-full rounded-xl border border-[#c9d1cb] bg-white px-3.5 py-2 text-xs font-semibold text-[#17211f] focus:border-[#0f4c5c] outline-none"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-[11px] font-extrabold uppercase tracking-wider text-[#475569] block mb-1">
+                  <label className="text-[11px] font-extrabold text-[#3a4743] block mb-1">
                     Valor Previsto (R$)
                   </label>
                   <input
@@ -1689,31 +1689,31 @@ export const ConciliationScreen: React.FC<ConciliationScreenProps> = ({
                     value={newRecurrenceDraft.value}
                     onChange={(e) => setNewRecurrenceDraft((d) => ({ ...d, value: e.target.value }))}
                     placeholder="4500,00"
-                    className="w-full rounded-xl border border-[#cbd5e1] bg-white px-3.5 py-2 text-xs font-semibold text-[#152238] focus:border-[#3c63da] outline-none"
+                    className="w-full rounded-xl border border-[#c9d1cb] bg-white px-3.5 py-2 text-xs font-semibold text-[#17211f] focus:border-[#0f4c5c] outline-none"
                   />
                 </div>
 
                 <div>
-                  <label className="text-[11px] font-extrabold uppercase tracking-wider text-[#475569] block mb-1">
+                  <label className="text-[11px] font-extrabold text-[#3a4743] block mb-1">
                     Vencimento Previsto
                   </label>
                   <input
                     type="date"
                     value={newRecurrenceDraft.vencimento}
                     onChange={(e) => setNewRecurrenceDraft((d) => ({ ...d, vencimento: e.target.value }))}
-                    className="w-full rounded-xl border border-[#cbd5e1] bg-white px-3.5 py-2 text-xs font-semibold text-[#152238] focus:border-[#3c63da] outline-none"
+                    className="w-full rounded-xl border border-[#c9d1cb] bg-white px-3.5 py-2 text-xs font-semibold text-[#17211f] focus:border-[#0f4c5c] outline-none"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="text-[11px] font-extrabold uppercase tracking-wider text-[#475569] block mb-1">
+                <label className="text-[11px] font-extrabold text-[#3a4743] block mb-1">
                   Categoria DRE
                 </label>
                 <select
                   value={newRecurrenceDraft.category}
                   onChange={(e) => setNewRecurrenceDraft((d) => ({ ...d, category: e.target.value }))}
-                  className="w-full rounded-xl border border-[#cbd5e1] bg-white px-3.5 py-2 text-xs font-semibold text-[#152238] focus:border-[#3c63da] outline-none"
+                  className="w-full rounded-xl border border-[#c9d1cb] bg-white px-3.5 py-2 text-xs font-semibold text-[#17211f] focus:border-[#0f4c5c] outline-none"
                 >
                   {FINANCIAL_CATEGORIES.map((cat) => (
                     <option key={cat} value={cat}>
@@ -1724,18 +1724,18 @@ export const ConciliationScreen: React.FC<ConciliationScreenProps> = ({
               </div>
             </div>
 
-            <div className="flex items-center justify-end gap-2 pt-3 border-t border-[#e2e8f0]">
+            <div className="flex items-center justify-end gap-2 pt-3 border-t border-[#dfe4df]">
               <button
                 type="button"
                 onClick={() => setIsAddingRecurrence(false)}
-                className="rounded-xl border border-[#cbd5e1] bg-white px-4 py-2 text-xs font-bold text-[#475569] hover:bg-slate-50 transition cursor-pointer"
+                className="rounded-xl border border-[#c9d1cb] bg-white px-4 py-2 text-xs font-bold text-[#3a4743] hover:bg-slate-50 transition cursor-pointer"
               >
                 Cancelar
               </button>
               <button
                 type="button"
                 onClick={() => void handleCreateRecurrence()}
-                className="rounded-xl bg-[#3c63da] px-5 py-2 text-xs font-bold text-white hover:bg-[#2f52c0] shadow-xs transition cursor-pointer"
+                className="rounded-xl bg-[#0f4c5c] px-5 py-2 text-xs font-bold text-white hover:bg-[#0b3b48] shadow-xs transition cursor-pointer"
               >
                 Cadastrar e Verificar
               </button>

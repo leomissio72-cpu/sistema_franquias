@@ -267,7 +267,7 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
   const [isAddingBiz, setIsAddingBiz] = useState(false);
   const [newBizName, setNewBizName] = useState("");
   const [newBizBrand, setNewBizBrand] = useState("");
-  const [newBizColor, setNewBizColor] = useState("#3c63da");
+  const [newBizColor, setNewBizColor] = useState("#0f4c5c");
   const [newBizRoyaltyType, setNewBizRoyaltyType] = useState<"pct" | "fixed">("pct");
   const [newBizRoyalty, setNewBizRoyalty] = useState("6.0");
   const [bizError, setBizError] = useState("");
@@ -275,7 +275,7 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
   // Editing existing business
   const [editingBizId, setEditingBizId] = useState<string | null>(null);
   const [editBizName, setEditBizName] = useState("");
-  const [editBizColor, setEditBizColor] = useState("#3c63da");
+  const [editBizColor, setEditBizColor] = useState("#0f4c5c");
   const [editBizRoyaltyType, setEditBizRoyaltyType] = useState<"pct" | "fixed">("pct");
   const [editBizRoyalty, setEditBizRoyalty] = useState("6.0");
 
@@ -283,7 +283,7 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
   const [isAddingInlineBiz, setIsAddingInlineBiz] = useState(false);
   const [inlineBizName, setInlineBizName] = useState("");
   const [inlineBizRoyalty, setInlineBizRoyalty] = useState("6.0");
-  const [inlineBizColor, setInlineBizColor] = useState("#3c63da");
+  const [inlineBizColor, setInlineBizColor] = useState("#0f4c5c");
 
   const [newFranchise, setNewFranchise] = useState({
     businessId: businesses[0]?.id || "",
@@ -437,7 +437,7 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
       id: cleanId,
       name: newBizName.trim(),
       brand: newBizBrand.trim() || newBizName.trim(),
-      color: newBizColor || "#3c63da",
+      color: newBizColor || "#0f4c5c",
       royaltyType: newBizRoyaltyType,
       royalty: assignedRoyalty,
     };
@@ -482,7 +482,7 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
             ...b,
             name: editBizName.trim(),
             brand: editBizName.trim(),
-            color: editBizColor || b.color || "#3c63da",
+            color: editBizColor || b.color || "#0f4c5c",
             royaltyType: editBizRoyaltyType,
             royalty: assignedRoyalty,
           }
@@ -520,7 +520,7 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
       id: cleanId,
       name: inlineBizName.trim(),
       brand: inlineBizName.trim(),
-      color: inlineBizColor || "#3c63da",
+      color: inlineBizColor || "#0f4c5c",
       royalty: Number.isFinite(parsedBizRoy) ? parsedBizRoy / 100 : 0.06,
     };
 
@@ -715,7 +715,7 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
         id: "biz_matriz",
         name: "Franquia Matriz",
         brand: "Matriz",
-        color: "#3c63da",
+        color: "#0f4c5c",
         royalty: 0.06,
       };
       currentBizList = [defaultBiz];
@@ -985,24 +985,24 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
       {/* Top Banner */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
         <div>
-          <div className="text-[10px] font-extrabold uppercase tracking-widest text-amber-600 flex items-center gap-1">
+          <div className="text-[10px] font-extrabold text-amber-600 flex items-center gap-1">
             <Database className="h-3 w-3" />
             <span>Administração do sistema</span>
           </div>
-          <h2 className="text-xl sm:text-2xl font-extrabold tracking-tight text-[#152238] flex items-center gap-2 mt-0.5">
+          <h2 className="text-xl sm:text-2xl font-extrabold tracking-tight text-[#17211f] flex items-center gap-2 mt-0.5">
             <CloudCog className="h-6 w-6 text-amber-500" />
             Configurações, acessos e unidades
           </h2>
-          <p className="text-xs text-[#69778c] mt-0.5">
+          <p className="text-xs text-[#5e6b67] mt-0.5">
             Qualquer alteração salva aqui é persistida e propagada para todos os aparelhos (Desktop, iPhone, Android).
           </p>
         </div>
 
         <button
           onClick={onRefresh}
-          className="flex items-center gap-1.5 rounded-xl border border-[#e5eaf1] bg-white px-3.5 py-2 text-xs font-bold text-[#152238] hover:bg-[#f4f7fb] shadow-2xs cursor-pointer flex-shrink-0"
+          className="flex items-center gap-1.5 rounded-xl border border-[#dfe4df] bg-white px-3.5 py-2 text-xs font-bold text-[#17211f] hover:bg-[#f0f3f0] shadow-2xs cursor-pointer flex-shrink-0"
         >
-          <RefreshCw className="h-3.5 w-3.5 text-[#3c63da]" />
+          <RefreshCw className="h-3.5 w-3.5 text-[#0f4c5c]" />
           <span>Atualizar</span>
         </button>
       </div>
@@ -1023,13 +1023,13 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
       )}
 
       {/* Navigation Sub-Tabs: somente recursos de gestão usados no dia a dia */}
-      <div className="flex flex-wrap items-center gap-1.5 rounded-xl bg-white border border-[#e5eaf1] p-1.5 shadow-xs">
+      <div className="flex flex-wrap items-center gap-1.5 rounded-xl bg-white border border-[#dfe4df] p-1.5 shadow-xs">
         <button
           onClick={() => setActiveTab("preferencias")}
           className={`flex items-center gap-1.5 rounded-lg px-3.5 py-2 text-xs font-bold transition-all cursor-pointer ${
             activeTab === "preferencias"
-              ? "bg-[#3c63da] text-white shadow-xs"
-              : "text-[#69778c] hover:bg-[#f4f7fb] hover:text-[#152238]"
+              ? "bg-[#0f4c5c] text-white shadow-xs"
+              : "text-[#5e6b67] hover:bg-[#f0f3f0] hover:text-[#17211f]"
           }`}
         >
           <Settings className="h-3.5 w-3.5" />
@@ -1040,8 +1040,8 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
           onClick={() => setActiveTab("marcas")}
           className={`flex items-center gap-1.5 rounded-lg px-3.5 py-2 text-xs font-bold transition-all cursor-pointer ${
             activeTab === "marcas"
-              ? "bg-[#3c63da] text-white shadow-xs"
-              : "text-[#69778c] hover:bg-[#f4f7fb] hover:text-[#152238]"
+              ? "bg-[#0f4c5c] text-white shadow-xs"
+              : "text-[#5e6b67] hover:bg-[#f0f3f0] hover:text-[#17211f]"
           }`}
         >
           <Layers className="h-3.5 w-3.5" />
@@ -1052,8 +1052,8 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
           onClick={() => setActiveTab("configs")}
           className={`flex items-center gap-1.5 rounded-lg px-3.5 py-2 text-xs font-bold transition-all cursor-pointer ${
             activeTab === "configs"
-              ? "bg-[#3c63da] text-white shadow-xs"
-              : "text-[#69778c] hover:bg-[#f4f7fb] hover:text-[#152238]"
+              ? "bg-[#0f4c5c] text-white shadow-xs"
+              : "text-[#5e6b67] hover:bg-[#f0f3f0] hover:text-[#17211f]"
           }`}
         >
           <CloudCog className="h-3.5 w-3.5" />
@@ -1064,8 +1064,8 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
           onClick={() => setActiveTab("intercompany")}
           className={`flex items-center gap-1.5 rounded-lg px-3.5 py-2 text-xs font-bold transition-all cursor-pointer ${
             activeTab === "intercompany"
-              ? "bg-[#3c63da] text-white shadow-xs"
-              : "text-[#69778c] hover:bg-[#f4f7fb] hover:text-[#152238]"
+              ? "bg-[#0f4c5c] text-white shadow-xs"
+              : "text-[#5e6b67] hover:bg-[#f0f3f0] hover:text-[#17211f]"
           }`}
         >
           <ArrowLeftRight className="h-3.5 w-3.5" />
@@ -1076,8 +1076,8 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
           onClick={() => setActiveTab("dreparams")}
           className={`flex items-center gap-1.5 rounded-lg px-3.5 py-2 text-xs font-bold transition-all cursor-pointer ${
             activeTab === "dreparams"
-              ? "bg-[#3c63da] text-white shadow-xs"
-              : "text-[#69778c] hover:bg-[#f4f7fb] hover:text-[#152238]"
+              ? "bg-[#0f4c5c] text-white shadow-xs"
+              : "text-[#5e6b67] hover:bg-[#f0f3f0] hover:text-[#17211f]"
           }`}
         >
           <SlidersHorizontal className="h-3.5 w-3.5" />
@@ -1088,8 +1088,8 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
           onClick={() => setActiveTab("permissoes")}
           className={`flex items-center gap-1.5 rounded-lg px-3.5 py-2 text-xs font-bold transition-all cursor-pointer ${
             activeTab === "permissoes"
-              ? "bg-[#3c63da] text-white shadow-xs"
-              : "text-[#69778c] hover:bg-[#f4f7fb] hover:text-[#152238]"
+              ? "bg-[#0f4c5c] text-white shadow-xs"
+              : "text-[#5e6b67] hover:bg-[#f0f3f0] hover:text-[#17211f]"
           }`}
         >
           <ShieldCheck className="h-3.5 w-3.5" />
@@ -1100,8 +1100,8 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
           onClick={() => setActiveTab("royalties")}
           className={`flex items-center gap-1.5 rounded-lg px-3.5 py-2 text-xs font-bold transition-all cursor-pointer ${
             activeTab === "royalties"
-              ? "bg-[#3c63da] text-white shadow-xs"
-              : "text-[#69778c] hover:bg-[#f4f7fb] hover:text-[#152238]"
+              ? "bg-[#0f4c5c] text-white shadow-xs"
+              : "text-[#5e6b67] hover:bg-[#f0f3f0] hover:text-[#17211f]"
           }`}
         >
           <Building2 className="h-3.5 w-3.5" />
@@ -1112,8 +1112,8 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
           onClick={() => setActiveTab("fornecedores")}
           className={`flex items-center gap-1.5 rounded-lg px-3.5 py-2 text-xs font-bold transition-all cursor-pointer ${
             activeTab === "fornecedores"
-              ? "bg-[#3c63da] text-white shadow-xs"
-              : "text-[#69778c] hover:bg-[#f4f7fb] hover:text-[#152238]"
+              ? "bg-[#0f4c5c] text-white shadow-xs"
+              : "text-[#5e6b67] hover:bg-[#f0f3f0] hover:text-[#17211f]"
           }`}
         >
           <PackageCheck className="h-3.5 w-3.5" />
@@ -1124,8 +1124,8 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
           onClick={() => setActiveTab("franqueados")}
           className={`flex items-center gap-1.5 rounded-lg px-3.5 py-2 text-xs font-bold transition-all cursor-pointer ${
             activeTab === "franqueados"
-              ? "bg-[#3c63da] text-white shadow-xs"
-              : "text-[#69778c] hover:bg-[#f4f7fb] hover:text-[#152238]"
+              ? "bg-[#0f4c5c] text-white shadow-xs"
+              : "text-[#5e6b67] hover:bg-[#f0f3f0] hover:text-[#17211f]"
           }`}
         >
           <Store className="h-3.5 w-3.5" />
@@ -1136,8 +1136,8 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
           onClick={() => setActiveTab("audit")}
           className={`flex items-center gap-1.5 rounded-lg px-3.5 py-2 text-xs font-bold transition-all cursor-pointer ${
             activeTab === "audit"
-              ? "bg-[#3c63da] text-white shadow-xs"
-              : "text-[#69778c] hover:bg-[#f4f7fb] hover:text-[#152238]"
+              ? "bg-[#0f4c5c] text-white shadow-xs"
+              : "text-[#5e6b67] hover:bg-[#f0f3f0] hover:text-[#17211f]"
           }`}
         >
           <History className="h-3.5 w-3.5" />
@@ -1152,13 +1152,13 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
       {activeTab === "preferencias" && (
         <div className="space-y-5">
           {/* Action Header */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4.5 rounded-2xl bg-white border border-[#e5eaf1] shadow-xs">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4.5 rounded-2xl bg-white border border-[#dfe4df] shadow-xs">
             <div>
-              <h3 className="text-base font-extrabold text-[#152238] flex items-center gap-2">
-                <Settings className="h-5 w-5 text-[#3c63da]" />
+              <h3 className="text-base font-extrabold text-[#17211f] flex items-center gap-2">
+                <Settings className="h-5 w-5 text-[#0f4c5c]" />
                 <span>Preferências Globais da Franqueadora</span>
               </h3>
-              <p className="text-xs text-[#69778c] mt-0.5">
+              <p className="text-xs text-[#5e6b67] mt-0.5">
                 Defina o nome da aplicação, razão social, moeda base e comportamento de sincronização entre os dispositivos.
               </p>
             </div>
@@ -1166,7 +1166,7 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
             <button
               onClick={handleSavePreferences}
               disabled={isSavingSettings}
-              className="flex items-center gap-1.5 rounded-xl bg-[#3c63da] px-5 py-2.5 text-xs font-bold text-white hover:bg-[#2f52c0] shadow-sm disabled:opacity-50 cursor-pointer transition-all self-start sm:self-auto"
+              className="flex items-center gap-1.5 rounded-xl bg-[#0f4c5c] px-5 py-2.5 text-xs font-bold text-white hover:bg-[#0b3b48] shadow-sm disabled:opacity-50 cursor-pointer transition-all self-start sm:self-auto"
             >
               {isSavedSettings ? (
                 <CheckCircle2 className="h-4 w-4 text-emerald-300" />
@@ -1185,20 +1185,20 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
             {/* Card 1: Identidade da Empresa */}
-            <div className="rounded-2xl border border-[#e5eaf1] bg-white p-5 shadow-xs space-y-4">
-              <div className="flex items-center justify-between border-b border-[#e5eaf1] pb-3">
-                <h4 className="text-sm font-bold text-[#152238] flex items-center gap-2">
-                  <Building2 className="h-4 w-4 text-[#3c63da]" />
+            <div className="rounded-2xl border border-[#dfe4df] bg-white p-5 shadow-xs space-y-4">
+              <div className="flex items-center justify-between border-b border-[#dfe4df] pb-3">
+                <h4 className="text-sm font-bold text-[#17211f] flex items-center gap-2">
+                  <Building2 className="h-4 w-4 text-[#0f4c5c]" />
                   <span>Identidade da Empresa & Marca</span>
                 </h4>
-                <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded bg-[#edf2ff] text-[#3c63da]">
+                <span className="text-[10px] font-extrabold px-2 py-0.5 rounded bg-[#e3eff1] text-[#0f4c5c]">
                   Institucional
                 </span>
               </div>
 
               <div className="space-y-3.5 text-xs">
                 <div>
-                  <label className="block text-[10px] font-extrabold uppercase text-[#69778c] mb-1">
+                  <label className="block text-[10px] font-extrabold text-[#5e6b67] mb-1">
                     Nome da Aplicação / Sistema
                   </label>
                   <input
@@ -1208,15 +1208,15 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
                       setSettingsForm((p) => ({ ...p, appName: e.target.value }))
                     }
                     placeholder="Ex: Franchise Hub Pro"
-                    className="w-full rounded-xl border border-[#e5eaf1] px-3 py-2 text-xs font-semibold text-[#152238] focus:border-[#3c63da] focus:outline-none bg-[#f8faff]"
+                    className="w-full rounded-xl border border-[#dfe4df] px-3 py-2 text-xs font-semibold text-[#17211f] focus:border-[#0f4c5c] focus:outline-none bg-[#f7f9f7]"
                   />
-                  <span className="text-[10px] text-[#69778c] mt-0.5 block">
+                  <span className="text-[10px] text-[#5e6b67] mt-0.5 block">
                     Exibido no topo da barra de navegação e nas notificações.
                   </span>
                 </div>
 
                 <div>
-                  <label className="block text-[10px] font-extrabold uppercase text-[#69778c] mb-1">
+                  <label className="block text-[10px] font-extrabold text-[#5e6b67] mb-1">
                     Razão Social da Franqueadora Matriz
                   </label>
                   <input
@@ -1226,13 +1226,13 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
                       setSettingsForm((p) => ({ ...p, companyName: e.target.value }))
                     }
                     placeholder="Ex: Franqueadora Matriz Brasil S/A"
-                    className="w-full rounded-xl border border-[#e5eaf1] px-3 py-2 text-xs font-semibold text-[#152238] focus:border-[#3c63da] focus:outline-none bg-[#f8faff]"
+                    className="w-full rounded-xl border border-[#dfe4df] px-3 py-2 text-xs font-semibold text-[#17211f] focus:border-[#0f4c5c] focus:outline-none bg-[#f7f9f7]"
                   />
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-[10px] font-extrabold uppercase text-[#69778c] mb-1">
+                    <label className="block text-[10px] font-extrabold text-[#5e6b67] mb-1">
                       Moeda Padrão
                     </label>
                     <select
@@ -1240,7 +1240,7 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
                       onChange={(e) =>
                         setSettingsForm((p) => ({ ...p, currency: e.target.value }))
                       }
-                      className="w-full rounded-xl border border-[#e5eaf1] px-3 py-2 text-xs font-semibold text-[#152238] focus:border-[#3c63da] focus:outline-none bg-[#f8faff]"
+                      className="w-full rounded-xl border border-[#dfe4df] px-3 py-2 text-xs font-semibold text-[#17211f] focus:border-[#0f4c5c] focus:outline-none bg-[#f7f9f7]"
                     >
                       <option value="BRL">Real Brasileiro (R$)</option>
                       <option value="USD">Dólar Americano ($)</option>
@@ -1249,7 +1249,7 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
                   </div>
 
                   <div>
-                    <label className="block text-[10px] font-extrabold uppercase text-[#69778c] mb-1">
+                    <label className="block text-[10px] font-extrabold text-[#5e6b67] mb-1">
                       Tema Visual
                     </label>
                     <select
@@ -1257,7 +1257,7 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
                       onChange={(e) =>
                         setSettingsForm((p) => ({ ...p, theme: e.target.value }))
                       }
-                      className="w-full rounded-xl border border-[#e5eaf1] px-3 py-2 text-xs font-semibold text-[#152238] focus:border-[#3c63da] focus:outline-none bg-[#f8faff]"
+                      className="w-full rounded-xl border border-[#dfe4df] px-3 py-2 text-xs font-semibold text-[#17211f] focus:border-[#0f4c5c] focus:outline-none bg-[#f7f9f7]"
                     >
                       <option value="light">Claro Profissional</option>
                       <option value="dark">Escuro Executivo</option>
@@ -1269,10 +1269,10 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
             </div>
 
             {/* Card 2: Sincronização & Tempo Real — mantido ativo internamente, sem exposição na interface */}
-            <div className="hidden rounded-2xl border border-[#e5eaf1] bg-white p-5 shadow-xs space-y-4">
-              <div className="flex items-center justify-between border-b border-[#e5eaf1] pb-3">
-                <h4 className="text-sm font-bold text-[#152238] flex items-center gap-2">
-                  <Cloud className="h-4 w-4 text-[#3c63da]" />
+            <div className="hidden rounded-2xl border border-[#dfe4df] bg-white p-5 shadow-xs space-y-4">
+              <div className="flex items-center justify-between border-b border-[#dfe4df] pb-3">
+                <h4 className="text-sm font-bold text-[#17211f] flex items-center gap-2">
+                  <Cloud className="h-4 w-4 text-[#0f4c5c]" />
                   <span>Sincronização (Multi-Dispositivo)</span>
                 </h4>
                 <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-bold">
@@ -1282,10 +1282,10 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
               </div>
 
               <div className="space-y-3.5 text-xs">
-                <div className="flex items-center justify-between p-3 rounded-xl bg-[#f8faff] border border-[#e5eaf1]">
+                <div className="flex items-center justify-between p-3 rounded-xl bg-[#f7f9f7] border border-[#dfe4df]">
                   <div>
-                      <div className="font-bold text-[#152238]">Atualização automática entre aparelhos</div>
-                    <div className="text-[11px] text-[#69778c]">
+                      <div className="font-bold text-[#17211f]">Atualização automática entre aparelhos</div>
+                    <div className="text-[11px] text-[#5e6b67]">
                       Dispara eventos para outros navegadores e celulares sem recarregar a página.
                     </div>
                   </div>
@@ -1298,12 +1298,12 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
                       }
                       className="sr-only peer"
                     />
-                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#3c63da]"></div>
+                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#0f4c5c]"></div>
                   </label>
                 </div>
 
                 <div>
-                  <label className="block text-[10px] font-extrabold uppercase text-[#69778c] mb-1">
+                  <label className="block text-[10px] font-extrabold text-[#5e6b67] mb-1">
                     Frequência de atualização (segundos)
                   </label>
                   <input
@@ -1317,9 +1317,9 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
                         syncInterval: Number(e.target.value) || 30,
                       }))
                     }
-                    className="w-full rounded-xl border border-[#e5eaf1] px-3 py-2 text-xs font-semibold text-[#152238] focus:border-[#3c63da] focus:outline-none bg-[#f8faff]"
+                    className="w-full rounded-xl border border-[#dfe4df] px-3 py-2 text-xs font-semibold text-[#17211f] focus:border-[#0f4c5c] focus:outline-none bg-[#f7f9f7]"
                   />
-                  <span className="text-[10px] text-[#69778c] mt-0.5 block">
+                  <span className="text-[10px] text-[#5e6b67] mt-0.5 block">
                     Garante atualização contínua mesmo em redes corporativas com proxy restrito.
                   </span>
                 </div>
@@ -1358,21 +1358,21 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
       {/* NOVO: ABA MODELOS & MARCAS (BUSINESSES)                      */}
       {/* ------------------------------------------------------------- */}
       {activeTab === "marcas" && (
-        <div className="rounded-2xl border border-[#e5eaf1] bg-white p-5 sm:p-6 shadow-xs space-y-5">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[#e5eaf1]">
+        <div className="rounded-2xl border border-[#dfe4df] bg-white p-5 sm:p-6 shadow-xs space-y-5">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[#dfe4df]">
             <div>
-              <h3 className="text-sm font-bold text-[#152238] flex items-center gap-2">
-                <Layers className="h-4 w-4 text-[#3c63da]" />
+              <h3 className="text-sm font-bold text-[#17211f] flex items-center gap-2">
+                <Layers className="h-4 w-4 text-[#0f4c5c]" />
                 <span>Modelos de Franquia & Marcas da Rede</span>
               </h3>
-              <p className="text-xs text-[#69778c] mt-0.5">
+              <p className="text-xs text-[#5e6b67] mt-0.5">
                 Cadastre e gerencie as marcas e modelos de negócio da sua rede. Cada unidade pertence a um modelo.
               </p>
             </div>
 
             <button
               onClick={() => setIsAddingBiz(!isAddingBiz)}
-              className="flex items-center gap-1.5 rounded-xl bg-[#3c63da] px-3.5 py-2 text-xs font-bold text-white hover:bg-[#2f52c0] shadow-sm cursor-pointer"
+              className="flex items-center gap-1.5 rounded-xl bg-[#0f4c5c] px-3.5 py-2 text-xs font-bold text-white hover:bg-[#0b3b48] shadow-sm cursor-pointer"
             >
               <Plus className="h-4 w-4" />
               <span>{isAddingBiz ? "Fechar Cadastro" : "Cadastrar Novo Modelo / Marca"}</span>
@@ -1381,8 +1381,8 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
 
           {/* Form to Add New Business/Brand */}
           {isAddingBiz && (
-            <div className="p-4 rounded-xl border border-[#3c63da]/30 bg-[#edf2ff]/40 space-y-3">
-              <h4 className="text-xs font-extrabold uppercase tracking-wider text-[#3c63da]">
+            <div className="p-4 rounded-xl border border-[#0f4c5c]/30 bg-[#e3eff1]/40 space-y-3">
+              <h4 className="text-xs font-extrabold text-[#0f4c5c]">
                 Novo Modelo / Marca
               </h4>
               {bizError && (
@@ -1392,7 +1392,7 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
               )}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                 <div>
-                  <label className="block text-[10px] font-bold text-[#152238] mb-1">
+                  <label className="block text-[10px] font-bold text-[#17211f] mb-1">
                     Nome da Marca / Modelo *
                   </label>
                   <input
@@ -1400,11 +1400,11 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
                     placeholder="Ex: Cafeteria Prime"
                     value={newBizName}
                     onChange={(e) => setNewBizName(e.target.value)}
-                    className="w-full rounded-lg border border-[#c4cdd9] bg-white px-2.5 py-1.5 text-xs font-bold"
+                    className="w-full rounded-lg border border-[#c9d1cb] bg-white px-2.5 py-1.5 text-xs font-bold"
                   />
                 </div>
                 <div>
-                  <label className="block text-[10px] font-bold text-[#152238] mb-1">
+                  <label className="block text-[10px] font-bold text-[#17211f] mb-1">
                     Sigla / Identificador Curto
                   </label>
                   <input
@@ -1412,12 +1412,12 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
                     placeholder="Ex: cafe_prime"
                     value={newBizBrand}
                     onChange={(e) => setNewBizBrand(e.target.value)}
-                    className="w-full rounded-lg border border-[#c4cdd9] bg-white px-2.5 py-1.5 text-xs font-bold"
+                    className="w-full rounded-lg border border-[#c9d1cb] bg-white px-2.5 py-1.5 text-xs font-bold"
                   />
                 </div>
                 <div>
                   <div className="flex items-center justify-between mb-1">
-                    <label className="block text-[10px] font-bold text-[#152238]">
+                    <label className="block text-[10px] font-bold text-[#17211f]">
                       Tipo e Valor do Royalty
                     </label>
                   </div>
@@ -1426,7 +1426,7 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
                       value={newBizRoyaltyType}
                       onChange={(e) => setNewBizRoyaltyType(e.target.value as any)}
                       disabled={!isOwner}
-                      className="rounded-lg border border-[#c4cdd9] bg-white px-2 py-1.5 text-xs font-bold text-[#152238]"
+                      className="rounded-lg border border-[#c9d1cb] bg-white px-2 py-1.5 text-xs font-bold text-[#17211f]"
                     >
                       <option value="pct">% Faturamento</option>
                       <option value="fixed">Valor Fixo R$</option>
@@ -1443,17 +1443,17 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
                         className={`w-full rounded-lg border px-2.5 py-1.5 text-xs font-bold ${
                           !isOwner
                             ? "bg-slate-100 text-slate-500 border-slate-200 cursor-not-allowed"
-                            : "bg-white text-[#152238] border-[#c4cdd9] focus:border-[#3c63da] focus:outline-none"
+                            : "bg-white text-[#17211f] border-[#c9d1cb] focus:border-[#0f4c5c] focus:outline-none"
                         }`}
                       />
-                      <span className="absolute right-2.5 top-1.5 text-xs font-bold text-[#69778c]">
+                      <span className="absolute right-2.5 top-1.5 text-xs font-bold text-[#5e6b67]">
                         {newBizRoyaltyType === "pct" ? "%" : "R$"}
                       </span>
                     </div>
                   </div>
                 </div>
                 <div>
-                  <label className="block text-[10px] font-bold text-[#152238] mb-1">
+                  <label className="block text-[10px] font-bold text-[#17211f] mb-1">
                     Cor Visual da Marca
                   </label>
                   <div className="flex items-center gap-2">
@@ -1461,9 +1461,9 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
                       type="color"
                       value={newBizColor}
                       onChange={(e) => setNewBizColor(e.target.value)}
-                      className="h-8 w-10 rounded cursor-pointer border border-[#c4cdd9] p-0.5 bg-white"
+                      className="h-8 w-10 rounded cursor-pointer border border-[#c9d1cb] p-0.5 bg-white"
                     />
-                    <span className="text-xs font-mono font-bold text-[#152238]">{newBizColor}</span>
+                    <span className="text-xs font-mono font-bold text-[#17211f]">{newBizColor}</span>
                   </div>
                 </div>
               </div>
@@ -1474,14 +1474,14 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
                     setIsAddingBiz(false);
                     setBizError("");
                   }}
-                  className="px-3 py-1.5 rounded-lg border border-[#c4cdd9] text-xs font-semibold text-[#69778c] hover:bg-white"
+                  className="px-3 py-1.5 rounded-lg border border-[#c9d1cb] text-xs font-semibold text-[#5e6b67] hover:bg-white"
                 >
                   Cancelar
                 </button>
                 <button
                   type="button"
                   onClick={handleAddBusiness}
-                  className="px-4 py-1.5 rounded-lg bg-[#3c63da] text-xs font-bold text-white hover:bg-[#2f52c0] shadow-xs cursor-pointer"
+                  className="px-4 py-1.5 rounded-lg bg-[#0f4c5c] text-xs font-bold text-white hover:bg-[#0b3b48] shadow-xs cursor-pointer"
                 >
                   Salvar Marca
                 </button>
@@ -1491,15 +1491,15 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
 
           {/* Cards of Brands */}
           {businessList.length === 0 ? (
-            <div className="p-8 text-center border-2 border-dashed border-[#d1dbe8] rounded-2xl bg-[#f8faff]">
-              <Layers className="h-10 w-10 text-[#3c63da] mx-auto mb-2 opacity-60" />
-              <h4 className="text-sm font-bold text-[#152238]">Nenhum Modelo ou Marca cadastrado</h4>
-              <p className="text-xs text-[#69778c] mt-1 max-w-sm mx-auto">
+            <div className="p-8 text-center border-2 border-dashed border-[#dfe4df] rounded-2xl bg-[#f7f9f7]">
+              <Layers className="h-10 w-10 text-[#0f4c5c] mx-auto mb-2 opacity-60" />
+              <h4 className="text-sm font-bold text-[#17211f]">Nenhum Modelo ou Marca cadastrado</h4>
+              <p className="text-xs text-[#5e6b67] mt-1 max-w-sm mx-auto">
                 Crie o primeiro modelo de franquia (ex: Cafeteria, Loja Express, Quiosque) para poder associar unidades e calcular royalties.
               </p>
               <button
                 onClick={() => setIsAddingBiz(true)}
-                className="mt-4 px-4 py-2 rounded-xl bg-[#3c63da] text-xs font-bold text-white hover:bg-[#2f52c0] shadow-sm cursor-pointer"
+                className="mt-4 px-4 py-2 rounded-xl bg-[#0f4c5c] text-xs font-bold text-white hover:bg-[#0b3b48] shadow-sm cursor-pointer"
               >
                 Cadastrar Primeira Marca
               </button>
@@ -1515,23 +1515,23 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
                 return (
                   <div
                     key={b.id}
-                    className="p-4 rounded-xl border border-[#e5eaf1] bg-[#f8faff] space-y-3 relative overflow-hidden"
+                    className="p-4 rounded-xl border border-[#dfe4df] bg-[#f7f9f7] space-y-3 relative overflow-hidden"
                   >
                     <div
                       className="absolute top-0 left-0 right-0 h-1"
-                      style={{ backgroundColor: (isEditing ? editBizColor : b.color) || "#3c63da" }}
+                      style={{ backgroundColor: (isEditing ? editBizColor : b.color) || "#0f4c5c" }}
                     />
                     <div className="flex items-center justify-between pt-1">
                       <div className="flex items-center gap-2">
                         <span
                           className="h-3.5 w-3.5 rounded-full border border-black/10 shadow-xs flex-shrink-0"
-                          style={{ backgroundColor: (isEditing ? editBizColor : b.color) || "#3c63da" }}
+                          style={{ backgroundColor: (isEditing ? editBizColor : b.color) || "#0f4c5c" }}
                         />
-                        <span className="text-xs font-mono font-extrabold text-[#3c63da] bg-[#edf2ff] px-2 py-0.5 rounded">
+                        <span className="text-xs font-mono font-extrabold text-[#0f4c5c] bg-[#e3eff1] px-2 py-0.5 rounded">
                           {b.id}
                         </span>
                       </div>
-                      <span className="text-[10px] font-bold text-[#69778c] bg-white px-2 py-0.5 rounded-full border border-[#e5eaf1]">
+                      <span className="text-[10px] font-bold text-[#5e6b67] bg-white px-2 py-0.5 rounded-full border border-[#dfe4df]">
                         {unitsCount} {unitsCount === 1 ? "loja" : "lojas"}
                       </span>
                     </div>
@@ -1539,29 +1539,29 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
                     {isEditing ? (
                       <div className="space-y-2 pt-1">
                         <div>
-                          <label className="block text-[10px] font-bold text-[#152238] mb-0.5">Nome do Modelo</label>
+                          <label className="block text-[10px] font-bold text-[#17211f] mb-0.5">Nome do Modelo</label>
                           <input
                             type="text"
                             value={editBizName}
                             onChange={(e) => setEditBizName(e.target.value)}
-                            className="w-full rounded border border-[#c4cdd9] bg-white px-2 py-1 text-xs font-bold"
+                            className="w-full rounded border border-[#c9d1cb] bg-white px-2 py-1 text-xs font-bold"
                           />
                         </div>
                         <div className="grid grid-cols-2 gap-2">
                           <div>
-                            <label className="block text-[10px] font-bold text-[#152238] mb-0.5">Tipo</label>
+                            <label className="block text-[10px] font-bold text-[#17211f] mb-0.5">Tipo</label>
                             <select
                               value={editBizRoyaltyType}
                               onChange={(e) => setEditBizRoyaltyType(e.target.value as any)}
                               disabled={!isOwner}
-                              className="w-full rounded border border-[#c4cdd9] bg-white px-1.5 py-1 text-xs font-bold"
+                              className="w-full rounded border border-[#c9d1cb] bg-white px-1.5 py-1 text-xs font-bold"
                             >
                               <option value="pct">% Fat.</option>
                               <option value="fixed">R$ Fixo</option>
                             </select>
                           </div>
                           <div>
-                            <label className="block text-[10px] font-bold text-[#152238] mb-0.5">
+                            <label className="block text-[10px] font-bold text-[#17211f] mb-0.5">
                               {editBizRoyaltyType === "pct" ? "Taxa (%)" : "Valor (R$)"}
                             </label>
                             <input
@@ -1573,7 +1573,7 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
                               className={`w-full rounded border px-2 py-1 text-xs font-bold ${
                                 !isOwner
                                   ? "bg-slate-100 text-slate-500 border-slate-200 cursor-not-allowed"
-                                  : "border-[#c4cdd9] bg-white text-[#152238]"
+                                  : "border-[#c9d1cb] bg-white text-[#17211f]"
                               }`}
                             />
                           </div>
@@ -1582,14 +1582,14 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
                           <button
                             type="button"
                             onClick={() => setEditingBizId(null)}
-                            className="px-2 py-1 rounded text-[11px] text-[#69778c] hover:bg-gray-100"
+                            className="px-2 py-1 rounded text-[11px] text-[#5e6b67] hover:bg-gray-100"
                           >
                             Cancelar
                           </button>
                           <button
                             type="button"
                             onClick={() => handleSaveEditBusiness(b.id)}
-                            className="px-3 py-1 rounded bg-[#3c63da] text-white text-[11px] font-bold hover:bg-[#2f52c0]"
+                            className="px-3 py-1 rounded bg-[#0f4c5c] text-white text-[11px] font-bold hover:bg-[#0b3b48]"
                           >
                             Salvar
                           </button>
@@ -1598,15 +1598,15 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
                     ) : (
                       <>
                         <div>
-                          <h4 className="text-sm font-extrabold text-[#152238]">{b.name}</h4>
+                          <h4 className="text-sm font-extrabold text-[#17211f]">{b.name}</h4>
                           {b.brand && b.brand !== b.name && (
-                            <span className="text-[11px] text-[#69778c]">{b.brand}</span>
+                            <span className="text-[11px] text-[#5e6b67]">{b.brand}</span>
                           )}
                         </div>
 
-                        <div className="pt-2 border-t border-[#e5eaf1] flex items-center justify-between text-xs">
+                        <div className="pt-2 border-t border-[#dfe4df] flex items-center justify-between text-xs">
                           <div>
-                            <span className="text-[10px] text-[#69778c] block uppercase font-bold">
+                            <span className="text-[10px] text-[#5e6b67] block font-bold">
                               Royalty Padrão
                             </span>
                             <strong className="text-emerald-700 font-extrabold font-mono">
@@ -1620,10 +1620,10 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
                               onClick={() => {
                                 setEditingBizId(b.id);
                                 setEditBizName(b.name);
-                                setEditBizColor(b.color || "#3c63da");
+                                setEditBizColor(b.color || "#0f4c5c");
                                 setEditBizRoyalty(String(royaltyVal));
                               }}
-                              className="text-[11px] font-semibold text-[#3c63da] hover:underline cursor-pointer"
+                              className="text-[11px] font-semibold text-[#0f4c5c] hover:underline cursor-pointer"
                             >
                               Editar
                             </button>
@@ -1651,7 +1651,7 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
       {/* ------------------------------------------------------------- */}
       {activeTab === "configs" && (
         <div className="space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-xl bg-white border border-[#e5eaf1] shadow-xs">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-xl bg-white border border-[#dfe4df] shadow-xs">
             {/* Categories */}
             <div className="flex flex-wrap gap-1.5">
               {categories.map((cat) => (
@@ -1660,8 +1660,8 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
                   onClick={() => setSelectedCategory(cat)}
                   className={`rounded-lg px-3 py-1.5 text-xs font-bold transition-all cursor-pointer ${
                     selectedCategory === cat
-                      ? "bg-[#152238] text-white shadow-xs"
-                      : "bg-[#f8faff] text-[#69778c] hover:bg-[#eef2f8] hover:text-[#152238]"
+                      ? "bg-[#17211f] text-white shadow-xs"
+                      : "bg-[#f7f9f7] text-[#5e6b67] hover:bg-[#f0f3f0] hover:text-[#17211f]"
                   }`}
                 >
                   {cat}
@@ -1672,7 +1672,7 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
             <button
               onClick={handleSaveAll}
               disabled={isSaving}
-              className="flex items-center gap-1.5 rounded-xl bg-[#3c63da] px-4 py-2 text-xs font-bold text-white hover:bg-[#2f52c0] shadow-sm disabled:opacity-50 cursor-pointer flex-shrink-0"
+              className="flex items-center gap-1.5 rounded-xl bg-[#0f4c5c] px-4 py-2 text-xs font-bold text-white hover:bg-[#0b3b48] shadow-sm disabled:opacity-50 cursor-pointer flex-shrink-0"
             >
               <Save className="h-3.5 w-3.5" />
               <span>Salvar Todos da Categoria</span>
@@ -1688,30 +1688,30 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
               return (
                 <div
                   key={c.key}
-                  className="rounded-2xl border border-[#e5eaf1] bg-white p-4.5 shadow-xs space-y-3"
+                  className="rounded-2xl border border-[#dfe4df] bg-white p-4.5 shadow-xs space-y-3"
                 >
                   <div className="flex items-start justify-between">
                     <div>
-                      <span className="text-[9px] font-extrabold uppercase bg-[#edf2ff] text-[#3c63da] px-2 py-0.5 rounded-full">
+                      <span className="text-[9px] font-extrabold bg-[#e3eff1] text-[#0f4c5c] px-2 py-0.5 rounded-full">
                         {c.category === "Financeiro" ? "Geral" : c.category}
                       </span>
-                      <h4 className="text-sm font-bold text-[#152238] mt-1.5">{c.name}</h4>
-                      <code className="text-[10px] text-[#69778c] font-mono">{c.key}</code>
+                      <h4 className="text-sm font-bold text-[#17211f] mt-1.5">{c.name}</h4>
+                      <code className="text-[10px] text-[#5e6b67] font-mono">{c.key}</code>
                     </div>
 
-                    <span className="text-[10px] text-[#69778c]">
+                    <span className="text-[10px] text-[#5e6b67]">
                       Modificado por: <strong>{c.modifiedBy}</strong>
                     </span>
                   </div>
 
-                  <p className="text-xs text-[#69778c] leading-relaxed">{c.description}</p>
+                  <p className="text-xs text-[#5e6b67] leading-relaxed">{c.description}</p>
 
-                  <div className="pt-2 border-t border-[#f0f4f9] flex items-center gap-2">
+                  <div className="pt-2 border-t border-[#f0f3f0] flex items-center gap-2">
                     {c.type === "boolean" ? (
                       <select
                         value={currentVal}
                         onChange={(e) => handleInputChange(c.key, e.target.value)}
-                        className="flex-1 rounded-xl border border-[#e5eaf1] bg-[#f8faff] px-3 py-2 text-xs font-bold text-[#152238] focus:border-[#3c63da] focus:outline-none"
+                        className="flex-1 rounded-xl border border-[#dfe4df] bg-[#f7f9f7] px-3 py-2 text-xs font-bold text-[#17211f] focus:border-[#0f4c5c] focus:outline-none"
                       >
                         <option value="true">Verdadeiro / Ativado (true)</option>
                         <option value="false">Falso / Desativado (false)</option>
@@ -1721,7 +1721,7 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
                         type={c.type === "number" ? "number" : "text"}
                         value={currentVal}
                         onChange={(e) => handleInputChange(c.key, e.target.value)}
-                        className="flex-1 rounded-xl border border-[#e5eaf1] bg-[#f8faff] px-3 py-2 text-xs font-bold text-[#152238] focus:border-[#3c63da] focus:outline-none"
+                        className="flex-1 rounded-xl border border-[#dfe4df] bg-[#f7f9f7] px-3 py-2 text-xs font-bold text-[#17211f] focus:border-[#0f4c5c] focus:outline-none"
                       />
                     )}
 
@@ -1731,7 +1731,7 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
                       className={`flex items-center gap-1 rounded-xl px-3 py-2 text-xs font-bold transition-all cursor-pointer ${
                         isItemSaved
                           ? "bg-emerald-600 text-white"
-                          : "bg-[#152238] text-white hover:bg-[#25395a]"
+                          : "bg-[#17211f] text-white hover:bg-[#24332f]"
                       }`}
                     >
                       {isItemSaved ? (
@@ -1777,39 +1777,39 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
           </div>
 
           <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)]">
-            <form onSubmit={handleSaveIntercompanyRule} className="rounded-2xl border border-[#e5eaf1] bg-white p-5 shadow-xs space-y-3">
-              <div className="flex items-center justify-between gap-3 border-b border-[#e5eaf1] pb-3">
+            <form onSubmit={handleSaveIntercompanyRule} className="rounded-2xl border border-[#dfe4df] bg-white p-5 shadow-xs space-y-3">
+              <div className="flex items-center justify-between gap-3 border-b border-[#dfe4df] pb-3">
                 <div>
-                  <h3 className="text-sm font-extrabold text-[#152238]">{editingIntercompanyId ? "Editar regra" : "Nova regra"}</h3>
-                  <p className="mt-0.5 text-[11px] text-[#69778c]">Use um termo por linha. Acentos e pontuação são normalizados.</p>
+                  <h3 className="text-sm font-extrabold text-[#17211f]">{editingIntercompanyId ? "Editar regra" : "Nova regra"}</h3>
+                  <p className="mt-0.5 text-[11px] text-[#5e6b67]">Use um termo por linha. Acentos e pontuação são normalizados.</p>
                 </div>
-                {editingIntercompanyId && <button type="button" onClick={resetIntercompanyForm} className="rounded-lg px-2 py-1 text-[11px] font-bold text-[#69778c] hover:bg-[#f4f7fb]">Cancelar edição</button>}
+                {editingIntercompanyId && <button type="button" onClick={resetIntercompanyForm} className="rounded-lg px-2 py-1 text-[11px] font-bold text-[#5e6b67] hover:bg-[#f0f3f0]">Cancelar edição</button>}
               </div>
 
-              <label className="block text-[10px] font-extrabold uppercase tracking-wider text-[#69778c]">
+              <label className="block text-[10px] font-extrabold text-[#5e6b67]">
                 Nome da regra *
-                <input required value={intercompanyForm.name} onChange={(event) => setIntercompanyForm((form) => ({ ...form, name: event.target.value }))} placeholder="Ex.: TED para a matriz" className="mt-1 w-full rounded-lg border border-[#cbd5e1] bg-white px-3 py-2 text-xs font-semibold normal-case text-[#152238]" />
+                <input required value={intercompanyForm.name} onChange={(event) => setIntercompanyForm((form) => ({ ...form, name: event.target.value }))} placeholder="Ex.: TED para a matriz" className="mt-1 w-full rounded-lg border border-[#c9d1cb] bg-white px-3 py-2 text-xs font-semibold normal-case text-[#17211f]" />
               </label>
 
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                <label className="block text-[10px] font-extrabold uppercase tracking-wider text-[#69778c]">
+                <label className="block text-[10px] font-extrabold text-[#5e6b67]">
                   Escopo da regra
-                  <select value={intercompanyForm.scope} onChange={(event) => setIntercompanyForm((form) => ({ ...form, scope: event.target.value as IntercompanyRule["scope"] }))} className="mt-1 w-full rounded-lg border border-[#cbd5e1] bg-white px-3 py-2 text-xs font-semibold normal-case text-[#152238]">
+                  <select value={intercompanyForm.scope} onChange={(event) => setIntercompanyForm((form) => ({ ...form, scope: event.target.value as IntercompanyRule["scope"] }))} className="mt-1 w-full rounded-lg border border-[#c9d1cb] bg-white px-3 py-2 text-xs font-semibold normal-case text-[#17211f]">
                     <option value="rede">Toda a rede</option>
                     <option value="empresa">Uma empresa / marca</option>
                     <option value="unidade">Uma unidade</option>
                   </select>
                 </label>
-                <label className="flex items-center gap-2 rounded-lg border border-[#e5eaf1] bg-[#f8faff] px-3 py-2 text-xs font-bold text-[#152238]">
+                <label className="flex items-center gap-2 rounded-lg border border-[#dfe4df] bg-[#f7f9f7] px-3 py-2 text-xs font-bold text-[#17211f]">
                   <input type="checkbox" checked={intercompanyForm.active} onChange={(event) => setIntercompanyForm((form) => ({ ...form, active: event.target.checked }))} />
                   Regra ativa para novas importações
                 </label>
               </div>
 
               {intercompanyForm.scope === "empresa" && (
-                <label className="block text-[10px] font-extrabold uppercase tracking-wider text-[#69778c]">
+                <label className="block text-[10px] font-extrabold text-[#5e6b67]">
                   Empresa / marca *
-                  <select value={intercompanyForm.businessId} onChange={(event) => setIntercompanyForm((form) => ({ ...form, businessId: event.target.value }))} className="mt-1 w-full rounded-lg border border-[#cbd5e1] bg-white px-3 py-2 text-xs font-semibold normal-case text-[#152238]">
+                  <select value={intercompanyForm.businessId} onChange={(event) => setIntercompanyForm((form) => ({ ...form, businessId: event.target.value }))} className="mt-1 w-full rounded-lg border border-[#c9d1cb] bg-white px-3 py-2 text-xs font-semibold normal-case text-[#17211f]">
                     <option value="">Selecione a empresa</option>
                     {businessList.map((business) => <option key={business.id} value={business.id}>{business.name || business.brand}</option>)}
                   </select>
@@ -1817,61 +1817,61 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
               )}
 
               {intercompanyForm.scope === "unidade" && (
-                <label className="block text-[10px] font-extrabold uppercase tracking-wider text-[#69778c]">
+                <label className="block text-[10px] font-extrabold text-[#5e6b67]">
                   Unidade *
-                  <select value={intercompanyForm.tenantId} onChange={(event) => setIntercompanyForm((form) => ({ ...form, tenantId: event.target.value }))} className="mt-1 w-full rounded-lg border border-[#cbd5e1] bg-white px-3 py-2 text-xs font-semibold normal-case text-[#152238]">
+                  <select value={intercompanyForm.tenantId} onChange={(event) => setIntercompanyForm((form) => ({ ...form, tenantId: event.target.value }))} className="mt-1 w-full rounded-lg border border-[#c9d1cb] bg-white px-3 py-2 text-xs font-semibold normal-case text-[#17211f]">
                     <option value="">Selecione a unidade</option>
                     {franchiseList.map((franchise) => <option key={franchise.id} value={franchise.id}>{franchise.name} ({franchise.code})</option>)}
                   </select>
                 </label>
               )}
 
-              <label className="block text-[10px] font-extrabold uppercase tracking-wider text-[#69778c]">
+              <label className="block text-[10px] font-extrabold text-[#5e6b67]">
                 Termos do histórico / descrição
-                <textarea rows={3} value={intercompanyForm.terms} onChange={(event) => setIntercompanyForm((form) => ({ ...form, terms: event.target.value }))} placeholder={'TED MATRIZ\nTRANSFERENCIA ENTRE EMPRESAS\nREPASSE INTERNO'} className="mt-1 w-full rounded-lg border border-[#cbd5e1] bg-white px-3 py-2 text-xs font-semibold normal-case text-[#152238]" />
+                <textarea rows={3} value={intercompanyForm.terms} onChange={(event) => setIntercompanyForm((form) => ({ ...form, terms: event.target.value }))} placeholder={'TED MATRIZ\nTRANSFERENCIA ENTRE EMPRESAS\nREPASSE INTERNO'} className="mt-1 w-full rounded-lg border border-[#c9d1cb] bg-white px-3 py-2 text-xs font-semibold normal-case text-[#17211f]" />
               </label>
 
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                <label className="block text-[10px] font-extrabold uppercase tracking-wider text-[#69778c]">
+                <label className="block text-[10px] font-extrabold text-[#5e6b67]">
                   CNPJ / CPF da contraparte
-                  <textarea rows={2} value={intercompanyForm.counterpartyDocuments} onChange={(event) => setIntercompanyForm((form) => ({ ...form, counterpartyDocuments: event.target.value }))} placeholder="Um documento por linha" className="mt-1 w-full rounded-lg border border-[#cbd5e1] bg-white px-3 py-2 text-xs font-semibold normal-case text-[#152238]" />
+                  <textarea rows={2} value={intercompanyForm.counterpartyDocuments} onChange={(event) => setIntercompanyForm((form) => ({ ...form, counterpartyDocuments: event.target.value }))} placeholder="Um documento por linha" className="mt-1 w-full rounded-lg border border-[#c9d1cb] bg-white px-3 py-2 text-xs font-semibold normal-case text-[#17211f]" />
                 </label>
-                <label className="block text-[10px] font-extrabold uppercase tracking-wider text-[#69778c]">
+                <label className="block text-[10px] font-extrabold text-[#5e6b67]">
                   Conta / PIX da contraparte
-                  <textarea rows={2} value={intercompanyForm.counterpartyAccounts} onChange={(event) => setIntercompanyForm((form) => ({ ...form, counterpartyAccounts: event.target.value }))} placeholder="Conta, agência ou chave por linha" className="mt-1 w-full rounded-lg border border-[#cbd5e1] bg-white px-3 py-2 text-xs font-semibold normal-case text-[#152238]" />
+                  <textarea rows={2} value={intercompanyForm.counterpartyAccounts} onChange={(event) => setIntercompanyForm((form) => ({ ...form, counterpartyAccounts: event.target.value }))} placeholder="Conta, agência ou chave por linha" className="mt-1 w-full rounded-lg border border-[#c9d1cb] bg-white px-3 py-2 text-xs font-semibold normal-case text-[#17211f]" />
                 </label>
               </div>
 
-              <button type="submit" disabled={!isOwner || isSavingIntercompany} className="inline-flex w-full items-center justify-center gap-1.5 rounded-xl bg-[#3c63da] px-4 py-2.5 text-xs font-extrabold text-white hover:bg-[#2f52c0] disabled:cursor-not-allowed disabled:opacity-50">
+              <button type="submit" disabled={!isOwner || isSavingIntercompany} className="inline-flex w-full items-center justify-center gap-1.5 rounded-xl bg-[#0f4c5c] px-4 py-2.5 text-xs font-extrabold text-white hover:bg-[#0b3b48] disabled:cursor-not-allowed disabled:opacity-50">
                 <Save className="h-3.5 w-3.5" />
                 {isSavingIntercompany ? "Salvando..." : editingIntercompanyId ? "Salvar alterações" : "Salvar regra"}
               </button>
             </form>
 
-            <div className="rounded-2xl border border-[#e5eaf1] bg-white p-5 shadow-xs">
-              <div className="flex items-center justify-between gap-3 border-b border-[#e5eaf1] pb-3">
+            <div className="rounded-2xl border border-[#dfe4df] bg-white p-5 shadow-xs">
+              <div className="flex items-center justify-between gap-3 border-b border-[#dfe4df] pb-3">
                 <div>
-                  <h3 className="text-sm font-extrabold text-[#152238]">Regras salvas ({intercompanyList.length})</h3>
-                  <p className="mt-0.5 text-[11px] text-[#69778c]">Aplicadas apenas a novas leituras; históricos não são apagados ao editar.</p>
+                  <h3 className="text-sm font-extrabold text-[#17211f]">Regras salvas ({intercompanyList.length})</h3>
+                  <p className="mt-0.5 text-[11px] text-[#5e6b67]">Aplicadas apenas a novas leituras; históricos não são apagados ao editar.</p>
                 </div>
                 <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2 py-1 text-[10px] font-extrabold text-emerald-700">Rastreável</span>
               </div>
               <div className="mt-3 space-y-2">
                 {intercompanyList.length === 0 ? (
-                  <div className="rounded-xl border border-dashed border-[#cbd5e1] bg-[#f8faff] p-6 text-center text-xs text-[#69778c]">Nenhuma regra cadastrada. Aguarde os dados das empresas e cadastre os termos exatos do extrato.</div>
+                  <div className="rounded-xl border border-dashed border-[#c9d1cb] bg-[#f7f9f7] p-6 text-center text-xs text-[#5e6b67]">Nenhuma regra cadastrada. Aguarde os dados das empresas e cadastre os termos exatos do extrato.</div>
                 ) : intercompanyList.map((rule) => (
-                  <div key={rule.id} className="rounded-xl border border-[#e5eaf1] bg-[#f8faff] p-3">
+                  <div key={rule.id} className="rounded-xl border border-[#dfe4df] bg-[#f7f9f7] p-3">
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
                         <div className="flex flex-wrap items-center gap-1.5">
-                          <b className="text-xs text-[#152238]">{rule.name}</b>
+                          <b className="text-xs text-[#17211f]">{rule.name}</b>
                           <span className={`rounded-full px-2 py-0.5 text-[9px] font-extrabold ${rule.active ? "bg-emerald-50 text-emerald-700" : "bg-slate-100 text-slate-500"}`}>{rule.active ? "Ativa" : "Pausada"}</span>
                           <span className="rounded-full bg-amber-50 px-2 py-0.5 text-[9px] font-extrabold text-amber-800">{rule.scope === "rede" ? "Rede" : rule.scope === "empresa" ? "Empresa" : "Unidade"}</span>
                         </div>
-                        <p className="mt-1 text-[10px] text-[#69778c]">{[...rule.terms, ...(rule.counterpartyDocuments || []), ...(rule.counterpartyAccounts || [])].join(" · ") || "Sem critérios"}</p>
+                        <p className="mt-1 text-[10px] text-[#5e6b67]">{[...rule.terms, ...(rule.counterpartyDocuments || []), ...(rule.counterpartyAccounts || [])].join(" · ") || "Sem critérios"}</p>
                       </div>
                       <div className="flex shrink-0 items-center gap-1">
-                        <button type="button" onClick={() => handleEditIntercompanyRule(rule)} className="rounded-lg p-1.5 text-[#3c63da] hover:bg-[#edf2ff]" title="Editar regra"><Edit3 className="h-3.5 w-3.5" /></button>
+                        <button type="button" onClick={() => handleEditIntercompanyRule(rule)} className="rounded-lg p-1.5 text-[#0f4c5c] hover:bg-[#e3eff1]" title="Editar regra"><Edit3 className="h-3.5 w-3.5" /></button>
                         <button type="button" onClick={() => void handleDeleteIntercompanyRule(rule.id)} className="rounded-lg p-1.5 text-rose-600 hover:bg-rose-50" title="Excluir regra"><Trash2 className="h-3.5 w-3.5" /></button>
                       </div>
                     </div>
@@ -1889,11 +1889,11 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
       {activeTab === "permissoes" && (
         <div className="space-y-5">
           {onSaveUsers && <AccessManagementPanel users={users} businesses={businesses} franchises={franchises} onSaveUsers={onSaveUsers} />}
-          <div className="rounded-2xl border border-[#e5eaf1] bg-white p-5 sm:p-6 shadow-xs space-y-4">
-          <div className="flex items-center justify-between pb-3 border-b border-[#e5eaf1]">
+          <div className="rounded-2xl border border-[#dfe4df] bg-white p-5 sm:p-6 shadow-xs space-y-4">
+          <div className="flex items-center justify-between pb-3 border-b border-[#dfe4df]">
             <div>
-              <h3 className="text-sm font-bold text-[#152238]">Matriz de Controle de Acesso (RBAC)</h3>
-              <p className="text-xs text-[#69778c]">
+              <h3 className="text-sm font-bold text-[#17211f]">Matriz de Controle de Acesso (RBAC)</h3>
+              <p className="text-xs text-[#5e6b67]">
                 Regras de permissão por perfil de usuário validadas no frontend e protegidas no backend.
               </p>
             </div>
@@ -1905,46 +1905,46 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs border-collapse">
               <thead>
-                <tr className="bg-[#f8faff] border-b border-[#e5eaf1] text-[#69778c]">
-                  <th className="py-2.5 px-4 font-bold uppercase text-[10px]">Perfil de Usuário</th>
-                  <th className="py-2.5 px-4 font-bold uppercase text-[10px]">Escopo de Dados</th>
-                  <th className="py-2.5 px-4 font-bold uppercase text-[10px]">Acesso ao DRE</th>
-                  <th className="py-2.5 px-4 font-bold uppercase text-[10px]">Lançamentos</th>
-                  <th className="py-2.5 px-4 font-bold uppercase text-[10px]">Área /configuracao</th>
+                <tr className="bg-[#f7f9f7] border-b border-[#dfe4df] text-[#5e6b67]">
+                  <th className="py-2.5 px-4 font-bold text-[10px]">Perfil de Usuário</th>
+                  <th className="py-2.5 px-4 font-bold text-[10px]">Escopo de Dados</th>
+                  <th className="py-2.5 px-4 font-bold text-[10px]">Acesso ao DRE</th>
+                  <th className="py-2.5 px-4 font-bold text-[10px]">Lançamentos</th>
+                  <th className="py-2.5 px-4 font-bold text-[10px]">Área /configuracao</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[#e5eaf1]">
+              <tbody className="divide-y divide-[#dfe4df]">
                 <tr>
-                  <td className="py-3 px-4 font-bold text-[#152238]">👑 Dono da Rede</td>
-                  <td className="py-3 px-4 text-[#3c63da] font-semibold">Toda a Rede Consolidada</td>
+                  <td className="py-3 px-4 font-bold text-[#17211f]">👑 Dono da Rede</td>
+                  <td className="py-3 px-4 text-[#0f4c5c] font-semibold">Toda a Rede Consolidada</td>
                   <td className="py-3 px-4 text-emerald-700 font-bold">✓ Total (Todas as Lojas)</td>
                   <td className="py-3 px-4 text-emerald-700 font-bold">✓ Total</td>
                   <td className="py-3 px-4 text-emerald-700 font-bold">✓ Administrador Total</td>
                 </tr>
                 <tr>
-                  <td className="py-3 px-4 font-bold text-[#152238]">🏢 Equipe Matriz</td>
-                  <td className="py-3 px-4 text-[#3c63da] font-semibold">Toda a Rede Consolidada</td>
+                  <td className="py-3 px-4 font-bold text-[#17211f]">🏢 Equipe Matriz</td>
+                  <td className="py-3 px-4 text-[#0f4c5c] font-semibold">Toda a Rede Consolidada</td>
                   <td className="py-3 px-4 text-emerald-700 font-bold">✓ Leitura e Edição</td>
                   <td className="py-3 px-4 text-emerald-700 font-bold">✓ Total</td>
                   <td className="py-3 px-4 text-emerald-700 font-bold">✓ Acesso Liberado</td>
                 </tr>
                 <tr>
-                  <td className="py-3 px-4 font-bold text-[#152238]">💼 Admin de Negócio</td>
-                  <td className="py-3 px-4 text-[#3c63da] font-semibold">Franquias da sua Marca</td>
+                  <td className="py-3 px-4 font-bold text-[#17211f]">💼 Admin de Negócio</td>
+                  <td className="py-3 px-4 text-[#0f4c5c] font-semibold">Franquias da sua Marca</td>
                   <td className="py-3 px-4 text-emerald-700 font-bold">✓ Unidades da Marca</td>
                   <td className="py-3 px-4 text-emerald-700 font-bold">✓ Permitido</td>
                   <td className="py-3 px-4 text-emerald-700 font-bold">✓ Permitido</td>
                 </tr>
                 <tr>
-                  <td className="py-3 px-4 font-bold text-[#152238]">📍 Franqueado</td>
-                  <td className="py-3 px-4 text-[#69778c]">Apenas sua Loja</td>
+                  <td className="py-3 px-4 font-bold text-[#17211f]">📍 Franqueado</td>
+                  <td className="py-3 px-4 text-[#5e6b67]">Apenas sua Loja</td>
                   <td className="py-3 px-4 text-emerald-700 font-bold">✓ DRE da sua Franquia</td>
                   <td className="py-3 px-4 text-emerald-700 font-bold">✓ Lançamentos da Loja</td>
                   <td className="py-3 px-4 text-rose-600 font-bold">✗ Bloqueado (403 Forbidden)</td>
                 </tr>
                 <tr>
-                  <td className="py-3 px-4 font-bold text-[#152238]">👤 Operador Local</td>
-                  <td className="py-3 px-4 text-[#69778c]">Apenas sua Loja</td>
+                  <td className="py-3 px-4 font-bold text-[#17211f]">👤 Operador Local</td>
+                  <td className="py-3 px-4 text-[#5e6b67]">Apenas sua Loja</td>
                   <td className="py-3 px-4 text-rose-600 font-bold">✗ Sem DRE</td>
                   <td className="py-3 px-4 text-emerald-700 font-bold">✓ Operação Básica</td>
                   <td className="py-3 px-4 text-rose-600 font-bold">✗ Bloqueado (403 Forbidden)</td>
@@ -1954,26 +1954,26 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
           </div>
 
           {/* Card de proteção técnica — mantido apenas no backend, sem mensagem na interface */}
-          <div className="hidden mt-5 p-4 rounded-xl border border-[#e5eaf1] bg-[#f8faff] flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="hidden mt-5 p-4 rounded-xl border border-[#dfe4df] bg-[#f7f9f7] flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="space-y-1">
               <div className="flex items-center gap-2">
                 <span className="h-2.5 w-2.5 rounded-full bg-emerald-500" />
-                <h4 className="text-xs font-bold text-[#152238]">
+                <h4 className="text-xs font-bold text-[#17211f]">
                   Proteção de Código-Fonte e Bloqueio de Inspeção (F12) Ativo
                 </h4>
                 <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-extrabold">
                   Protegido
                 </span>
               </div>
-              <p className="text-[11px] text-[#69778c]">
+              <p className="text-[11px] text-[#5e6b67]">
                 Atalhos de inspeção (F12, Ctrl+Shift+I, Ctrl+U), menu de contexto e compartilhamento indevido de código estão bloqueados preventivamente em produção para resguardar as fórmulas financeiras e a propriedade intelectual da rede.
               </p>
             </div>
             <div className="flex items-center gap-2 shrink-0">
-              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white border border-[#cbd5e1] text-[11px] font-bold text-[#152238]">
+              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white border border-[#c9d1cb] text-[11px] font-bold text-[#17211f]">
                 ✓ DevTools Interceptado
               </span>
-              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white border border-[#cbd5e1] text-[11px] font-bold text-emerald-700">
+              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white border border-[#c9d1cb] text-[11px] font-bold text-emerald-700">
                 ✓ Anti-Tamper Ativo
               </span>
             </div>
@@ -1986,11 +1986,11 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
       {/* 3. ABA: ROYALTIES POR MARCA                                   */}
       {/* ------------------------------------------------------------- */}
       {activeTab === "royalties" && (
-        <div className="rounded-2xl border border-[#e5eaf1] bg-white p-5 sm:p-6 shadow-xs space-y-5">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[#e5eaf1]">
+        <div className="rounded-2xl border border-[#dfe4df] bg-white p-5 sm:p-6 shadow-xs space-y-5">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[#dfe4df]">
             <div>
               <div className="flex items-center gap-2">
-                <h3 className="text-sm font-bold text-[#152238]">Taxas de Royalties por Marca</h3>
+                <h3 className="text-sm font-bold text-[#17211f]">Taxas de Royalties por Marca</h3>
                 {isOwner ? (
                   <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 border border-emerald-200 px-2 py-0.5 text-[10px] font-bold text-emerald-700">
                     👑 Dono da Rede · Edição Liberada
@@ -2001,7 +2001,7 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
                   </span>
                 )}
               </div>
-              <p className="text-xs text-[#69778c] mt-0.5">
+              <p className="text-xs text-[#5e6b67] mt-0.5">
                 Alíquota percentual sobre o faturamento bruto cobrada mensalmente das franquias de cada marca.
               </p>
             </div>
@@ -2013,7 +2013,7 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
                   setActiveTab("marcas");
                   setIsAddingBiz(true);
                 }}
-                className="flex items-center gap-1.5 rounded-xl border border-[#3c63da] bg-[#edf2ff] px-3.5 py-2 text-xs font-bold text-[#3c63da] hover:bg-[#dfe8fe] shadow-2xs cursor-pointer"
+                className="flex items-center gap-1.5 rounded-xl border border-[#0f4c5c] bg-[#e3eff1] px-3.5 py-2 text-xs font-bold text-[#0f4c5c] hover:bg-[#e3eff1] shadow-2xs cursor-pointer"
               >
                 <Plus className="h-4 w-4" />
                 <span>Cadastrar Nova Marca</span>
@@ -2025,7 +2025,7 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
                 className={`flex items-center gap-1.5 rounded-xl px-4 py-2 text-xs font-bold text-white shadow-sm transition-all ${
                   !isOwner
                     ? "bg-slate-300 text-slate-500 cursor-not-allowed border border-slate-300"
-                    : "bg-[#3c63da] hover:bg-[#2f52c0] cursor-pointer"
+                    : "bg-[#0f4c5c] hover:bg-[#0b3b48] cursor-pointer"
                 }`}
                 title={!isOwner ? "Apenas o Dono da Rede pode alterar ou salvar taxas de royalties" : "Salvar alterações de royalties"}
               >
@@ -2070,17 +2070,17 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
 
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
             {businessList.length === 0 ? (
-              <div className="p-8 text-center border-2 border-dashed border-[#d1dbe8] rounded-xl bg-[#f8faff] col-span-full space-y-2">
-                <Building2 className="h-8 w-8 text-[#3c63da] mx-auto opacity-50" />
-                <p className="text-xs font-bold text-[#152238]">Nenhum modelo ou marca cadastrado no sistema.</p>
-                <p className="text-[11px] text-[#69778c]">Cadastre as marcas da rede para estipular a taxa de royalty de cada uma.</p>
+              <div className="p-8 text-center border-2 border-dashed border-[#dfe4df] rounded-xl bg-[#f7f9f7] col-span-full space-y-2">
+                <Building2 className="h-8 w-8 text-[#0f4c5c] mx-auto opacity-50" />
+                <p className="text-xs font-bold text-[#17211f]">Nenhum modelo ou marca cadastrado no sistema.</p>
+                <p className="text-[11px] text-[#5e6b67]">Cadastre as marcas da rede para estipular a taxa de royalty de cada uma.</p>
                 <button
                   type="button"
                   onClick={() => {
                     setActiveTab("marcas");
                     setIsAddingBiz(true);
                   }}
-                  className="mt-2 inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-[#3c63da] text-xs font-bold text-white hover:bg-[#2f52c0]"
+                  className="mt-2 inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-[#0f4c5c] text-xs font-bold text-white hover:bg-[#0b3b48]"
                 >
                   <Plus className="h-3.5 w-3.5" />
                   <span>Cadastrar Primeira Marca</span>
@@ -2098,30 +2098,30 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
                 return (
                   <div
                     key={b.id}
-                    className="p-4 rounded-xl border border-[#e5eaf1] bg-[#f8faff] space-y-3 relative overflow-hidden"
+                    className="p-4 rounded-xl border border-[#dfe4df] bg-[#f7f9f7] space-y-3 relative overflow-hidden"
                   >
                     <div
                       className="absolute top-0 left-0 right-0 h-1"
-                      style={{ backgroundColor: b.color || "#3c63da" }}
+                      style={{ backgroundColor: b.color || "#0f4c5c" }}
                     />
                     <div className="flex items-center justify-between pt-1">
                       <div className="flex items-center gap-2">
                         <span
                           className="h-3.5 w-3.5 rounded-full border border-black/10 shadow-xs flex-shrink-0"
-                          style={{ backgroundColor: b.color || "#3c63da" }}
+                          style={{ backgroundColor: b.color || "#0f4c5c" }}
                         />
-                        <span className="text-xs font-extrabold text-[#152238] truncate max-w-[150px]">
+                        <span className="text-xs font-extrabold text-[#17211f] truncate max-w-[150px]">
                           {b.name || b.brand || b.id}
                         </span>
                       </div>
-                      <span className="text-[10px] font-bold text-[#69778c] bg-white px-2 py-0.5 rounded-full border border-[#e5eaf1]">
+                      <span className="text-[10px] font-bold text-[#5e6b67] bg-white px-2 py-0.5 rounded-full border border-[#dfe4df]">
                         {unitsCount} {unitsCount === 1 ? "loja" : "lojas"}
                       </span>
                     </div>
 
                     <div>
                       <div className="flex items-center justify-between mb-1">
-                        <label className="block text-[10px] font-extrabold uppercase text-[#69778c]">
+                        <label className="block text-[10px] font-extrabold text-[#5e6b67]">
                           Royalty sobre Faturamento
                         </label>
                         {!isOwner ? (
@@ -2153,13 +2153,13 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
                           className={`w-full rounded-xl border px-3 py-2 text-xs font-bold transition-all ${
                             !isOwner
                               ? "bg-slate-100 text-slate-500 border-slate-200 cursor-not-allowed"
-                              : "bg-white text-[#152238] border-[#e5eaf1] focus:border-[#3c63da] focus:outline-none focus:ring-1 focus:ring-[#3c63da]"
+                              : "bg-white text-[#17211f] border-[#dfe4df] focus:border-[#0f4c5c] focus:outline-none focus:ring-1 focus:ring-[#0f4c5c]"
                           }`}
                         />
-                        <span className="absolute right-3 top-2 text-xs font-bold text-[#69778c]">%</span>
+                        <span className="absolute right-3 top-2 text-xs font-bold text-[#5e6b67]">%</span>
                       </div>
 
-                      <div className="mt-2 pt-2 border-t border-[#e5eaf1]/60 flex items-center justify-between text-[11px] text-[#69778c]">
+                      <div className="mt-2 pt-2 border-t border-[#dfe4df]/60 flex items-center justify-between text-[11px] text-[#5e6b67]">
                         <span>Simulação p/ R$ 50k:</span>
                         <strong className="font-mono text-emerald-700 font-extrabold">
                           {sampleRoyaltySim}
@@ -2195,25 +2195,25 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
       {activeTab === "fornecedores" && (
         <div className="space-y-5">
           {/* Sub-navegação interna: Fornecedores vs Produtos */}
-          <div className="flex items-center justify-between flex-wrap gap-3 pb-3 border-b border-[#e5eaf1]">
+          <div className="flex items-center justify-between flex-wrap gap-3 pb-3 border-b border-[#dfe4df]">
             <div>
-              <h3 className="text-sm font-bold text-[#152238] flex items-center gap-2">
-                <PackageCheck className="h-4 w-4 text-[#3c63da]" />
+              <h3 className="text-sm font-bold text-[#17211f] flex items-center gap-2">
+                <PackageCheck className="h-4 w-4 text-[#0f4c5c]" />
                 <span>Cadastro de Fornecedores e Produtos</span>
               </h3>
-              <p className="text-xs text-[#69778c]">
+              <p className="text-xs text-[#5e6b67]">
                 Gestão dos fornecedores oficiais e catálogo padronizado de produtos homologados pela rede.
               </p>
             </div>
 
-            <div className="flex items-center gap-1.5 bg-[#f8faff] p-1 rounded-xl border border-[#e5eaf1]">
+            <div className="flex items-center gap-1.5 bg-[#f7f9f7] p-1 rounded-xl border border-[#dfe4df]">
               <button
                 type="button"
                 onClick={() => setCatalogSubTab("produtos")}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                   catalogSubTab === "produtos"
-                    ? "bg-[#3c63da] text-white shadow-xs"
-                    : "text-[#69778c] hover:text-[#152238]"
+                    ? "bg-[#0f4c5c] text-white shadow-xs"
+                    : "text-[#5e6b67] hover:text-[#17211f]"
                 }`}
               >
                 <PackageCheck className="h-3.5 w-3.5" />
@@ -2225,8 +2225,8 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
                 onClick={() => setCatalogSubTab("fornecedores")}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                   catalogSubTab === "fornecedores"
-                    ? "bg-[#3c63da] text-white shadow-xs"
-                    : "text-[#69778c] hover:text-[#152238]"
+                    ? "bg-[#0f4c5c] text-white shadow-xs"
+                    : "text-[#5e6b67] hover:text-[#17211f]"
                 }`}
               >
                 <Truck className="h-3.5 w-3.5" />
@@ -2246,14 +2246,14 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
           )}
 
           {catalogSubTab === "produtos" && (
-            <div className="rounded-2xl border border-[#e5eaf1] bg-white p-5 sm:p-6 shadow-xs space-y-4">
+            <div className="rounded-2xl border border-[#dfe4df] bg-white p-5 sm:p-6 shadow-xs space-y-4">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div>
-                  <h4 className="text-xs font-extrabold uppercase tracking-wider text-[#3c63da] flex items-center gap-1.5">
+                  <h4 className="text-xs font-extrabold text-[#0f4c5c] flex items-center gap-1.5">
                     <PackageCheck className="h-4 w-4" />
                     <span>Catálogo de Produtos Homologados</span>
                   </h4>
-                  <p className="text-xs text-[#69778c] mt-0.5">
+                  <p className="text-xs text-[#5e6b67] mt-0.5">
                     Cadastre os insumos e mercadorias que cada franquia deve comprar dos parceiros homologados.
                   </p>
                 </div>
@@ -2262,7 +2262,7 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
                   type="button"
                   id="btn-add-product"
                   onClick={handleStartAddProduct}
-                  className="flex items-center gap-1.5 rounded-xl bg-[#3c63da] px-3.5 py-2 text-xs font-bold text-white hover:bg-[#2f52c0] shadow-sm cursor-pointer"
+                  className="flex items-center gap-1.5 rounded-xl bg-[#0f4c5c] px-3.5 py-2 text-xs font-bold text-white hover:bg-[#0b3b48] shadow-sm cursor-pointer"
                 >
                   <Plus className="h-4 w-4" />
                   <span>Cadastrar Novo Produto</span>
@@ -2271,15 +2271,15 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
 
               {/* Form de Adicionar/Editar Produto */}
               {isAddingProduct && (
-                <form onSubmit={handleSaveProduct} className="p-4 sm:p-5 rounded-xl border border-[#3c63da]/30 bg-[#edf2ff]/40 space-y-3">
-                  <div className="flex items-center justify-between border-b border-[#3c63da]/20 pb-2">
-                    <h5 className="text-xs font-bold text-[#152238]">
+                <form onSubmit={handleSaveProduct} className="p-4 sm:p-5 rounded-xl border border-[#0f4c5c]/30 bg-[#e3eff1]/40 space-y-3">
+                  <div className="flex items-center justify-between border-b border-[#0f4c5c]/20 pb-2">
+                    <h5 className="text-xs font-bold text-[#17211f]">
                       {editingProductId ? "Editar Produto Homologado" : "Novo Produto Homologado"}
                     </h5>
                     <button
                       type="button"
                       onClick={() => setIsAddingProduct(false)}
-                      className="text-[#69778c] hover:text-[#152238]"
+                      className="text-[#5e6b67] hover:text-[#17211f]"
                     >
                       <X className="h-4 w-4" />
                     </button>
@@ -2287,31 +2287,31 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
 
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
                     <div>
-                      <label className="block text-[10px] font-bold text-[#152238] mb-1">Nome do Produto *</label>
+                      <label className="block text-[10px] font-bold text-[#17211f] mb-1">Nome do Produto *</label>
                       <input
                         type="text"
                         required
                         placeholder="Ex: Café Grão Especial Blend 1kg"
                         value={productForm.name}
                         onChange={(e) => setProductForm({ ...productForm, name: e.target.value })}
-                        className="w-full rounded-lg border border-[#c4cdd9] bg-white px-2.5 py-2 font-bold"
+                        className="w-full rounded-lg border border-[#c9d1cb] bg-white px-2.5 py-2 font-bold"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-[10px] font-bold text-[#152238] mb-1">Categoria *</label>
+                      <label className="block text-[10px] font-bold text-[#17211f] mb-1">Categoria *</label>
                       <input
                         type="text"
                         required
                         placeholder="Ex: Café em Grãos, Embalagens, Uniforme"
                         value={productForm.category}
                         onChange={(e) => setProductForm({ ...productForm, category: e.target.value })}
-                        className="w-full rounded-lg border border-[#c4cdd9] bg-white px-2.5 py-2 font-bold"
+                        className="w-full rounded-lg border border-[#c9d1cb] bg-white px-2.5 py-2 font-bold"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-[10px] font-bold text-[#152238] mb-1">Fornecedor Homologado *</label>
+                      <label className="block text-[10px] font-bold text-[#17211f] mb-1">Fornecedor Homologado *</label>
                       <select
                         value={productForm.supplierId}
                         onChange={(e) => {
@@ -2322,7 +2322,7 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
                             supplierName: s?.name || "",
                           });
                         }}
-                        className="w-full rounded-lg border border-[#c4cdd9] bg-white px-2.5 py-2 font-bold"
+                        className="w-full rounded-lg border border-[#c9d1cb] bg-white px-2.5 py-2 font-bold"
                       >
                         {suppliers.length === 0 ? (
                           <option value="">Nenhum fornecedor cadastrado</option>
@@ -2337,33 +2337,33 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
                     </div>
 
                     <div>
-                      <label className="block text-[10px] font-bold text-[#152238] mb-1">Código / SKU</label>
+                      <label className="block text-[10px] font-bold text-[#17211f] mb-1">Código / SKU</label>
                       <input
                         type="text"
                         placeholder="Ex: PRD-0042"
                         value={productForm.sku}
                         onChange={(e) => setProductForm({ ...productForm, sku: e.target.value })}
-                        className="w-full rounded-lg border border-[#c4cdd9] bg-white px-2.5 py-2 font-mono font-bold"
+                        className="w-full rounded-lg border border-[#c9d1cb] bg-white px-2.5 py-2 font-mono font-bold"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-[10px] font-bold text-[#152238] mb-1">Marca / Fabricante</label>
+                      <label className="block text-[10px] font-bold text-[#17211f] mb-1">Marca / Fabricante</label>
                       <input
                         type="text"
                         placeholder="Ex: Torrefação Paulista"
                         value={productForm.brand}
                         onChange={(e) => setProductForm({ ...productForm, brand: e.target.value })}
-                        className="w-full rounded-lg border border-[#c4cdd9] bg-white px-2.5 py-2"
+                        className="w-full rounded-lg border border-[#c9d1cb] bg-white px-2.5 py-2"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-[10px] font-bold text-[#152238] mb-1">Unidade de Medida</label>
+                      <label className="block text-[10px] font-bold text-[#17211f] mb-1">Unidade de Medida</label>
                       <select
                         value={productForm.unit}
                         onChange={(e) => setProductForm({ ...productForm, unit: e.target.value })}
-                        className="w-full rounded-lg border border-[#c4cdd9] bg-white px-2.5 py-2 font-bold"
+                        className="w-full rounded-lg border border-[#c9d1cb] bg-white px-2.5 py-2 font-bold"
                       >
                         <option value="kg">kg (Quilograma)</option>
                         <option value="un">un (Unidade)</option>
@@ -2376,28 +2376,28 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
                   </div>
 
                   <div>
-                    <label className="block text-[10px] font-bold text-[#152238] mb-1">Especificações / Padrão de Compra</label>
+                    <label className="block text-[10px] font-bold text-[#17211f] mb-1">Especificações / Padrão de Compra</label>
                     <textarea
                       rows={2}
                       placeholder="Ex: Torra média, padrão de acidez controlada, entrega semanal."
                       value={productForm.notes}
                       onChange={(e) => setProductForm({ ...productForm, notes: e.target.value })}
-                      className="w-full rounded-lg border border-[#c4cdd9] bg-white px-2.5 py-2 text-xs"
+                      className="w-full rounded-lg border border-[#c9d1cb] bg-white px-2.5 py-2 text-xs"
                     />
                   </div>
 
-                  <div className="flex justify-end gap-2 pt-2 border-t border-[#3c63da]/20">
+                  <div className="flex justify-end gap-2 pt-2 border-t border-[#0f4c5c]/20">
                     <button
                       type="button"
                       onClick={() => setIsAddingProduct(false)}
-                      className="px-3 py-1.5 rounded-lg border border-[#c4cdd9] text-xs font-bold text-[#69778c] hover:bg-white"
+                      className="px-3 py-1.5 rounded-lg border border-[#c9d1cb] text-xs font-bold text-[#5e6b67] hover:bg-white"
                     >
                       Cancelar
                     </button>
                     <button
                       type="submit"
                       disabled={isSavingProduct}
-                      className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg bg-[#3c63da] text-white text-xs font-bold hover:bg-[#2f52c0] shadow-xs disabled:opacity-60"
+                      className="flex items-center gap-1.5 px-4 py-1.5 rounded-lg bg-[#0f4c5c] text-white text-xs font-bold hover:bg-[#0b3b48] shadow-xs disabled:opacity-60"
                     >
                       <Save className="h-3.5 w-3.5" />
                       <span>{isSavingProduct ? "Salvando..." : "Salvar Produto Homologado"}</span>
@@ -2408,13 +2408,13 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
 
               {/* Tabela de Produtos Homologados */}
               {productList.length === 0 ? (
-                <div className="p-8 text-center border border-dashed border-[#cbd5e1] rounded-xl text-xs text-[#69778c] bg-[#f8faff]">
+                <div className="p-8 text-center border border-dashed border-[#c9d1cb] rounded-xl text-xs text-[#5e6b67] bg-[#f7f9f7]">
                   Nenhum produto homologado cadastrado ainda. Clique em "Cadastrar Novo Produto" para iniciar o catálogo.
                 </div>
               ) : (
-                <div className="overflow-x-auto rounded-xl border border-[#e5eaf1]">
+                <div className="overflow-x-auto rounded-xl border border-[#dfe4df]">
                   <table className="w-full text-left text-xs">
-                    <thead className="bg-[#f8fafc] text-[10px] uppercase tracking-wider text-[#69778c] border-b border-[#e5eaf1]">
+                    <thead className="bg-[#f7f9f7] text-[10px] text-[#5e6b67] border-b border-[#dfe4df]">
                       <tr>
                         <th className="p-3">Produto</th>
                         <th className="p-3">Categoria</th>
@@ -2425,17 +2425,17 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
                         <th className="p-3 text-right">Ações</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-[#e5eaf1]">
+                    <tbody className="divide-y divide-[#dfe4df]">
                       {productList.map((prod) => (
-                        <tr key={prod.id} className="hover:bg-[#f8faff]">
+                        <tr key={prod.id} className="hover:bg-[#f7f9f7]">
                           <td className="p-3">
-                            <strong className="text-[#152238] block">{prod.name}</strong>
-                            {prod.brand && <span className="text-[10px] text-[#69778c]">{prod.brand}</span>}
+                            <strong className="text-[#17211f] block">{prod.name}</strong>
+                            {prod.brand && <span className="text-[10px] text-[#5e6b67]">{prod.brand}</span>}
                           </td>
-                          <td className="p-3 text-[#475569]">{prod.category}</td>
-                          <td className="p-3 font-semibold text-[#152238]">{prod.supplierName || "—"}</td>
-                          <td className="p-3 font-mono text-[11px] text-[#64748b]">{prod.sku || "—"}</td>
-                          <td className="p-3 text-[#475569]">{prod.unit || "un"}</td>
+                          <td className="p-3 text-[#3a4743]">{prod.category}</td>
+                          <td className="p-3 font-semibold text-[#17211f]">{prod.supplierName || "—"}</td>
+                          <td className="p-3 font-mono text-[11px] text-[#5e6b67]">{prod.sku || "—"}</td>
+                          <td className="p-3 text-[#3a4743]">{prod.unit || "un"}</td>
                           <td className="p-3">
                             <span className="inline-flex rounded-full px-2 py-0.5 text-[10px] font-extrabold bg-emerald-50 text-emerald-700 border border-emerald-200">
                               {prod.status || "ativo"}
@@ -2446,7 +2446,7 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
                               <button
                                 type="button"
                                 onClick={() => handleStartEditProduct(prod)}
-                                className="p-1.5 rounded-lg text-[#3c63da] hover:bg-[#edf2ff] cursor-pointer"
+                                className="p-1.5 rounded-lg text-[#0f4c5c] hover:bg-[#e3eff1] cursor-pointer"
                                 title="Editar Produto"
                               >
                                 <Edit3 className="h-3.5 w-3.5" />
@@ -2476,14 +2476,14 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
       {/* 4. ABA: CADASTRO DE FRANQUEADOS                               */}
       {/* ------------------------------------------------------------- */}
       {activeTab === "franqueados" && (
-        <div className="rounded-2xl border border-[#e5eaf1] bg-white p-5 sm:p-6 shadow-xs space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[#e5eaf1]">
+        <div className="rounded-2xl border border-[#dfe4df] bg-white p-5 sm:p-6 shadow-xs space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[#dfe4df]">
             <div>
-              <h3 className="text-sm font-bold text-[#152238] flex items-center gap-2">
-                <Store className="h-4 w-4 text-[#3c63da]" />
+              <h3 className="text-sm font-bold text-[#17211f] flex items-center gap-2">
+                <Store className="h-4 w-4 text-[#0f4c5c]" />
                 <span>Cadastro de Franqueados</span>
               </h3>
-              <p className="text-xs text-[#69778c]">
+              <p className="text-xs text-[#5e6b67]">
                 Gerenciamento centralizado de unidades, responsáveis e faturamento da rede.
               </p>
             </div>
@@ -2494,7 +2494,7 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
                 setIsAddingFranchise(!isAddingFranchise);
                 setFranchiseFormError("");
               }}
-              className="flex items-center gap-1.5 rounded-xl bg-[#3c63da] px-3.5 py-2 text-xs font-bold text-white hover:bg-[#2f52c0] shadow-sm cursor-pointer"
+              className="flex items-center gap-1.5 rounded-xl bg-[#0f4c5c] px-3.5 py-2 text-xs font-bold text-white hover:bg-[#0b3b48] shadow-sm cursor-pointer"
             >
               <Plus className="h-4 w-4" />
               <span>{isAddingFranchise ? "Fechar Formulário" : "Cadastrar Novo Franqueado"}</span>
@@ -2503,13 +2503,13 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
 
           {/* Form to Add New Franchise */}
           {isAddingFranchise && (
-            <div className="p-4 sm:p-5 rounded-xl border border-[#3c63da]/30 bg-[#edf2ff]/40 space-y-3 shadow-xs">
-              <div className="flex items-center justify-between border-b border-[#3c63da]/20 pb-2">
-                <h4 className="text-xs font-extrabold uppercase tracking-wider text-[#3c63da] flex items-center gap-1.5">
+            <div className="p-4 sm:p-5 rounded-xl border border-[#0f4c5c]/30 bg-[#e3eff1]/40 space-y-3 shadow-xs">
+              <div className="flex items-center justify-between border-b border-[#0f4c5c]/20 pb-2">
+                <h4 className="text-xs font-extrabold text-[#0f4c5c] flex items-center gap-1.5">
                   <Store className="h-4 w-4" />
                   <span>Cadastrar Novo Franqueado</span>
                 </h4>
-                <span className="text-[11px] text-[#69778c]">Cadastro ágil com sincronização instantânea</span>
+                <span className="text-[11px] text-[#5e6b67]">Cadastro ágil com sincronização instantânea</span>
               </div>
 
               {franchiseFormError && (
@@ -2521,24 +2521,24 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 <div>
                   <div className="flex items-center justify-between mb-1">
-                    <label className="block text-[10px] font-bold text-[#152238]">Modelo / Marca *</label>
+                    <label className="block text-[10px] font-bold text-[#17211f]">Modelo / Marca *</label>
                     <button
                       type="button"
                       onClick={() => setIsAddingInlineBiz(!isAddingInlineBiz)}
-                      className="text-[10px] font-bold text-[#3c63da] hover:underline"
+                      className="text-[10px] font-bold text-[#0f4c5c] hover:underline"
                     >
                       {isAddingInlineBiz ? "Cancelar Nova Marca" : "Nova Marca Rápida"}
                     </button>
                   </div>
                   {isAddingInlineBiz ? (
-                    <div className="p-2.5 rounded-lg border border-[#3c63da] bg-white space-y-2 shadow-xs">
-                      <div className="text-[10px] font-bold text-[#3c63da] uppercase">Criar e Selecionar Marca</div>
+                    <div className="p-2.5 rounded-lg border border-[#0f4c5c] bg-white space-y-2 shadow-xs">
+                      <div className="text-[10px] font-bold text-[#0f4c5c] ">Criar e Selecionar Marca</div>
                       <input
                         type="text"
                         placeholder="Nome (Ex: Quiosque Express)"
                         value={inlineBizName}
                         onChange={(e) => setInlineBizName(e.target.value)}
-                        className="w-full rounded border border-[#c4cdd9] bg-white px-2 py-1 text-xs font-bold"
+                        className="w-full rounded border border-[#c9d1cb] bg-white px-2 py-1 text-xs font-bold"
                       />
                       <div className="flex items-center gap-2">
                         <div className="flex-1">
@@ -2548,19 +2548,19 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
                             placeholder="Royalty %"
                             value={inlineBizRoyalty}
                             onChange={(e) => setInlineBizRoyalty(e.target.value)}
-                            className="w-full rounded border border-[#c4cdd9] bg-white px-2 py-1 text-xs font-bold"
+                            className="w-full rounded border border-[#c9d1cb] bg-white px-2 py-1 text-xs font-bold"
                           />
                         </div>
                         <input
                           type="color"
                           value={inlineBizColor}
                           onChange={(e) => setInlineBizColor(e.target.value)}
-                          className="h-7 w-8 rounded border border-[#c4cdd9] p-0.5 cursor-pointer bg-white"
+                          className="h-7 w-8 rounded border border-[#c9d1cb] p-0.5 cursor-pointer bg-white"
                         />
                         <button
                           type="button"
                           onClick={handleAddInlineBusiness}
-                          className="px-2.5 py-1 rounded bg-[#3c63da] text-white text-[11px] font-bold hover:bg-[#2f52c0] cursor-pointer"
+                          className="px-2.5 py-1 rounded bg-[#0f4c5c] text-white text-[11px] font-bold hover:bg-[#0b3b48] cursor-pointer"
                         >
                           Salvar
                         </button>
@@ -2572,7 +2572,7 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
                       <button
                         type="button"
                         onClick={() => setIsAddingInlineBiz(true)}
-                        className="font-bold underline text-[#3c63da]"
+                        className="font-bold underline text-[#0f4c5c]"
                       >
                         Criar Marca
                       </button>
@@ -2587,7 +2587,7 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
                           setNewFranchise({ ...newFranchise, businessId: e.target.value });
                         }
                       }}
-                      className="w-full rounded-lg border border-[#c4cdd9] bg-white px-2.5 py-2 text-xs font-bold text-[#152238] focus:border-[#3c63da] focus:outline-none"
+                      className="w-full rounded-lg border border-[#c9d1cb] bg-white px-2.5 py-2 text-xs font-bold text-[#17211f] focus:border-[#0f4c5c] focus:outline-none"
                     >
                       {businessList.map((b) => (
                         <option key={b.id} value={b.id}>{b?.name || b?.brand || b?.id}</option>
@@ -2598,7 +2598,7 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
                 </div>
 
                 <div>
-                  <label className="block text-[10px] font-bold text-[#152238] mb-1">
+                  <label className="block text-[10px] font-bold text-[#17211f] mb-1">
                     Nome da Loja / Franqueado *
                   </label>
                   <input
@@ -2606,26 +2606,26 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
                     placeholder="Ex: Café Bela Vista Jardins"
                     value={newFranchise.name}
                     onChange={(e) => setNewFranchise({ ...newFranchise, name: e.target.value })}
-                    className="w-full rounded-lg border border-[#c4cdd9] bg-white px-2.5 py-2 text-xs font-bold text-[#152238] focus:border-[#3c63da] focus:outline-none"
+                    className="w-full rounded-lg border border-[#c9d1cb] bg-white px-2.5 py-2 text-xs font-bold text-[#17211f] focus:border-[#0f4c5c] focus:outline-none"
                   />
                 </div>
 
                 <div>
                   <div className="flex items-center justify-between mb-1">
-                    <label className="block text-[10px] font-bold text-[#152238]">Código da Franquia</label>
-                    <span className="text-[9px] text-[#69778c]">Auto se vazio</span>
+                    <label className="block text-[10px] font-bold text-[#17211f]">Código da Franquia</label>
+                    <span className="text-[9px] text-[#5e6b67]">Auto se vazio</span>
                   </div>
                   <input
                     type="text"
                     placeholder={`Ex: F${String(franchiseList.length + 1).padStart(3, "0")}`}
                     value={newFranchise.code}
                     onChange={(e) => setNewFranchise({ ...newFranchise, code: e.target.value })}
-                    className="w-full rounded-lg border border-[#c4cdd9] bg-white px-2.5 py-2 text-xs font-bold text-[#152238] focus:border-[#3c63da] focus:outline-none"
+                    className="w-full rounded-lg border border-[#c9d1cb] bg-white px-2.5 py-2 text-xs font-bold text-[#17211f] focus:border-[#0f4c5c] focus:outline-none"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-[10px] font-bold text-[#152238] mb-1">
+                  <label className="block text-[10px] font-bold text-[#17211f] mb-1">
                     Responsável (Nome do Franqueado)
                   </label>
                   <input
@@ -2633,46 +2633,46 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
                     placeholder="Nome do franqueado responsável"
                     value={newFranchise.resp}
                     onChange={(e) => setNewFranchise({ ...newFranchise, resp: e.target.value })}
-                    className="w-full rounded-lg border border-[#c4cdd9] bg-white px-2.5 py-2 text-xs font-bold text-[#152238] focus:border-[#3c63da] focus:outline-none"
+                    className="w-full rounded-lg border border-[#c9d1cb] bg-white px-2.5 py-2 text-xs font-bold text-[#17211f] focus:border-[#0f4c5c] focus:outline-none"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-[10px] font-bold text-[#152238] mb-1">Cidade - UF *</label>
+                  <label className="block text-[10px] font-bold text-[#17211f] mb-1">Cidade - UF *</label>
                   <input
                     type="text"
                     required
                     placeholder="Ex: Santo André - SP"
                     value={newFranchise.city}
                     onChange={(e) => setNewFranchise({ ...newFranchise, city: e.target.value })}
-                    className="w-full rounded-lg border border-[#c4cdd9] bg-white px-2.5 py-2 text-xs font-bold text-[#152238] focus:border-[#3c63da] focus:outline-none"
+                    className="w-full rounded-lg border border-[#c9d1cb] bg-white px-2.5 py-2 text-xs font-bold text-[#17211f] focus:border-[#0f4c5c] focus:outline-none"
                   />
                 </div>
 
                 <div className="sm:col-span-2">
-                  <label className="block text-[10px] font-bold text-[#152238] mb-1">Endereço completo *</label>
+                  <label className="block text-[10px] font-bold text-[#17211f] mb-1">Endereço completo *</label>
                   <input
                     type="text"
                     required
                     placeholder="Rua, número, bairro, cidade - UF, CEP"
                     value={newFranchise.address}
                     onChange={(e) => setNewFranchise({ ...newFranchise, address: e.target.value })}
-                    className="w-full rounded-lg border border-[#c4cdd9] bg-white px-2.5 py-2 text-xs font-bold text-[#152238] focus:border-[#3c63da] focus:outline-none"
+                    className="w-full rounded-lg border border-[#c9d1cb] bg-white px-2.5 py-2 text-xs font-bold text-[#17211f] focus:border-[#0f4c5c] focus:outline-none"
                   />
-                  <p className="mt-1 text-[10px] text-[#69778c]">O endereço será confirmado antes de criar o pino no mapa.</p>
+                  <p className="mt-1 text-[10px] text-[#5e6b67]">O endereço será confirmado antes de criar o pino no mapa.</p>
                 </div>
 
                 <div>
-                  <label className="block text-[10px] font-bold text-[#152238] mb-1">Faturamento Médio Mensal (R$)</label>
+                  <label className="block text-[10px] font-bold text-[#17211f] mb-1">Faturamento Médio Mensal (R$)</label>
                   <input
                     type="number"
                     value={newFranchise.faturamento}
                     onChange={(e) => setNewFranchise({ ...newFranchise, faturamento: Number(e.target.value) })}
-                    className="w-full rounded-lg border border-[#c4cdd9] bg-white px-2.5 py-2 text-xs font-bold text-[#152238] focus:border-[#3c63da] focus:outline-none"
+                    className="w-full rounded-lg border border-[#c9d1cb] bg-white px-2.5 py-2 text-xs font-bold text-[#17211f] focus:border-[#0f4c5c] focus:outline-none"
                   />
                 </div>
 
-                <label className="flex items-center gap-2 rounded-lg border border-[#dce4f0] bg-white px-3 py-2 text-xs font-bold text-[#152238]">
+                <label className="flex items-center gap-2 rounded-lg border border-[#dfe4df] bg-white px-3 py-2 text-xs font-bold text-[#17211f]">
                   <input
                     type="checkbox"
                     checked={newFranchise.active !== false}
@@ -2682,14 +2682,14 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
                 </label>
               </div>
 
-              <div className="flex justify-end gap-2 pt-3 border-t border-[#3c63da]/20">
+              <div className="flex justify-end gap-2 pt-3 border-t border-[#0f4c5c]/20">
                 <button
                   type="button"
                   onClick={() => {
                     setIsAddingFranchise(false);
                     setFranchiseFormError("");
                   }}
-                  className="rounded-lg border border-[#c4cdd9] px-3.5 py-2 text-xs font-bold text-[#69778c] hover:bg-white cursor-pointer"
+                  className="rounded-lg border border-[#c9d1cb] px-3.5 py-2 text-xs font-bold text-[#5e6b67] hover:bg-white cursor-pointer"
                 >
                   Cancelar
                 </button>
@@ -2698,7 +2698,7 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
                   id="btn-submit-add-franqueado"
                   onClick={handleAddFranchise}
                   disabled={isSubmittingFranchise}
-                  className="rounded-lg bg-[#3c63da] text-white px-5 py-2 text-xs font-bold hover:bg-[#2f52c0] shadow-sm disabled:opacity-50 flex items-center gap-1.5 cursor-pointer"
+                  className="rounded-lg bg-[#0f4c5c] text-white px-5 py-2 text-xs font-bold hover:bg-[#0b3b48] shadow-sm disabled:opacity-50 flex items-center gap-1.5 cursor-pointer"
                 >
                   <Plus className="h-3.5 w-3.5" />
                   <span>{isSubmittingFranchise ? "Cadastrando..." : "Cadastrar Novo Franqueado"}</span>
@@ -2711,7 +2711,7 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
           {editingFranchiseId && (
             <div className="p-4 sm:p-5 rounded-xl border border-amber-300 bg-amber-50/40 space-y-3 shadow-xs">
               <div className="flex items-center justify-between border-b border-amber-200 pb-2">
-                <h4 className="text-xs font-extrabold uppercase tracking-wider text-amber-800 flex items-center gap-1.5">
+                <h4 className="text-xs font-extrabold text-amber-800 flex items-center gap-1.5">
                   <Edit3 className="h-4 w-4 text-amber-700" />
                   <span>Alterar Informações do Franqueado (Salvar Fixo)</span>
                 </h4>
@@ -2732,11 +2732,11 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
 
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 text-xs">
                 <div>
-                  <label className="block text-[10px] font-bold text-[#152238] mb-1">Modelo / Marca *</label>
+                  <label className="block text-[10px] font-bold text-[#17211f] mb-1">Modelo / Marca *</label>
                   <select
                     value={editFranchiseForm.businessId}
                     onChange={(e) => setEditFranchiseForm({ ...editFranchiseForm, businessId: e.target.value })}
-                    className="w-full rounded-lg border border-[#c4cdd9] bg-white px-2.5 py-2 font-bold"
+                    className="w-full rounded-lg border border-[#c9d1cb] bg-white px-2.5 py-2 font-bold"
                   >
                     {businessList.map((b) => (
                       <option key={b.id} value={b.id}>{b?.name || b?.brand || b?.id}</option>
@@ -2745,73 +2745,73 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
                 </div>
 
                 <div>
-                  <label className="block text-[10px] font-bold text-[#152238] mb-1">Nome da Loja *</label>
+                  <label className="block text-[10px] font-bold text-[#17211f] mb-1">Nome da Loja *</label>
                   <input
                     type="text"
                     required
                     value={editFranchiseForm.name}
                     onChange={(e) => setEditFranchiseForm({ ...editFranchiseForm, name: e.target.value })}
-                    className="w-full rounded-lg border border-[#c4cdd9] bg-white px-2.5 py-2 font-bold"
+                    className="w-full rounded-lg border border-[#c9d1cb] bg-white px-2.5 py-2 font-bold"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-[10px] font-bold text-[#152238] mb-1">Código da Unidade *</label>
+                  <label className="block text-[10px] font-bold text-[#17211f] mb-1">Código da Unidade *</label>
                   <input
                     type="text"
                     required
                     value={editFranchiseForm.code}
                     onChange={(e) => setEditFranchiseForm({ ...editFranchiseForm, code: e.target.value })}
-                    className="w-full rounded-lg border border-[#c4cdd9] bg-white px-2.5 py-2 font-mono font-bold"
+                    className="w-full rounded-lg border border-[#c9d1cb] bg-white px-2.5 py-2 font-mono font-bold"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-[10px] font-bold text-[#152238] mb-1">Responsável / Franqueado</label>
+                  <label className="block text-[10px] font-bold text-[#17211f] mb-1">Responsável / Franqueado</label>
                   <input
                     type="text"
                     value={editFranchiseForm.resp}
                     onChange={(e) => setEditFranchiseForm({ ...editFranchiseForm, resp: e.target.value })}
-                    className="w-full rounded-lg border border-[#c4cdd9] bg-white px-2.5 py-2 font-bold"
+                    className="w-full rounded-lg border border-[#c9d1cb] bg-white px-2.5 py-2 font-bold"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-[10px] font-bold text-[#152238] mb-1">Cidade - UF</label>
+                  <label className="block text-[10px] font-bold text-[#17211f] mb-1">Cidade - UF</label>
                   <input
                     type="text"
                     value={editFranchiseForm.city}
                     onChange={(e) => setEditFranchiseForm({ ...editFranchiseForm, city: e.target.value })}
-                    className="w-full rounded-lg border border-[#c4cdd9] bg-white px-2.5 py-2 font-bold"
+                    className="w-full rounded-lg border border-[#c9d1cb] bg-white px-2.5 py-2 font-bold"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-[10px] font-bold text-[#152238] mb-1">Faturamento Médio (R$)</label>
+                  <label className="block text-[10px] font-bold text-[#17211f] mb-1">Faturamento Médio (R$)</label>
                   <input
                     type="number"
                     value={editFranchiseForm.faturamento}
                     onChange={(e) => setEditFranchiseForm({ ...editFranchiseForm, faturamento: Number(e.target.value) })}
-                    className="w-full rounded-lg border border-[#c4cdd9] bg-white px-2.5 py-2 font-mono font-bold"
+                    className="w-full rounded-lg border border-[#c9d1cb] bg-white px-2.5 py-2 font-mono font-bold"
                   />
                 </div>
 
                 <div className="sm:col-span-2">
-                  <label className="block text-[10px] font-bold text-[#152238] mb-1">Endereço Completo</label>
+                  <label className="block text-[10px] font-bold text-[#17211f] mb-1">Endereço Completo</label>
                   <input
                     type="text"
                     value={editFranchiseForm.address}
                     onChange={(e) => setEditFranchiseForm({ ...editFranchiseForm, address: e.target.value })}
-                    className="w-full rounded-lg border border-[#c4cdd9] bg-white px-2.5 py-2 font-bold"
+                    className="w-full rounded-lg border border-[#c9d1cb] bg-white px-2.5 py-2 font-bold"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-[10px] font-bold text-[#152238] mb-1">Status Operacional</label>
+                  <label className="block text-[10px] font-bold text-[#17211f] mb-1">Status Operacional</label>
                   <select
                     value={editFranchiseForm.status}
                     onChange={(e) => setEditFranchiseForm({ ...editFranchiseForm, status: e.target.value as any })}
-                    className="w-full rounded-lg border border-[#c4cdd9] bg-white px-2.5 py-2 font-bold"
+                    className="w-full rounded-lg border border-[#c9d1cb] bg-white px-2.5 py-2 font-bold"
                   >
                     <option value="green">Verde (Saudável)</option>
                     <option value="yellow">Amarelo (Atenção)</option>
@@ -2819,7 +2819,7 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
                   </select>
                 </div>
 
-                <label className="flex items-center gap-2 rounded-lg border border-amber-200 bg-white px-3 py-2 font-bold text-[#152238]">
+                <label className="flex items-center gap-2 rounded-lg border border-amber-200 bg-white px-3 py-2 font-bold text-[#17211f]">
                   <input
                     type="checkbox"
                     checked={editFranchiseForm.active !== false}
@@ -2833,7 +2833,7 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
                 <button
                   type="button"
                   onClick={handleCancelEditFranchise}
-                  className="px-3.5 py-2 rounded-lg border border-[#c4cdd9] text-xs font-bold text-[#69778c] hover:bg-white cursor-pointer"
+                  className="px-3.5 py-2 rounded-lg border border-[#c9d1cb] text-xs font-bold text-[#5e6b67] hover:bg-white cursor-pointer"
                 >
                   Cancelar
                 </button>
@@ -2851,20 +2851,20 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
           )}
 
           {/* List of Franchises with Edit & Delete actions */}
-          <div className="flex flex-col gap-2 rounded-xl border border-[#e5eaf1] bg-white p-3 sm:flex-row sm:items-center">
+          <div className="flex flex-col gap-2 rounded-xl border border-[#dfe4df] bg-white p-3 sm:flex-row sm:items-center">
             <div className="relative flex-1">
-              <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[#69778c]" />
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[#5e6b67]" />
               <input
                 value={searchFranchise}
                 onChange={(event) => setSearchFranchise(event.target.value)}
                 placeholder="Buscar unidade, código, responsável ou cidade"
-                className="w-full rounded-lg border border-[#dce4f0] bg-[#f8faff] py-2 pl-9 pr-3 text-xs font-semibold text-[#152238] outline-none focus:border-[#3c63da]"
+                className="w-full rounded-lg border border-[#dfe4df] bg-[#f7f9f7] py-2 pl-9 pr-3 text-xs font-semibold text-[#17211f] outline-none focus:border-[#0f4c5c]"
               />
             </div>
             <select
               value={franchiseStatusFilter}
               onChange={(event) => setFranchiseStatusFilter(event.target.value as "all" | "active" | "inactive")}
-              className="rounded-lg border border-[#dce4f0] bg-white px-3 py-2 text-xs font-bold text-[#152238]"
+              className="rounded-lg border border-[#dfe4df] bg-white px-3 py-2 text-xs font-bold text-[#17211f]"
             >
               <option value="all">Todas ({franchiseList.length})</option>
               <option value="active">Ativas ({franchiseList.filter((item) => item.active !== false).length})</option>
@@ -2876,29 +2876,29 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
             {visibleFranchises.map((f) => {
               const biz = businesses.find((b) => b.id === f.businessId);
               return (
-                <div key={f.id} className="p-3.5 rounded-xl border border-[#e5eaf1] bg-[#f8faff] space-y-2">
+                <div key={f.id} className="p-3.5 rounded-xl border border-[#dfe4df] bg-[#f7f9f7] space-y-2">
                   <div className="flex items-center justify-between gap-2">
-                    <span className="text-[9px] font-extrabold uppercase bg-white border border-[#e5eaf1] px-2 py-0.5 rounded-full text-[#3c63da]">
+                    <span className="text-[9px] font-extrabold bg-white border border-[#dfe4df] px-2 py-0.5 rounded-full text-[#0f4c5c]">
                       {biz?.brand || f.businessId}
                     </span>
                     <div className="flex items-center gap-1.5">
                       <span className={`rounded-full px-2 py-0.5 text-[9px] font-extrabold ${f.active === false ? "bg-slate-100 text-slate-600" : "bg-emerald-50 text-emerald-700"}`}>
                         {f.active === false ? "Inativa" : "Ativa"}
                       </span>
-                      <span className="font-mono text-xs font-bold text-[#152238]">{f.code}</span>
+                      <span className="font-mono text-xs font-bold text-[#17211f]">{f.code}</span>
                     </div>
                   </div>
-                  <h4 className="text-xs font-bold text-[#152238] truncate">{f?.name || f?.code}</h4>
-                  <div className="text-[11px] text-[#69778c]">Resp: <strong>{f.resp}</strong> · {f.city}</div>
-                  <div className="pt-1.5 border-t border-[#e5eaf1] flex justify-between items-center text-xs">
-                    <span className="text-[#69778c]">Faturamento:</span>
+                  <h4 className="text-xs font-bold text-[#17211f] truncate">{f?.name || f?.code}</h4>
+                  <div className="text-[11px] text-[#5e6b67]">Resp: <strong>{f.resp}</strong> · {f.city}</div>
+                  <div className="pt-1.5 border-t border-[#dfe4df] flex justify-between items-center text-xs">
+                    <span className="text-[#5e6b67]">Faturamento:</span>
                     <strong className="text-emerald-700 font-mono">{formatBrl(f.faturamento)}</strong>
                   </div>
-                  <div className="pt-2 border-t border-[#e5eaf1]/60 flex items-center justify-end gap-1.5">
+                  <div className="pt-2 border-t border-[#dfe4df]/60 flex items-center justify-end gap-1.5">
                     <button
                       type="button"
                       onClick={() => handleStartEditFranchise(f)}
-                      className="flex items-center gap-1 px-2.5 py-1 rounded-lg border border-[#3c63da]/30 bg-[#edf2ff] text-[#3c63da] text-[11px] font-bold hover:bg-[#dfe8fe] cursor-pointer"
+                      className="flex items-center gap-1 px-2.5 py-1 rounded-lg border border-[#0f4c5c]/30 bg-[#e3eff1] text-[#0f4c5c] text-[11px] font-bold hover:bg-[#e3eff1] cursor-pointer"
                     >
                       <Edit3 className="h-3 w-3" />
                       <span>Alterar</span>
@@ -2916,7 +2916,7 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
               );
             })}
           </div>
-          {visibleFranchises.length === 0 && <div className="rounded-xl border border-dashed border-[#cbd5e1] bg-[#f8faff] p-6 text-center text-xs text-[#69778c]">Nenhuma unidade corresponde aos filtros.</div>}
+          {visibleFranchises.length === 0 && <div className="rounded-xl border border-dashed border-[#c9d1cb] bg-[#f7f9f7] p-6 text-center text-xs text-[#5e6b67]">Nenhuma unidade corresponde aos filtros.</div>}
         </div>
       )}
 
@@ -2924,26 +2924,26 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
       {/* 5. ABA: AUDITORIA                                    */}
       {/* ------------------------------------------------------------- */}
       {activeTab === "audit" && (
-        <div className="rounded-2xl border border-[#e5eaf1] bg-white p-5 sm:p-6 shadow-xs space-y-4">
-          <div className="flex items-center justify-between pb-3 border-b border-[#e5eaf1]">
+        <div className="rounded-2xl border border-[#dfe4df] bg-white p-5 sm:p-6 shadow-xs space-y-4">
+          <div className="flex items-center justify-between pb-3 border-b border-[#dfe4df]">
             <div>
-              <h3 className="text-sm font-bold text-[#152238]">Histórico de Auditoria & Alterações</h3>
-              <p className="text-xs text-[#69778c]">
+              <h3 className="text-sm font-bold text-[#17211f]">Histórico de Auditoria & Alterações</h3>
+              <p className="text-xs text-[#5e6b67]">
                 Registro cronológico permanente de todas as modificações realizadas.
               </p>
             </div>
-            <span className="text-xs font-bold text-[#69778c]">{auditLogs.length} registros</span>
+            <span className="text-xs font-bold text-[#5e6b67]">{auditLogs.length} registros</span>
           </div>
 
           <div className="space-y-2.5 max-h-[400px] overflow-y-auto">
             {auditLogs.map((log) => (
-              <div key={log.id} className="p-3 rounded-xl border border-[#e5eaf1] bg-[#f8faff] text-xs space-y-1">
+              <div key={log.id} className="p-3 rounded-xl border border-[#dfe4df] bg-[#f7f9f7] text-xs space-y-1">
                 <div className="flex items-center justify-between">
-                  <span className="font-bold text-[#152238]">{log.action}: <code>{log.key}</code></span>
-                  <span className="text-[10px] text-[#69778c]">{new Date(log.timestamp).toLocaleString("pt-BR")}</span>
+                  <span className="font-bold text-[#17211f]">{log.action}: <code>{log.key}</code></span>
+                  <span className="text-[10px] text-[#5e6b67]">{new Date(log.timestamp).toLocaleString("pt-BR")}</span>
                 </div>
-                <div className="text-[#69778c] text-[11px]">
-                  Usuário: <strong>{log.user}</strong> · De: <code className="text-[#b44b4b]">{String(log.oldValue)}</code> para: <code className="text-emerald-700">{String(log.newValue)}</code>
+                <div className="text-[#5e6b67] text-[11px]">
+                  Usuário: <strong>{log.user}</strong> · De: <code className="text-[#b93a48]">{String(log.oldValue)}</code> para: <code className="text-emerald-700">{String(log.newValue)}</code>
                 </div>
               </div>
             ))}
@@ -2956,14 +2956,14 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
       {/* ------------------------------------------------------------- */}
       {activeTab === "deploy" && (
         <div className="space-y-5">
-          <div className="rounded-2xl border border-[#e5eaf1] bg-white p-5 sm:p-6 shadow-xs space-y-4">
-            <div className="flex items-center gap-2 pb-3 border-b border-[#e5eaf1]">
-              <Github className="h-5 w-5 text-[#152238]" />
+          <div className="rounded-2xl border border-[#dfe4df] bg-white p-5 sm:p-6 shadow-xs space-y-4">
+            <div className="flex items-center gap-2 pb-3 border-b border-[#dfe4df]">
+              <Github className="h-5 w-5 text-[#17211f]" />
               <div>
-                <h3 className="text-base font-extrabold text-[#152238]">
+                <h3 className="text-base font-extrabold text-[#17211f]">
                   Como Hospedar no GitHub e Fazer o Deploy no Vercel
                 </h3>
-                <p className="text-xs text-[#69778c]">
+                <p className="text-xs text-[#5e6b67]">
                   O projeto está preparado com suporte total para SPA, Vercel (`vercel.json`) e responsividade em iPhone e Android.
                 </p>
               </div>
@@ -2971,15 +2971,15 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
 
             {/* Step 1: Git & GitHub */}
             <div className="space-y-2">
-              <span className="text-xs font-bold text-[#3c63da] uppercase tracking-wider">
+              <span className="text-xs font-bold text-[#0f4c5c] ">
                 Passo 1: Subir o Código no GitHub
               </span>
               <div className="rounded-xl bg-[#0f192c] p-4 text-white font-mono text-xs space-y-1 overflow-x-auto">
-                <p className="text-[#8ba2c7]"># 1. Inicialize o repositório git (se necessário)</p>
+                <p className="text-[#93a09b]"># 1. Inicialize o repositório git (se necessário)</p>
                 <p>git init</p>
                 <p>git add .</p>
                 <p>git commit -m "feat: Gestão de Franquias plataforma de franquias"</p>
-                <p className="text-[#8ba2c7] mt-2"># 2. Conecte ao seu repositório no GitHub e faça o push</p>
+                <p className="text-[#93a09b] mt-2"># 2. Conecte ao seu repositório no GitHub e faça o push</p>
                 <p>git remote add origin https://github.com/SEU_USUARIO/gestao-franquias.git</p>
                 <p>git branch -M main</p>
                 <p>git push -u origin main</p>
@@ -2987,35 +2987,35 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
             </div>
 
             {/* Step 2: Vercel Deploy */}
-            <div className="space-y-2 pt-3 border-t border-[#e5eaf1]">
-              <span className="text-xs font-bold text-[#3c63da] uppercase tracking-wider">
+            <div className="space-y-2 pt-3 border-t border-[#dfe4df]">
+              <span className="text-xs font-bold text-[#0f4c5c] ">
                 Passo 2: Deploy no Vercel (1 Clique)
               </span>
-              <div className="space-y-2 text-xs text-[#152238] leading-relaxed">
+              <div className="space-y-2 text-xs text-[#17211f] leading-relaxed">
                 <p>1. Acesse <strong>vercel.com</strong> e faça login com a sua conta do GitHub.</p>
                 <p>2. Clique em <strong>"Add New... &gt; Project"</strong> e selecione o repositório da Gestão de Franquias.</p>
-                <p>3. O arquivo <code className="bg-[#f0f4f9] px-1.5 py-0.5 rounded font-mono font-bold">vercel.json</code> já está configurado na raiz com as rotas SPA e cabeçalhos de segurança.</p>
+                <p>3. O arquivo <code className="bg-[#f0f3f0] px-1.5 py-0.5 rounded font-mono font-bold">vercel.json</code> já está configurado na raiz com as rotas SPA e cabeçalhos de segurança.</p>
                 <p>4. Em <strong>Framework Preset</strong>, selecione <strong>Vite</strong>.</p>
                 <p>5. Clique em <strong>Deploy</strong>. Em cerca de 40 segundos seu site estará online!</p>
               </div>
             </div>
 
             {/* Step 3: iPhone and Android Compatibility */}
-            <div className="space-y-2 pt-3 border-t border-[#e5eaf1]">
-              <span className="text-xs font-bold text-[#3c63da] uppercase tracking-wider flex items-center gap-1.5">
+            <div className="space-y-2 pt-3 border-t border-[#dfe4df]">
+              <span className="text-xs font-bold text-[#0f4c5c] flex items-center gap-1.5">
                 <Smartphone className="h-4 w-4" />
                 <span>Compatibilidade Total com iPhone (iOS) e Android</span>
               </span>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-                <div className="p-3.5 rounded-xl border border-[#e5eaf1] bg-[#f8faff] space-y-1">
-                  <strong className="text-[#152238] flex items-center gap-1">📱 No iPhone (Safari & Chrome iOS):</strong>
-                  <p className="text-[#69778c]">
+                <div className="p-3.5 rounded-xl border border-[#dfe4df] bg-[#f7f9f7] space-y-1">
+                  <strong className="text-[#17211f] flex items-center gap-1">📱 No iPhone (Safari & Chrome iOS):</strong>
+                  <p className="text-[#5e6b67]">
                     O site inclui tags <code className="font-mono text-[10px]">viewport-fit=cover</code>, botões com área de toque mínima de 44px, barra lateral recolhível por drawer e suporte à barra de status e notch do iOS.
                   </p>
                 </div>
-                <div className="p-3.5 rounded-xl border border-[#e5eaf1] bg-[#f8faff] space-y-1">
-                  <strong className="text-[#152238] flex items-center gap-1">🤖 No Android (Chrome Mobile):</strong>
-                  <p className="text-[#69778c]">
+                <div className="p-3.5 rounded-xl border border-[#dfe4df] bg-[#f7f9f7] space-y-1">
+                  <strong className="text-[#17211f] flex items-center gap-1">🤖 No Android (Chrome Mobile):</strong>
+                  <p className="text-[#5e6b67]">
                     Compatibilidade com gestos de toque, mapa com navegação suave sem travamento de rolagem, renderização rápida e ajuste dinâmico à resolução da tela.
                   </p>
                 </div>

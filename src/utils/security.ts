@@ -145,7 +145,7 @@ function showSecurityToast(message: string) {
   if (!toast) {
     toast = document.createElement("div");
     toast.id = "security-protection-toast";
-    toast.className = "fixed bottom-5 right-5 z-[99999] flex items-center gap-3 px-4 py-3 rounded-xl bg-[#152238] text-white shadow-2xl border border-[#334155] text-xs font-semibold max-w-md transition-all duration-300 transform translate-y-0";
+    toast.className = "fixed bottom-5 right-5 z-[99999] flex items-center gap-3 px-4 py-3 rounded-xl bg-[#17211f] text-white shadow-2xl border border-[#3a4743] text-xs font-semibold max-w-md transition-all duration-300 transform translate-y-0";
     toast.innerHTML = `
       <div class="h-7 w-7 rounded-lg bg-rose-500/20 text-rose-400 flex items-center justify-center flex-shrink-0">
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

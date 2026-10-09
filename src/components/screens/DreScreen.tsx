@@ -733,18 +733,18 @@ export const DreScreen: React.FC<DreScreenProps> = ({
       const contentWidth = pageWidth - margin * 2; // 182mm
 
       // 1. Barra decorativa superior
-      doc.setFillColor(60, 99, 218); // #3c63da
+      doc.setFillColor(60, 99, 218); // #0f4c5c
       doc.rect(margin, 10, contentWidth, 3, "F");
 
       // 2. Título & Subtítulo
       doc.setFont("helvetica", "bold");
       doc.setFontSize(15);
-      doc.setTextColor(21, 34, 56); // #152238
+      doc.setTextColor(21, 34, 56); // #17211f
       doc.text("DEMONSTRATIVO DO RESULTADO DO EXERCÍCIO (DRE)", margin, 20);
 
       doc.setFont("helvetica", "normal");
       doc.setFontSize(8.5);
-      doc.setTextColor(105, 119, 140); // #69778c
+      doc.setTextColor(105, 119, 140); // #5e6b67
       doc.text("Relatório Contábil e Financeiro Oficial — Base de Lançamentos Reais", margin, 25);
 
       // 3. Caixa de Destaque com NOME DA UNIDADE e PERÍODO QUE ESTÁ FILTRADO
@@ -981,14 +981,14 @@ export const DreScreen: React.FC<DreScreenProps> = ({
       {/* Header & Unified Sub-Tab Selector */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <div className="text-[10px] font-extrabold uppercase tracking-widest text-[#3c63da]">
+          <div className="text-[10px] font-extrabold text-[#0f4c5c]">
             Demonstrativo Financeiro do Exercício (DRE)
           </div>
-          <h2 className="text-xl sm:text-2xl font-extrabold tracking-tight text-[#152238] flex items-center gap-2 mt-0.5">
-            <TrendingUp className="h-6 w-6 text-[#3c63da]" />
+          <h2 className="text-xl sm:text-2xl font-extrabold tracking-tight text-[#17211f] flex items-center gap-2 mt-0.5">
+            <TrendingUp className="h-6 w-6 text-[#0f4c5c]" />
             DRE e Resultados — {getScopeTitle()}
           </h2>
-          <p className="text-xs text-[#69778c] mt-0.5">
+          <p className="text-xs text-[#5e6b67] mt-0.5">
             Apuração contábil e controle de margens.
           </p>
         </div>
@@ -998,13 +998,13 @@ export const DreScreen: React.FC<DreScreenProps> = ({
 
       <div className="space-y-6">
         {/* Sub-Tabs Selector */}
-        <div className="flex items-center gap-2 border-b border-[#e5eaf1] pb-3 flex-wrap">
+        <div className="flex items-center gap-2 border-b border-[#dfe4df] pb-3 flex-wrap">
           <button
             onClick={() => setActiveSubTab("demonstrativo")}
             className={`px-4 py-2 text-xs font-bold rounded-xl transition-all cursor-pointer ${
               activeSubTab === "demonstrativo"
-                ? "bg-[#3c63da] text-white shadow-xs"
-                : "bg-white border border-[#e5eaf1] text-[#69778c] hover:text-[#152238]"
+                ? "bg-[#0f4c5c] text-white shadow-xs"
+                : "bg-white border border-[#dfe4df] text-[#5e6b67] hover:text-[#17211f]"
             }`}
           >
             Demonstrativo DRE
@@ -1013,8 +1013,8 @@ export const DreScreen: React.FC<DreScreenProps> = ({
             onClick={() => setActiveSubTab("extrato")}
             className={`px-4 py-2 text-xs font-bold rounded-xl transition-all cursor-pointer ${
               activeSubTab === "extrato"
-                ? "bg-[#3c63da] text-white shadow-xs"
-                : "bg-white border border-[#e5eaf1] text-[#69778c] hover:text-[#152238]"
+                ? "bg-[#0f4c5c] text-white shadow-xs"
+                : "bg-white border border-[#dfe4df] text-[#5e6b67] hover:text-[#17211f]"
             }`}
           >
             Entradas, Saídas & Despesas (Extrato DRE)
@@ -1023,17 +1023,17 @@ export const DreScreen: React.FC<DreScreenProps> = ({
 
         {activeSubTab === "extrato" && (
         <div className="space-y-6">
-          <div className="rounded-2xl border border-[#e5eaf1] bg-white p-5 shadow-xs space-y-4">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[#e5eaf1]">
+          <div className="rounded-2xl border border-[#dfe4df] bg-white p-5 shadow-xs space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[#dfe4df]">
               <div>
-                <h3 className="text-base font-extrabold text-[#152238]">Extrato de Entradas, Saídas e Despesas do DRE</h3>
+                <h3 className="text-base font-extrabold text-[#17211f]">Extrato de Entradas, Saídas e Despesas do DRE</h3>
                 <div className="flex items-center gap-2 flex-wrap mt-1.5">
-                  <span className="inline-flex items-center gap-1.5 rounded-lg bg-[#eff6ff] px-2.5 py-1 text-xs font-bold text-[#1d4ed8] border border-[#bfdbfe]">
-                    <Building2 className="h-3.5 w-3.5 text-[#2563eb]" />
+                  <span className="inline-flex items-center gap-1.5 rounded-lg bg-[#e3eff1] px-2.5 py-1 text-xs font-bold text-[#0b3b48] border border-[#b9d5da]">
+                    <Building2 className="h-3.5 w-3.5 text-[#0f4c5c]" />
                     <span>Unidade: <strong>{getScopeTitle()}</strong></span>
                   </span>
-                  <span className="inline-flex items-center gap-1.5 rounded-lg bg-[#f8fafc] px-2.5 py-1 text-xs font-bold text-[#475569] border border-[#cbd5e1]">
-                    <Calendar className="h-3.5 w-3.5 text-[#64748b]" />
+                  <span className="inline-flex items-center gap-1.5 rounded-lg bg-[#f7f9f7] px-2.5 py-1 text-xs font-bold text-[#3a4743] border border-[#c9d1cb]">
+                    <Calendar className="h-3.5 w-3.5 text-[#5e6b67]" />
                     <span>Período Filtrado: <strong>{getPeriodSummary()}</strong></span>
                   </span>
                 </div>
@@ -1051,10 +1051,10 @@ export const DreScreen: React.FC<DreScreenProps> = ({
                 <button
                   type="button"
                   onClick={handleGenerateExtratoPdfReport}
-                  className="flex items-center gap-1.5 rounded-xl border border-[#3c63da]/30 bg-[#edf2ff] px-3.5 py-2 text-xs font-bold text-[#3c63da] hover:bg-[#dfe8fe] transition-all cursor-pointer shadow-2xs"
+                  className="flex items-center gap-1.5 rounded-xl border border-[#0f4c5c]/30 bg-[#e3eff1] px-3.5 py-2 text-xs font-bold text-[#0f4c5c] hover:bg-[#e3eff1] transition-all cursor-pointer shadow-2xs"
                   title="Baixar extrato e lançamentos em PDF com unidade e período filtrado"
                 >
-                  <Download className="h-4 w-4 text-[#3c63da]" />
+                  <Download className="h-4 w-4 text-[#0f4c5c]" />
                   <span>Baixar PDF da Planilha</span>
                 </button>
               </div>
@@ -1066,21 +1066,21 @@ export const DreScreen: React.FC<DreScreenProps> = ({
             {/* Summary Cards */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div className="p-4 rounded-xl border border-emerald-200 bg-emerald-50/50">
-                <span className="text-[10px] font-extrabold uppercase text-emerald-800 block">Total de Entradas</span>
+                <span className="text-[10px] font-extrabold text-emerald-800 block">Total de Entradas</span>
                 <strong className="text-xl font-black text-emerald-900 block mt-1">
                   {formatBrl2(realEntradas.reduce((s, e) => s + Number(e.value || 0), 0))}
                 </strong>
                 <span className="text-[11px] text-emerald-700">{realEntradas.length} lançamento(s) de entrada</span>
               </div>
               <div className="p-4 rounded-xl border border-rose-200 bg-rose-50/50">
-                <span className="text-[10px] font-extrabold uppercase text-rose-800 block">Total de Saídas & Despesas</span>
+                <span className="text-[10px] font-extrabold text-rose-800 block">Total de Saídas & Despesas</span>
                 <strong className="text-xl font-black text-rose-900 block mt-1">
                   {formatBrl2(realDespesas.reduce((s, e) => s + Number(e.value || 0), 0))}
                 </strong>
                 <span className="text-[11px] text-rose-700">{realDespesas.length} lançamento(s) de despesa</span>
               </div>
               <div className="p-4 rounded-xl border border-indigo-200 bg-indigo-50/50">
-                <span className="text-[10px] font-extrabold uppercase text-indigo-800 block">Saldo Líquido (Entrada - Saída)</span>
+                <span className="text-[10px] font-extrabold text-indigo-800 block">Saldo Líquido (Entrada - Saída)</span>
                 <strong className="text-xl font-black text-indigo-950 block mt-1">
                   {formatBrl2(realEntradas.reduce((s, e) => s + Number(e.value || 0), 0) - realDespesas.reduce((s, e) => s + Number(e.value || 0), 0))}
                 </strong>
@@ -1090,11 +1090,11 @@ export const DreScreen: React.FC<DreScreenProps> = ({
 
             {/* Entradas Table */}
             <div className="space-y-2 pt-2">
-              <h4 className="text-xs font-bold text-[#152238] uppercase tracking-wider">Entradas (Receitas) no Período</h4>
-              <div className="max-h-[300px] overflow-y-auto rounded-xl border border-[#e5eaf1]">
+              <h4 className="text-xs font-bold text-[#17211f] ">Entradas (Receitas) no Período</h4>
+              <div className="max-h-[300px] overflow-y-auto rounded-xl border border-[#dfe4df]">
                 <table className="w-full text-left text-xs border-collapse">
                   <thead>
-                    <tr className="bg-[#f8faff] text-[#69778c] uppercase text-[9px] tracking-wider border-b border-[#e5eaf1]">
+                    <tr className="bg-[#f7f9f7] text-[#5e6b67] text-[9px]  border-b border-[#dfe4df]">
                       <th className="p-2.5">Data</th>
                       <th className="p-2.5">Descrição</th>
                       <th className="p-2.5">Apelido / Tag</th>
@@ -1102,16 +1102,16 @@ export const DreScreen: React.FC<DreScreenProps> = ({
                       <th className="p-2.5 text-right">Valor (R$)</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-[#e5eaf1]">
+                  <tbody className="divide-y divide-[#dfe4df]">
                     {realEntradas.length === 0 ? (
-                      <tr><td colSpan={5} className="p-4 text-center text-[#69778c]">Nenhuma entrada encontrada com estes filtros.</td></tr>
+                      <tr><td colSpan={5} className="p-4 text-center text-[#5e6b67]">Nenhuma entrada encontrada com estes filtros.</td></tr>
                     ) : (
                       realEntradas.map(e => (
-                        <tr key={e.id} className="hover:bg-[#f8faff]">
-                          <td className="p-2.5 text-[#69778c] whitespace-nowrap">{new Date(e.date + "T12:00:00").toLocaleDateString("pt-BR")}</td>
-                          <td className="p-2.5 font-bold text-[#152238]">{e.desc}</td>
+                        <tr key={e.id} className="hover:bg-[#f7f9f7]">
+                          <td className="p-2.5 text-[#5e6b67] whitespace-nowrap">{new Date(e.date + "T12:00:00").toLocaleDateString("pt-BR")}</td>
+                          <td className="p-2.5 font-bold text-[#17211f]">{e.desc}</td>
                           <td className="p-2.5"><span className="px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 text-[10px] font-bold">{e.apelido || "—"}</span></td>
-                          <td className="p-2.5 text-[#69778c]">{e.catName || "—"}</td>
+                          <td className="p-2.5 text-[#5e6b67]">{e.catName || "—"}</td>
                           <td className="p-2.5 text-right font-mono font-bold text-emerald-700">+ {formatBrl2(e.value)}</td>
                         </tr>
                       ))
@@ -1123,11 +1123,11 @@ export const DreScreen: React.FC<DreScreenProps> = ({
 
             {/* Despesas Table */}
             <div className="space-y-2 pt-2">
-              <h4 className="text-xs font-bold text-[#152238] uppercase tracking-wider">Saídas & Despesas Operacionais no Período</h4>
-              <div className="max-h-[300px] overflow-y-auto rounded-xl border border-[#e5eaf1]">
+              <h4 className="text-xs font-bold text-[#17211f] ">Saídas & Despesas Operacionais no Período</h4>
+              <div className="max-h-[300px] overflow-y-auto rounded-xl border border-[#dfe4df]">
                 <table className="w-full text-left text-xs border-collapse">
                   <thead>
-                    <tr className="bg-[#f8faff] text-[#69778c] uppercase text-[9px] tracking-wider border-b border-[#e5eaf1]">
+                    <tr className="bg-[#f7f9f7] text-[#5e6b67] text-[9px]  border-b border-[#dfe4df]">
                       <th className="p-2.5">Data</th>
                       <th className="p-2.5">Descrição</th>
                       <th className="p-2.5">Apelido / Tag</th>
@@ -1135,16 +1135,16 @@ export const DreScreen: React.FC<DreScreenProps> = ({
                       <th className="p-2.5 text-right">Valor (R$)</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-[#e5eaf1]">
+                  <tbody className="divide-y divide-[#dfe4df]">
                     {realDespesas.length === 0 ? (
-                      <tr><td colSpan={5} className="p-4 text-center text-[#69778c]">Nenhuma despesa encontrada com estes filtros.</td></tr>
+                      <tr><td colSpan={5} className="p-4 text-center text-[#5e6b67]">Nenhuma despesa encontrada com estes filtros.</td></tr>
                     ) : (
                       realDespesas.map(e => (
-                        <tr key={e.id} className="hover:bg-[#f8faff]">
-                          <td className="p-2.5 text-[#69778c] whitespace-nowrap">{new Date(e.date + "T12:00:00").toLocaleDateString("pt-BR")}</td>
-                          <td className="p-2.5 font-bold text-[#152238]">{e.desc}</td>
+                        <tr key={e.id} className="hover:bg-[#f7f9f7]">
+                          <td className="p-2.5 text-[#5e6b67] whitespace-nowrap">{new Date(e.date + "T12:00:00").toLocaleDateString("pt-BR")}</td>
+                          <td className="p-2.5 font-bold text-[#17211f]">{e.desc}</td>
                           <td className="p-2.5"><span className="px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 text-[10px] font-bold">{e.apelido || "—"}</span></td>
-                          <td className="p-2.5 text-[#69778c]">{e.catName || "—"}</td>
+                          <td className="p-2.5 text-[#5e6b67]">{e.catName || "—"}</td>
                           <td className="p-2.5 text-right font-mono font-bold text-rose-700">- {formatBrl2(e.value)}</td>
                         </tr>
                       ))
@@ -1155,8 +1155,8 @@ export const DreScreen: React.FC<DreScreenProps> = ({
             </div>
 
             {/* Final Net Total */}
-            <div className="p-4 rounded-xl bg-[#152238] text-white flex items-center justify-between font-extrabold text-sm">
-              <span>TOTAL FINAL (ENTRADA - SAÍDA):</span>
+            <div className="p-4 rounded-xl bg-[#17211f] text-white flex items-center justify-between font-extrabold text-sm">
+              <span>Total final (entrada - saída):</span>
               <span className="font-mono text-base sm:text-lg text-emerald-400">
                 {formatBrl2(realEntradas.reduce((s, e) => s + Number(e.value || 0), 0) - realDespesas.reduce((s, e) => s + Number(e.value || 0), 0))}
               </span>
@@ -1168,22 +1168,22 @@ export const DreScreen: React.FC<DreScreenProps> = ({
       {activeSubTab === "demonstrativo" && (
         <div className="space-y-6">
           {/* Card Unificado de Filtros com Seletores Granulares (Ano, Mês, Dia, Marca, Unidade) */}
-          <div className="rounded-2xl border border-[#e5eaf1] bg-white p-4 sm:p-5 shadow-xs space-y-4">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[#f1f5f9]">
+          <div className="rounded-2xl border border-[#dfe4df] bg-white p-4 sm:p-5 shadow-xs space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[#f0f3f0]">
               <div>
                 <div className="flex items-center gap-2">
-                  <Filter className="h-4 w-4 text-[#3c63da]" />
-                  <span className="text-xs font-bold text-[#152238] uppercase tracking-wider">
+                  <Filter className="h-4 w-4 text-[#0f4c5c]" />
+                  <span className="text-xs font-bold text-[#17211f] ">
                     Filtros de Período & Escopo
                   </span>
                 </div>
                 <div className="flex items-center gap-2 flex-wrap mt-1.5">
-                  <span className="inline-flex items-center gap-1.5 rounded-lg bg-[#eff6ff] px-2.5 py-1 text-xs font-bold text-[#1d4ed8] border border-[#bfdbfe]">
-                    <Building2 className="h-3.5 w-3.5 text-[#2563eb]" />
+                  <span className="inline-flex items-center gap-1.5 rounded-lg bg-[#e3eff1] px-2.5 py-1 text-xs font-bold text-[#0b3b48] border border-[#b9d5da]">
+                    <Building2 className="h-3.5 w-3.5 text-[#0f4c5c]" />
                     <span>Unidade: <strong>{getScopeTitle()}</strong></span>
                   </span>
-                  <span className="inline-flex items-center gap-1.5 rounded-lg bg-[#f8fafc] px-2.5 py-1 text-xs font-bold text-[#475569] border border-[#cbd5e1]">
-                    <Calendar className="h-3.5 w-3.5 text-[#64748b]" />
+                  <span className="inline-flex items-center gap-1.5 rounded-lg bg-[#f7f9f7] px-2.5 py-1 text-xs font-bold text-[#3a4743] border border-[#c9d1cb]">
+                    <Calendar className="h-3.5 w-3.5 text-[#5e6b67]" />
                     <span>Período Filtrado: <strong>{getPeriodSummary()}</strong></span>
                   </span>
                 </div>
@@ -1202,19 +1202,19 @@ export const DreScreen: React.FC<DreScreenProps> = ({
                 <button
                   type="button"
                   onClick={handleGeneratePdfReport}
-                  className="flex items-center gap-1.5 rounded-xl border border-[#3c63da]/30 bg-[#edf2ff] px-3.5 py-2 text-xs font-bold text-[#3c63da] hover:bg-[#dfe8fe] transition-all cursor-pointer shadow-2xs"
+                  className="flex items-center gap-1.5 rounded-xl border border-[#0f4c5c]/30 bg-[#e3eff1] px-3.5 py-2 text-xs font-bold text-[#0f4c5c] hover:bg-[#e3eff1] transition-all cursor-pointer shadow-2xs"
                   title="Baixar demonstrativo da DRE em PDF com nome da unidade e período filtrado"
                 >
-                  <Download className="h-4 w-4 text-[#3c63da]" />
+                  <Download className="h-4 w-4 text-[#0f4c5c]" />
                   <span>Baixar PDF da Planilha</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => window.print()}
-                  className="flex items-center gap-1.5 rounded-xl border border-[#cbd5e1] bg-white px-3 py-2 text-xs font-bold text-[#152238] hover:bg-[#f8faff] hover:border-[#3c63da] transition-all cursor-pointer"
+                  className="flex items-center gap-1.5 rounded-xl border border-[#c9d1cb] bg-white px-3 py-2 text-xs font-bold text-[#17211f] hover:bg-[#f7f9f7] hover:border-[#0f4c5c] transition-all cursor-pointer"
                   title="Imprimir ou Salvar em PDF"
                 >
-                  <Printer className="h-4 w-4 text-[#69778c]" />
+                  <Printer className="h-4 w-4 text-[#5e6b67]" />
                   <span>Imprimir</span>
                 </button>
               </div>
@@ -1224,14 +1224,14 @@ export const DreScreen: React.FC<DreScreenProps> = ({
             <DateMultiFilter selection={dateSelection} onChange={setDateSelection} />
 
             {/* Filtros Operacionais: Marca e Unidade */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-3 border-t border-[#f1f5f9]">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-3 border-t border-[#f0f3f0]">
               {/* Filtro Marca / Rede */}
               <div>
                 <label
                   htmlFor="dre-filter-business"
-                  className="flex items-center gap-1.5 text-[11px] font-bold text-[#152238] mb-1.5"
+                  className="flex items-center gap-1.5 text-[11px] font-bold text-[#17211f] mb-1.5"
                 >
-                  <Building2 className="h-3.5 w-3.5 text-[#3c63da]" />
+                  <Building2 className="h-3.5 w-3.5 text-[#0f4c5c]" />
                   <span>Rede / Marca</span>
                 </label>
                 <select
@@ -1244,7 +1244,7 @@ export const DreScreen: React.FC<DreScreenProps> = ({
                     setSelectedFranchise("all");
                     if (onSelectBusiness) onSelectBusiness(bId);
                   }}
-                  className="w-full rounded-xl border border-[#cbd5e1] bg-white px-3.5 py-2.5 text-xs sm:text-sm font-semibold text-[#152238] shadow-2xs hover:border-[#94a3b8] focus:border-[#3c63da] focus:ring-2 focus:ring-[#3c63da]/15 focus:outline-none transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+                  className="w-full rounded-md border border-[#c9d1cb] bg-white px-3 py-2 text-[13px] font-semibold text-[#17211f] shadow-2xs hover:border-[#93a09b] focus:border-[#0f4c5c] focus:ring-2 focus:ring-[#0f4c5c]/15 focus:outline-none transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
                 >
                   <option value="all">Todas as Redes e Marcas</option>
                   {businesses.map((b) => (
@@ -1259,9 +1259,9 @@ export const DreScreen: React.FC<DreScreenProps> = ({
               <div>
                 <label
                   htmlFor="dre-filter-franchise"
-                  className="flex items-center gap-1.5 text-[11px] font-bold text-[#152238] mb-1.5"
+                  className="flex items-center gap-1.5 text-[11px] font-bold text-[#17211f] mb-1.5"
                 >
-                  <Store className="h-3.5 w-3.5 text-[#3c63da]" />
+                  <Store className="h-3.5 w-3.5 text-[#0f4c5c]" />
                   <span>Unidade / Franqueado</span>
                 </label>
                 <select
@@ -1273,7 +1273,7 @@ export const DreScreen: React.FC<DreScreenProps> = ({
                     setSelectedFranchise(fId);
                     if (onSelectTenant) onSelectTenant(fId === "all" ? "dono" : fId);
                   }}
-                  className="w-full rounded-xl border border-[#cbd5e1] bg-white px-3.5 py-2.5 text-xs sm:text-sm font-semibold text-[#152238] shadow-2xs hover:border-[#94a3b8] focus:border-[#3c63da] focus:ring-2 focus:ring-[#3c63da]/15 focus:outline-none transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+                  className="w-full rounded-md border border-[#c9d1cb] bg-white px-3 py-2 text-[13px] font-semibold text-[#17211f] shadow-2xs hover:border-[#93a09b] focus:border-[#0f4c5c] focus:ring-2 focus:ring-[#0f4c5c]/15 focus:outline-none transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
                 >
                   <option value="all">Todas as Unidades ({availableFranchises.length})</option>
                   {availableFranchises.map((f) => (
@@ -1286,7 +1286,7 @@ export const DreScreen: React.FC<DreScreenProps> = ({
             </div>
 
             {/* Barra de Auditoria da Base e Ações Rápidas */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 rounded-xl bg-[#f8faff] border border-[#e5eaf1] text-xs">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 rounded-xl bg-[#f7f9f7] border border-[#dfe4df] text-xs">
               <div className="flex items-center gap-2">
                 <span className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-50 px-2.5 py-1 text-xs font-bold text-emerald-800 border border-emerald-200">
                   <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
@@ -1304,7 +1304,7 @@ export const DreScreen: React.FC<DreScreenProps> = ({
                       days: AVAILABLE_DAYS,
                     });
                   }}
-                  className="flex items-center gap-1.5 rounded-lg border border-[#cbd5e1] bg-white px-3 py-1.5 text-[11px] font-bold text-[#64748b] hover:text-[#3c63da] hover:border-[#3c63da] transition-all cursor-pointer shadow-2xs"
+                  className="flex items-center gap-1.5 rounded-lg border border-[#c9d1cb] bg-white px-3 py-1.5 text-[11px] font-bold text-[#5e6b67] hover:text-[#0f4c5c] hover:border-[#0f4c5c] transition-all cursor-pointer shadow-2xs"
                   title="Redefinir filtros para o mês atual"
                 >
                   <RotateCcw className="h-3 w-3" />
@@ -1328,44 +1328,44 @@ export const DreScreen: React.FC<DreScreenProps> = ({
 
           {/* KPI Cards */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-            <div className="rounded-xl border border-[#e5eaf1] bg-white p-4 shadow-xs">
-              <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#69778c] block">
+            <div className="rounded-xl border border-[#dfe4df] bg-white p-4 shadow-xs">
+              <span className="text-[10px] font-extrabold text-[#5e6b67] block">
                 Receita Bruta (Faturamento)
               </span>
-              <strong className="text-xl sm:text-2xl font-extrabold tracking-tight text-[#152238] block mt-1">
+              <strong className="text-xl sm:text-2xl font-extrabold tracking-tight text-[#17211f] block mt-1">
                 {formatBrl(dre.fatBruta)}
               </strong>
-              <span className="text-[11px] text-[#69778c] block mt-0.5">
+              <span className="text-[11px] text-[#5e6b67] block mt-0.5">
                 {visibleUnits.length} unidade(s) incluídas
               </span>
             </div>
 
-            <div className="rounded-xl border border-[#e5eaf1] bg-white p-4 shadow-xs">
-              <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#69778c] block">
+            <div className="rounded-xl border border-[#dfe4df] bg-white p-4 shadow-xs">
+              <span className="text-[10px] font-extrabold text-[#5e6b67] block">
                 Lucro Bruto Operacional
               </span>
-              <strong className="text-xl sm:text-2xl font-extrabold tracking-tight text-[#3c63da] block mt-1">
+              <strong className="text-xl sm:text-2xl font-extrabold tracking-tight text-[#0f4c5c] block mt-1">
                 {formatBrl(dre.lucroBruto)}
               </strong>
-              <span className="text-[11px] text-[#69778c] block mt-0.5">
+              <span className="text-[11px] text-[#5e6b67] block mt-0.5">
                 Margem de {formatPct(dre.margemBruta)}
               </span>
             </div>
 
-            <div className="rounded-xl border border-[#e5eaf1] bg-white p-4 shadow-xs">
-              <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#69778c] block">
+            <div className="rounded-xl border border-[#dfe4df] bg-white p-4 shadow-xs">
+              <span className="text-[10px] font-extrabold text-[#5e6b67] block">
                 Despesas Operacionais Fixas
               </span>
-              <strong className="text-xl sm:text-2xl font-extrabold tracking-tight text-[#b44b4b] block mt-1">
+              <strong className="text-xl sm:text-2xl font-extrabold tracking-tight text-[#b93a48] block mt-1">
                 -{formatBrl(dre.totalDesp)}
               </strong>
-              <span className="text-[11px] text-[#69778c] block mt-0.5">
+              <span className="text-[11px] text-[#5e6b67] block mt-0.5">
                 {formatPct(dre.despRatio)} da receita líquida
               </span>
             </div>
 
-            <div className="rounded-xl border border-[#e5eaf1] bg-emerald-50/70 border-emerald-200 p-4 shadow-xs">
-              <span className="text-[10px] font-extrabold uppercase tracking-wider text-emerald-800 block">
+            <div className="rounded-xl border border-[#dfe4df] bg-emerald-50/70 border-emerald-200 p-4 shadow-xs">
+              <span className="text-[10px] font-extrabold text-emerald-800 block">
                 Lucro Líquido Final
               </span>
               <strong className="text-xl sm:text-2xl font-extrabold tracking-tight text-emerald-800 block mt-1">
@@ -1377,31 +1377,31 @@ export const DreScreen: React.FC<DreScreenProps> = ({
             </div>
           </div>
 
-          <div className="rounded-2xl border border-[#e5eaf1] bg-[#f8faff] p-4 sm:p-5 shadow-xs space-y-4">
+          <div className="rounded-2xl border border-[#dfe4df] bg-[#f7f9f7] p-4 sm:p-5 shadow-xs space-y-4">
             <div>
-              <span className="text-[10px] font-extrabold uppercase tracking-widest text-[#3c63da]">Leitura gerencial</span>
-              <h3 className="text-sm font-extrabold text-[#152238] mt-1">Resultado, margem e compromisso de caixa no mesmo recorte</h3>
-              <p className="text-[11px] text-[#69778c] mt-1">Use esta faixa para entender rapidamente se o lucro do período está sendo pressionado por despesas ou vencimentos.</p>
+              <span className="text-[10px] font-extrabold text-[#0f4c5c]">Leitura gerencial</span>
+              <h3 className="text-sm font-extrabold text-[#17211f] mt-1">Resultado, margem e compromisso de caixa no mesmo recorte</h3>
+              <p className="text-[11px] text-[#5e6b67] mt-1">Use esta faixa para entender rapidamente se o lucro do período está sendo pressionado por despesas ou vencimentos.</p>
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 w-full">
-              <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-3 flex flex-col justify-between"><span className="block text-[10px] font-black uppercase text-emerald-800">Margem líquida</span><strong className="block mt-2 text-base sm:text-lg text-emerald-900">{formatPct(dre.margemLiquida)}</strong></div>
-              <div className="rounded-xl border border-[#cbd5e1] bg-white p-3 flex flex-col justify-between"><span className="block text-[10px] font-black uppercase text-[#69778c]">Despesas/receita</span><strong className="block mt-2 text-base sm:text-lg text-[#152238]">{formatPct(dre.despRatio)}</strong></div>
-              <div className="rounded-xl border border-rose-200 bg-rose-50 p-3 flex flex-col justify-between"><span className="block text-[10px] font-black uppercase text-rose-700">Vencidas</span><strong className="block mt-2 text-base sm:text-lg text-rose-900">{formatBrl2(billRisk.overdue)}</strong></div>
-              <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 flex flex-col justify-between"><span className="block text-[10px] font-black uppercase text-amber-800">Próximas</span><strong className="block mt-2 text-base sm:text-lg text-amber-900">{formatBrl2(billRisk.today + billRisk.soon)}</strong></div>
+              <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-3 flex flex-col justify-between"><span className="block text-[10px] font-black text-emerald-800">Margem líquida</span><strong className="block mt-2 text-base sm:text-lg text-emerald-900">{formatPct(dre.margemLiquida)}</strong></div>
+              <div className="rounded-xl border border-[#c9d1cb] bg-white p-3 flex flex-col justify-between"><span className="block text-[10px] font-black text-[#5e6b67]">Despesas/receita</span><strong className="block mt-2 text-base sm:text-lg text-[#17211f]">{formatPct(dre.despRatio)}</strong></div>
+              <div className="rounded-xl border border-rose-200 bg-rose-50 p-3 flex flex-col justify-between"><span className="block text-[10px] font-black text-rose-700">Vencidas</span><strong className="block mt-2 text-base sm:text-lg text-rose-900">{formatBrl2(billRisk.overdue)}</strong></div>
+              <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 flex flex-col justify-between"><span className="block text-[10px] font-black text-amber-800">Próximas</span><strong className="block mt-2 text-base sm:text-lg text-amber-900">{formatBrl2(billRisk.today + billRisk.soon)}</strong></div>
             </div>
           </div>
 
           {/* DRE Detailed Table */}
-          <div className="rounded-2xl border border-[#e5eaf1] bg-white shadow-xs overflow-hidden">
-            <div className="p-4 sm:p-5 border-b border-[#e5eaf1] flex items-center justify-between">
+          <div className="rounded-2xl border border-[#dfe4df] bg-white shadow-xs overflow-hidden">
+            <div className="p-4 sm:p-5 border-b border-[#dfe4df] flex items-center justify-between">
               <div>
-                <h3 className="text-sm font-bold text-[#152238] flex items-center gap-2">
+                <h3 className="text-sm font-bold text-[#17211f] flex items-center gap-2">
                   <span>Demonstrativo do Resultado do Exercício (DRE)</span>
-                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#f4f7fb] text-[#69778c] font-bold">
+                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#f0f3f0] text-[#5e6b67] font-bold">
                     Oficial
                   </span>
                 </h3>
-                <p className="text-xs text-[#69778c] mt-0.5">
+                <p className="text-xs text-[#5e6b67] mt-0.5">
                   Valores apurados conforme os filtros de ano, mês, dia e unidades selecionadas.
                 </p>
               </div>
@@ -1420,24 +1420,24 @@ export const DreScreen: React.FC<DreScreenProps> = ({
                   <button
                     type="button"
                     onClick={handleGeneratePdfReport}
-                    className="flex items-center gap-1 rounded-lg border border-[#3c63da]/30 bg-[#edf2ff] px-2.5 py-1 text-[11px] font-bold text-[#3c63da] hover:bg-[#dfe8fe] transition-all cursor-pointer shadow-2xs"
+                    className="flex items-center gap-1 rounded-lg border border-[#0f4c5c]/30 bg-[#e3eff1] px-2.5 py-1 text-[11px] font-bold text-[#0f4c5c] hover:bg-[#e3eff1] transition-all cursor-pointer shadow-2xs"
                     title="Baixar Relatório Formatado em PDF"
                   >
-                    <Download className="h-3 w-3 text-[#3c63da]" />
+                    <Download className="h-3 w-3 text-[#0f4c5c]" />
                     <span>Baixar PDF da Planilha</span>
                   </button>
                   <button
                     type="button"
                     onClick={() => window.print()}
-                    className="flex items-center gap-1 rounded-lg border border-[#cbd5e1] bg-white px-2.5 py-1 text-[11px] font-bold text-[#152238] hover:bg-[#f8faff] hover:border-[#3c63da] transition-all cursor-pointer"
+                    className="flex items-center gap-1 rounded-lg border border-[#c9d1cb] bg-white px-2.5 py-1 text-[11px] font-bold text-[#17211f] hover:bg-[#f7f9f7] hover:border-[#0f4c5c] transition-all cursor-pointer"
                     title="Imprimir"
                   >
-                    <Printer className="h-3 w-3 text-[#69778c]" />
+                    <Printer className="h-3 w-3 text-[#5e6b67]" />
                     <span>Imprimir</span>
                   </button>
                 </div>
-                <div className="text-right pl-2 border-l border-[#e5eaf1]">
-                  <span className="text-[11px] text-[#69778c] block">Resultado Líquido</span>
+                <div className="text-right pl-2 border-l border-[#dfe4df]">
+                  <span className="text-[11px] text-[#5e6b67] block">Resultado Líquido</span>
                   <span className="text-base font-extrabold text-emerald-700">
                     {formatPct(dre.margemLiquida)}
                   </span>
@@ -1448,55 +1448,55 @@ export const DreScreen: React.FC<DreScreenProps> = ({
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs border-collapse">
                 <thead>
-                  <tr className="bg-[#f8faff] border-b border-[#e5eaf1] text-[#69778c]">
-                    <th className="py-2.5 px-4 font-bold uppercase text-[10px]">Conta Contábil / Descrição</th>
-                    <th className="py-2.5 px-4 text-right font-bold uppercase text-[10px]">Valor Nominal (R$)</th>
+                  <tr className="bg-[#f7f9f7] border-b border-[#dfe4df] text-[#5e6b67]">
+                    <th className="py-2.5 px-4 font-bold text-[10px]">Conta Contábil / Descrição</th>
+                    <th className="py-2.5 px-4 text-right font-bold text-[10px]">Valor Nominal (R$)</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-[#e5eaf1]">
-                  <tr className="font-bold text-[#152238] bg-[#f8faff]/50">
+                <tbody className="divide-y divide-[#dfe4df]">
+                  <tr className="font-bold text-[#17211f] bg-[#f7f9f7]/50">
                     <td className="py-2.5 px-4">(=) RECEITA BRUTA OPERACIONAL</td>
                     <td className="py-2.5 px-4 text-right font-mono text-emerald-800">
                       {formatBrl2(dre.fatBruta)}
                     </td>
                   </tr>
-                  <tr className="text-[#69778c]">
+                  <tr className="text-[#5e6b67]">
                     <td className="py-2.5 px-4 pl-8">(-) Descontos & Cancelamentos</td>
                     <td className="py-2.5 px-4 text-right font-mono">-{formatBrl2(dre.desconto)}</td>
                   </tr>
-                  <tr className="text-[#69778c]">
+                  <tr className="text-[#5e6b67]">
                     <td className="py-2.5 px-4 pl-8">(-) Impostos sobre Vendas</td>
                     <td className="py-2.5 px-4 text-right font-mono">-{formatBrl2(dre.impostos)}</td>
                   </tr>
-                  <tr className="font-bold text-[#152238] bg-[#f4f7fb]/60">
+                  <tr className="font-bold text-[#17211f] bg-[#f0f3f0]/60">
                     <td className="py-2.5 px-4">(=) RECEITA LÍQUIDA OPERACIONAL</td>
                     <td className="py-2.5 px-4 text-right font-mono">{formatBrl2(dre.receitaLiquida)}</td>
                   </tr>
-                  <tr className="text-[#69778c]">
+                  <tr className="text-[#5e6b67]">
                     <td className="py-2.5 px-4 pl-8">(-) Custo das Mercadorias Vendidas (CMV)</td>
                     <td className="py-2.5 px-4 text-right font-mono">-{formatBrl2(dre.cmv)}</td>
                   </tr>
-                  <tr className="text-[#69778c]">
+                  <tr className="text-[#5e6b67]">
                     <td className="py-2.5 px-4 pl-8">(-) Taxas de Cartão & Plataforma</td>
                     <td className="py-2.5 px-4 text-right font-mono">-{formatBrl2(dre.taxasNegocio)}</td>
                   </tr>
-                  <tr className="bg-[#edf2ff] font-bold text-[#152238]">
+                  <tr className="bg-[#e3eff1] font-bold text-[#17211f]">
                     <td className="py-3 px-4">(=) Margem de Contribuição Bruta (Lucro Bruto)</td>
-                    <td className="py-3 px-4 text-right font-mono font-bold text-[#3c63da]">
+                    <td className="py-3 px-4 text-right font-mono font-bold text-[#0f4c5c]">
                       {formatBrl2(dre.lucroBruto)}
                     </td>
                   </tr>
 
                   {/* Despesas Fixas Group */}
-                  <tr className="bg-[#f8faff]">
-                    <td colSpan={2} className="py-2 px-4 text-[10px] font-extrabold uppercase tracking-wider text-[#69778c]">
+                  <tr className="bg-[#f7f9f7]">
+                    <td colSpan={2} className="py-2 px-4 text-[10px] font-extrabold text-[#5e6b67]">
                       Despesas Operacionais Fixas & Administrativas
                     </td>
                   </tr>
                   {dre.despesas.map((item) => (
-                    <tr key={item.id} className="text-[#69778c]">
+                    <tr key={item.id} className="text-[#5e6b67]">
                       <td className="py-2 px-4 pl-8 text-xs">{item.name}</td>
-                      <td className="py-2 px-4 text-right font-mono text-[#b44b4b]">
+                      <td className="py-2 px-4 text-right font-mono text-[#b93a48]">
                         -{formatBrl2(item.value)}
                       </td>
                     </tr>

@@ -50,7 +50,7 @@ import {
 } from "./api";
 import { isFirebaseMirrorAvailable } from "./firebaseState";
 import { Header } from "./components/Header";
-import { Sidebar } from "./components/Sidebar";
+import { Sidebar, ScopeSelectors } from "./components/Sidebar";
 import { LoginModal } from "./components/LoginModal";
 import { HomeScreen } from "./components/screens/HomeScreen";
 import { ConfiguracaoScreen } from "./components/screens/ConfiguracaoScreen";
@@ -629,15 +629,15 @@ export const App: React.FC = () => {
 
   if (isLoading || !serverState) {
     return (
-      <div className="flex h-screen w-screen flex-col items-center justify-center bg-[#10192c] text-white">
+      <div className="flex h-screen w-screen flex-col items-center justify-center bg-[#17211f] text-white">
         <div className="flex items-center gap-3">
-          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#3c63da] text-white shadow-lg">
+          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#0f4c5c] text-white shadow-lg">
             <Cloud className="h-6 w-6 animate-pulse" />
           </div>
           <div>
             <h1 className="text-xl font-extrabold tracking-tight">Gestão de Franquias</h1>
-            <p className="max-w-md text-xs text-[#8ea1be]">{loadError || "Conectando à base central..."}</p>
-            {loadError && <button type="button" onClick={() => void loadState()} className="mt-4 rounded-xl bg-[#3c63da] px-4 py-2 text-xs font-bold text-white">Tentar novamente</button>}
+            <p className="max-w-md text-xs text-[#93a09b]">{loadError || "Conectando à base central..."}</p>
+            {loadError && <button type="button" onClick={() => void loadState()} className="mt-4 rounded-xl bg-[#0f4c5c] px-4 py-2 text-xs font-bold text-white">Tentar novamente</button>}
           </div>
         </div>
       </div>
@@ -673,7 +673,7 @@ export const App: React.FC = () => {
   };
 
   return (
-    <div className={`app-shell flex min-h-screen bg-[#f4f7fb] text-[#152238] font-sans antialiased selection:bg-[#3c63da] selection:text-white ${isDarkMode ? "theme-dark" : ""}`}>
+    <div className={`app-shell flex min-h-screen bg-[#f0f3f0] text-[#17211f] font-sans antialiased selection:bg-[#0f4c5c] selection:text-white ${isDarkMode ? "theme-dark" : ""}`}>
       {/* Sidebar Desktop & Mobile Drawer */}
       <Sidebar
         currentScreen={currentScreen}
@@ -693,13 +693,14 @@ export const App: React.FC = () => {
         onCloseMobile={() => setIsMobileMenuOpen(false)}
         isCollapsed={isSidebarCollapsed}
         onToggleCollapse={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+        isDarkMode={isDarkMode}
+        onToggleTheme={() => setIsDarkMode((current) => !current)}
+        onLogout={handleLogout}
       />
 
       {/* Main Container with responsive padding for collapsed sidebar */}
       <div
-        className={`flex flex-1 flex-col min-w-0 transition-all duration-300 ${
-          isSidebarCollapsed ? "lg:pl-20" : "lg:pl-64"
-        }`}
+        className="flex flex-1 flex-col min-w-0 lg:pt-14"
       >
         {/* Top Header */}
         <Header
@@ -716,10 +717,25 @@ export const App: React.FC = () => {
           onToggleSidebarCollapse={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
           isDarkMode={isDarkMode}
           onToggleTheme={() => setIsDarkMode((current) => !current)}
+          onNavigate={(screen) => {
+            setCurrentScreen(screen);
+            window.scrollTo({ top: 0, behavior: "smooth" });
+          }}
+          scope={
+            <ScopeSelectors
+              businesses={businesses}
+              franchises={franchises}
+              currentBusinessId={currentBusinessId}
+              currentTenantId={currentTenantId}
+              onSelectBusiness={handleSelectBusiness}
+              onSelectTenant={handleSelectTenant}
+              userSession={userSession}
+            />
+          }
         />
 
         {/* Dynamic Screen View */}
-        <main className="flex-1 p-2.5 sm:p-4 lg:p-5 max-w-7xl w-full mx-auto pb-16 md:pb-6">
+        <main className="flex-1 p-2.5 sm:p-4 lg:px-6 lg:py-5 max-w-[1520px] w-full mx-auto pb-16 md:pb-6">
           {currentScreen === "home" && (
             <HomeScreen
               currentTenantId={currentTenantId}

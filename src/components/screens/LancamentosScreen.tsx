@@ -261,12 +261,12 @@ export const LancamentosScreen: React.FC<LancamentosScreenProps> = ({
 
       rowsHtml += `
         <tr>
-          <td style="padding:6px 8px;border-bottom:1px solid #e2e8f0;">${new Date(e.date + "T12:00:00").toLocaleDateString("pt-BR")}</td>
-          <td style="padding:6px 8px;border-bottom:1px solid #e2e8f0;font-weight:bold;color:${isEntrada ? "#047857" : "#b44b4b"};">${isEntrada ? "Entrada" : "Despesa"}</td>
-          <td style="padding:6px 8px;border-bottom:1px solid #e2e8f0;">${e.desc} ${e.note ? `<br/><small style="color:#64748b;">${e.note}</small>` : ""}</td>
-          <td style="padding:6px 8px;border-bottom:1px solid #e2e8f0;">${e.apelido || "-"}</td>
-          <td style="padding:6px 8px;border-bottom:1px solid #e2e8f0;text-transform:uppercase;">${e.pay || "-"}</td>
-          <td style="padding:6px 8px;border-bottom:1px solid #e2e8f0;text-align:right;font-family:monospace;font-weight:bold;color:${isEntrada ? "#047857" : "#b44b4b"};">${isEntrada ? "+" : "-"} ${formatBrl2(e.value)}</td>
+          <td style="padding:6px 8px;border-bottom:1px solid #dfe4df;">${new Date(e.date + "T12:00:00").toLocaleDateString("pt-BR")}</td>
+          <td style="padding:6px 8px;border-bottom:1px solid #dfe4df;font-weight:bold;color:${isEntrada ? "#1a7f5a" : "#b93a48"};">${isEntrada ? "Entrada" : "Despesa"}</td>
+          <td style="padding:6px 8px;border-bottom:1px solid #dfe4df;">${e.desc} ${e.note ? `<br/><small style="color:#5e6b67;">${e.note}</small>` : ""}</td>
+          <td style="padding:6px 8px;border-bottom:1px solid #dfe4df;">${e.apelido || "-"}</td>
+          <td style="padding:6px 8px;border-bottom:1px solid #dfe4df;text-transform:uppercase;">${e.pay || "-"}</td>
+          <td style="padding:6px 8px;border-bottom:1px solid #dfe4df;text-align:right;font-family:monospace;font-weight:bold;color:${isEntrada ? "#1a7f5a" : "#b93a48"};">${isEntrada ? "+" : "-"} ${formatBrl2(e.value)}</td>
         </tr>
       `;
     });
@@ -279,13 +279,13 @@ export const LancamentosScreen: React.FC<LancamentosScreenProps> = ({
       <meta charset="UTF-8">
       <title>Relatório de Lançamentos Manuais</title>
       <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; margin: 20px; color: #1e293b; font-size: 11px; }
-        .header { border-bottom: 2px solid #3c63da; padding-bottom: 8px; margin-bottom: 14px; }
-        .title { font-size: 16px; font-weight: 800; color: #0f172a; margin: 0; }
-        .meta { font-size: 10px; color: #475569; margin-top: 4px; display: flex; gap: 12px; flex-wrap: wrap; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; margin: 20px; color: #17211f; font-size: 11px; }
+        .header { border-bottom: 2px solid #0f4c5c; padding-bottom: 8px; margin-bottom: 14px; }
+        .title { font-size: 16px; font-weight: 800; color: #17211f; margin: 0; }
+        .meta { font-size: 10px; color: #3a4743; margin-top: 4px; display: flex; gap: 12px; flex-wrap: wrap; }
         table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-        th { background: #f8fafc; color: #64748b; text-transform: uppercase; font-size: 9px; padding: 6px 8px; border-bottom: 2px solid #cbd5e1; text-align: left; }
-        .summary { margin-top: 15px; padding: 10px; background: #f8faff; border: 1px solid #e2e8f0; border-radius: 6px; display: flex; justify-content: space-between; font-weight: bold; }
+        th { background: #f7f9f7; color: #5e6b67; text-transform: uppercase; font-size: 9px; padding: 6px 8px; border-bottom: 2px solid #c9d1cb; text-align: left; }
+        .summary { margin-top: 15px; padding: 10px; background: #f7f9f7; border: 1px solid #dfe4df; border-radius: 6px; display: flex; justify-content: space-between; font-weight: bold; }
         @media print { body { margin: 10mm; } @page { size: landscape; margin: 10mm; } }
       </style>
     </head>
@@ -350,11 +350,11 @@ export const LancamentosScreen: React.FC<LancamentosScreenProps> = ({
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
         <div>
-          <h3 className="text-base font-extrabold text-[#152238] flex items-center gap-2">
-            <FilePenLine className="h-4.5 w-4.5 text-[#3c63da]" />
+          <h3 className="text-base font-extrabold text-[#17211f] flex items-center gap-2">
+            <FilePenLine className="h-4.5 w-4.5 text-[#0f4c5c]" />
             Lançamentos Manuais
           </h3>
-          <p className="text-xs text-[#69778c]">
+          <p className="text-xs text-[#5e6b67]">
             Registre entradas e saídas avulsas. Lançamentos alimentam diretamente o DRE.
           </p>
         </div>
@@ -362,7 +362,7 @@ export const LancamentosScreen: React.FC<LancamentosScreenProps> = ({
         <div className="flex items-center gap-2">
           <button
             onClick={() => onNavigate("dre")}
-            className="flex items-center gap-1.5 rounded-lg border border-[#3c63da]/30 bg-[#edf2ff] px-3 py-1.5 text-xs font-bold text-[#3c63da] hover:bg-[#3c63da] hover:text-white transition-all shadow-xs cursor-pointer"
+            className="flex items-center gap-1.5 rounded-lg border border-[#0f4c5c]/30 bg-[#e3eff1] px-3 py-1.5 text-xs font-bold text-[#0f4c5c] hover:bg-[#0f4c5c] hover:text-white transition-all shadow-xs cursor-pointer"
           >
             <span>Ver no DRE</span>
             <ArrowUpRight className="h-3.5 w-3.5" />
@@ -372,57 +372,57 @@ export const LancamentosScreen: React.FC<LancamentosScreenProps> = ({
 
       {/* KPI Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-        <div className="rounded-xl border border-[#e5eaf1] bg-white p-4.5 shadow-xs">
-          <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#69778c] block">
+        <div className="rounded-xl border border-[#dfe4df] bg-white p-4.5 shadow-xs">
+          <span className="text-[10px] font-extrabold text-[#5e6b67] block">
             Entradas Manuais
           </span>
-          <strong className="text-2xl font-extrabold text-[#118464] block mt-1">
+          <strong className="text-2xl font-extrabold text-[#1a7f5a] block mt-1">
             {formatBrl(totalEntradas)}
           </strong>
-          <small className="text-[11px] text-[#69778c] block mt-0.5">Lançadas no período</small>
+          <small className="text-[11px] text-[#5e6b67] block mt-0.5">Lançadas no período</small>
         </div>
 
-        <div className="rounded-xl border border-[#e5eaf1] bg-white p-4.5 shadow-xs">
-          <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#69778c] block">
+        <div className="rounded-xl border border-[#dfe4df] bg-white p-4.5 shadow-xs">
+          <span className="text-[10px] font-extrabold text-[#5e6b67] block">
             Despesas Manuais
           </span>
-          <strong className="text-2xl font-extrabold text-[#b44b4b] block mt-1">
+          <strong className="text-2xl font-extrabold text-[#b93a48] block mt-1">
             {formatBrl(totalDespesas)}
           </strong>
-          <small className="text-[11px] text-[#69778c] block mt-0.5">Contas e saídas avulsas</small>
+          <small className="text-[11px] text-[#5e6b67] block mt-0.5">Contas e saídas avulsas</small>
         </div>
 
-        <div className="rounded-xl border border-[#e5eaf1] bg-white p-4.5 shadow-xs">
-          <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#69778c] block">
+        <div className="rounded-xl border border-[#dfe4df] bg-white p-4.5 shadow-xs">
+          <span className="text-[10px] font-extrabold text-[#5e6b67] block">
             Saldo Líquido Manual
           </span>
           <strong
             className={`text-2xl font-extrabold block mt-1 ${
-              saldoManual >= 0 ? "text-[#3c63da]" : "text-[#b44b4b]"
+              saldoManual >= 0 ? "text-[#0f4c5c]" : "text-[#b93a48]"
             }`}
           >
             {formatBrl(saldoManual)}
           </strong>
-          <small className="text-[11px] text-[#69778c] block mt-0.5">Entradas − Despesas</small>
+          <small className="text-[11px] text-[#5e6b67] block mt-0.5">Entradas − Despesas</small>
         </div>
 
-        <div className="rounded-xl border border-[#e5eaf1] bg-white p-4.5 shadow-xs">
-          <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#69778c] block">
+        <div className="rounded-xl border border-[#dfe4df] bg-white p-4.5 shadow-xs">
+          <span className="text-[10px] font-extrabold text-[#5e6b67] block">
             Total de Registros
           </span>
-          <strong className="text-2xl font-extrabold text-[#152238] block mt-1">
+          <strong className="text-2xl font-extrabold text-[#17211f] block mt-1">
             {manualEntries.length}
           </strong>
-          <small className="text-[11px] text-[#69778c] block mt-0.5">Persistidos</small>
+          <small className="text-[11px] text-[#5e6b67] block mt-0.5">Persistidos</small>
         </div>
       </div>
 
       {/* Form + List Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
         {/* Form Card */}
-        <div className="rounded-2xl border border-[#e5eaf1] bg-white p-5 sm:p-6 shadow-xs space-y-4">
-          <div className="flex items-center justify-between border-b border-[#e5eaf1] pb-3">
-            <h3 className="text-sm font-bold text-[#152238]">
+        <div className="rounded-2xl border border-[#dfe4df] bg-white p-5 sm:p-6 shadow-xs space-y-4">
+          <div className="flex items-center justify-between border-b border-[#dfe4df] pb-3">
+            <h3 className="text-sm font-bold text-[#17211f]">
               {editingEntryId ? "Editar Lançamento" : "Novo Lançamento"}
             </h3>
             {editingEntryId && (
@@ -434,7 +434,7 @@ export const LancamentosScreen: React.FC<LancamentosScreenProps> = ({
                   setDesc("");
                   setNote("");
                 }}
-                className="text-[11px] font-bold text-[#3c63da] hover:underline cursor-pointer"
+                className="text-[11px] font-bold text-[#0f4c5c] hover:underline cursor-pointer"
               >
                 Cancelar Edição
               </button>
@@ -451,7 +451,7 @@ export const LancamentosScreen: React.FC<LancamentosScreenProps> = ({
               className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1 cursor-pointer ${
                 entryType === "entrada"
                   ? "bg-emerald-600 text-white shadow-xs"
-                  : "border border-[#e5eaf1] bg-[#f8faff] text-[#69778c]"
+                  : "border border-[#dfe4df] bg-[#f7f9f7] text-[#5e6b67]"
               }`}
             >
               <ArrowUpRight className="h-3.5 w-3.5" />
@@ -466,7 +466,7 @@ export const LancamentosScreen: React.FC<LancamentosScreenProps> = ({
               className={`flex-1 py-2 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1 cursor-pointer ${
                 entryType === "despesa"
                   ? "bg-red-600 text-white shadow-xs"
-                  : "border border-[#e5eaf1] bg-[#f8faff] text-[#69778c]"
+                  : "border border-[#dfe4df] bg-[#f7f9f7] text-[#5e6b67]"
               }`}
             >
               <ArrowDownRight className="h-3.5 w-3.5" />
@@ -476,19 +476,19 @@ export const LancamentosScreen: React.FC<LancamentosScreenProps> = ({
 
           <form onSubmit={handleSubmit} className="space-y-3.5 text-xs">
             <div>
-              <label className="block text-[10px] font-extrabold uppercase text-[#69778c] mb-1">
+              <label className="block text-[10px] font-extrabold text-[#5e6b67] mb-1">
                 Data do Lançamento
               </label>
               <input
                 type="date"
                 value={date}
                 onChange={(e) => setDate(e.target.value)}
-                className="w-full rounded-lg border border-[#e5eaf1] px-3 py-2 text-xs font-semibold text-[#152238] bg-white focus:border-[#3c63da] focus:outline-none"
+                className="w-full rounded-lg border border-[#dfe4df] px-3 py-2 text-xs font-semibold text-[#17211f] bg-white focus:border-[#0f4c5c] focus:outline-none"
               />
             </div>
 
             <div>
-              <label className="block text-[10px] font-extrabold uppercase text-[#69778c] mb-1">
+              <label className="block text-[10px] font-extrabold text-[#5e6b67] mb-1">
                 Valor (R$)
               </label>
               <input
@@ -498,12 +498,12 @@ export const LancamentosScreen: React.FC<LancamentosScreenProps> = ({
                 placeholder="0,00"
                 value={value}
                 onChange={(e) => setValue(e.target.value)}
-                className="w-full rounded-lg border border-[#e5eaf1] px-3 py-2 text-xs font-mono font-bold text-[#152238] bg-white focus:border-[#3c63da] focus:outline-none"
+                className="w-full rounded-lg border border-[#dfe4df] px-3 py-2 text-xs font-mono font-bold text-[#17211f] bg-white focus:border-[#0f4c5c] focus:outline-none"
               />
             </div>
 
             <div>
-              <label className="block text-[10px] font-extrabold uppercase text-[#69778c] mb-1">
+              <label className="block text-[10px] font-extrabold text-[#5e6b67] mb-1">
                 Descrição
               </label>
               <input
@@ -511,20 +511,20 @@ export const LancamentosScreen: React.FC<LancamentosScreenProps> = ({
                 placeholder="Ex.: Aluguel do mês / Venda corporativa"
                 value={desc}
                 onChange={(e) => setDesc(e.target.value)}
-                className="w-full rounded-lg border border-[#e5eaf1] px-3 py-2 text-xs font-medium text-[#152238] bg-white focus:border-[#3c63da] focus:outline-none"
+                className="w-full rounded-lg border border-[#dfe4df] px-3 py-2 text-xs font-medium text-[#17211f] bg-white focus:border-[#0f4c5c] focus:outline-none"
               />
             </div>
 
 
 
             <div>
-              <label className="block text-[10px] font-extrabold uppercase text-[#69778c] mb-1">
+              <label className="block text-[10px] font-extrabold text-[#5e6b67] mb-1">
                 Forma de Pagamento
               </label>
               <select
                 value={payMethod}
                 onChange={(e) => setPayMethod(e.target.value)}
-                className="w-full rounded-lg border border-[#e5eaf1] px-3 py-2 text-xs font-semibold text-[#152238] bg-white focus:border-[#3c63da] focus:outline-none"
+                className="w-full rounded-lg border border-[#dfe4df] px-3 py-2 text-xs font-semibold text-[#17211f] bg-white focus:border-[#0f4c5c] focus:outline-none"
               >
                 <option value="pix">PIX</option>
                 <option value="dinheiro">Dinheiro</option>
@@ -536,13 +536,13 @@ export const LancamentosScreen: React.FC<LancamentosScreenProps> = ({
             </div>
 
             {/* Recorrência */}
-            <div className="pt-2 border-t border-[#f0f4f9]">
+            <div className="pt-2 border-t border-[#f0f3f0]">
               <div className="flex items-center justify-between mb-1.5">
-                <label className="flex items-center gap-1.5 text-[10px] font-extrabold uppercase text-[#3c63da]">
+                <label className="flex items-center gap-1.5 text-[10px] font-extrabold text-[#0f4c5c]">
                   <Repeat className="h-3 w-3" />
                   <span>Recorrência Mensal</span>
                 </label>
-                <span className="text-[10px] font-bold text-[#69778c]">
+                <span className="text-[10px] font-bold text-[#5e6b67]">
                   {recurrence === "1" ? "Lançamento Avulso" : `${recurrence} parcelas mensais`}
                 </span>
               </div>
@@ -560,8 +560,8 @@ export const LancamentosScreen: React.FC<LancamentosScreenProps> = ({
                     onClick={() => setRecurrence(item.val as any)}
                     className={`py-1.5 text-[11px] font-bold rounded-lg border transition-all cursor-pointer text-center ${
                       recurrence === item.val
-                        ? "bg-[#3c63da] text-white border-[#3c63da] shadow-2xs"
-                        : "bg-[#f8faff] text-[#48566a] border-[#e5eaf1] hover:border-[#c4cdd9]"
+                        ? "bg-[#0f4c5c] text-white border-[#0f4c5c] shadow-2xs"
+                        : "bg-[#f7f9f7] text-[#5e6b67] border-[#dfe4df] hover:border-[#c9d1cb]"
                     }`}
                   >
                     {item.label}
@@ -570,19 +570,19 @@ export const LancamentosScreen: React.FC<LancamentosScreenProps> = ({
               </div>
 
               {recurrence !== "1" && (
-                <div className="mt-2.5 p-3 rounded-xl bg-[#edf2ff] border border-[#3c63da]/25 space-y-2 text-[11px] animate-in fade-in duration-150">
-                  <div className="flex items-center justify-between font-bold text-[#3c63da]">
+                <div className="mt-2.5 p-3 rounded-xl bg-[#e3eff1] border border-[#0f4c5c]/25 space-y-2 text-[11px] animate-in fade-in duration-150">
+                  <div className="flex items-center justify-between font-bold text-[#0f4c5c]">
                     <span className="flex items-center gap-1.5">
                       <CalendarRange className="h-3.5 w-3.5" />
                       <span>Configurar Valor da Recorrência</span>
                     </span>
-                    <span className="text-[10px] bg-[#3c63da] text-white px-2 py-0.5 rounded-full font-bold">
+                    <span className="text-[10px] bg-[#0f4c5c] text-white px-2 py-0.5 rounded-full font-bold">
                       {recurrence} meses
                     </span>
                   </div>
 
                   <div>
-                    <label className="block text-[10px] font-extrabold uppercase text-[#152238] mb-1">
+                    <label className="block text-[10px] font-extrabold text-[#17211f] mb-1">
                       Valor de Cada Parcela Recorrente (R$)
                     </label>
                     <input
@@ -592,7 +592,7 @@ export const LancamentosScreen: React.FC<LancamentosScreenProps> = ({
                       placeholder={value || "0,00"}
                       value={recurringValue}
                       onChange={(e) => setRecurringValue(e.target.value)}
-                      className="w-full rounded-lg border border-[#3c63da]/40 bg-white px-2.5 py-1.5 text-xs font-mono font-bold text-[#152238] focus:border-[#3c63da] focus:outline-none shadow-2xs"
+                      className="w-full rounded-lg border border-[#0f4c5c]/40 bg-white px-2.5 py-1.5 text-xs font-mono font-bold text-[#17211f] focus:border-[#0f4c5c] focus:outline-none shadow-2xs"
                     />
                   </div>
                 </div>
@@ -600,7 +600,7 @@ export const LancamentosScreen: React.FC<LancamentosScreenProps> = ({
             </div>
 
             <div>
-              <label className="block text-[10px] font-extrabold uppercase text-[#69778c] mb-1">
+              <label className="block text-[10px] font-extrabold text-[#5e6b67] mb-1">
                 Observações (Opcional)
               </label>
               <textarea
@@ -608,7 +608,7 @@ export const LancamentosScreen: React.FC<LancamentosScreenProps> = ({
                 placeholder="Detalhes ou número do documento"
                 value={note}
                 onChange={(e) => setNote(e.target.value)}
-                className="w-full rounded-lg border border-[#e5eaf1] px-3 py-2 text-xs font-medium text-[#152238] bg-white focus:border-[#3c63da] focus:outline-none resize-none"
+                className="w-full rounded-lg border border-[#dfe4df] px-3 py-2 text-xs font-medium text-[#17211f] bg-white focus:border-[#0f4c5c] focus:outline-none resize-none"
               />
             </div>
 
@@ -622,7 +622,7 @@ export const LancamentosScreen: React.FC<LancamentosScreenProps> = ({
             <button
               type="submit"
               disabled={isSubmitting}
-              className="w-full flex items-center justify-center gap-1.5 rounded-lg bg-[#3c63da] py-2.5 text-xs font-bold text-white hover:bg-[#2f52c0] shadow-xs disabled:opacity-50 cursor-pointer"
+              className="w-full flex items-center justify-center gap-1.5 rounded-lg bg-[#0f4c5c] py-2.5 text-xs font-bold text-white hover:bg-[#0b3b48] shadow-xs disabled:opacity-50 cursor-pointer"
             >
               <Plus className="h-4 w-4" />
               <span>
@@ -639,35 +639,35 @@ export const LancamentosScreen: React.FC<LancamentosScreenProps> = ({
         </div>
 
         {/* History Table with Advanced Filters & PDF Export */}
-        <div className="lg:col-span-2 rounded-2xl border border-[#e5eaf1] bg-white p-5 sm:p-6 shadow-xs space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[#e5eaf1]">
+        <div className="lg:col-span-2 rounded-2xl border border-[#dfe4df] bg-white p-5 sm:p-6 shadow-xs space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[#dfe4df]">
             <div>
-              <h3 className="text-sm font-bold text-[#152238]">Histórico de Lançamentos</h3>
-              <p className="text-[11px] text-[#69778c]">Filtre por empresa, período, dia, mês, ano ou tipo e baixe o relatório em PDF.</p>
+              <h3 className="text-sm font-bold text-[#17211f]">Histórico de Lançamentos</h3>
+              <p className="text-[11px] text-[#5e6b67]">Filtre por empresa, período, dia, mês, ano ou tipo e baixe o relatório em PDF.</p>
             </div>
 
             <div className="flex items-center gap-2 flex-wrap">
               <button
                 type="button"
                 onClick={handleDownloadPdf}
-                className="flex items-center gap-1.5 rounded-xl border border-[#3c63da]/30 bg-[#edf2ff] px-3 py-1.5 text-xs font-bold text-[#3c63da] hover:bg-[#dfe8fe] transition-all cursor-pointer shadow-2xs"
+                className="flex items-center gap-1.5 rounded-xl border border-[#0f4c5c]/30 bg-[#e3eff1] px-3 py-1.5 text-xs font-bold text-[#0f4c5c] hover:bg-[#e3eff1] transition-all cursor-pointer shadow-2xs"
                 title="Baixar PDF considerando os filtros aplicados"
               >
-                <Download className="h-3.5 w-3.5 text-[#3c63da]" />
+                <Download className="h-3.5 w-3.5 text-[#0f4c5c]" />
                 <span>Baixar PDF</span>
               </button>
             </div>
           </div>
 
           {/* Advanced Filters Bar */}
-          <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 p-3 bg-[#f8faff] rounded-xl border border-[#e5eaf1] text-xs">
+          <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 p-3 bg-[#f7f9f7] rounded-xl border border-[#dfe4df] text-xs">
             {/* Empresa / Unidade */}
             <div>
-              <label className="block text-[9px] font-extrabold uppercase text-[#69778c] mb-1">Empresa / Unidade</label>
+              <label className="block text-[9px] font-extrabold text-[#5e6b67] mb-1">Empresa / Unidade</label>
               <select
                 value={filterCompany}
                 onChange={(e) => setFilterCompany(e.target.value)}
-                className="w-full rounded-lg border border-[#e5eaf1] bg-white px-2 py-1.5 text-xs font-semibold text-[#152238] focus:border-[#3c63da] focus:outline-none"
+                className="w-full rounded-lg border border-[#dfe4df] bg-white px-2 py-1.5 text-xs font-semibold text-[#17211f] focus:border-[#0f4c5c] focus:outline-none"
               >
                 <option value="all">Todas as Unidades</option>
                 {businesses.map((b) => (
@@ -681,11 +681,11 @@ export const LancamentosScreen: React.FC<LancamentosScreenProps> = ({
 
             {/* Tipo */}
             <div>
-              <label className="block text-[9px] font-extrabold uppercase text-[#69778c] mb-1">Tipo</label>
+              <label className="block text-[9px] font-extrabold text-[#5e6b67] mb-1">Tipo</label>
               <select
                 value={filterType}
                 onChange={(e) => setFilterType(e.target.value as any)}
-                className="w-full rounded-lg border border-[#e5eaf1] bg-white px-2 py-1.5 text-xs font-semibold text-[#152238] focus:border-[#3c63da] focus:outline-none"
+                className="w-full rounded-lg border border-[#dfe4df] bg-white px-2 py-1.5 text-xs font-semibold text-[#17211f] focus:border-[#0f4c5c] focus:outline-none"
               >
                 <option value="all">Entradas & Despesas</option>
                 <option value="entrada">Somente Entradas</option>
@@ -695,11 +695,11 @@ export const LancamentosScreen: React.FC<LancamentosScreenProps> = ({
 
             {/* Ano */}
             <div>
-              <label className="block text-[9px] font-extrabold uppercase text-[#69778c] mb-1">Ano</label>
+              <label className="block text-[9px] font-extrabold text-[#5e6b67] mb-1">Ano</label>
               <select
                 value={filterYear}
                 onChange={(e) => setFilterYear(e.target.value)}
-                className="w-full rounded-lg border border-[#e5eaf1] bg-white px-2 py-1.5 text-xs font-semibold text-[#152238] focus:border-[#3c63da] focus:outline-none"
+                className="w-full rounded-lg border border-[#dfe4df] bg-white px-2 py-1.5 text-xs font-semibold text-[#17211f] focus:border-[#0f4c5c] focus:outline-none"
               >
                 <option value="all">Todos os Anos</option>
                 <option value="2026">2026</option>
@@ -710,11 +710,11 @@ export const LancamentosScreen: React.FC<LancamentosScreenProps> = ({
 
             {/* Mês */}
             <div>
-              <label className="block text-[9px] font-extrabold uppercase text-[#69778c] mb-1">Mês</label>
+              <label className="block text-[9px] font-extrabold text-[#5e6b67] mb-1">Mês</label>
               <select
                 value={filterMonth}
                 onChange={(e) => setFilterMonth(e.target.value)}
-                className="w-full rounded-lg border border-[#e5eaf1] bg-white px-2 py-1.5 text-xs font-semibold text-[#152238] focus:border-[#3c63da] focus:outline-none"
+                className="w-full rounded-lg border border-[#dfe4df] bg-white px-2 py-1.5 text-xs font-semibold text-[#17211f] focus:border-[#0f4c5c] focus:outline-none"
               >
                 <option value="all">Todos os Meses</option>
                 {[
@@ -730,11 +730,11 @@ export const LancamentosScreen: React.FC<LancamentosScreenProps> = ({
 
             {/* Dia */}
             <div>
-              <label className="block text-[9px] font-extrabold uppercase text-[#69778c] mb-1">Dia</label>
+              <label className="block text-[9px] font-extrabold text-[#5e6b67] mb-1">Dia</label>
               <select
                 value={filterDay}
                 onChange={(e) => setFilterDay(e.target.value)}
-                className="w-full rounded-lg border border-[#e5eaf1] bg-white px-2 py-1.5 text-xs font-semibold text-[#152238] focus:border-[#3c63da] focus:outline-none"
+                className="w-full rounded-lg border border-[#dfe4df] bg-white px-2 py-1.5 text-xs font-semibold text-[#17211f] focus:border-[#0f4c5c] focus:outline-none"
               >
                 <option value="all">Todos os Dias</option>
                 {Array.from({ length: 31 }, (_, i) => i + 1).map((d) => (
@@ -747,7 +747,7 @@ export const LancamentosScreen: React.FC<LancamentosScreenProps> = ({
           <div className="max-h-[460px] overflow-y-auto pr-1">
             <table className="w-full text-left text-xs border-collapse">
               <thead>
-                <tr className="bg-[#f8f9fc] text-[#69778c] uppercase text-[9px] tracking-wider border-b border-[#e5eaf1]">
+                <tr className="bg-[#f7f9f7] text-[#5e6b67] text-[9px]  border-b border-[#dfe4df]">
                   <th className="p-3">Data</th>
                   <th className="p-3">Tipo</th>
                   <th className="p-3">Descrição</th>
@@ -757,10 +757,10 @@ export const LancamentosScreen: React.FC<LancamentosScreenProps> = ({
                   <th className="p-3 text-right">Ação</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[#e5eaf1]">
+              <tbody className="divide-y divide-[#dfe4df]">
                 {visibleEntries.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="p-6 text-center text-[#69778c]">
+                    <td colSpan={7} className="p-6 text-center text-[#5e6b67]">
                       Nenhum lançamento manual encontrado com os filtros selecionados.
                     </td>
                   </tr>
@@ -769,8 +769,8 @@ export const LancamentosScreen: React.FC<LancamentosScreenProps> = ({
                     const isEntrada = e.type === "entrada";
                     const apelidoVal = e.apelido || detectApelido(e.desc, e.catName).apelido;
                     return (
-                      <tr key={e.id} className="hover:bg-[#f8faff] transition-colors">
-                        <td className="p-3 text-[#69778c] whitespace-nowrap">
+                      <tr key={e.id} className="hover:bg-[#f7f9f7] transition-colors">
+                        <td className="p-3 text-[#5e6b67] whitespace-nowrap">
                           {new Date(e.date + "T12:00:00").toLocaleDateString("pt-BR")}
                         </td>
                         <td className="p-3">
@@ -786,27 +786,27 @@ export const LancamentosScreen: React.FC<LancamentosScreenProps> = ({
                         </td>
                         <td className="p-3">
                           <div className="flex items-center gap-1.5 flex-wrap">
-                            <b className="text-[#152238]">{e.desc}</b>
+                            <b className="text-[#17211f]">{e.desc}</b>
                             {isIntercompanyEntry(e) && (
                               <span className="inline-flex items-center rounded-md border border-amber-200 bg-amber-50 px-1.5 py-0.5 text-[9px] font-extrabold text-amber-800" title="Mantido no histórico, excluído dos totais do DRE">
                                 Não entra no DRE
                               </span>
                             )}
                             {/\(\d+\/\d+\)/.test(e.desc) && (
-                              <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md bg-[#edf2ff] text-[#3c63da] text-[9px] font-extrabold border border-[#3c63da]/20">
+                              <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-md bg-[#e3eff1] text-[#0f4c5c] text-[9px] font-extrabold border border-[#0f4c5c]/20">
                                 <Repeat className="h-2.5 w-2.5" />
                                 <span>{e.desc.match(/\(\d+\/\d+\)/)?.[0]}</span>
                               </span>
                             )}
                           </div>
-                          {e.note && <span className="text-[10px] text-[#69778c] block mt-0.5">{e.note}</span>}
+                          {e.note && <span className="text-[10px] text-[#5e6b67] block mt-0.5">{e.note}</span>}
                         </td>
                         <td className="p-3">
                           <span className="inline-flex items-center rounded-md bg-indigo-50 border border-indigo-200/60 px-2 py-0.5 text-[10px] font-extrabold text-indigo-700 whitespace-nowrap">
                             {apelidoVal}
                           </span>
                         </td>
-                        <td className="p-3 text-[#69778c] uppercase text-[10px] font-bold font-mono">
+                        <td className="p-3 text-[#5e6b67] text-[10px] font-bold font-mono">
                           {e.pay}
                         </td>
                         <td
@@ -819,7 +819,7 @@ export const LancamentosScreen: React.FC<LancamentosScreenProps> = ({
                         <td className="p-3 text-right flex items-center justify-end gap-1.5">
                           <button
                             onClick={() => handleStartEdit(e)}
-                            className="text-[#3c63da] hover:text-[#2f52c0] p-1 rounded hover:bg-[#edf2ff] transition-all cursor-pointer font-semibold text-xs flex items-center gap-1"
+                            className="text-[#0f4c5c] hover:text-[#0b3b48] p-1 rounded hover:bg-[#e3eff1] transition-all cursor-pointer font-semibold text-xs flex items-center gap-1"
                             title="Editar lançamento"
                           >
                             <FilePenLine className="h-3.5 w-3.5" />
@@ -834,7 +834,7 @@ export const LancamentosScreen: React.FC<LancamentosScreenProps> = ({
                                 toast.error(err?.message || "Erro ao excluir lançamento.");
                               }
                             }}
-                            className="text-[#b44b4b] hover:text-red-800 p-1 rounded hover:bg-red-50 transition-all cursor-pointer"
+                            className="text-[#b93a48] hover:text-red-800 p-1 rounded hover:bg-red-50 transition-all cursor-pointer"
                             title="Remover lançamento"
                           >
                             <Trash2 className="h-4 w-4" />

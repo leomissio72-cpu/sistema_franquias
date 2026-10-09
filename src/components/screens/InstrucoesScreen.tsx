@@ -102,7 +102,7 @@ export const InstrucoesScreen: React.FC<InstrucoesScreenProps> = ({
   const modulesList = [
     {
       title: "Rede e Unidades (Visão Geral)",
-      icon: <Building2 className="h-5 w-5 text-[#3c63da]" />,
+      icon: <Building2 className="h-5 w-5 text-[#0f4c5c]" />,
       summary: "Dashboard executivo da rede com faturamento total, ticket médio, metas e status operacional das lojas (verde, amarelo e alerta).",
       details: [
         "Acesso à visualização geográfica de lojas através do Mapa interativo.",
@@ -245,10 +245,10 @@ export const InstrucoesScreen: React.FC<InstrucoesScreenProps> = ({
   return (
     <div className="space-y-6 animate-in fade-in duration-150">
       {/* Top Hero Banner */}
-      <div className="rounded-3xl border border-[#d8e3f5] bg-gradient-to-br from-[#152238] via-[#1a2d4c] to-[#0f1b2e] p-6 sm:p-8 text-white shadow-md relative overflow-hidden">
-        <div className="absolute right-0 top-0 bottom-0 w-1/3 bg-radial from-[#3c63da]/20 to-transparent pointer-events-none" />
+      <div className="rounded-3xl border border-[#d8e3f5] bg-gradient-to-br from-[#17211f] via-[#1a2d4c] to-[#0f1b2e] p-6 sm:p-8 text-white shadow-md relative overflow-hidden">
+        <div className="absolute right-0 top-0 bottom-0 w-1/3 bg-radial from-[#0f4c5c]/20 to-transparent pointer-events-none" />
         <div className="max-w-3xl space-y-3 relative z-10">
-          <div className="inline-flex items-center gap-2 rounded-full bg-[#3c63da]/30 border border-[#3c63da]/40 px-3 py-1 text-[11px] font-extrabold uppercase tracking-widest text-cyan-200">
+          <div className="inline-flex items-center gap-2 rounded-full bg-[#0f4c5c]/30 border border-[#0f4c5c]/40 px-3 py-1 text-[11px] font-extrabold text-cyan-200">
             <BookOpen className="h-3.5 w-3.5" />
             <span>Central de Ajuda & Guia Operacional</span>
           </div>
@@ -275,15 +275,15 @@ export const InstrucoesScreen: React.FC<InstrucoesScreenProps> = ({
       </div>
 
       {/* Navigation Tabs */}
-      <div className="flex flex-wrap items-center gap-1.5 rounded-2xl bg-white border border-[#e5eaf1] p-1.5 shadow-xs">
+      <div className="flex flex-wrap items-center gap-1.5 rounded-2xl bg-white border border-[#dfe4df] p-1.5 shadow-xs">
         {categories.map((cat) => (
           <button
             key={cat.id}
             onClick={() => setActiveCategory(cat.id)}
             className={`flex items-center gap-2 rounded-xl px-4 py-2.5 text-xs font-bold transition-all cursor-pointer ${
               activeCategory === cat.id
-                ? "bg-[#3c63da] text-white shadow-xs"
-                : "text-[#69778c] hover:bg-[#f4f7fb] hover:text-[#152238]"
+                ? "bg-[#0f4c5c] text-white shadow-xs"
+                : "text-[#5e6b67] hover:bg-[#f0f3f0] hover:text-[#17211f]"
             }`}
           >
             {cat.icon}
@@ -297,12 +297,12 @@ export const InstrucoesScreen: React.FC<InstrucoesScreenProps> = ({
       {/* ------------------------------------------------------------- */}
       {activeCategory === "passo_a_passo" && (
         <div className="space-y-4">
-          <div className="p-4 rounded-2xl bg-white border border-[#e5eaf1] shadow-xs">
-            <h3 className="text-sm font-extrabold text-[#152238] flex items-center gap-2">
-              <CheckCircle2 className="h-4 w-4 text-[#3c63da]" />
+          <div className="p-4 rounded-2xl bg-white border border-[#dfe4df] shadow-xs">
+            <h3 className="text-sm font-extrabold text-[#17211f] flex items-center gap-2">
+              <CheckCircle2 className="h-4 w-4 text-[#0f4c5c]" />
               <span>Fluxo Operacional Recomendado para Início</span>
             </h3>
-            <p className="text-xs text-[#69778c] mt-0.5">
+            <p className="text-xs text-[#5e6b67] mt-0.5">
               Siga os passos abaixo para configurar e operar sua rede de franquias com 100% de precisão financeira.
             </p>
           </div>
@@ -311,11 +311,11 @@ export const InstrucoesScreen: React.FC<InstrucoesScreenProps> = ({
             {quickSteps.map((step) => (
               <div
                 key={step.num}
-                className="rounded-2xl border border-[#e5eaf1] bg-white p-5 shadow-xs flex flex-col justify-between hover:border-[#3c63da]/50 hover:shadow-md transition-all"
+                className="rounded-2xl border border-[#dfe4df] bg-white p-5 shadow-xs flex flex-col justify-between hover:border-[#0f4c5c]/50 hover:shadow-md transition-all"
               >
                 <div>
                   <div className="flex items-center justify-between mb-3">
-                    <span className="font-mono text-xs font-black text-[#3c63da] bg-[#edf2ff] px-2.5 py-1 rounded-lg">
+                    <span className="font-mono text-xs font-black text-[#0f4c5c] bg-[#e3eff1] px-2.5 py-1 rounded-lg">
                       PASSO {step.num}
                     </span>
                     {step.ownerOnly && (
@@ -325,14 +325,14 @@ export const InstrucoesScreen: React.FC<InstrucoesScreenProps> = ({
                       </span>
                     )}
                   </div>
-                  <h4 className="text-sm font-extrabold text-[#152238]">{step.title}</h4>
-                  <p className="text-xs text-[#69778c] mt-2 leading-relaxed">{step.desc}</p>
+                  <h4 className="text-sm font-extrabold text-[#17211f]">{step.title}</h4>
+                  <p className="text-xs text-[#5e6b67] mt-2 leading-relaxed">{step.desc}</p>
                 </div>
 
-                <div className="pt-4 mt-4 border-t border-[#f0f4f9]">
+                <div className="pt-4 mt-4 border-t border-[#f0f3f0]">
                   <button
                     onClick={() => onNavigate(step.screen)}
-                    className="w-full flex items-center justify-center gap-1.5 rounded-xl bg-[#f4f7fb] hover:bg-[#3c63da] text-[#152238] hover:text-white px-3.5 py-2 text-xs font-bold transition-all cursor-pointer group"
+                    className="w-full flex items-center justify-center gap-1.5 rounded-xl bg-[#f0f3f0] hover:bg-[#0f4c5c] text-[#17211f] hover:text-white px-3.5 py-2 text-xs font-bold transition-all cursor-pointer group"
                   >
                     <span>{step.btnText}</span>
                     <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1" />
@@ -349,12 +349,12 @@ export const InstrucoesScreen: React.FC<InstrucoesScreenProps> = ({
       {/* ------------------------------------------------------------- */}
       {activeCategory === "modulos" && (
         <div className="space-y-4">
-          <div className="p-4 rounded-2xl bg-white border border-[#e5eaf1] shadow-xs">
-            <h3 className="text-sm font-extrabold text-[#152238] flex items-center gap-2">
-              <Layers className="h-4 w-4 text-[#3c63da]" />
+          <div className="p-4 rounded-2xl bg-white border border-[#dfe4df] shadow-xs">
+            <h3 className="text-sm font-extrabold text-[#17211f] flex items-center gap-2">
+              <Layers className="h-4 w-4 text-[#0f4c5c]" />
               <span>Funcionalidades Integradas da Plataforma</span>
             </h3>
-            <p className="text-xs text-[#69778c] mt-0.5">
+            <p className="text-xs text-[#5e6b67] mt-0.5">
               Conheça em detalhes o que cada tela e módulo do sistema é capaz de fazer.
             </p>
           </div>
@@ -363,26 +363,26 @@ export const InstrucoesScreen: React.FC<InstrucoesScreenProps> = ({
             {modulesList.map((mod, i) => (
               <div
                 key={i}
-                className="rounded-2xl border border-[#e5eaf1] bg-white p-5 shadow-xs space-y-3 hover:border-[#3c63da]/50 transition-all flex flex-col justify-between"
+                className="rounded-2xl border border-[#dfe4df] bg-white p-5 shadow-xs space-y-3 hover:border-[#0f4c5c]/50 transition-all flex flex-col justify-between"
               >
                 <div>
-                  <div className="flex items-center gap-2.5 pb-2 border-b border-[#f0f4f9]">
-                    <div className="p-2 rounded-xl bg-[#f8faff] border border-[#e5eaf1]">
+                  <div className="flex items-center gap-2.5 pb-2 border-b border-[#f0f3f0]">
+                    <div className="p-2 rounded-xl bg-[#f7f9f7] border border-[#dfe4df]">
                       {mod.icon}
                     </div>
                     <div>
-                      <h4 className="text-sm font-extrabold text-[#152238]">{mod.title}</h4>
-                      <span className="text-[10px] font-semibold text-[#69778c]">Módulo operacional</span>
+                      <h4 className="text-sm font-extrabold text-[#17211f]">{mod.title}</h4>
+                      <span className="text-[10px] font-semibold text-[#5e6b67]">Módulo operacional</span>
                     </div>
                   </div>
 
-                  <p className="text-xs text-[#152238] mt-3 leading-relaxed font-medium">
+                  <p className="text-xs text-[#17211f] mt-3 leading-relaxed font-medium">
                     {mod.summary}
                   </p>
 
                   <ul className="mt-3 space-y-1.5">
                     {mod.details.map((d, dIdx) => (
-                      <li key={dIdx} className="text-xs text-[#69778c] flex items-start gap-2">
+                      <li key={dIdx} className="text-xs text-[#5e6b67] flex items-start gap-2">
                         <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500 mt-0.5 flex-shrink-0" />
                         <span>{d}</span>
                       </li>
@@ -390,10 +390,10 @@ export const InstrucoesScreen: React.FC<InstrucoesScreenProps> = ({
                   </ul>
                 </div>
 
-                <div className="pt-3 border-t border-[#f0f4f9]">
+                <div className="pt-3 border-t border-[#f0f3f0]">
                   <button
                     onClick={() => onNavigate(mod.screen)}
-                    className="flex items-center gap-1.5 text-xs font-bold text-[#3c63da] hover:underline cursor-pointer"
+                    className="flex items-center gap-1.5 text-xs font-bold text-[#0f4c5c] hover:underline cursor-pointer"
                   >
                     <span>Acessar {mod.title}</span>
                     <ArrowRight className="h-3.5 w-3.5" />
@@ -403,23 +403,23 @@ export const InstrucoesScreen: React.FC<InstrucoesScreenProps> = ({
             ))}
           </div>
 
-          <div className="rounded-2xl border border-[#e5eaf1] bg-white p-5 shadow-xs">
-            <div className="flex items-center justify-between gap-3 border-b border-[#e5eaf1] pb-3">
+          <div className="rounded-2xl border border-[#dfe4df] bg-white p-5 shadow-xs">
+            <div className="flex items-center justify-between gap-3 border-b border-[#dfe4df] pb-3">
               <div>
-                <h3 className="text-sm font-extrabold text-[#152238]">Guia rápido de cada página</h3>
-                <p className="mt-0.5 text-xs text-[#69778c]">Consulte a finalidade e o primeiro passo sem sair da Central de Ajuda.</p>
+                <h3 className="text-sm font-extrabold text-[#17211f]">Guia rápido de cada página</h3>
+                <p className="mt-0.5 text-xs text-[#5e6b67]">Consulte a finalidade e o primeiro passo sem sair da Central de Ajuda.</p>
               </div>
-              <BookOpen className="h-5 w-5 text-[#3c63da]" />
+              <BookOpen className="h-5 w-5 text-[#0f4c5c]" />
             </div>
             <div className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
               {pageGuide.map((page) => (
-                <div key={page.screen} className="rounded-xl border border-[#e5eaf1] bg-[#f8faff] p-3">
+                <div key={page.screen} className="rounded-xl border border-[#dfe4df] bg-[#f7f9f7] p-3">
                   <div className="flex items-start justify-between gap-2">
-                    <h4 className="text-xs font-extrabold text-[#152238]">{page.title}</h4>
-                    <button type="button" onClick={() => onNavigate(page.screen)} className="shrink-0 rounded-md p-1 text-[#3c63da] hover:bg-[#edf2ff]" title={`Abrir ${page.title}`}><ChevronRight className="h-3.5 w-3.5" /></button>
+                    <h4 className="text-xs font-extrabold text-[#17211f]">{page.title}</h4>
+                    <button type="button" onClick={() => onNavigate(page.screen)} className="shrink-0 rounded-md p-1 text-[#0f4c5c] hover:bg-[#e3eff1]" title={`Abrir ${page.title}`}><ChevronRight className="h-3.5 w-3.5" /></button>
                   </div>
-                  <p className="mt-1 text-[11px] font-semibold text-[#475569]">{page.purpose}</p>
-                  <p className="mt-1.5 text-[10px] leading-relaxed text-[#69778c]">{page.steps}</p>
+                  <p className="mt-1 text-[11px] font-semibold text-[#3a4743]">{page.purpose}</p>
+                  <p className="mt-1.5 text-[10px] leading-relaxed text-[#5e6b67]">{page.steps}</p>
                 </div>
               ))}
             </div>
@@ -431,21 +431,21 @@ export const InstrucoesScreen: React.FC<InstrucoesScreenProps> = ({
       {/* 3. ABA: REGRAS DE ROYALTIES                                   */}
       {/* ------------------------------------------------------------- */}
       {activeCategory === "royalties" && (
-        <div className="rounded-2xl border border-[#e5eaf1] bg-white p-6 shadow-xs space-y-6">
-          <div className="pb-4 border-b border-[#e5eaf1] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="rounded-2xl border border-[#dfe4df] bg-white p-6 shadow-xs space-y-6">
+          <div className="pb-4 border-b border-[#dfe4df] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
-              <h3 className="text-base font-extrabold text-[#152238] flex items-center gap-2">
+              <h3 className="text-base font-extrabold text-[#17211f] flex items-center gap-2">
                 <Percent className="h-5 w-5 text-emerald-600" />
                 <span>Política de Royalties por Marca & Regra de Governança</span>
               </h3>
-              <p className="text-xs text-[#69778c] mt-1">
+              <p className="text-xs text-[#5e6b67] mt-1">
                 Entenda como a cobrança e o cálculo de royalties são implementados de forma segura e exclusiva.
               </p>
             </div>
 
             <button
               onClick={() => onNavigate("configuracao")}
-              className="flex items-center gap-1.5 rounded-xl bg-[#3c63da] px-4 py-2 text-xs font-bold text-white hover:bg-[#2f52c0] shadow-xs cursor-pointer flex-shrink-0"
+              className="flex items-center gap-1.5 rounded-xl bg-[#0f4c5c] px-4 py-2 text-xs font-bold text-white hover:bg-[#0b3b48] shadow-xs cursor-pointer flex-shrink-0"
             >
               <span>Gerenciar Taxas de Royalties</span>
               <ArrowRight className="h-3.5 w-3.5" />
@@ -464,22 +464,22 @@ export const InstrucoesScreen: React.FC<InstrucoesScreenProps> = ({
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="p-4 rounded-xl border border-[#e5eaf1] bg-[#f8faff] space-y-2">
-              <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#3c63da] block">
+            <div className="p-4 rounded-xl border border-[#dfe4df] bg-[#f7f9f7] space-y-2">
+              <span className="text-[10px] font-extrabold text-[#0f4c5c] block">
                 Uma Taxa por Marca
               </span>
-              <h4 className="text-sm font-bold text-[#152238]">Alíquota Específica do Modelo</h4>
-              <p className="text-xs text-[#69778c] leading-relaxed">
+              <h4 className="text-sm font-bold text-[#17211f]">Alíquota Específica do Modelo</h4>
+              <p className="text-xs text-[#5e6b67] leading-relaxed">
                 Cada modelo de negócio cadastrado (ex: Cafeteria = 6%, Loja Express = 5%, Quiosque = 7%) possui sua taxa única. Todas as franquias daquele modelo herdam a alíquota automaticamente.
               </p>
             </div>
 
-            <div className="p-4 rounded-xl border border-[#e5eaf1] bg-[#f8faff] space-y-2">
-              <span className="text-[10px] font-extrabold uppercase tracking-wider text-emerald-700 block">
+            <div className="p-4 rounded-xl border border-[#dfe4df] bg-[#f7f9f7] space-y-2">
+              <span className="text-[10px] font-extrabold text-emerald-700 block">
                 Cálculo em Tempo Real
               </span>
-              <h4 className="text-sm font-bold text-[#152238]">Aplicação Automática na DRE</h4>
-              <p className="text-xs text-[#69778c] leading-relaxed">
+              <h4 className="text-sm font-bold text-[#17211f]">Aplicação Automática na DRE</h4>
+              <p className="text-xs text-[#5e6b67] leading-relaxed">
                 Ao registrar faturamento ou lançamentos, o sistema aplica instantaneamente a fórmula: <br />
                 <code className="text-xs font-mono font-bold text-emerald-800 bg-emerald-100 px-1.5 py-0.5 rounded">
                   Royalties = Faturamento × Alíquota da Marca
@@ -487,12 +487,12 @@ export const InstrucoesScreen: React.FC<InstrucoesScreenProps> = ({
               </p>
             </div>
 
-            <div className="p-4 rounded-xl border border-[#e5eaf1] bg-[#f8faff] space-y-2">
-              <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-700 block">
+            <div className="p-4 rounded-xl border border-[#dfe4df] bg-[#f7f9f7] space-y-2">
+              <span className="text-[10px] font-extrabold text-slate-700 block">
                 Histórico & Auditoria
               </span>
-              <h4 className="text-sm font-bold text-[#152238]">Rastreabilidade Completa</h4>
-              <p className="text-xs text-[#69778c] leading-relaxed">
+              <h4 className="text-sm font-bold text-[#17211f]">Rastreabilidade Completa</h4>
+              <p className="text-xs text-[#5e6b67] leading-relaxed">
                 Qualquer reajuste de taxa gera um registro imediato nos logs de auditoria, documentando quem fez a alteração, o percentual anterior e o novo percentual.
               </p>
             </div>
@@ -505,65 +505,65 @@ export const InstrucoesScreen: React.FC<InstrucoesScreenProps> = ({
       {/* ------------------------------------------------------------- */}
       {activeCategory === "perfis" && (
         <div className="space-y-4">
-          <div className="p-4 rounded-2xl bg-white border border-[#e5eaf1] shadow-xs">
-            <h3 className="text-sm font-extrabold text-[#152238] flex items-center gap-2">
-              <Shield className="h-4 w-4 text-[#3c63da]" />
+          <div className="p-4 rounded-2xl bg-white border border-[#dfe4df] shadow-xs">
+            <h3 className="text-sm font-extrabold text-[#17211f] flex items-center gap-2">
+              <Shield className="h-4 w-4 text-[#0f4c5c]" />
               <span>Estrutura de Acessos & Segregação por Loja</span>
             </h3>
-            <p className="text-xs text-[#69778c] mt-0.5">
+            <p className="text-xs text-[#5e6b67] mt-0.5">
               O sistema conta com isolamento seguro para que cada usuário atue apenas no seu raio de responsabilidade.
             </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="rounded-2xl border-2 border-[#3c63da]/30 bg-white p-5 shadow-xs space-y-3">
+            <div className="rounded-2xl border-2 border-[#0f4c5c]/30 bg-white p-5 shadow-xs space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-extrabold uppercase text-[#3c63da] bg-[#edf2ff] px-2.5 py-1 rounded-lg">
-                  NÍVEL MASTER
+                <span className="text-xs font-extrabold text-[#0f4c5c] bg-[#e3eff1] px-2.5 py-1 rounded-lg">
+                  Nível master
                 </span>
                 <span className="text-[10px] font-bold text-slate-500">Acesso Total</span>
               </div>
-              <h4 className="text-base font-extrabold text-[#152238]">Dono da Rede ('dono')</h4>
-              <p className="text-xs text-[#69778c] leading-relaxed">
+              <h4 className="text-base font-extrabold text-[#17211f]">Dono da Rede ('dono')</h4>
+              <p className="text-xs text-[#5e6b67] leading-relaxed">
                 Acesso irrestrito a todas as marcas e lojas da rede. Visualiza indicadores consolidados, define parâmetros da DRE e é o <b>único autorizado a alterar taxas de royalties</b> e cadastrar novos modelos de negócio.
               </p>
-              <ul className="text-xs space-y-1 text-[#152238] font-medium pt-2 border-t border-[#f0f4f9]">
+              <ul className="text-xs space-y-1 text-[#17211f] font-medium pt-2 border-t border-[#f0f3f0]">
                 <li className="flex items-center gap-1.5 text-emerald-700">✓ Altera taxas de royalties</li>
                 <li className="flex items-center gap-1.5 text-emerald-700">✓ Cadastra novos modelos de franquia</li>
                 <li className="flex items-center gap-1.5 text-emerald-700">✓ Visualiza consolidação de todas as unidades</li>
               </ul>
             </div>
 
-            <div className="rounded-2xl border border-[#e5eaf1] bg-white p-5 shadow-xs space-y-3">
+            <div className="rounded-2xl border border-[#dfe4df] bg-white p-5 shadow-xs space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-extrabold uppercase text-slate-700 bg-slate-100 px-2.5 py-1 rounded-lg">
-                  UNIDADE LOCAL
+                <span className="text-xs font-extrabold text-slate-700 bg-slate-100 px-2.5 py-1 rounded-lg">
+                  Unidade local
                 </span>
                 <span className="text-[10px] font-bold text-slate-500">Segregado</span>
               </div>
-              <h4 className="text-base font-extrabold text-[#152238]">Franqueado ('franqueado')</h4>
-              <p className="text-xs text-[#69778c] leading-relaxed">
+              <h4 className="text-base font-extrabold text-[#17211f]">Franqueado ('franqueado')</h4>
+              <p className="text-xs text-[#5e6b67] leading-relaxed">
                 Gestão restrita à sua própria unidade. Acessa a conciliação bancária da loja, lançamentos manuais, controle de equipe e sua respectiva DRE apurada. Não visualiza lojas de terceiros.
               </p>
-              <ul className="text-xs space-y-1 text-[#152238] font-medium pt-2 border-t border-[#f0f4f9]">
+              <ul className="text-xs space-y-1 text-[#17211f] font-medium pt-2 border-t border-[#f0f3f0]">
                 <li className="flex items-center gap-1.5 text-rose-600">✗ Não pode alterar royalties</li>
                 <li className="flex items-center gap-1.5 text-rose-600">✗ Não visualiza outras lojas da rede</li>
                 <li className="flex items-center gap-1.5 text-emerald-700">✓ Conciliação e caixa da sua unidade</li>
               </ul>
             </div>
 
-            <div className="rounded-2xl border border-[#e5eaf1] bg-white p-5 shadow-xs space-y-3">
+            <div className="rounded-2xl border border-[#dfe4df] bg-white p-5 shadow-xs space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-extrabold uppercase text-sky-700 bg-sky-50 px-2.5 py-1 rounded-lg">
-                  OPERADOR
+                <span className="text-xs font-extrabold text-sky-700 bg-sky-50 px-2.5 py-1 rounded-lg">
+                  Operador
                 </span>
                 <span className="text-[10px] font-bold text-slate-500">Operação de Caixa</span>
               </div>
-              <h4 className="text-base font-extrabold text-[#152238]">Operador / Caixa ('operador')</h4>
-              <p className="text-xs text-[#69778c] leading-relaxed">
+              <h4 className="text-base font-extrabold text-[#17211f]">Operador / Caixa ('operador')</h4>
+              <p className="text-xs text-[#5e6b67] leading-relaxed">
                 Perfil focado no dia a dia da loja. Insere movimentações de entradas e saídas, anexa comprovantes e realiza conferência de extrato. Não possui acesso a configurações nem cadastro de usuários.
               </p>
-              <ul className="text-xs space-y-1 text-[#152238] font-medium pt-2 border-t border-[#f0f4f9]">
+              <ul className="text-xs space-y-1 text-[#17211f] font-medium pt-2 border-t border-[#f0f3f0]">
                 <li className="flex items-center gap-1.5 text-rose-600">✗ Bloqueado para configurações</li>
                 <li className="flex items-center gap-1.5 text-rose-600">✗ Bloqueado para gerenciar acessos</li>
                 <li className="flex items-center gap-1.5 text-emerald-700">✓ Lançamentos e extrato de caixa</li>
@@ -577,13 +577,13 @@ export const InstrucoesScreen: React.FC<InstrucoesScreenProps> = ({
       {/* 5. ABA: PERGUNTAS FREQUENTES (FAQ)                            */}
       {/* ------------------------------------------------------------- */}
       {activeCategory === "faq" && (
-        <div className="rounded-2xl border border-[#e5eaf1] bg-white p-6 shadow-xs space-y-5">
-          <div className="pb-3 border-b border-[#e5eaf1]">
-            <h3 className="text-base font-extrabold text-[#152238] flex items-center gap-2">
-              <HelpCircle className="h-5 w-5 text-[#3c63da]" />
+        <div className="rounded-2xl border border-[#dfe4df] bg-white p-6 shadow-xs space-y-5">
+          <div className="pb-3 border-b border-[#dfe4df]">
+            <h3 className="text-base font-extrabold text-[#17211f] flex items-center gap-2">
+              <HelpCircle className="h-5 w-5 text-[#0f4c5c]" />
               <span>Dúvidas Frequentes & Resoluções Rápidas</span>
             </h3>
-            <p className="text-xs text-[#69778c] mt-1">
+            <p className="text-xs text-[#5e6b67] mt-1">
               Respostas claras para as principais dúvidas sobre operação, persistência e cálculos do sistema.
             </p>
           </div>
@@ -592,13 +592,13 @@ export const InstrucoesScreen: React.FC<InstrucoesScreenProps> = ({
             {faqs.map((f, idx) => (
               <div
                 key={idx}
-                className="p-4 rounded-xl border border-[#e5eaf1] bg-[#f8faff] space-y-2 hover:border-[#3c63da]/40 transition-all"
+                className="p-4 rounded-xl border border-[#dfe4df] bg-[#f7f9f7] space-y-2 hover:border-[#0f4c5c]/40 transition-all"
               >
-                <div className="flex items-start gap-2 text-xs font-extrabold text-[#152238]">
-                  <span className="text-[#3c63da] font-mono">Q:</span>
+                <div className="flex items-start gap-2 text-xs font-extrabold text-[#17211f]">
+                  <span className="text-[#0f4c5c] font-mono">Q:</span>
                   <span>{f.q}</span>
                 </div>
-                <div className="text-xs text-[#69778c] leading-relaxed pl-5">
+                <div className="text-xs text-[#5e6b67] leading-relaxed pl-5">
                   {f.a}
                 </div>
               </div>

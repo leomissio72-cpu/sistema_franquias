@@ -320,11 +320,11 @@ export const RpScreen: React.FC<RpScreenProps> = ({ bills: incomingBills, curren
 
       rowsHtml += `
         <tr>
-          <td style="padding:6px 8px;border-bottom:1px solid #e2e8f0;font-weight:600;">${b.desc}</td>
-          <td style="padding:6px 8px;border-bottom:1px solid #e2e8f0;">${dataVenc}</td>
-          <td style="padding:6px 8px;border-bottom:1px solid #e2e8f0;">${b.cat}</td>
-          <td style="padding:6px 8px;border-bottom:1px solid #e2e8f0;">${meta.label} (${prazoStr})</td>
-          <td style="padding:6px 8px;border-bottom:1px solid #e2e8f0;text-align:right;font-family:monospace;font-weight:bold;">${formatBrl2(b.value)}</td>
+          <td style="padding:6px 8px;border-bottom:1px solid #dfe4df;font-weight:600;">${b.desc}</td>
+          <td style="padding:6px 8px;border-bottom:1px solid #dfe4df;">${dataVenc}</td>
+          <td style="padding:6px 8px;border-bottom:1px solid #dfe4df;">${b.cat}</td>
+          <td style="padding:6px 8px;border-bottom:1px solid #dfe4df;">${meta.label} (${prazoStr})</td>
+          <td style="padding:6px 8px;border-bottom:1px solid #dfe4df;text-align:right;font-family:monospace;font-weight:bold;">${formatBrl2(b.value)}</td>
         </tr>
       `;
     });
@@ -335,15 +335,15 @@ export const RpScreen: React.FC<RpScreenProps> = ({ bills: incomingBills, curren
   <meta charset="UTF-8">
   <title>Relatório de Despesas - ${scopeName}</title>
   <style>
-    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; margin: 15mm; color: #1e293b; font-size: 11px; }
-    .header { border-bottom: 2px solid #3c63da; padding-bottom: 8px; margin-bottom: 12px; }
-    .title { font-size: 16px; font-weight: 800; color: #0f172a; margin: 0; }
-    .meta { display: flex; gap: 15px; font-size: 10px; color: #64748b; margin-top: 4px; flex-wrap: wrap; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; margin: 15mm; color: #17211f; font-size: 11px; }
+    .header { border-bottom: 2px solid #0f4c5c; padding-bottom: 8px; margin-bottom: 12px; }
+    .title { font-size: 16px; font-weight: 800; color: #17211f; margin: 0; }
+    .meta { display: flex; gap: 15px; font-size: 10px; color: #5e6b67; margin-top: 4px; flex-wrap: wrap; }
     .summary-grid { display: flex; gap: 10px; margin-bottom: 15px; }
-    .summary-box { flex: 1; padding: 8px 12px; border: 1px solid #e2e8f0; border-radius: 6px; background: #f8fafc; }
-    .summary-box strong { display: block; font-size: 13px; font-family: monospace; color: #0f172a; margin-top: 2px; }
+    .summary-box { flex: 1; padding: 8px 12px; border: 1px solid #dfe4df; border-radius: 6px; background: #f7f9f7; }
+    .summary-box strong { display: block; font-size: 13px; font-family: monospace; color: #17211f; margin-top: 2px; }
     table { width: 100%; border-collapse: collapse; font-size: 10.5px; }
-    th { background: #f1f5f9; padding: 6px 8px; text-align: left; border-bottom: 2px solid #cbd5e1; text-transform: uppercase; font-size: 9px; }
+    th { background: #f0f3f0; padding: 6px 8px; text-align: left; border-bottom: 2px solid #c9d1cb; text-transform: uppercase; font-size: 9px; }
     @media print { @page { size: portrait; margin: 10mm; } body { margin: 0; } }
   </style>
 </head>
@@ -360,7 +360,7 @@ export const RpScreen: React.FC<RpScreenProps> = ({ bills: incomingBills, curren
 
   <div class="summary-grid">
     <div class="summary-box"><span>Total no Filtro:</span><strong>${formatBrl2(reportTotals.total)}</strong></div>
-    <div class="summary-box"><span>Já Pago:</span><strong style="color:#047857;">${formatBrl2(reportTotals.paid)}</strong></div>
+    <div class="summary-box"><span>Já Pago:</span><strong style="color:#1a7f5a;">${formatBrl2(reportTotals.paid)}</strong></div>
     <div class="summary-box"><span>A Vencer / Futuro:</span><strong style="color:#b45309;">${formatBrl2(reportTotals.pending)}</strong></div>
     <div class="summary-box"><span>Vencido:</span><strong style="color:#b91c1c;">${formatBrl2(reportTotals.overdue)}</strong></div>
   </div>
@@ -531,9 +531,9 @@ export const RpScreen: React.FC<RpScreenProps> = ({ bills: incomingBills, curren
         >
           <div className="flex items-center justify-between">
             <span className="h-3 w-3 rounded-full bg-rose-600" />
-            <span className="text-[10px] font-black uppercase tracking-wider text-rose-700">VENCIDAS</span>
+            <span className="text-[10px] font-black text-rose-700">Vencidas</span>
           </div>
-          <strong className="block mt-2 text-2xl font-black text-[#152238]">{formatBrl2(amounts.overdue)}</strong>
+          <strong className="block mt-2 text-2xl font-black text-[#17211f]">{formatBrl2(amounts.overdue)}</strong>
           <span className="text-[11px] font-medium text-rose-700">{counts.overdue} compromisso(s) exigem ação</span>
         </button>
 
@@ -548,9 +548,9 @@ export const RpScreen: React.FC<RpScreenProps> = ({ bills: incomingBills, curren
         >
           <div className="flex items-center justify-between">
             <span className="h-3 w-3 rounded-full bg-amber-500" />
-            <span className="text-[10px] font-black uppercase tracking-wider text-amber-800">A VENCER</span>
+            <span className="text-[10px] font-black text-amber-800">A vencer</span>
           </div>
-          <strong className="block mt-2 text-2xl font-black text-[#152238]">{formatBrl2(dueSoonAmount)}</strong>
+          <strong className="block mt-2 text-2xl font-black text-[#17211f]">{formatBrl2(dueSoonAmount)}</strong>
           <span className="text-[11px] font-medium text-amber-800">{counts.today + counts.soon} até os próximos 7 dias</span>
         </button>
 
@@ -565,37 +565,37 @@ export const RpScreen: React.FC<RpScreenProps> = ({ bills: incomingBills, curren
         >
           <div className="flex items-center justify-between">
             <span className="h-3 w-3 rounded-full bg-emerald-600" />
-            <span className="text-[10px] font-black uppercase tracking-wider text-emerald-800">NO PRAZO</span>
+            <span className="text-[10px] font-black text-emerald-800">No prazo</span>
           </div>
-          <strong className="block mt-2 text-2xl font-black text-[#152238]">{formatBrl2(amounts.scheduled + amounts.paid)}</strong>
+          <strong className="block mt-2 text-2xl font-black text-[#17211f]">{formatBrl2(amounts.scheduled + amounts.paid)}</strong>
           <span className="text-[11px] font-medium text-emerald-700">{counts.scheduled} agendado(s) - {counts.paid} pago(s)</span>
         </button>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
         {/* Formulário Agendar Nova Conta */}
-        <div className="rounded-2xl border border-[#e5eaf1] bg-white p-5 sm:p-6 shadow-xs space-y-4">
-          <h3 className="text-sm font-bold text-[#152238] border-b border-[#e5eaf1] pb-2">
+        <div className="rounded-2xl border border-[#dfe4df] bg-white p-5 sm:p-6 shadow-xs space-y-4">
+          <h3 className="text-sm font-bold text-[#17211f] border-b border-[#dfe4df] pb-2">
             Agendar Nova Conta
           </h3>
 
           <form onSubmit={handleAddBill} className="space-y-3.5 text-xs">
             <div>
-              <label className="block text-[10px] font-extrabold uppercase text-[#69778c] mb-1">
-                DESCRIÇÃO DO COMPROMISSO
+              <label className="block text-[10px] font-extrabold text-[#5e6b67] mb-1">
+                Descrição do compromisso
               </label>
               <input
                 type="text"
                 placeholder="Ex.: Aluguel, Provedor de Internet"
                 value={desc}
                 onChange={(e) => setDesc(e.target.value)}
-                className="w-full rounded-lg border border-[#e5eaf1] px-3 py-2 text-xs font-semibold text-[#152238] focus:border-[#3c63da] focus:outline-none"
+                className="w-full rounded-lg border border-[#dfe4df] px-3 py-2 text-xs font-semibold text-[#17211f] focus:border-[#0f4c5c] focus:outline-none"
               />
             </div>
 
             <div>
-              <label className="block text-[10px] font-extrabold uppercase text-[#69778c] mb-1">
-                VALOR PREVISTO (R$)
+              <label className="block text-[10px] font-extrabold text-[#5e6b67] mb-1">
+                Valor previsto (R$)
               </label>
               <input
                 type="text"
@@ -603,30 +603,30 @@ export const RpScreen: React.FC<RpScreenProps> = ({ bills: incomingBills, curren
                 placeholder="0,00"
                 value={value}
                 onChange={(e) => setValue(e.target.value)}
-                className="w-full rounded-lg border border-[#e5eaf1] px-3 py-2 text-xs font-mono font-bold text-[#152238] focus:border-[#3c63da] focus:outline-none"
+                className="w-full rounded-lg border border-[#dfe4df] px-3 py-2 text-xs font-mono font-bold text-[#17211f] focus:border-[#0f4c5c] focus:outline-none"
               />
             </div>
 
             <div>
-              <label className="block text-[10px] font-extrabold uppercase text-[#69778c] mb-1">
-                DATA DE VENCIMENTO
+              <label className="block text-[10px] font-extrabold text-[#5e6b67] mb-1">
+                Data de vencimento
               </label>
               <input
                 type="date"
                 value={venc}
                 onChange={(e) => setVenc(e.target.value)}
-                className="w-full rounded-lg border border-[#e5eaf1] px-3 py-2 text-xs font-semibold text-[#152238] focus:border-[#3c63da] focus:outline-none"
+                className="w-full rounded-lg border border-[#dfe4df] px-3 py-2 text-xs font-semibold text-[#17211f] focus:border-[#0f4c5c] focus:outline-none"
               />
             </div>
 
             <div>
-              <label className="block text-[10px] font-extrabold uppercase text-[#69778c] mb-1">
-                CATEGORIA
+              <label className="block text-[10px] font-extrabold text-[#5e6b67] mb-1">
+                Categoria
               </label>
               <select
                 value={cat}
                 onChange={(e) => setCat(e.target.value)}
-                className="w-full rounded-lg border border-[#e5eaf1] px-3 py-2 text-xs font-semibold text-[#152238] bg-white focus:border-[#3c63da] focus:outline-none"
+                className="w-full rounded-lg border border-[#dfe4df] px-3 py-2 text-xs font-semibold text-[#17211f] bg-white focus:border-[#0f4c5c] focus:outline-none"
               >
                 <option value="Ocupação">Ocupação / Aluguel</option>
                 <option value="Utilidades">Utilidades (Água, Luz, Internet)</option>
@@ -638,13 +638,13 @@ export const RpScreen: React.FC<RpScreenProps> = ({ bills: incomingBills, curren
             </div>
 
             <div>
-              <label className="block text-[10px] font-extrabold uppercase text-[#69778c] mb-1">
-                FORMA DE PAGAMENTO
+              <label className="block text-[10px] font-extrabold text-[#5e6b67] mb-1">
+                Forma de pagamento
               </label>
               <select
                 value={payMethod}
                 onChange={(e) => setPayMethod(e.target.value)}
-                className="w-full rounded-lg border border-[#e5eaf1] px-3 py-2 text-xs font-semibold text-[#152238] bg-white focus:border-[#3c63da] focus:outline-none"
+                className="w-full rounded-lg border border-[#dfe4df] px-3 py-2 text-xs font-semibold text-[#17211f] bg-white focus:border-[#0f4c5c] focus:outline-none"
               >
                 <option value="boleto">Boleto Bancário</option>
                 <option value="pix">PIX</option>
@@ -655,13 +655,13 @@ export const RpScreen: React.FC<RpScreenProps> = ({ bills: incomingBills, curren
             </div>
 
             {/* Recorrência Mensal */}
-            <div className="pt-2 border-t border-[#f0f4f9] space-y-1.5">
+            <div className="pt-2 border-t border-[#f0f3f0] space-y-1.5">
               <div className="flex items-center justify-between">
-                <label className="flex items-center gap-1.5 text-[10px] font-extrabold uppercase text-[#3c63da]">
+                <label className="flex items-center gap-1.5 text-[10px] font-extrabold text-[#0f4c5c]">
                   <Repeat className="h-3 w-3" />
-                  <span>RECORRÊNCIA MENSAL</span>
+                  <span>Recorrência mensal</span>
                 </label>
-                <span className="text-[10px] font-bold text-[#69778c]">
+                <span className="text-[10px] font-bold text-[#5e6b67]">
                   {Number(recurrence) <= 1 ? "Única vez" : `${recurrence} parcelas`}
                 </span>
               </div>
@@ -670,14 +670,14 @@ export const RpScreen: React.FC<RpScreenProps> = ({ bills: incomingBills, curren
                 min="1"
                 value={recurrence}
                 onChange={(e) => setRecurrence(e.target.value as any)}
-                className="w-full rounded-lg border border-[#e5eaf1] px-3 py-2 text-xs font-semibold text-[#152238] focus:border-[#3c63da] focus:outline-none"
+                className="w-full rounded-lg border border-[#dfe4df] px-3 py-2 text-xs font-semibold text-[#17211f] focus:border-[#0f4c5c] focus:outline-none"
               />
             </div>
 
             <button
               type="submit"
               disabled={isSaving}
-              className="w-full flex items-center justify-center gap-1.5 rounded-lg bg-[#3c63da] py-2.5 text-xs font-bold text-white hover:bg-[#2f52c0] shadow-xs disabled:opacity-60 cursor-pointer"
+              className="w-full flex items-center justify-center gap-1.5 rounded-lg bg-[#0f4c5c] py-2.5 text-xs font-bold text-white hover:bg-[#0b3b48] shadow-xs disabled:opacity-60 cursor-pointer"
             >
               <Plus className="h-4 w-4" />
               <span>
@@ -690,11 +690,11 @@ export const RpScreen: React.FC<RpScreenProps> = ({ bills: incomingBills, curren
         </div>
 
         {/* Lista de compromissos agendados */}
-        <div className="lg:col-span-2 rounded-2xl border border-[#e5eaf1] bg-white p-5 sm:p-6 shadow-xs space-y-4">
-          <div className="flex items-center justify-between gap-3 border-b border-[#e5eaf1] pb-3">
+        <div className="lg:col-span-2 rounded-2xl border border-[#dfe4df] bg-white p-5 sm:p-6 shadow-xs space-y-4">
+          <div className="flex items-center justify-between gap-3 border-b border-[#dfe4df] pb-3">
             <div>
-              <h3 className="text-sm font-bold text-[#152238]">Lista de compromissos agendados</h3>
-              <p className="text-[11px] text-[#69778c] mt-0.5">Clique no status para registrar a baixa ou em editar para alterar informações.</p>
+              <h3 className="text-sm font-bold text-[#17211f]">Lista de compromissos agendados</h3>
+              <p className="text-[11px] text-[#5e6b67] mt-0.5">Clique no status para registrar a baixa ou em editar para alterar informações.</p>
             </div>
 
             <button
@@ -709,9 +709,9 @@ export const RpScreen: React.FC<RpScreenProps> = ({ bills: incomingBills, curren
           </div>
 
           {/* Barra de Filtros Interna */}
-          <div className="p-3 bg-[#f8faff] rounded-xl border border-[#e5eaf1]">
+          <div className="p-3 bg-[#f7f9f7] rounded-xl border border-[#dfe4df]">
             <div className="flex flex-wrap items-center gap-2 text-xs">
-              <div className="flex items-center gap-1 font-bold text-[#3c63da] shrink-0">
+              <div className="flex items-center gap-1 font-bold text-[#0f4c5c] shrink-0">
                 <Filter className="h-3.5 w-3.5" />
                 <span>Filtrar Lista:</span>
               </div>
@@ -719,7 +719,7 @@ export const RpScreen: React.FC<RpScreenProps> = ({ bills: incomingBills, curren
               <select
                 value={reportFilterStatus}
                 onChange={(e) => setReportFilterStatus(e.target.value)}
-                className="rounded-lg border border-[#cbd5e1] bg-white px-2.5 py-1.5 text-xs font-semibold text-[#152238] focus:border-[#3c63da] outline-none"
+                className="rounded-lg border border-[#c9d1cb] bg-white px-2.5 py-1.5 text-xs font-semibold text-[#17211f] focus:border-[#0f4c5c] outline-none"
               >
                 <option value="all">Todos os Status</option>
                 <option value="futuras">A Vencer / No Prazo</option>
@@ -730,7 +730,7 @@ export const RpScreen: React.FC<RpScreenProps> = ({ bills: incomingBills, curren
               <select
                 value={reportFilterPeriod}
                 onChange={(e) => setReportFilterPeriod(e.target.value)}
-                className="rounded-lg border border-[#cbd5e1] bg-white px-2.5 py-1.5 text-xs font-semibold text-[#152238] focus:border-[#3c63da] outline-none"
+                className="rounded-lg border border-[#c9d1cb] bg-white px-2.5 py-1.5 text-xs font-semibold text-[#17211f] focus:border-[#0f4c5c] outline-none"
               >
                 <option value="mes_atual">Mês Atual</option>
                 <option value="proximo_mes">Próximo Mês</option>
@@ -741,7 +741,7 @@ export const RpScreen: React.FC<RpScreenProps> = ({ bills: incomingBills, curren
               <select
                 value={reportFilterCategory}
                 onChange={(e) => setReportFilterCategory(e.target.value)}
-                className="rounded-lg border border-[#cbd5e1] bg-white px-2.5 py-1.5 text-xs font-semibold text-[#152238] focus:border-[#3c63da] outline-none"
+                className="rounded-lg border border-[#c9d1cb] bg-white px-2.5 py-1.5 text-xs font-semibold text-[#17211f] focus:border-[#0f4c5c] outline-none"
               >
                 <option value="all">Todas Categorias</option>
                 <option value="Ocupação">Ocupação / Aluguel</option>
@@ -753,13 +753,13 @@ export const RpScreen: React.FC<RpScreenProps> = ({ bills: incomingBills, curren
               </select>
 
               <div className="relative flex-1 min-w-[130px]">
-                <Search className="h-3.5 w-3.5 absolute left-2.5 top-2.5 text-[#94a3b8]" />
+                <Search className="h-3.5 w-3.5 absolute left-2.5 top-2.5 text-[#93a09b]" />
                 <input
                   type="text"
                   placeholder="Buscar..."
                   value={reportSearchText}
                   onChange={(e) => setReportSearchText(e.target.value)}
-                  className="w-full rounded-lg border border-[#cbd5e1] bg-white pl-8 pr-2.5 py-1.5 text-xs font-semibold text-[#152238] focus:border-[#3c63da] outline-none"
+                  className="w-full rounded-lg border border-[#c9d1cb] bg-white pl-8 pr-2.5 py-1.5 text-xs font-semibold text-[#17211f] focus:border-[#0f4c5c] outline-none"
                 />
               </div>
 
@@ -772,7 +772,7 @@ export const RpScreen: React.FC<RpScreenProps> = ({ bills: incomingBills, curren
                     setReportFilterCategory("all");
                     setReportSearchText("");
                   }}
-                  className="flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-bold text-[#b44b4b] hover:bg-rose-50 transition cursor-pointer shrink-0"
+                  className="flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-bold text-[#b93a48] hover:bg-rose-50 transition cursor-pointer shrink-0"
                   title="Limpar todos os filtros"
                 >
                   <X className="h-3.5 w-3.5" />
@@ -784,14 +784,14 @@ export const RpScreen: React.FC<RpScreenProps> = ({ bills: incomingBills, curren
 
           {/* Listagem de Compromissos ou Estado Vazio */}
           {filteredBillsForReport.length === 0 ? (
-            <div className="rounded-2xl border border-dashed border-[#cbd5e1] bg-[#f8faff] p-12 text-center text-xs font-medium text-[#69778c]">
+            <div className="rounded-2xl border border-dashed border-[#c9d1cb] bg-[#f7f9f7] p-12 text-center text-xs font-medium text-[#5e6b67]">
               Nenhum compromisso neste escopo. Cadastre a primeira conta ao lado.
             </div>
           ) : (
             <div className="max-h-[460px] overflow-y-auto">
               <table className="w-full min-w-[720px] text-left text-xs border-collapse">
                 <thead>
-                  <tr className="bg-[#f8f9fc] text-[#69778c] uppercase text-[9px] tracking-wider border-b border-[#e5eaf1]">
+                  <tr className="bg-[#f7f9f7] text-[#5e6b67] text-[9px]  border-b border-[#dfe4df]">
                     <th className="p-3">Semáforo</th>
                     <th className="p-3">Descrição</th>
                     <th className="p-3">Vencimento</th>
@@ -800,13 +800,13 @@ export const RpScreen: React.FC<RpScreenProps> = ({ bills: incomingBills, curren
                     <th className="p-3 text-right">Ações</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-[#e5eaf1]">
+                <tbody className="divide-y divide-[#dfe4df]">
                   {filteredBillsForReport.map((bill) => {
                     const status = getBillDueStatus(bill);
                     const meta = statusMeta[status];
                     const days = getBillDaysUntilDue(bill);
                     return (
-                      <tr key={bill.id} className="hover:bg-[#f8faff]">
+                      <tr key={bill.id} className="hover:bg-[#f7f9f7]">
                         <td className="p-3">
                           <button
                             type="button"
@@ -817,29 +817,29 @@ export const RpScreen: React.FC<RpScreenProps> = ({ bills: incomingBills, curren
                             {meta.icon}
                             <span>{meta.shortLabel}</span>
                           </button>
-                          <span className="block text-[10px] text-[#69778c] mt-1">
+                          <span className="block text-[10px] text-[#5e6b67] mt-1">
                             {status === "paid" ? "Baixa registrada" : days < 0 ? `${Math.abs(days)} dia(s) em atraso` : days === 0 ? "Vence hoje" : `Em ${days} dia(s)`}
                           </span>
                         </td>
                         <td className="p-3">
-                          <b className="text-[#152238] block">{bill.desc}</b>
-                          {bill.apelido && <span className="inline-block bg-[#edf2ff] text-[#3c63da] text-[9px] font-extrabold px-1.5 py-0.5 rounded-md mr-1">{bill.apelido}</span>}
-                          <span className="text-[10px] text-[#69778c]">{bill.payMethod || "Não informado"}</span>
+                          <b className="text-[#17211f] block">{bill.desc}</b>
+                          {bill.apelido && <span className="inline-block bg-[#e3eff1] text-[#0f4c5c] text-[9px] font-extrabold px-1.5 py-0.5 rounded-md mr-1">{bill.apelido}</span>}
+                          <span className="text-[10px] text-[#5e6b67]">{bill.payMethod || "Não informado"}</span>
                         </td>
-                        <td className="p-3 text-[#69778c] font-medium">
+                        <td className="p-3 text-[#5e6b67] font-medium">
                           {new Date(`${bill.vencimento}T12:00:00`).toLocaleDateString("pt-BR")}
                         </td>
                         <td className="p-3">
-                          <span className="bg-[#f0f4f9] text-[#152238] px-2 py-0.5 text-[10px] font-bold rounded-full border border-[#e5eaf1]">{bill.cat}</span>
+                          <span className="bg-[#f0f3f0] text-[#17211f] px-2 py-0.5 text-[10px] font-bold rounded-full border border-[#dfe4df]">{bill.cat}</span>
                         </td>
-                        <td className="p-3 text-right font-mono font-bold text-[#152238]">{formatBrl2(bill.value)}</td>
+                        <td className="p-3 text-right font-mono font-bold text-[#17211f]">{formatBrl2(bill.value)}</td>
                         <td className="p-3 text-right flex items-center justify-end gap-1.5">
                           <button
                             type="button"
                             onClick={() => handleStartEditBill(bill)}
                             disabled={isSaving}
                             title="Editar compromisso"
-                            className="text-[#3c63da] hover:text-[#2f52c0] p-1.5 rounded-lg hover:bg-blue-50 transition-all cursor-pointer inline-flex items-center gap-1 font-semibold text-xs"
+                            className="text-[#0f4c5c] hover:text-[#0b3b48] p-1.5 rounded-lg hover:bg-blue-50 transition-all cursor-pointer inline-flex items-center gap-1 font-semibold text-xs"
                           >
                             <Edit3 className="h-4 w-4" />
                             <span>Editar</span>
@@ -849,7 +849,7 @@ export const RpScreen: React.FC<RpScreenProps> = ({ bills: incomingBills, curren
                             onClick={() => handleDelete(bill.id)}
                             disabled={isSaving}
                             title={`Excluir ${bill.desc}`}
-                            className="text-[#b44b4b] hover:text-red-800 p-1.5 rounded-lg hover:bg-red-50 transition-all cursor-pointer inline-flex items-center"
+                            className="text-[#b93a48] hover:text-red-800 p-1.5 rounded-lg hover:bg-red-50 transition-all cursor-pointer inline-flex items-center"
                           >
                             <Trash2 className="h-4 w-4" />
                           </button>
@@ -867,20 +867,20 @@ export const RpScreen: React.FC<RpScreenProps> = ({ bills: incomingBills, curren
       {/* Modal de Edição de Conta / Compromisso */}
       {editingBill && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4 animate-in fade-in duration-150">
-          <div className="w-full max-w-md rounded-2xl border border-[#e5eaf1] bg-white p-5 sm:p-6 shadow-2xl space-y-4">
-            <div className="flex items-center justify-between border-b border-[#e5eaf1] pb-3">
+          <div className="w-full max-w-md rounded-2xl border border-[#dfe4df] bg-white p-5 sm:p-6 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between border-b border-[#dfe4df] pb-3">
               <div className="flex items-center gap-2">
-                <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-[#3c63da]/10 text-[#3c63da]">
+                <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-[#0f4c5c]/10 text-[#0f4c5c]">
                   <Edit3 className="h-4 w-4" />
                 </div>
-                <h3 className="text-sm font-extrabold text-[#152238]">
+                <h3 className="text-sm font-extrabold text-[#17211f]">
                   Editar Compromisso
                 </h3>
               </div>
               <button
                 type="button"
                 onClick={() => setEditingBill(null)}
-                className="rounded-lg p-1 text-[#69778c] hover:bg-slate-100 transition-all cursor-pointer"
+                className="rounded-lg p-1 text-[#5e6b67] hover:bg-slate-100 transition-all cursor-pointer"
               >
                 <X className="h-4 w-4" />
               </button>
@@ -888,20 +888,20 @@ export const RpScreen: React.FC<RpScreenProps> = ({ bills: incomingBills, curren
 
             <form onSubmit={handleSaveEditBill} className="space-y-3.5 text-xs">
               <div>
-                <label className="block text-[10px] font-extrabold uppercase text-[#69778c] mb-1">
+                <label className="block text-[10px] font-extrabold text-[#5e6b67] mb-1">
                   Descrição
                 </label>
                 <input
                   type="text"
                   value={editDesc}
                   onChange={(e) => setEditDesc(e.target.value)}
-                  className="w-full rounded-lg border border-[#e5eaf1] px-3 py-2 text-xs font-semibold text-[#152238] focus:border-[#3c63da] focus:outline-none"
+                  className="w-full rounded-lg border border-[#dfe4df] px-3 py-2 text-xs font-semibold text-[#17211f] focus:border-[#0f4c5c] focus:outline-none"
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-[10px] font-extrabold uppercase text-[#69778c] mb-1">
+                <label className="block text-[10px] font-extrabold text-[#5e6b67] mb-1">
                   Valor (R$)
                 </label>
                 <input
@@ -910,32 +910,32 @@ export const RpScreen: React.FC<RpScreenProps> = ({ bills: incomingBills, curren
                   min="0"
                   value={editValue}
                   onChange={(e) => setEditValue(e.target.value)}
-                  className="w-full rounded-lg border border-[#e5eaf1] px-3 py-2 text-xs font-mono font-bold text-[#152238] focus:border-[#3c63da] focus:outline-none"
+                  className="w-full rounded-lg border border-[#dfe4df] px-3 py-2 text-xs font-mono font-bold text-[#17211f] focus:border-[#0f4c5c] focus:outline-none"
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-[10px] font-extrabold uppercase text-[#69778c] mb-1">
+                <label className="block text-[10px] font-extrabold text-[#5e6b67] mb-1">
                   Data de Vencimento
                 </label>
                 <input
                   type="date"
                   value={editVenc}
                   onChange={(e) => setEditVenc(e.target.value)}
-                  className="w-full rounded-lg border border-[#e5eaf1] px-3 py-2 text-xs font-semibold text-[#152238] focus:border-[#3c63da] focus:outline-none"
+                  className="w-full rounded-lg border border-[#dfe4df] px-3 py-2 text-xs font-semibold text-[#17211f] focus:border-[#0f4c5c] focus:outline-none"
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-[10px] font-extrabold uppercase text-[#69778c] mb-1">
+                <label className="block text-[10px] font-extrabold text-[#5e6b67] mb-1">
                   Categoria
                 </label>
                 <select
                   value={editCat}
                   onChange={(e) => setEditCat(e.target.value)}
-                  className="w-full rounded-lg border border-[#e5eaf1] px-3 py-2 text-xs font-semibold text-[#152238] bg-white focus:border-[#3c63da] focus:outline-none"
+                  className="w-full rounded-lg border border-[#dfe4df] px-3 py-2 text-xs font-semibold text-[#17211f] bg-white focus:border-[#0f4c5c] focus:outline-none"
                 >
                   <option value="Ocupação">Ocupação / Aluguel</option>
                   <option value="Utilidades">Utilidades (Água, Luz, Internet)</option>
@@ -947,13 +947,13 @@ export const RpScreen: React.FC<RpScreenProps> = ({ bills: incomingBills, curren
               </div>
 
               <div>
-                <label className="block text-[10px] font-extrabold uppercase text-[#69778c] mb-1">
+                <label className="block text-[10px] font-extrabold text-[#5e6b67] mb-1">
                   Forma de Pagamento
                 </label>
                 <select
                   value={editPayMethod}
                   onChange={(e) => setEditPayMethod(e.target.value)}
-                  className="w-full rounded-lg border border-[#e5eaf1] px-3 py-2 text-xs font-semibold text-[#152238] bg-white focus:border-[#3c63da] focus:outline-none"
+                  className="w-full rounded-lg border border-[#dfe4df] px-3 py-2 text-xs font-semibold text-[#17211f] bg-white focus:border-[#0f4c5c] focus:outline-none"
                 >
                   <option value="boleto">Boleto Bancário</option>
                   <option value="pix">PIX</option>
@@ -963,18 +963,18 @@ export const RpScreen: React.FC<RpScreenProps> = ({ bills: incomingBills, curren
                 </select>
               </div>
 
-              <div className="flex justify-end gap-2 pt-2 border-t border-[#e5eaf1]">
+              <div className="flex justify-end gap-2 pt-2 border-t border-[#dfe4df]">
                 <button
                   type="button"
                   onClick={() => setEditingBill(null)}
-                  className="px-4 py-2 rounded-lg border border-[#e5eaf1] bg-white text-xs font-bold text-[#526078] hover:bg-slate-50 transition-all cursor-pointer"
+                  className="px-4 py-2 rounded-lg border border-[#dfe4df] bg-white text-xs font-bold text-[#4a5753] hover:bg-slate-50 transition-all cursor-pointer"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
                   disabled={isSaving}
-                  className="px-4 py-2 rounded-lg bg-[#3c63da] text-xs font-bold text-white hover:bg-[#2f52c0] transition-all cursor-pointer shadow-xs disabled:opacity-60"
+                  className="px-4 py-2 rounded-lg bg-[#0f4c5c] text-xs font-bold text-white hover:bg-[#0b3b48] transition-all cursor-pointer shadow-xs disabled:opacity-60"
                 >
                   Salvar Alterações
                 </button>

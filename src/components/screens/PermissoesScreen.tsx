@@ -49,7 +49,7 @@ export const PermissoesScreen: React.FC<PermissoesScreenProps> = ({
   const [brandName, setBrandName] = useState("");
   const [brandRoyalty, setBrandRoyalty] = useState("6.0");
   const [brandRoyaltyType, setBrandRoyaltyType] = useState<"pct" | "fixed">("pct");
-  const [brandColor, setBrandColor] = useState("#3c63da");
+  const [brandColor, setBrandColor] = useState("#0f4c5c");
   const [brandError, setBrandError] = useState("");
 
   useEffect(() => {
@@ -173,7 +173,7 @@ export const PermissoesScreen: React.FC<PermissoesScreenProps> = ({
       id,
       name: cleanName,
       brand: cleanName,
-      color: brandColor || "#3c63da",
+      color: brandColor || "#0f4c5c",
       royaltyType: brandRoyaltyType,
       royalty: finalRoyalty,
     };
@@ -219,11 +219,11 @@ export const PermissoesScreen: React.FC<PermissoesScreenProps> = ({
     <div className="space-y-6 animate-in fade-in duration-150">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-extrabold tracking-tight text-[#152238] flex items-center gap-2 mt-1">
-            <ShieldCheck className="h-6 w-6 text-[#3c63da]" />
+          <h2 className="text-2xl font-extrabold tracking-tight text-[#17211f] flex items-center gap-2 mt-1">
+            <ShieldCheck className="h-6 w-6 text-[#0f4c5c]" />
             Permissões & Royalties por Marca
           </h2>
-          <p className="text-xs text-[#69778c] mt-1">
+          <p className="text-xs text-[#5e6b67] mt-1">
             Defina se o royalty será cobrado como percentual (%) sobre o faturamento ou como valor fixo (R$), com histórico de reajustes.
           </p>
         </div>
@@ -232,7 +232,7 @@ export const PermissoesScreen: React.FC<PermissoesScreenProps> = ({
             type="button"
             onClick={handleFormatRoyalties}
             disabled={isSaving}
-            className="flex items-center gap-1.5 rounded-lg border border-[#3c63da]/30 bg-[#edf2ff] px-3 py-2 text-xs font-bold text-[#3c63da] hover:bg-[#dfe8fe] shadow-sm disabled:opacity-50 cursor-pointer"
+            className="flex items-center gap-1.5 rounded-lg border border-[#0f4c5c]/30 bg-[#e3eff1] px-3 py-2 text-xs font-bold text-[#0f4c5c] hover:bg-[#e3eff1] shadow-sm disabled:opacity-50 cursor-pointer"
             title="Formatar e redefinir taxas de royalties padrão (6%)"
           >
             <RotateCcw className="h-3.5 w-3.5" />
@@ -241,7 +241,7 @@ export const PermissoesScreen: React.FC<PermissoesScreenProps> = ({
           <button
             onClick={handleSave}
             disabled={isSaving}
-            className="flex items-center gap-1.5 rounded-lg bg-[#3c63da] px-4 py-2 text-xs font-bold text-white hover:bg-[#2f52c0] shadow-sm disabled:opacity-50 cursor-pointer"
+            className="flex items-center gap-1.5 rounded-lg bg-[#0f4c5c] px-4 py-2 text-xs font-bold text-white hover:bg-[#0b3b48] shadow-sm disabled:opacity-50 cursor-pointer"
           >
             {isSaved ? <CheckCircle2 className="h-3.5 w-3.5 text-emerald-300" /> : <Save className="h-3.5 w-3.5" />}
             <span>{isSaved ? "Taxas salvas" : isSaving ? "Salvando..." : "Salvar taxas de royalties"}</span>
@@ -250,38 +250,38 @@ export const PermissoesScreen: React.FC<PermissoesScreenProps> = ({
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-        <div className="rounded-2xl border border-[#e5eaf1] bg-white p-5 sm:p-6 shadow-xs space-y-4">
-          <div className="flex items-start justify-between gap-3 border-b border-[#e5eaf1] pb-3">
-            <h3 className="text-sm font-bold text-[#152238] flex items-center gap-2">
-              <Building2 className="h-4 w-4 text-[#3c63da]" />
+        <div className="rounded-2xl border border-[#dfe4df] bg-white p-5 sm:p-6 shadow-xs space-y-4">
+          <div className="flex items-start justify-between gap-3 border-b border-[#dfe4df] pb-3">
+            <h3 className="text-sm font-bold text-[#17211f] flex items-center gap-2">
+              <Building2 className="h-4 w-4 text-[#0f4c5c]" />
               Royalties por marca / modelo
             </h3>
-            <span className="text-[10px] font-bold text-[#69778c]">{businesses.length} marca(s)</span>
+            <span className="text-[10px] font-bold text-[#5e6b67]">{businesses.length} marca(s)</span>
           </div>
 
-          <form onSubmit={handleCreateBrand} className="rounded-xl border border-[#cbdaf8] bg-[#f8faff] p-3.5 space-y-3">
-            <div className="flex items-center gap-2 text-[11px] font-extrabold uppercase tracking-wider text-[#315bc5]">
+          <form onSubmit={handleCreateBrand} className="rounded-xl border border-[#b9d5da] bg-[#f7f9f7] p-3.5 space-y-3">
+            <div className="flex items-center gap-2 text-[11px] font-extrabold text-[#0b3b48]">
               <Plus className="h-3.5 w-3.5" />
               Cadastrar nova marca
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              <label className="text-[10px] font-extrabold uppercase text-[#69778c]">
+              <label className="text-[10px] font-extrabold text-[#5e6b67]">
                 Nome da Marca
                 <input
                   value={brandName}
                   onChange={(event) => setBrandName(event.target.value)}
                   placeholder="Ex.: Café Express"
-                  className="mt-1 w-full rounded-lg border border-[#dbe4ef] bg-white px-2.5 py-2 text-xs font-bold text-[#152238] focus:border-[#3c63da] focus:outline-none"
+                  className="mt-1 w-full rounded-lg border border-[#dfe4df] bg-white px-2.5 py-2 text-xs font-bold text-[#17211f] focus:border-[#0f4c5c] focus:outline-none"
                 />
               </label>
 
-              <label className="text-[10px] font-extrabold uppercase text-[#69778c]">
+              <label className="text-[10px] font-extrabold text-[#5e6b67]">
                 Tipo de Cobrança
                 <select
                   value={brandRoyaltyType}
                   onChange={(e) => setBrandRoyaltyType(e.target.value as any)}
-                  className="mt-1 w-full rounded-lg border border-[#dbe4ef] bg-white px-2.5 py-2 text-xs font-bold text-[#152238] focus:border-[#3c63da] focus:outline-none"
+                  className="mt-1 w-full rounded-lg border border-[#dfe4df] bg-white px-2.5 py-2 text-xs font-bold text-[#17211f] focus:border-[#0f4c5c] focus:outline-none"
                 >
                   <option value="pct">Percentual (%) do Faturamento</option>
                   <option value="fixed">Valor Fixo (R$)</option>
@@ -290,7 +290,7 @@ export const PermissoesScreen: React.FC<PermissoesScreenProps> = ({
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-[1fr_110px_42px_auto] gap-2 items-end">
-              <label className="text-[10px] font-extrabold uppercase text-[#69778c]">
+              <label className="text-[10px] font-extrabold text-[#5e6b67]">
                 {brandRoyaltyType === "pct" ? "Taxa (%)" : "Valor Fixo (R$)"}
                 <input
                   type="number"
@@ -298,25 +298,25 @@ export const PermissoesScreen: React.FC<PermissoesScreenProps> = ({
                   step={brandRoyaltyType === "pct" ? "0.1" : "1"}
                   value={brandRoyalty}
                   onChange={(event) => setBrandRoyalty(event.target.value)}
-                  className="mt-1 w-full rounded-lg border border-[#dbe4ef] bg-white px-2.5 py-2 text-xs font-mono font-bold text-[#152238] focus:border-[#3c63da] focus:outline-none"
+                  className="mt-1 w-full rounded-lg border border-[#dfe4df] bg-white px-2.5 py-2 text-xs font-mono font-bold text-[#17211f] focus:border-[#0f4c5c] focus:outline-none"
                 />
               </label>
 
-              <label className="text-[10px] font-extrabold uppercase text-[#69778c]">
+              <label className="text-[10px] font-extrabold text-[#5e6b67]">
                 Cor
                 <input
                   aria-label="Cor da marca"
                   type="color"
                   value={brandColor}
                   onChange={(event) => setBrandColor(event.target.value)}
-                  className="mt-1 h-[34px] w-full rounded-lg border border-[#dbe4ef] bg-white p-1 cursor-pointer"
+                  className="mt-1 h-[34px] w-full rounded-lg border border-[#dfe4df] bg-white p-1 cursor-pointer"
                 />
               </label>
 
               <button
                 type="submit"
                 disabled={isSaving}
-                className="inline-flex h-[34px] items-center justify-center gap-1 rounded-lg bg-[#3c63da] px-3 text-xs font-bold text-white hover:bg-[#2f52c0] disabled:opacity-50 cursor-pointer"
+                className="inline-flex h-[34px] items-center justify-center gap-1 rounded-lg bg-[#0f4c5c] px-3 text-xs font-bold text-white hover:bg-[#0b3b48] disabled:opacity-50 cursor-pointer"
               >
                 <Plus className="h-3.5 w-3.5" />
                 <span>Cadastrar</span>
@@ -327,7 +327,7 @@ export const PermissoesScreen: React.FC<PermissoesScreenProps> = ({
 
           <div className="space-y-3">
             {businesses.length === 0 && (
-              <div className="rounded-xl border border-dashed border-[#cbd5e1] bg-[#fbfcff] p-5 text-center text-xs text-[#69778c]">
+              <div className="rounded-xl border border-dashed border-[#c9d1cb] bg-[#f7f9f7] p-5 text-center text-xs text-[#5e6b67]">
                 Nenhuma marca cadastrada. Use o formulário acima para começar.
               </div>
             )}
@@ -340,13 +340,13 @@ export const PermissoesScreen: React.FC<PermissoesScreenProps> = ({
               const monthlyProjection = currentType === "pct" ? revenue * currentVal : currentVal * linkedUnits.length;
 
               return (
-                <div key={biz.id} className="rounded-xl border border-[#e5eaf1] bg-[#f8faff] p-4 space-y-3">
+                <div key={biz.id} className="rounded-xl border border-[#dfe4df] bg-[#f7f9f7] p-4 space-y-3">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                     <div className="flex min-w-0 items-center gap-2">
-                      <span className="h-3 w-3 shrink-0 rounded-full" style={{ backgroundColor: biz.color || "#3c63da" }} />
+                      <span className="h-3 w-3 shrink-0 rounded-full" style={{ backgroundColor: biz.color || "#0f4c5c" }} />
                       <div className="min-w-0">
-                        <b className="text-sm text-[#152238] block truncate">{biz.name || biz.brand}</b>
-                        <span className="text-[11px] text-[#69778c]">{linkedUnits.length} unidade(s) · Faturamento: {formatBrl(revenue)}</span>
+                        <b className="text-sm text-[#17211f] block truncate">{biz.name || biz.brand}</b>
+                        <span className="text-[11px] text-[#5e6b67]">{linkedUnits.length} unidade(s) · Faturamento: {formatBrl(revenue)}</span>
                       </div>
                     </div>
 
@@ -354,7 +354,7 @@ export const PermissoesScreen: React.FC<PermissoesScreenProps> = ({
                       <select
                         value={currentType}
                         onChange={(e) => handleTypeChange(biz.id, e.target.value as any)}
-                        className="rounded-lg border border-[#e5eaf1] bg-white px-2 py-1.5 text-xs font-semibold text-[#152238] focus:border-[#3c63da] focus:outline-none"
+                        className="rounded-lg border border-[#dfe4df] bg-white px-2 py-1.5 text-xs font-semibold text-[#17211f] focus:border-[#0f4c5c] focus:outline-none"
                       >
                         <option value="pct">% Faturamento</option>
                         <option value="fixed">Valor Fixo (R$)</option>
@@ -368,16 +368,16 @@ export const PermissoesScreen: React.FC<PermissoesScreenProps> = ({
                           min="0"
                           value={displayVal}
                           onChange={(event) => handleRateChange(biz.id, event.target.value)}
-                          className="w-full rounded-lg border border-[#e5eaf1] bg-white px-2.5 py-1.5 pr-8 text-right text-xs font-mono font-bold text-[#152238] focus:border-[#3c63da] focus:outline-none"
+                          className="w-full rounded-lg border border-[#dfe4df] bg-white px-2.5 py-1.5 pr-8 text-right text-xs font-mono font-bold text-[#17211f] focus:border-[#0f4c5c] focus:outline-none"
                         />
-                        <span className="absolute right-2 top-1.5 text-xs font-bold text-[#69778c]">
+                        <span className="absolute right-2 top-1.5 text-xs font-bold text-[#5e6b67]">
                           {currentType === "pct" ? "%" : "R$"}
                         </span>
                       </label>
                     </div>
                   </div>
 
-                  <div className="flex justify-between border-t border-[#e5eaf1]/80 pt-2 text-xs text-[#69778c]">
+                  <div className="flex justify-between border-t border-[#dfe4df]/80 pt-2 text-xs text-[#5e6b67]">
                     <span>Projeção mensal da matriz ({currentType === "pct" ? "Baseada no faturamento" : "Valor fixo por unidade"})</span>
                     <b className="font-mono font-bold text-emerald-700">{formatBrl(monthlyProjection)}</b>
                   </div>
@@ -387,23 +387,23 @@ export const PermissoesScreen: React.FC<PermissoesScreenProps> = ({
           </div>
         </div>
 
-        <div className="rounded-2xl border border-[#e5eaf1] bg-white p-5 sm:p-6 shadow-xs space-y-4">
-          <h3 className="text-sm font-bold text-[#152238] border-b border-[#e5eaf1] pb-3 flex items-center gap-2">
-            <KeyRound className="h-4 w-4 text-[#3c63da]" />
+        <div className="rounded-2xl border border-[#dfe4df] bg-white p-5 sm:p-6 shadow-xs space-y-4">
+          <h3 className="text-sm font-bold text-[#17211f] border-b border-[#dfe4df] pb-3 flex items-center gap-2">
+            <KeyRound className="h-4 w-4 text-[#0f4c5c]" />
             Matriz de acessos & segurança
           </h3>
           <div className="space-y-3 text-xs">
-            <div className="p-3 rounded-lg border border-[#e5eaf1] bg-white">
-              <b className="text-[#152238] block">Dono da Rede / Matriz (Super Admin)</b>
-              <p className="text-[11px] text-[#69778c] mt-0.5">Acesso total: troca de contexto entre todas as unidades, edição de parâmetros do DRE, alteração de taxas e acesso aos relatórios consolidados.</p>
+            <div className="p-3 rounded-lg border border-[#dfe4df] bg-white">
+              <b className="text-[#17211f] block">Dono da Rede / Matriz (Super Admin)</b>
+              <p className="text-[11px] text-[#5e6b67] mt-0.5">Acesso total: troca de contexto entre todas as unidades, edição de parâmetros do DRE, alteração de taxas e acesso aos relatórios consolidados.</p>
             </div>
-            <div className="p-3 rounded-lg border border-[#e5eaf1] bg-white">
-              <b className="text-[#152238] block">Equipe Corporativa / Auditoria</b>
-              <p className="text-[11px] text-[#69778c] mt-0.5">Visualização de toda a rede consolidada e mapas, geração de DRE e relatórios sem permissão de alterar parâmetros tributários.</p>
+            <div className="p-3 rounded-lg border border-[#dfe4df] bg-white">
+              <b className="text-[#17211f] block">Equipe Corporativa / Auditoria</b>
+              <p className="text-[11px] text-[#5e6b67] mt-0.5">Visualização de toda a rede consolidada e mapas, geração de DRE e relatórios sem permissão de alterar parâmetros tributários.</p>
             </div>
-            <div className="p-3 rounded-lg border border-[#e5eaf1] bg-white">
-              <b className="text-[#152238] block">Franqueado da Loja</b>
-              <p className="text-[11px] text-[#69778c] mt-0.5">Segregação restrita: visualiza exclusivamente os dados, DRE, lançamentos e conciliação da própria unidade.</p>
+            <div className="p-3 rounded-lg border border-[#dfe4df] bg-white">
+              <b className="text-[#17211f] block">Franqueado da Loja</b>
+              <p className="text-[11px] text-[#5e6b67] mt-0.5">Segregação restrita: visualiza exclusivamente os dados, DRE, lançamentos e conciliação da própria unidade.</p>
             </div>
           </div>
           <div className="rounded-xl border border-blue-100 bg-blue-50/60 p-3 text-[11px] text-blue-900">
@@ -414,15 +414,15 @@ export const PermissoesScreen: React.FC<PermissoesScreenProps> = ({
       </div>
 
       {/* Histórico de Reajustes de Royalties */}
-      <div className="rounded-2xl border border-[#e5eaf1] bg-white p-5 sm:p-6 shadow-xs space-y-4">
-        <h3 className="text-sm font-bold text-[#152238] border-b border-[#e5eaf1] pb-3 flex items-center gap-2">
-          <Clock className="h-4 w-4 text-[#3c63da]" />
+      <div className="rounded-2xl border border-[#dfe4df] bg-white p-5 sm:p-6 shadow-xs space-y-4">
+        <h3 className="text-sm font-bold text-[#17211f] border-b border-[#dfe4df] pb-3 flex items-center gap-2">
+          <Clock className="h-4 w-4 text-[#0f4c5c]" />
           Histórico de Reajustes de Royalties
         </h3>
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs border-collapse">
             <thead>
-              <tr className="bg-[#f8f9fc] text-[#69778c] uppercase text-[9px] tracking-wider border-b border-[#e5eaf1]">
+              <tr className="bg-[#f7f9f7] text-[#5e6b67] text-[9px]  border-b border-[#dfe4df]">
                 <th className="p-2.5">Data / Hora</th>
                 <th className="p-2.5">Marca / Modelo</th>
                 <th className="p-2.5">Tipo</th>
@@ -430,10 +430,10 @@ export const PermissoesScreen: React.FC<PermissoesScreenProps> = ({
                 <th className="p-2.5">Responsável</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-[#e5eaf1]">
+            <tbody className="divide-y divide-[#dfe4df]">
               {(!royaltyHistory || royaltyHistory.length === 0) ? (
                 <tr>
-                  <td colSpan={5} className="p-5 text-center text-[#69778c]">
+                  <td colSpan={5} className="p-5 text-center text-[#5e6b67]">
                     Nenhum reajuste registrado no histórico.
                   </td>
                 </tr>
@@ -442,11 +442,11 @@ export const PermissoesScreen: React.FC<PermissoesScreenProps> = ({
                   const b = businesses.find((x) => x.id === h.businessId);
                   const isPct = h.type === "pct";
                   return (
-                    <tr key={h.id} className="hover:bg-[#f8faff]">
-                      <td className="p-2.5 text-[#69778c] whitespace-nowrap">
+                    <tr key={h.id} className="hover:bg-[#f7f9f7]">
+                      <td className="p-2.5 text-[#5e6b67] whitespace-nowrap">
                         {new Date(h.date).toLocaleString("pt-BR")}
                       </td>
-                      <td className="p-2.5 font-bold text-[#152238]">
+                      <td className="p-2.5 font-bold text-[#17211f]">
                         {h.businessName || b?.name || h.businessId}
                       </td>
                       <td className="p-2.5">
@@ -454,10 +454,10 @@ export const PermissoesScreen: React.FC<PermissoesScreenProps> = ({
                           {isPct ? "Percentual (%)" : "Valor Fixo (R$)"}
                         </span>
                       </td>
-                      <td className="p-2.5 font-mono font-bold text-[#3c63da]">
+                      <td className="p-2.5 font-mono font-bold text-[#0f4c5c]">
                         {isPct ? `${(h.value * 100).toFixed(1)}%` : formatBrl(h.value)}
                       </td>
-                      <td className="p-2.5 text-[#69778c]">{h.user}</td>
+                      <td className="p-2.5 text-[#5e6b67]">{h.user}</td>
                     </tr>
                   );
                 })

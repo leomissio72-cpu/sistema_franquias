@@ -130,7 +130,7 @@ export const NetworkScreen: React.FC<NetworkScreenProps> = ({
 
       mappedUnits.forEach((f) => {
         const biz = businesses.find((b) => b.id === f.businessId);
-        const pinColor = f.status === "green" ? "#118464" : "#a86a08";
+        const pinColor = f.status === "green" ? "#1a7f5a" : "#a86a08";
         const unitRev = getUnitEffectiveRev(f);
         const calc = getUnitEffectiveDre(f);
 
@@ -149,17 +149,17 @@ export const NetworkScreen: React.FC<NetworkScreenProps> = ({
         const popupContent = document.createElement("div");
         popupContent.className = "p-1 font-sans";
         popupContent.innerHTML = `
-          <div style="font-size:9px;font-weight:800;color:${biz?.color || "#3c63da"};margin-bottom:2px;">${biz?.name || ""}</div>
-          <div style="font-weight:800;font-size:13px;color:#152238;">${f.name}</div>
-          <div style="font-size:10px;color:#69778c;margin-bottom:8px;line-height:1.4;">${f.address}</div>
+          <div style="font-size:9px;font-weight:800;color:${biz?.color || "#0f4c5c"};margin-bottom:2px;">${biz?.name || ""}</div>
+          <div style="font-weight:800;font-size:13px;color:#17211f;">${f.name}</div>
+          <div style="font-size:10px;color:#5e6b67;margin-bottom:8px;line-height:1.4;">${f.address}</div>
           <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px;"><span>Faturamento:</span><b>${formatBrl(f.faturamento)}</b></div>
-          <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px;"><span>Lucro Líquido:</span><b style="color:#118464">${formatBrl(calc.lucroLiquido)}</b></div>
+          <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px;"><span>Lucro Líquido:</span><b style="color:#1a7f5a">${formatBrl(calc.lucroLiquido)}</b></div>
           <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:8px;"><span>Margem:</span><b>${formatPct(calc.margemLiquida)}</b></div>
         `;
 
         const btn = document.createElement("button");
         btn.innerText = "Ver DRE da Unidade";
-        btn.className = "w-full rounded bg-[#3c63da] text-white py-1.5 text-xs font-bold hover:bg-[#2f52c0] cursor-pointer";
+        btn.className = "w-full rounded bg-[#0f4c5c] text-white py-1.5 text-xs font-bold hover:bg-[#0b3b48] cursor-pointer";
         btn.onclick = () => {
           onSelectTenant(f.id);
           onNavigate("dre");
@@ -190,14 +190,14 @@ export const NetworkScreen: React.FC<NetworkScreenProps> = ({
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <div className="text-[10px] font-extrabold uppercase tracking-widest text-[#3c63da]">
+          <div className="text-[10px] font-extrabold text-[#0f4c5c]">
             Franqueadora · Dados Consolidados em Tempo Real
           </div>
-          <h2 className="text-2xl font-extrabold tracking-tight text-[#152238] flex items-center gap-2 mt-1">
-            <Building2 className="h-6 w-6 text-[#3c63da]" />
+          <h2 className="text-2xl font-extrabold tracking-tight text-[#17211f] flex items-center gap-2 mt-1">
+            <Building2 className="h-6 w-6 text-[#0f4c5c]" />
             Rede e Unidades
           </h2>
-          <p className="text-xs text-[#69778c] mt-1 max-w-2xl">
+          <p className="text-xs text-[#5e6b67] mt-1 max-w-2xl">
             Vários negócios, vários franqueados. A diretoria acompanha o ecossistema completo; cada rede e
             unidade opera no seu respectivo escopo.
           </p>
@@ -206,24 +206,24 @@ export const NetworkScreen: React.FC<NetworkScreenProps> = ({
         <div className="flex flex-wrap items-center gap-2">
           <button
             onClick={() => onNavigate("tenants")}
-            className="flex items-center gap-1.5 rounded-lg bg-[#3c63da] hover:bg-[#2f52c0] px-3.5 py-2 text-xs font-bold text-white shadow-xs transition-all cursor-pointer"
+            className="flex items-center gap-1.5 rounded-lg bg-[#0f4c5c] hover:bg-[#0b3b48] px-3.5 py-2 text-xs font-bold text-white shadow-xs transition-all cursor-pointer"
           >
             <Plus className="h-3.5 w-3.5" />
             <span>Cadastrar Novo Franqueado</span>
           </button>
           <button
             onClick={scrollToMap}
-            className="flex items-center gap-1.5 rounded-lg border border-[#e5eaf1] bg-white px-3 py-2 text-xs font-bold text-[#152238] hover:bg-[#f4f7fb] transition-all cursor-pointer shadow-2xs"
+            className="flex items-center gap-1.5 rounded-lg border border-[#dfe4df] bg-white px-3 py-2 text-xs font-bold text-[#17211f] hover:bg-[#f0f3f0] transition-all cursor-pointer shadow-2xs"
           >
-            <MapPin className="h-3.5 w-3.5 text-[#3c63da]" />
+            <MapPin className="h-3.5 w-3.5 text-[#0f4c5c]" />
             <span>Ver Mapa na Página</span>
           </button>
           {onRefreshData && (
             <button
               onClick={onRefreshData}
-              className="flex items-center gap-1.5 rounded-lg border border-[#e5eaf1] bg-white px-3 py-2 text-xs font-bold text-[#152238] hover:bg-[#f4f7fb] transition-all shadow-2xs cursor-pointer"
+              className="flex items-center gap-1.5 rounded-lg border border-[#dfe4df] bg-white px-3 py-2 text-xs font-bold text-[#17211f] hover:bg-[#f0f3f0] transition-all shadow-2xs cursor-pointer"
             >
-              <RefreshCw className="h-3.5 w-3.5 text-[#3c63da]" />
+              <RefreshCw className="h-3.5 w-3.5 text-[#0f4c5c]" />
               <span>Atualizar</span>
             </button>
           )}
@@ -232,50 +232,50 @@ export const NetworkScreen: React.FC<NetworkScreenProps> = ({
 
       {/* KPI Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-        <div className="rounded-xl border border-[#e5eaf1] bg-white p-4.5 shadow-xs">
-          <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#69778c] block">
+        <div className="rounded-xl border border-[#dfe4df] bg-white p-4.5 shadow-xs">
+          <span className="text-[10px] font-extrabold text-[#5e6b67] block">
             Unidades na Rede
           </span>
-          <strong className="text-2xl font-extrabold text-[#152238] block mt-1">
+          <strong className="text-2xl font-extrabold text-[#17211f] block mt-1">
             {visibleUnits.length}
           </strong>
-          <small className="text-[11px] text-[#69778c] block mt-0.5">
+          <small className="text-[11px] text-[#5e6b67] block mt-0.5">
             {visibleUnits.length} licenças ativas
           </small>
         </div>
 
-        <div className="rounded-xl border border-[#e5eaf1] bg-white p-4.5 shadow-xs">
-          <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#69778c] block">
+        <div className="rounded-xl border border-[#dfe4df] bg-white p-4.5 shadow-xs">
+          <span className="text-[10px] font-extrabold text-[#5e6b67] block">
             Faturamento do Mês
           </span>
-          <strong className="text-2xl font-extrabold text-[#152238] block mt-1">
+          <strong className="text-2xl font-extrabold text-[#17211f] block mt-1">
             {formatBrl(totalFat)}
           </strong>
-          <small className="text-[11px] text-[#69778c] block mt-0.5">
+          <small className="text-[11px] text-[#5e6b67] block mt-0.5">
             Soma de todas as lojas
           </small>
         </div>
 
-        <div className="rounded-xl border border-[#e5eaf1] bg-white p-4.5 shadow-xs">
-          <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#69778c] block">
+        <div className="rounded-xl border border-[#dfe4df] bg-white p-4.5 shadow-xs">
+          <span className="text-[10px] font-extrabold text-[#5e6b67] block">
             Lucro Líquido Consolidado
           </span>
-          <strong className="text-2xl font-extrabold text-[#118464] block mt-1">
+          <strong className="text-2xl font-extrabold text-[#1a7f5a] block mt-1">
             {formatBrl(totalLucro)}
           </strong>
-          <small className="text-[11px] text-[#69778c] block mt-0.5">
+          <small className="text-[11px] text-[#5e6b67] block mt-0.5">
             Após impostos, CMV e taxas
           </small>
         </div>
 
-        <div className="rounded-xl border border-[#e5eaf1] bg-white p-4.5 shadow-xs">
-          <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#69778c] block">
+        <div className="rounded-xl border border-[#dfe4df] bg-white p-4.5 shadow-xs">
+          <span className="text-[10px] font-extrabold text-[#5e6b67] block">
             Margem Líquida da Rede
           </span>
-          <strong className="text-2xl font-extrabold text-[#3c63da] block mt-1">
+          <strong className="text-2xl font-extrabold text-[#0f4c5c] block mt-1">
             {formatPct(margemConsolidada)}
           </strong>
-          <small className="text-[11px] text-[#69778c] block mt-0.5">
+          <small className="text-[11px] text-[#5e6b67] block mt-0.5">
             Lucro líquido ÷ receita
           </small>
         </div>
@@ -284,32 +284,32 @@ export const NetworkScreen: React.FC<NetworkScreenProps> = ({
       {/* ------------------------------------------------------------- */}
       {/* MAPA DAS UNIDADES & REDE INTEGRADOS NA MESMA PÁGINA           */}
       {/* ------------------------------------------------------------- */}
-      <div ref={mapSectionRef} className="rounded-2xl border border-[#e5eaf1] bg-white p-4 sm:p-5 shadow-xs space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[#e5eaf1]">
+      <div ref={mapSectionRef} className="rounded-2xl border border-[#dfe4df] bg-white p-4 sm:p-5 shadow-xs space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[#dfe4df]">
           <div>
             <div className="flex items-center gap-2">
-              <div className="h-7 w-7 rounded-lg bg-[#3c63da]/10 text-[#3c63da] flex items-center justify-center">
+              <div className="h-7 w-7 rounded-lg bg-[#0f4c5c]/10 text-[#0f4c5c] flex items-center justify-center">
                 <MapPin className="h-4 w-4" />
               </div>
-              <h3 className="text-sm font-extrabold text-[#152238]">
+              <h3 className="text-sm font-extrabold text-[#17211f]">
                 Mapa Georreferenciado das Unidades (Presença Nacional)
               </h3>
-              <span className="text-[11px] font-bold text-[#3c63da] bg-[#3c63da]/10 px-2 py-0.5 rounded-full">
+              <span className="text-[11px] font-bold text-[#0f4c5c] bg-[#0f4c5c]/10 px-2 py-0.5 rounded-full">
                 {mappedUnits.length} geolocalizadas · {citiesCount} cidades
               </span>
             </div>
-            <p className="text-xs text-[#69778c] mt-1">
+            <p className="text-xs text-[#5e6b67] mt-1">
               Visualize a distribuição geográfica de todas as unidades da franquia no mapa interativo em tempo real. Clique nos pins para abrir indicadores e DRE.
             </p>
           </div>
 
           {/* Filtros do Mapa */}
-          <div className="flex items-center gap-1.5 bg-[#f8fafc] p-1 rounded-xl border border-[#e5eaf1] self-start sm:self-auto">
+          <div className="flex items-center gap-1.5 bg-[#f7f9f7] p-1 rounded-xl border border-[#dfe4df] self-start sm:self-auto">
             <button
               type="button"
               onClick={() => setMapFilter("all")}
               className={`px-2.5 py-1 text-xs font-bold rounded-lg transition-all cursor-pointer ${
-                mapFilter === "all" ? "bg-[#3c63da] text-white shadow-xs" : "text-[#69778c] hover:text-[#152238]"
+                mapFilter === "all" ? "bg-[#0f4c5c] text-white shadow-xs" : "text-[#5e6b67] hover:text-[#17211f]"
               }`}
             >
               Todas ({visibleUnits.length})
@@ -318,7 +318,7 @@ export const NetworkScreen: React.FC<NetworkScreenProps> = ({
               type="button"
               onClick={() => setMapFilter("green")}
               className={`px-2.5 py-1 text-xs font-bold rounded-lg transition-all cursor-pointer flex items-center gap-1 ${
-                mapFilter === "green" ? "bg-emerald-600 text-white shadow-xs" : "text-[#69778c] hover:text-[#152238]"
+                mapFilter === "green" ? "bg-emerald-600 text-white shadow-xs" : "text-[#5e6b67] hover:text-[#17211f]"
               }`}
             >
               <span className="h-2 w-2 rounded-full bg-emerald-400" />
@@ -328,7 +328,7 @@ export const NetworkScreen: React.FC<NetworkScreenProps> = ({
               type="button"
               onClick={() => setMapFilter("amber")}
               className={`px-2.5 py-1 text-xs font-bold rounded-lg transition-all cursor-pointer flex items-center gap-1 ${
-                mapFilter === "amber" ? "bg-amber-600 text-white shadow-xs" : "text-[#69778c] hover:text-[#152238]"
+                mapFilter === "amber" ? "bg-amber-600 text-white shadow-xs" : "text-[#5e6b67] hover:text-[#17211f]"
               }`}
             >
               <span className="h-2 w-2 rounded-full bg-amber-400" />
@@ -338,14 +338,14 @@ export const NetworkScreen: React.FC<NetworkScreenProps> = ({
         </div>
 
         {/* Container do Mapa Leaflet */}
-        <div className="relative w-full h-[360px] sm:h-[420px] rounded-xl overflow-hidden border border-[#dbe4ef] shadow-inner bg-[#f1f5f9]">
+        <div className="relative w-full h-[360px] sm:h-[420px] rounded-xl overflow-hidden border border-[#dfe4df] shadow-inner bg-[#f0f3f0]">
           <div ref={mapContainerRef} className="w-full h-full" style={{ minHeight: "360px" }} />
           {mappedUnits.length === 0 && (
             <div className="absolute inset-0 flex items-center justify-center bg-white/80 backdrop-blur-2xs p-4 text-center">
               <div>
-                <MapPin className="h-8 w-8 text-[#9aa9bf] mx-auto mb-2" />
-                <p className="text-xs font-bold text-[#152238]">Nenhuma unidade com coordenadas geográficas nesta seleção.</p>
-                <p className="text-[11px] text-[#69778c] mt-0.5">Cadastre ou edite as franquias informando endereço ou latitude/longitude.</p>
+                <MapPin className="h-8 w-8 text-[#93a09b] mx-auto mb-2" />
+                <p className="text-xs font-bold text-[#17211f]">Nenhuma unidade com coordenadas geográficas nesta seleção.</p>
+                <p className="text-[11px] text-[#5e6b67] mt-0.5">Cadastre ou edite as franquias informando endereço ou latitude/longitude.</p>
               </div>
             </div>
           )}
@@ -354,23 +354,23 @@ export const NetworkScreen: React.FC<NetworkScreenProps> = ({
 
       {/* Progress Bars and Health Overview */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-        <div className="lg:col-span-2 rounded-xl border border-[#e5eaf1] bg-white p-5 shadow-xs">
-          <div className="flex items-center justify-between pb-3 border-b border-[#e5eaf1] mb-4">
+        <div className="lg:col-span-2 rounded-xl border border-[#dfe4df] bg-white p-5 shadow-xs">
+          <div className="flex items-center justify-between pb-3 border-b border-[#dfe4df] mb-4">
             <div>
-              <h3 className="text-sm font-bold text-[#152238]">Faturamento x Lucro por Unidade</h3>
-              <p className="text-[11px] text-[#69778c]">Comparativo de performance do mês corrente.</p>
+              <h3 className="text-sm font-bold text-[#17211f]">Faturamento x Lucro por Unidade</h3>
+              <p className="text-[11px] text-[#5e6b67]">Comparativo de performance do mês corrente.</p>
             </div>
-            <span className="rounded-full bg-[#edf2ff] px-2.5 py-1 text-xs font-bold text-[#3c63da]">
+            <span className="rounded-full bg-[#e3eff1] px-2.5 py-1 text-xs font-bold text-[#0f4c5c]">
               {healthyCount} Saudáveis · {warnCount} em Atenção
             </span>
           </div>
 
           <div className="space-y-4">
             {visibleUnits.length === 0 ? (
-              <div className="rounded-xl border border-dashed border-[#cdd7e7] bg-[#fbfcff] p-8 text-center">
-                <Building2 className="mx-auto h-8 w-8 text-[#9aa9bf]" />
-                <p className="mt-3 text-sm font-bold text-[#334155]">Nenhuma unidade cadastrada</p>
-                <p className="mt-1 text-xs text-[#69778c]">Esta página continua disponível. Cadastre uma unidade para ver os indicadores.</p>
+              <div className="rounded-xl border border-dashed border-[#c9d1cb] bg-[#f7f9f7] p-8 text-center">
+                <Building2 className="mx-auto h-8 w-8 text-[#93a09b]" />
+                <p className="mt-3 text-sm font-bold text-[#3a4743]">Nenhuma unidade cadastrada</p>
+                <p className="mt-1 text-xs text-[#5e6b67]">Esta página continua disponível. Cadastre uma unidade para ver os indicadores.</p>
               </div>
             ) : visibleUnits.map((f) => {
               const p = dreParams[f.id] || dreParams["dono"];
@@ -383,33 +383,33 @@ export const NetworkScreen: React.FC<NetworkScreenProps> = ({
               return (
                 <div key={f.id} className="space-y-1.5">
                   <div className="flex items-center justify-between text-xs font-semibold">
-                    <span className="text-[#152238] flex items-center gap-1.5">
+                    <span className="text-[#17211f] flex items-center gap-1.5">
                       <span
                         className={`h-2 w-2 rounded-full ${
                           f.status === "green" ? "bg-emerald-500" : "bg-amber-500"
                         }`}
                       />
                       <b>{f.name}</b>
-                      <span className="text-[10px] text-[#69778c]">· {f.code}</span>
+                      <span className="text-[10px] text-[#5e6b67]">· {f.code}</span>
                     </span>
                     <span className="font-mono text-xs">
                       {formatBrl(unitRev)}{" "}
-                      <span className="text-[10px] text-[#69778c]">
+                      <span className="text-[10px] text-[#5e6b67]">
                         ({formatPct(calc.margemLiquida)} margem)
                       </span>
                     </span>
                   </div>
 
-                  <div className="h-2 w-full rounded-full bg-[#eef2f8] overflow-hidden flex">
+                  <div className="h-2 w-full rounded-full bg-[#f0f3f0] overflow-hidden flex">
                     <div
                       style={{ width: `${pctFat}%` }}
-                      className="h-full rounded-full bg-[#3c63da] transition-all"
+                      className="h-full rounded-full bg-[#0f4c5c] transition-all"
                     />
                   </div>
-                  <div className="h-1.5 w-full rounded-full bg-[#eef2f8] overflow-hidden flex">
+                  <div className="h-1.5 w-full rounded-full bg-[#f0f3f0] overflow-hidden flex">
                     <div
                       style={{ width: `${Math.max(0, pctLucro)}%` }}
-                      className="h-full rounded-full bg-[#118464] transition-all"
+                      className="h-full rounded-full bg-[#1a7f5a] transition-all"
                     />
                   </div>
                 </div>
@@ -419,20 +419,20 @@ export const NetworkScreen: React.FC<NetworkScreenProps> = ({
         </div>
 
         {/* Health and Alerts Box */}
-        <div className="rounded-xl border border-[#e5eaf1] bg-white p-5 shadow-xs space-y-4">
-          <h3 className="text-sm font-bold text-[#152238]">Saúde da Rede & Alertas</h3>
+        <div className="rounded-xl border border-[#dfe4df] bg-white p-5 shadow-xs space-y-4">
+          <h3 className="text-sm font-bold text-[#17211f]">Saúde da Rede & Alertas</h3>
 
           <div>
             <div className="flex justify-between text-xs font-semibold mb-1.5">
-              <span className="text-[#69778c]">Status Operacional:</span>
+              <span className="text-[#5e6b67]">Status Operacional:</span>
               <span className="text-emerald-700 font-bold">
                 {healthRate}% Saudável
               </span>
             </div>
-            <div className="h-2.5 w-full rounded-full bg-[#eef2f8] overflow-hidden flex">
+            <div className="h-2.5 w-full rounded-full bg-[#f0f3f0] overflow-hidden flex">
               <div
                 style={{ width: `${healthRate}%` }}
-                className="h-full bg-[#118464]"
+                className="h-full bg-[#1a7f5a]"
               />
               <div
                 style={{ width: `${visibleUnits.length ? (warnCount / visibleUnits.length) * 100 : 0}%` }}
@@ -441,17 +441,17 @@ export const NetworkScreen: React.FC<NetworkScreenProps> = ({
             </div>
           </div>
 
-          <div className="space-y-2 pt-2 text-xs divide-y divide-[#e5eaf1]">
+          <div className="space-y-2 pt-2 text-xs divide-y divide-[#dfe4df]">
             <div className="flex justify-between pt-2">
-              <span className="text-[#69778c]">Unidades saudáveis</span>
+              <span className="text-[#5e6b67]">Unidades saudáveis</span>
               <b className="text-emerald-700">{healthyCount} unidades</b>
             </div>
             <div className="flex justify-between pt-2">
-              <span className="text-[#69778c]">Unidades em atenção</span>
+              <span className="text-[#5e6b67]">Unidades em atenção</span>
               <b className="text-amber-700">{warnCount} unidades</b>
             </div>
             <div className="flex justify-between pt-2">
-              <span className="text-[#69778c]">Média de pendências</span>
+              <span className="text-[#5e6b67]">Média de pendências</span>
               <b>
                 {(
                   visibleUnits.reduce((s, f) => s + f.pendencias, 0) /
@@ -461,9 +461,9 @@ export const NetworkScreen: React.FC<NetworkScreenProps> = ({
             </div>
           </div>
 
-          <div className="rounded-lg bg-[#f8faff] p-3 border border-[#e5eaf1] text-xs space-y-1">
-            <span className="font-bold text-[#152238] block">Atalho Rápido:</span>
-            <p className="text-[11px] text-[#69778c]">
+          <div className="rounded-lg bg-[#f7f9f7] p-3 border border-[#dfe4df] text-xs space-y-1">
+            <span className="font-bold text-[#17211f] block">Atalho Rápido:</span>
+            <p className="text-[11px] text-[#5e6b67]">
               Clique em qualquer unidade para inspecionar os lançamentos e o DRE discriminado.
             </p>
           </div>
@@ -472,7 +472,7 @@ export const NetworkScreen: React.FC<NetworkScreenProps> = ({
 
       {/* Franchise Cards Bento Grid */}
       <div className="space-y-3">
-        <h3 className="text-base font-extrabold text-[#152238]">Todas as Unidades</h3>
+        <h3 className="text-base font-extrabold text-[#17211f]">Todas as Unidades</h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5">
           {visibleUnits.map((f) => {
             const p = dreParams[f.id] || dreParams["dono"];
@@ -489,17 +489,17 @@ export const NetworkScreen: React.FC<NetworkScreenProps> = ({
                 }}
                 className={`rounded-xl border p-4.5 bg-white transition-all cursor-pointer hover:shadow-md ${
                   isCurrent
-                    ? "border-[#3c63da] bg-[#f8faff] ring-2 ring-[#3c63da]/20"
-                    : "border-[#e5eaf1] hover:border-[#3c63da]/50"
+                    ? "border-[#0f4c5c] bg-[#f7f9f7] ring-2 ring-[#0f4c5c]/20"
+                    : "border-[#dfe4df] hover:border-[#0f4c5c]/50"
                 }`}
               >
                 <div className="flex items-start justify-between gap-2">
                   <div>
-                    <span className="text-[9px] font-extrabold uppercase bg-[#edf2ff] text-[#3c63da] px-2 py-0.5 rounded-full">
+                    <span className="text-[9px] font-extrabold bg-[#e3eff1] text-[#0f4c5c] px-2 py-0.5 rounded-full">
                       {getBusinessBrand(f.businessId)}
                     </span>
-                    <h4 className="text-sm font-bold text-[#152238] mt-1.5">{f.name}</h4>
-                    <p className="text-[10px] text-[#69778c]">
+                    <h4 className="text-sm font-bold text-[#17211f] mt-1.5">{f.name}</h4>
+                    <p className="text-[10px] text-[#5e6b67]">
                       {f.code} · Resp: {f.resp}
                     </p>
                   </div>
@@ -515,18 +515,18 @@ export const NetworkScreen: React.FC<NetworkScreenProps> = ({
                 </div>
 
                 <div className="mt-3.5">
-                  <div className="text-xl font-extrabold text-[#152238]">
+                  <div className="text-xl font-extrabold text-[#17211f]">
                     {formatBrl(f.faturamento)}
                   </div>
-                  <div className="text-[11px] text-[#69778c] mt-0.5 flex items-center justify-between">
+                  <div className="text-[11px] text-[#5e6b67] mt-0.5 flex items-center justify-between">
                     <span>Lucro: <b className="text-emerald-700">{formatBrl(calc.lucroLiquido)}</b></span>
                     <span>Margem: <b>{formatPct(calc.margemLiquida)}</b></span>
                   </div>
                 </div>
 
-                <div className="mt-3 pt-2.5 border-t border-[#e5eaf1] flex items-center justify-between text-[10px] text-[#69778c]">
+                <div className="mt-3 pt-2.5 border-t border-[#dfe4df] flex items-center justify-between text-[10px] text-[#5e6b67]">
                   <span>{f.city} · {f.region}</span>
-                  <span className="text-[#3c63da] font-bold flex items-center gap-0.5">
+                  <span className="text-[#0f4c5c] font-bold flex items-center gap-0.5">
                     Ver DRE <ArrowRight className="h-3 w-3" />
                   </span>
                 </div>

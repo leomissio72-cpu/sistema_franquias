@@ -107,6 +107,16 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
   const daysRatio = numDays / 31;
   const periodMultiplier = Math.max(0.032, numYears * numMonths * daysRatio);
 
+  // "Outubro de 2026" quando há um único mês; caso contrário, o resumo dos filtros
+  const homePeriodTitle = (() => {
+    if (dateSelection.years.length === 1 && dateSelection.months.length === 1) {
+      const month = AVAILABLE_MONTHS.find((m) => m.value === dateSelection.months[0])?.label;
+      if (month) return `Resultado de ${month.toLowerCase()} de ${dateSelection.years[0]}`;
+    }
+    if (dateSelection.years.length === 1 && dateSelection.months.length === 12) return `Resultado de ${dateSelection.years[0]}`;
+    return "Resultado do período selecionado";
+  })();
+
   const getPeriodSummary = () => {
     const yrText =
       dateSelection.years.length === AVAILABLE_YEARS.length
@@ -275,7 +285,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
 
       mapUnits.forEach((f) => {
         const biz = businesses.find((b) => b.id === f.businessId);
-        const pinColor = f.status === "green" ? "#118464" : "#a86a08";
+        const pinColor = f.status === "green" ? "#1a7f5a" : "#a86a08";
         const calc = getUnitEffectiveDre(f);
 
         const customIcon = L.divIcon({
@@ -293,17 +303,17 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
         const popupDiv = document.createElement("div");
         popupDiv.className = "p-1 font-sans";
         popupDiv.innerHTML = `
-          <div style="font-size:9px;font-weight:800;color:${biz?.color || "#3c63da"};margin-bottom:2px;">${biz?.name || ""}</div>
-          <div style="font-weight:800;font-size:13px;color:#152238;">${f.name}</div>
-          <div style="font-size:10px;color:#69778c;margin-bottom:6px;">${f.address}</div>
+          <div style="font-size:9px;font-weight:800;color:${biz?.color || "#0f4c5c"};margin-bottom:2px;">${biz?.name || ""}</div>
+          <div style="font-weight:800;font-size:13px;color:#17211f;">${f.name}</div>
+          <div style="font-size:10px;color:#5e6b67;margin-bottom:6px;">${f.address}</div>
           <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:2px;"><span>Faturamento:</span><b>${formatBrl(f.faturamento * periodMultiplier)}</b></div>
-          <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:2px;"><span>Lucro:</span><b style="color:#118464">${formatBrl(calc.lucroLiquido)}</b></div>
+          <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:2px;"><span>Lucro:</span><b style="color:#1a7f5a">${formatBrl(calc.lucroLiquido)}</b></div>
           <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:6px;"><span>Margem:</span><b>${formatPct(calc.margemLiquida)}</b></div>
         `;
 
         const btn = document.createElement("button");
         btn.innerText = "Mudar Visão para Esta Unidade";
-        btn.className = "w-full rounded-lg bg-[#3c63da] text-white py-1.5 text-xs font-bold hover:bg-[#2f52c0] cursor-pointer shadow-xs";
+        btn.className = "w-full rounded-lg bg-[#0f4c5c] text-white py-1.5 text-xs font-bold hover:bg-[#0b3b48] cursor-pointer shadow-xs";
         btn.onclick = () => {
           onSelectTenant(f.id);
         };
@@ -377,25 +387,64 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
   return (
     <div className="space-y-6 animate-in fade-in duration-150">
       {/* ------------------------------------------------------------- */}
-      {/* 1. TOP BAR: FILTROS UNIFICADOS (DATA, NEGÓCIO, FRANQUEADO)     */}
+      {/* 1. RESULTADO DO PERÍODO (extrato) + PERÍODO E ESCOPO            */}
       {/* ------------------------------------------------------------- */}
-      <div className="rounded-2xl border border-[#e5eaf1] bg-white p-4 sm:p-5 shadow-xs">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div className="flex flex-wrap items-center gap-3">
-            <h1 className="text-xl sm:text-2xl font-black text-[#152238] tracking-tight">
-              Gestão de Franquias
-            </h1>
+      <section className="grid gap-4 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:items-start">
+        {/* Resultado em formato de livro-caixa: entra, sai, sobra */}
+        <div className="rounded-xl border border-[#dfe4df] border-t-[3px] border-t-[#17211f] bg-white p-5 sm:p-6">
+          <h1 className="text-lg sm:text-xl font-extrabold text-[#17211f]">{homePeriodTitle}</h1>
+          <p className="mt-0.5 text-xs text-[#5e6b67]">
+            {filteredUnits.length} {filteredUnits.length === 1 ? "unidade no escopo" : "unidades no escopo"}
+          </p>
 
-            {/* Quick Button to open Franqueados Directory next to Gestão de Franquias */}
+          <dl className="mt-5">
+            <div className="flex items-baseline justify-between gap-4 border-t border-[#dfe4df] py-2.5">
+              <dt className="text-sm text-[#3a4743]">Faturamento</dt>
+              <dd className="font-mono text-base font-bold text-[#17211f]">{formatBrl(totalFat)}</dd>
+            </div>
+            <div className="flex items-baseline justify-between gap-4 border-t border-[#dfe4df] py-2.5">
+              <dt className="text-sm text-[#3a4743]">Custos e despesas</dt>
+              <dd className="font-mono text-base font-bold text-[#b93a48]">
+                {totalFat - totalLucro > 0 ? "− " : ""}{formatBrl(Math.abs(totalFat - totalLucro))}
+              </dd>
+            </div>
+            <div className="flex items-end justify-between gap-4 border-t-2 border-[#17211f] pt-3">
+              <dt>
+                <span className="block text-sm font-bold text-[#17211f]">Resultado</span>
+                <span className="mt-0.5 block text-xs text-[#5e6b67]">Margem de {formatPct(margemConsolidada)}</span>
+              </dt>
+              <dd className={`font-mono text-3xl sm:text-4xl font-extrabold leading-none ${totalLucro < 0 ? "text-[#b93a48]" : "text-[#1a7f5a]"}`}>
+                {totalLucro < 0 ? "− " : ""}{formatBrl(Math.abs(totalLucro))}
+              </dd>
+            </div>
+          </dl>
+
+          <div className="mt-5 grid grid-cols-2 gap-3 border-t border-[#dfe4df] pt-4">
+            <div>
+              <span className={`font-mono text-xl font-extrabold ${totalPendencias > 0 ? "text-[#a86a08]" : "text-[#17211f]"}`}>{totalPendencias}</span>
+              <span className="block text-xs text-[#5e6b67]">{totalPendencias === 1 ? "conciliação a regularizar" : "conciliações a regularizar"}</span>
+            </div>
+            <div>
+              <span className="font-mono text-xl font-extrabold text-[#17211f]">{totalRp}</span>
+              <span className="block text-xs text-[#5e6b67]">rotinas e pagamentos em dia</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Período e escopo */}
+        <div className="rounded-xl border border-[#dfe4df] bg-white p-4 sm:p-5">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <h2 className="text-sm font-extrabold text-[#17211f]">Período e escopo</h2>
+            <div className="flex flex-wrap items-center gap-2">
             <button
               type="button"
               id="btn-open-franqueados-modal"
               onClick={() => setIsFranchiseesModalOpen(true)}
-              className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-white border border-[#cbd5e1] hover:border-[#3c63da] hover:text-[#3c63da] px-3 py-1.5 text-xs font-extrabold text-[#152238] transition-all shadow-2xs hover:shadow-xs cursor-pointer"
+              className="inline-flex items-center justify-center gap-1.5 rounded-xl bg-white border border-[#c9d1cb] hover:border-[#0f4c5c] hover:text-[#0f4c5c] px-3 py-1.5 text-xs font-extrabold text-[#17211f] transition-all shadow-2xs hover:shadow-xs cursor-pointer"
             >
-              <Store className="h-3.5 w-3.5 text-[#3c63da]" />
-              <span>{isFranchisee ? "Minha(s) Unidade(s)" : "Ver Franqueados"}</span>
-              <span className="rounded-full bg-[#3c63da] text-white px-1.5 py-0.2 text-[10px] font-bold">
+              <Store className="h-3.5 w-3.5 text-[#0f4c5c]" />
+              <span>{isFranchisee ? "Minhas unidades" : "Ver franqueados"}</span>
+              <span className="rounded-full bg-[#0f4c5c] text-white px-1.5 py-0.2 text-[10px] font-bold">
                 {isFranchisee ? filteredUnits.length : franchises.length}
               </span>
             </button>
@@ -412,33 +461,27 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                 handleBusinessFilterChange("all");
                 handleFranchiseFilterChange("all");
               }}
-              className="inline-flex items-center gap-1 rounded-xl border border-[#cbd5e1] bg-white px-2.5 py-1.5 text-xs font-bold text-[#69778c] hover:text-[#3c63da] hover:border-[#3c63da] transition-all cursor-pointer shadow-2xs"
+              className="inline-flex items-center gap-1 rounded-xl border border-[#c9d1cb] bg-white px-2.5 py-1.5 text-xs font-bold text-[#5e6b67] hover:text-[#0f4c5c] hover:border-[#0f4c5c] transition-all cursor-pointer shadow-2xs"
               title="Redefinir filtros para o padrão"
             >
               <RotateCcw className="h-3.5 w-3.5" />
-              <span>Resetar Filtros</span>
+              <span>Limpar filtros</span>
             </button>
+            </div>
           </div>
-
-          <p className="text-xs text-[#69778c] sm:text-right hidden sm:block">
-            Acompanhamento da operação da rede em um só lugar.
-          </p>
-        </div>
-
-        {/* Filters Controls */}
-        <div className="mt-4 pt-4 border-t border-[#e5eaf1] space-y-4">
+          <div className="mt-4 space-y-4">
           {/* Seletor Temporal Separado: Ano, Mês e Dia */}
           <DateMultiFilter selection={dateSelection} onChange={setDateSelection} />
 
           {/* Filtros Operacionais */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-3 border-t border-[#f1f5f9]">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-3 border-t border-[#f0f3f0]">
             {/* Filter 1: Negócio / Marca */}
             <div>
               <label
                 htmlFor="filter-business"
-                className="flex items-center gap-1.5 text-[11px] font-bold text-[#152238] mb-1.5"
+                className="flex items-center gap-1.5 text-[11px] font-bold text-[#17211f] mb-1.5"
               >
-                <Building2 className="h-3.5 w-3.5 text-[#3c63da]" />
+                <Building2 className="h-3.5 w-3.5 text-[#0f4c5c]" />
                 <span>Rede / Marca</span>
               </label>
               <select
@@ -446,7 +489,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                 disabled={isFranchisee}
                 value={selectedBusiness}
                 onChange={(e) => handleBusinessFilterChange(e.target.value)}
-                className="w-full rounded-xl border border-[#cbd5e1] bg-white px-3.5 py-2.5 text-xs sm:text-sm font-semibold text-[#152238] shadow-2xs hover:border-[#94a3b8] focus:border-[#3c63da] focus:ring-2 focus:ring-[#3c63da]/15 focus:outline-none transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+                className="w-full rounded-md border border-[#c9d1cb] bg-white px-3 py-2 text-[13px] font-semibold text-[#17211f] shadow-2xs hover:border-[#93a09b] focus:border-[#0f4c5c] focus:ring-2 focus:ring-[#0f4c5c]/15 focus:outline-none transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
               >
                 <option value="all">Todas as Redes e Marcas</option>
                 {businesses.map((b) => (
@@ -461,9 +504,9 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
             <div>
               <label
                 htmlFor="filter-franchisee"
-                className="flex items-center gap-1.5 text-[11px] font-bold text-[#152238] mb-1.5"
+                className="flex items-center gap-1.5 text-[11px] font-bold text-[#17211f] mb-1.5"
               >
-                <Store className="h-3.5 w-3.5 text-[#3c63da]" />
+                <Store className="h-3.5 w-3.5 text-[#0f4c5c]" />
                 <span>Unidade / Franqueado</span>
               </label>
               <select
@@ -471,7 +514,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                 disabled={isFranchisee}
                 value={selectedFranchiseFilter}
                 onChange={(e) => handleFranchiseFilterChange(e.target.value)}
-                className="w-full rounded-xl border border-[#cbd5e1] bg-white px-3.5 py-2.5 text-xs sm:text-sm font-semibold text-[#152238] shadow-2xs hover:border-[#94a3b8] focus:border-[#3c63da] focus:ring-2 focus:ring-[#3c63da]/15 focus:outline-none transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+                className="w-full rounded-md border border-[#c9d1cb] bg-white px-3 py-2 text-[13px] font-semibold text-[#17211f] shadow-2xs hover:border-[#93a09b] focus:border-[#0f4c5c] focus:ring-2 focus:ring-[#0f4c5c]/15 focus:outline-none transition-all cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
               >
                 <option value="all">Todas as Unidades ({availableFranchises.length})</option>
                 {availableFranchises.map((f) => (
@@ -482,84 +525,32 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
               </select>
             </div>
           </div>
+          </div>
         </div>
-      </div>
-
-      {/* ------------------------------------------------------------- */}
-      {/* 2. KPI METRICS CARDS                                          */}
-      {/* ------------------------------------------------------------- */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-        <div className="rounded-xl border border-[#e5eaf1] bg-white p-4 shadow-xs">
-          <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#69778c] block">
-            Faturamento Filtrado
-          </span>
-          <strong className="text-xl sm:text-2xl font-extrabold tracking-tight text-[#152238] block mt-1">
-            {formatBrl(totalFat)}
-          </strong>
-          <small className="text-[11px] text-[#69778c] block mt-0.5">
-            {filteredUnits.length} unidade(s) no escopo
-          </small>
-        </div>
-
-        <div className="rounded-xl border border-[#e5eaf1] bg-white p-4 shadow-xs">
-          <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#69778c] block">
-            Lucro Líquido Apurado
-          </span>
-          <strong className="text-xl sm:text-2xl font-extrabold tracking-tight text-[#118464] block mt-1">
-            {formatBrl(totalLucro)}
-          </strong>
-          <small className="text-[11px] text-[#69778c] block mt-0.5">
-            Margem Líquida: {formatPct(margemConsolidada)}
-          </small>
-        </div>
-
-        <div className="rounded-xl border border-[#e5eaf1] bg-white p-4 shadow-xs">
-          <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#69778c] block">
-            Pendências Operacionais
-          </span>
-          <strong className="text-xl sm:text-2xl font-extrabold tracking-tight text-[#a86a08] block mt-1">
-            {String(totalPendencias).padStart(2, "0")}
-          </strong>
-          <small className="text-[11px] text-[#69778c] block mt-0.5">
-            Conciliações a regularizar
-          </small>
-        </div>
-
-        <div className="rounded-xl border border-[#e5eaf1] bg-white p-4 shadow-xs">
-          <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#69778c] block">
-            Rotinas / RP em Dia
-          </span>
-          <strong className="text-xl sm:text-2xl font-extrabold tracking-tight text-[#3c63da] block mt-1">
-            {String(totalRp).padStart(2, "0")}
-          </strong>
-          <small className="text-[11px] text-[#69778c] block mt-0.5">
-            Obrigações e pagamentos
-          </small>
-        </div>
-      </div>
+      </section>
 
       {/* ------------------------------------------------------------- */}
       {/* 3. SEÇÃO DIRETA NA TELA: MAPA DAS UNIDADES                    */}
       {/* ------------------------------------------------------------- */}
-      <div className="rounded-2xl border border-[#e5eaf1] bg-white p-5 shadow-xs space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[#e5eaf1]">
+      <div className="rounded-2xl border border-[#dfe4df] bg-white p-5 shadow-xs space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[#dfe4df]">
           <div>
             <div className="flex items-center gap-2">
-              <MapPin className="h-5 w-5 text-[#3c63da]" />
-              <h2 className="text-base sm:text-lg font-extrabold text-[#152238]">
+              <MapPin className="h-5 w-5 text-[#0f4c5c]" />
+              <h2 className="text-base sm:text-lg font-extrabold text-[#17211f]">
                 Mapa das Unidades & Geolocalização
               </h2>
             </div>
-            <p className="text-xs text-[#69778c] mt-0.5">
+            <p className="text-xs text-[#5e6b67] mt-0.5">
               Visualize cada franquia no mapa, inspecione a saúde operacional e mude a visão com 1 clique.
             </p>
           </div>
 
-          <div className="flex items-center gap-1.5 bg-[#f8faff] p-1 rounded-xl border border-[#e5eaf1] flex-shrink-0">
+          <div className="flex items-center gap-1.5 bg-[#f7f9f7] p-1 rounded-xl border border-[#dfe4df] flex-shrink-0">
             <button
               onClick={() => setMapStatusFilter("all")}
               className={`rounded-lg px-3 py-1 text-xs font-bold transition-all cursor-pointer ${
-                mapStatusFilter === "all" ? "bg-[#3c63da] text-white" : "text-[#69778c] hover:text-[#152238]"
+                mapStatusFilter === "all" ? "bg-[#0f4c5c] text-white" : "text-[#5e6b67] hover:text-[#17211f]"
               }`}
             >
               Todas ({filteredUnits.length})
@@ -567,7 +558,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
             <button
               onClick={() => setMapStatusFilter("green")}
               className={`rounded-lg px-3 py-1 text-xs font-bold transition-all cursor-pointer ${
-                mapStatusFilter === "green" ? "bg-emerald-600 text-white" : "text-[#69778c] hover:text-emerald-700"
+                mapStatusFilter === "green" ? "bg-emerald-600 text-white" : "text-[#5e6b67] hover:text-emerald-700"
               }`}
             >
               Saudáveis ({healthyCount})
@@ -575,7 +566,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
             <button
               onClick={() => setMapStatusFilter("amber")}
               className={`rounded-lg px-3 py-1 text-xs font-bold transition-all cursor-pointer ${
-                mapStatusFilter === "amber" ? "bg-amber-600 text-white" : "text-[#69778c] hover:text-amber-700"
+                mapStatusFilter === "amber" ? "bg-amber-600 text-white" : "text-[#5e6b67] hover:text-amber-700"
               }`}
             >
               Atenção ({warnCount})
@@ -585,17 +576,17 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
 
         {/* Leaflet Map Display */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-          <div className="lg:col-span-2 rounded-xl border border-[#e5eaf1] overflow-hidden min-h-[380px] sm:min-h-[440px] relative z-0 isolate">
+          <div className="lg:col-span-2 rounded-xl border border-[#dfe4df] overflow-hidden min-h-[380px] sm:min-h-[440px] relative z-0 isolate">
             <div ref={mapContainerRef} className="h-full w-full min-h-[380px] sm:min-h-[440px]" />
           </div>
 
           {/* Quick Unit Cards on the side of the Map */}
-          <div className="rounded-xl border border-[#e5eaf1] bg-[#f8faff] p-3 max-h-[440px] overflow-y-auto space-y-2">
-            <div className="flex items-center justify-between pb-2 border-b border-[#e5eaf1]">
-              <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#69778c]">
+          <div className="rounded-xl border border-[#dfe4df] bg-[#f7f9f7] p-3 max-h-[440px] overflow-y-auto space-y-2">
+            <div className="flex items-center justify-between pb-2 border-b border-[#dfe4df]">
+              <span className="text-[10px] font-extrabold text-[#5e6b67]">
                 Unidades no Mapa ({mappedFilteredUnits.length})
               </span>
-              <span className="text-[10px] text-[#3c63da] font-bold">Focar & Mudar Visão</span>
+              <span className="text-[10px] text-[#0f4c5c] font-bold">Focar & Mudar Visão</span>
             </div>
 
             {filteredUnits.map((f) => {
@@ -614,24 +605,24 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                   }}
                   className={`p-3 rounded-xl border transition-all cursor-pointer ${
                     isCurrent
-                      ? "bg-white border-[#3c63da] shadow-xs ring-2 ring-[#3c63da]/20"
-                      : "bg-white border-[#e5eaf1] hover:border-[#3c63da]"
+                      ? "bg-white border-[#0f4c5c] shadow-xs ring-2 ring-[#0f4c5c]/20"
+                      : "bg-white border-[#dfe4df] hover:border-[#0f4c5c]"
                   }`}
                 >
                   <div className="flex items-center justify-between text-xs font-bold">
-                    <span className="text-[#152238] truncate">{f.name}</span>
+                    <span className="text-[#17211f] truncate">{f.name}</span>
                     <span
                       className={`h-2.5 w-2.5 rounded-full flex-shrink-0 ${
                         f.status === "green" ? "bg-emerald-500" : "bg-amber-500"
                       }`}
                     />
                   </div>
-                  <div className="text-[10px] text-[#69778c] truncate mt-0.5">
+                  <div className="text-[10px] text-[#5e6b67] truncate mt-0.5">
                     {f.city} · {f.code} · Resp: {f.resp}
                   </div>
 
-                  <div className="mt-2 pt-2 border-t border-[#f0f4f9] flex items-center justify-between">
-                    <span className="font-mono font-bold text-xs text-[#152238]">
+                  <div className="mt-2 pt-2 border-t border-[#f0f3f0] flex items-center justify-between">
+                    <span className="font-mono font-bold text-xs text-[#17211f]">
                       {formatBrl(unitRev)}
                     </span>
                     <button
@@ -639,7 +630,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                         e.stopPropagation();
                         onSelectTenant(f.id);
                       }}
-                      className="text-[10px] font-extrabold text-[#3c63da] hover:underline cursor-pointer"
+                      className="text-[10px] font-extrabold text-[#0f4c5c] hover:underline cursor-pointer"
                     >
                       {isCurrent ? "✓ Visão Ativa" : "Mudar Visão"}
                     </button>
@@ -654,22 +645,22 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
       {/* ------------------------------------------------------------- */}
       {/* 4. SEÇÃO DIRETA NA TELA: REDE E COMPARATIVO DE UNIDADES        */}
       {/* ------------------------------------------------------------- */}
-      <div className="rounded-2xl border border-[#e5eaf1] bg-white p-5 shadow-xs space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[#e5eaf1]">
+      <div className="rounded-2xl border border-[#dfe4df] bg-white p-5 shadow-xs space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[#dfe4df]">
           <div>
             <div className="flex items-center gap-2">
-              <Building2 className="h-5 w-5 text-[#3c63da]" />
-              <h2 className="text-base sm:text-lg font-extrabold text-[#152238]">
+              <Building2 className="h-5 w-5 text-[#0f4c5c]" />
+              <h2 className="text-base sm:text-lg font-extrabold text-[#17211f]">
                 Rede & Comparativo de Unidades
               </h2>
             </div>
-            <p className="text-xs text-[#69778c] mt-0.5">
+            <p className="text-xs text-[#5e6b67] mt-0.5">
               Ranking de faturamento, margem líquida e barras comparativas da operação.
             </p>
           </div>
 
           <div className="flex items-center gap-2">
-            <span className="rounded-full bg-[#edf2ff] px-3 py-1 text-xs font-bold text-[#3c63da]">
+            <span className="rounded-full bg-[#e3eff1] px-3 py-1 text-xs font-bold text-[#0f4c5c]">
               {healthyCount} Saudáveis · {warnCount} em Atenção
             </span>
           </div>
@@ -678,7 +669,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
         {/* Ranking Bars of Units */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
           <div className="lg:col-span-2 space-y-3">
-            <div className="text-xs font-bold text-[#69778c] mb-2 flex justify-between">
+            <div className="text-xs font-bold text-[#5e6b67] mb-2 flex justify-between">
               <span>Unidade / Responsável</span>
               <span>Faturamento x Lucro Líquido</span>
             </div>
@@ -697,26 +688,26 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                     onClick={() => onSelectTenant(f.id)}
                     className={`p-3 rounded-xl border transition-all cursor-pointer ${
                       isCurrent
-                        ? "bg-[#edf2ff] border-[#3c63da] shadow-xs"
-                        : "bg-[#f8faff] border-[#e5eaf1] hover:border-[#3c63da]"
+                        ? "bg-[#e3eff1] border-[#0f4c5c] shadow-xs"
+                        : "bg-[#f7f9f7] border-[#dfe4df] hover:border-[#0f4c5c]"
                     }`}
                   >
                     <div className="flex items-center justify-between text-xs font-bold mb-1.5">
-                      <span className="text-[#152238] flex items-center gap-2">
+                      <span className="text-[#17211f] flex items-center gap-2">
                         <span
                           className={`h-2 w-2 rounded-full ${
                             f.status === "green" ? "bg-emerald-500" : "bg-amber-500"
                           }`}
                         />
                         <span>{f.name}</span>
-                        <span className="text-[10px] text-[#69778c] font-mono">({f.code})</span>
+                        <span className="text-[10px] text-[#5e6b67] font-mono">({f.code})</span>
                         {isCurrent && (
-                          <span className="text-[9px] font-extrabold bg-[#3c63da] text-white px-1.5 py-0.2 rounded-full">
+                          <span className="text-[9px] font-extrabold bg-[#0f4c5c] text-white px-1.5 py-0.2 rounded-full">
                             Visão Ativa
                           </span>
                         )}
                       </span>
-                      <span className="font-mono text-xs text-[#152238]">
+                      <span className="font-mono text-xs text-[#17211f]">
                         {formatBrl(unitRev)}{" "}
                         <span className="text-[10px] text-emerald-700 font-bold">
                           ({formatPct(calc.margemLiquida)})
@@ -724,16 +715,16 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                       </span>
                     </div>
 
-                    <div className="h-2 w-full rounded-full bg-[#e5eaf1] overflow-hidden flex mb-1">
+                    <div className="h-2 w-full rounded-full bg-[#dfe4df] overflow-hidden flex mb-1">
                       <div
                         style={{ width: `${pctFat}%` }}
-                        className="h-full rounded-full bg-[#3c63da] transition-all"
+                        className="h-full rounded-full bg-[#0f4c5c] transition-all"
                       />
                     </div>
-                    <div className="h-1.5 w-full rounded-full bg-[#e5eaf1] overflow-hidden flex">
+                    <div className="h-1.5 w-full rounded-full bg-[#dfe4df] overflow-hidden flex">
                       <div
                         style={{ width: `${Math.max(0, pctLucro)}%` }}
-                        className="h-full rounded-full bg-[#118464] transition-all"
+                        className="h-full rounded-full bg-[#1a7f5a] transition-all"
                       />
                     </div>
                   </div>
@@ -743,22 +734,22 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
           </div>
 
           {/* Network Health Summary Box */}
-          <div className="rounded-xl border border-[#e5eaf1] bg-[#f8faff] p-4.5 space-y-4">
-            <h4 className="text-xs font-extrabold uppercase tracking-wider text-[#152238]">
+          <div className="rounded-xl border border-[#dfe4df] bg-[#f7f9f7] p-4.5 space-y-4">
+            <h4 className="text-xs font-extrabold text-[#17211f]">
               Saúde da Rede no Período
             </h4>
 
             <div>
               <div className="flex justify-between text-xs font-bold mb-1.5">
-                <span className="text-[#69778c]">Índice Saudável:</span>
+                <span className="text-[#5e6b67]">Índice Saudável:</span>
                 <span className="text-emerald-700 font-extrabold">
                   {Math.round((healthyCount / (filteredUnits.length || 1)) * 100)}%
                 </span>
               </div>
-              <div className="h-2.5 w-full rounded-full bg-[#e5eaf1] overflow-hidden flex">
+              <div className="h-2.5 w-full rounded-full bg-[#dfe4df] overflow-hidden flex">
                 <div
                   style={{ width: `${(healthyCount / (filteredUnits.length || 1)) * 100}%` }}
-                  className="h-full bg-[#118464]"
+                  className="h-full bg-[#1a7f5a]"
                 />
                 <div
                   style={{ width: `${(warnCount / (filteredUnits.length || 1)) * 100}%` }}
@@ -767,17 +758,17 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
               </div>
             </div>
 
-            <div className="space-y-2 pt-2 text-xs divide-y divide-[#e5eaf1]">
+            <div className="space-y-2 pt-2 text-xs divide-y divide-[#dfe4df]">
               <div className="flex justify-between pt-2">
-                <span className="text-[#69778c]">Unidades saudáveis</span>
+                <span className="text-[#5e6b67]">Unidades saudáveis</span>
                 <b className="text-emerald-700">{healthyCount} unidades</b>
               </div>
               <div className="flex justify-between pt-2">
-                <span className="text-[#69778c]">Unidades em atenção</span>
+                <span className="text-[#5e6b67]">Unidades em atenção</span>
                 <b className="text-amber-700">{warnCount} unidades</b>
               </div>
               <div className="flex justify-between pt-2">
-                <span className="text-[#69778c]">Média de pendências</span>
+                <span className="text-[#5e6b67]">Média de pendências</span>
                 <b>
                   {(
                     filteredUnits.reduce((s, f) => s + f.pendencias, 0) /
@@ -789,7 +780,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
 
             <button
               onClick={() => onNavigate("dre")}
-              className="w-full flex items-center justify-center gap-1.5 rounded-xl bg-[#3c63da] py-2 text-xs font-bold text-white hover:bg-[#2f52c0] transition-all shadow-xs cursor-pointer"
+              className="w-full flex items-center justify-center gap-1.5 rounded-xl bg-[#0f4c5c] py-2 text-xs font-bold text-white hover:bg-[#0b3b48] transition-all shadow-xs cursor-pointer"
             >
               <span>Abrir DRE Completo & Metas</span>
               <ArrowRight className="h-3.5 w-3.5" />
@@ -803,23 +794,23 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
       {/* ------------------------------------------------------------- */}
       {isFranchiseesModalOpen && (
         <div className="fixed inset-0 z-[9999] flex items-center justify-center p-3 sm:p-5 bg-black/75 backdrop-blur-xs">
-          <div className="bg-white rounded-2xl shadow-2xl border border-[#e5eaf1] w-full max-w-5xl max-h-[92vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-150">
+          <div className="bg-white rounded-2xl shadow-2xl border border-[#dfe4df] w-full max-w-5xl max-h-[92vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-150">
             {/* Modal Header */}
-            <div className="p-4 sm:p-5 border-b border-[#e5eaf1] flex items-center justify-between bg-[#f8faff]">
+            <div className="p-4 sm:p-5 border-b border-[#dfe4df] flex items-center justify-between bg-[#f7f9f7]">
               <div className="flex items-center gap-3">
-                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#3c63da] text-white shadow-md">
+                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#0f4c5c] text-white shadow-md">
                   <Store className="h-6 w-6" />
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
-                    <h3 className="text-base sm:text-lg font-extrabold text-[#152238]">
+                    <h3 className="text-base sm:text-lg font-extrabold text-[#17211f]">
                       Gestão & Diretório de Franqueados
                     </h3>
-                    <span className="rounded-full bg-[#3c63da] text-white text-[11px] font-extrabold px-2.5 py-0.5">
+                    <span className="rounded-full bg-[#0f4c5c] text-white text-[11px] font-extrabold px-2.5 py-0.5">
                       {modalFilteredFranchises.length} de {franchises.length}
                     </span>
                   </div>
-                  <p className="text-xs text-[#69778c]">
+                  <p className="text-xs text-[#5e6b67]">
                     Indicadores em tempo real, DRE individual e alternância imediata de visão da loja.
                   </p>
                 </div>
@@ -827,7 +818,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
 
               <button
                 onClick={() => setIsFranchiseesModalOpen(false)}
-                className="h-8 w-8 rounded-lg bg-white border border-[#e5eaf1] flex items-center justify-center text-[#69778c] hover:bg-[#f4f7fb] hover:text-[#152238] transition-all cursor-pointer"
+                className="h-8 w-8 rounded-lg bg-white border border-[#dfe4df] flex items-center justify-center text-[#5e6b67] hover:bg-[#f0f3f0] hover:text-[#17211f] transition-all cursor-pointer"
                 title="Fechar modal"
               >
                 <X className="h-4 w-4" />
@@ -835,22 +826,22 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
             </div>
 
             {/* Modal Filters & Tools Bar */}
-            <div className="p-4 border-b border-[#e5eaf1] bg-white space-y-3">
+            <div className="p-4 border-b border-[#dfe4df] bg-white space-y-3">
               {/* Row 1: Search & View Mode */}
               <div className="flex flex-col sm:flex-row sm:items-center gap-3">
                 <div className="relative flex-1">
-                  <Search className="absolute left-3 top-2.5 h-4 w-4 text-[#69778c]" />
+                  <Search className="absolute left-3 top-2.5 h-4 w-4 text-[#5e6b67]" />
                   <input
                     type="text"
                     placeholder="Pesquisar por franqueado, código, cidade, responsável, telefone..."
                     value={modalSearch}
                     onChange={(e) => setModalSearch(e.target.value)}
-                    className="w-full rounded-xl border border-[#e5eaf1] bg-[#f8faff] pl-9 pr-8 py-2 text-xs font-semibold text-[#152238] focus:border-[#3c63da] focus:outline-none"
+                    className="w-full rounded-xl border border-[#dfe4df] bg-[#f7f9f7] pl-9 pr-8 py-2 text-xs font-semibold text-[#17211f] focus:border-[#0f4c5c] focus:outline-none"
                   />
                   {modalSearch && (
                     <button
                       onClick={() => setModalSearch("")}
-                      className="absolute right-2.5 top-2.5 text-[#69778c] hover:text-[#152238]"
+                      className="absolute right-2.5 top-2.5 text-[#5e6b67] hover:text-[#17211f]"
                     >
                       <X className="h-3.5 w-3.5" />
                     </button>
@@ -858,13 +849,13 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                 </div>
 
                 {/* View Mode Switcher */}
-                <div className="flex items-center gap-1 bg-[#f0f4f9] p-1 rounded-xl border border-[#e5eaf1] flex-shrink-0 self-start sm:self-auto">
+                <div className="flex items-center gap-1 bg-[#f0f3f0] p-1 rounded-xl border border-[#dfe4df] flex-shrink-0 self-start sm:self-auto">
                   <button
                     onClick={() => setModalViewMode("cards")}
                     className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                       modalViewMode === "cards"
-                        ? "bg-white text-[#3c63da] shadow-xs"
-                        : "text-[#69778c] hover:text-[#152238]"
+                        ? "bg-white text-[#0f4c5c] shadow-xs"
+                        : "text-[#5e6b67] hover:text-[#17211f]"
                     }`}
                   >
                     <LayoutGrid className="h-3.5 w-3.5" />
@@ -874,8 +865,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                     onClick={() => setModalViewMode("table")}
                     className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                       modalViewMode === "table"
-                        ? "bg-white text-[#3c63da] shadow-xs"
-                        : "text-[#69778c] hover:text-[#152238]"
+                        ? "bg-white text-[#0f4c5c] shadow-xs"
+                        : "text-[#5e6b67] hover:text-[#17211f]"
                     }`}
                   >
                     <TableIcon className="h-3.5 w-3.5" />
@@ -888,13 +879,13 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1 text-xs">
                 {/* Brand filter */}
                 <div>
-                  <label className="block text-[9px] font-extrabold uppercase text-[#69778c] mb-1">
+                  <label className="block text-[9px] font-extrabold text-[#5e6b67] mb-1">
                     Rede / Marca
                   </label>
                   <select
                     value={modalBrandFilter}
                     onChange={(e) => setModalBrandFilter(e.target.value)}
-                    className="w-full rounded-lg border border-[#cbd5e1] bg-white px-2.5 py-1.5 text-xs font-semibold text-[#152238] shadow-2xs focus:border-[#3c63da] focus:outline-none cursor-pointer"
+                    className="w-full rounded-lg border border-[#c9d1cb] bg-white px-2.5 py-1.5 text-xs font-semibold text-[#17211f] shadow-2xs focus:border-[#0f4c5c] focus:outline-none cursor-pointer"
                   >
                     <option value="all">Todas as Redes</option>
                     {businesses.map((b) => (
@@ -907,13 +898,13 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
 
                 {/* Health Status */}
                 <div>
-                  <label className="block text-[9px] font-extrabold uppercase text-[#69778c] mb-1">
+                  <label className="block text-[9px] font-extrabold text-[#5e6b67] mb-1">
                     Saúde Operacional
                   </label>
                   <select
                     value={modalStatusFilter}
                     onChange={(e) => setModalStatusFilter(e.target.value as any)}
-                    className="w-full rounded-lg border border-[#cbd5e1] bg-white px-2.5 py-1.5 text-xs font-semibold text-[#152238] shadow-2xs focus:border-[#3c63da] focus:outline-none cursor-pointer"
+                    className="w-full rounded-lg border border-[#c9d1cb] bg-white px-2.5 py-1.5 text-xs font-semibold text-[#17211f] shadow-2xs focus:border-[#0f4c5c] focus:outline-none cursor-pointer"
                   >
                     <option value="all">Todos os Status</option>
                     <option value="green">🟢 Saudável</option>
@@ -923,13 +914,13 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
 
                 {/* Revenue Range */}
                 <div>
-                  <label className="block text-[9px] font-extrabold uppercase text-[#69778c] mb-1">
+                  <label className="block text-[9px] font-extrabold text-[#5e6b67] mb-1">
                     Faixa de Faturamento
                   </label>
                   <select
                     value={modalRevenueRange}
                     onChange={(e) => setModalRevenueRange(e.target.value as any)}
-                    className="w-full rounded-lg border border-[#cbd5e1] bg-white px-2.5 py-1.5 text-xs font-semibold text-[#152238] shadow-2xs focus:border-[#3c63da] focus:outline-none cursor-pointer"
+                    className="w-full rounded-lg border border-[#c9d1cb] bg-white px-2.5 py-1.5 text-xs font-semibold text-[#17211f] shadow-2xs focus:border-[#0f4c5c] focus:outline-none cursor-pointer"
                   >
                     <option value="all">Qualquer Faturamento</option>
                     <option value="high">Acima de R$ 80k/mês</option>
@@ -940,13 +931,13 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
 
                 {/* Sort Order */}
                 <div>
-                  <label className="block text-[9px] font-extrabold uppercase text-[#69778c] mb-1">
+                  <label className="block text-[9px] font-extrabold text-[#5e6b67] mb-1">
                     Ordenar Por
                   </label>
                   <select
                     value={modalSort}
                     onChange={(e) => setModalSort(e.target.value as any)}
-                    className="w-full rounded-lg border border-[#cbd5e1] bg-white px-2.5 py-1.5 text-xs font-semibold text-[#152238] shadow-2xs focus:border-[#3c63da] focus:outline-none cursor-pointer"
+                    className="w-full rounded-lg border border-[#c9d1cb] bg-white px-2.5 py-1.5 text-xs font-semibold text-[#17211f] shadow-2xs focus:border-[#0f4c5c] focus:outline-none cursor-pointer"
                   >
                     <option value="fat_desc">Maior Faturamento</option>
                     <option value="fat_asc">Menor Faturamento</option>
@@ -961,9 +952,9 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
             {/* Modal Body: Content Area */}
             <div className="p-4 sm:p-5 overflow-y-auto flex-1">
               {modalFilteredFranchises.length === 0 ? (
-                <div className="py-12 text-center text-[#69778c] space-y-2">
+                <div className="py-12 text-center text-[#5e6b67] space-y-2">
                   <Store className="h-10 w-10 mx-auto text-[#a0aec0]" />
-                  <div className="text-sm font-bold text-[#152238]">Nenhuma franquia encontrada</div>
+                  <div className="text-sm font-bold text-[#17211f]">Nenhuma franquia encontrada</div>
                   <p className="text-xs">Tente ajustar os termos de pesquisa ou remover os filtros aplicados.</p>
                   <button
                     onClick={() => {
@@ -972,7 +963,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                       setModalStatusFilter("all");
                       setModalRevenueRange("all");
                     }}
-                    className="mt-2 px-3 py-1.5 rounded-lg bg-[#edf2ff] text-[#3c63da] text-xs font-bold hover:bg-[#3c63da] hover:text-white transition-all cursor-pointer"
+                    className="mt-2 px-3 py-1.5 rounded-lg bg-[#e3eff1] text-[#0f4c5c] text-xs font-bold hover:bg-[#0f4c5c] hover:text-white transition-all cursor-pointer"
                   >
                     Limpar Todos os Filtros
                   </button>
@@ -992,14 +983,14 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                         key={f.id}
                         className={`rounded-2xl border p-4 bg-white transition-all flex flex-col justify-between shadow-xs ${
                           isCurrent
-                            ? "border-[#3c63da] bg-[#f8faff] ring-2 ring-[#3c63da]/25 shadow-md"
-                            : "border-[#e5eaf1] hover:border-[#3c63da] hover:shadow-sm"
+                            ? "border-[#0f4c5c] bg-[#f7f9f7] ring-2 ring-[#0f4c5c]/25 shadow-md"
+                            : "border-[#dfe4df] hover:border-[#0f4c5c] hover:shadow-sm"
                         }`}
                       >
                         <div>
                           {/* Card Top: Brand & Health Status */}
                           <div className="flex items-center justify-between gap-2">
-                            <span className="text-[9px] font-extrabold uppercase bg-[#edf2ff] text-[#3c63da] px-2 py-0.5 rounded-md border border-[#3c63da]/20 truncate">
+                            <span className="text-[9px] font-extrabold bg-[#e3eff1] text-[#0f4c5c] px-2 py-0.5 rounded-md border border-[#0f4c5c]/20 truncate">
                               {biz?.brand || f.businessId}
                             </span>
                             <span
@@ -1019,28 +1010,28 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                           </div>
 
                           {/* Unit Title */}
-                          <h4 className="text-sm font-bold text-[#152238] mt-2.5 truncate" title={f.name}>
+                          <h4 className="text-sm font-bold text-[#17211f] mt-2.5 truncate" title={f.name}>
                             {f.name}
                           </h4>
-                          <p className="text-[11px] text-[#69778c] flex items-center gap-1 mt-0.5">
-                            <MapPin className="h-3 w-3 text-[#3c63da]" />
+                          <p className="text-[11px] text-[#5e6b67] flex items-center gap-1 mt-0.5">
+                            <MapPin className="h-3 w-3 text-[#0f4c5c]" />
                             <span>{f.city}</span>
                             <span>·</span>
-                            <span className="font-mono font-bold text-[#152238]">{f.code}</span>
+                            <span className="font-mono font-bold text-[#17211f]">{f.code}</span>
                           </p>
 
                           {/* Financial Metrics Strip */}
-                          <div className="mt-3 p-2.5 rounded-xl bg-[#f8f9fc] border border-[#e5eaf1] grid grid-cols-2 gap-2 text-xs">
+                          <div className="mt-3 p-2.5 rounded-xl bg-[#f7f9f7] border border-[#dfe4df] grid grid-cols-2 gap-2 text-xs">
                             <div>
-                              <span className="text-[9px] uppercase font-extrabold text-[#69778c] block">
+                              <span className="text-[9px] font-extrabold text-[#5e6b67] block">
                                 Faturamento
                               </span>
-                              <strong className="font-mono text-[13px] text-[#152238]">
+                              <strong className="font-mono text-[13px] text-[#17211f]">
                                 {formatBrl(periodRev)}
                               </strong>
                             </div>
                             <div>
-                              <span className="text-[9px] uppercase font-extrabold text-[#69778c] block">
+                              <span className="text-[9px] font-extrabold text-[#5e6b67] block">
                                 Lucro Líq. (DRE)
                               </span>
                               <strong
@@ -1051,8 +1042,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                                 {formatBrl(unitDre.lucroLiquido)}
                               </strong>
                             </div>
-                            <div className="col-span-2 pt-1.5 border-t border-[#e5eaf1] flex items-center justify-between text-[10px]">
-                              <span className="text-[#69778c]">Margem Líquida:</span>
+                            <div className="col-span-2 pt-1.5 border-t border-[#dfe4df] flex items-center justify-between text-[10px]">
+                              <span className="text-[#5e6b67]">Margem Líquida:</span>
                               <span
                                 className={`font-bold font-mono px-1.5 py-0.2 rounded ${
                                   unitDre.margemLiquida >= 0.15
@@ -1066,22 +1057,22 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                           </div>
 
                           {/* Contact and Responsible */}
-                          <div className="mt-3 pt-2.5 border-t border-[#e5eaf1] space-y-1 text-[11px] text-[#69778c]">
+                          <div className="mt-3 pt-2.5 border-t border-[#dfe4df] space-y-1 text-[11px] text-[#5e6b67]">
                             <div className="truncate">
-                              Responsável: <strong className="text-[#152238]">{f.resp}</strong>
+                              Responsável: <strong className="text-[#17211f]">{f.resp}</strong>
                             </div>
                             {f.phone && (
                               <div className="flex items-center justify-between text-[10px]">
-                                <span className="flex items-center gap-1 truncate text-[#48566a]">
-                                  <Phone className="h-3 w-3 text-[#69778c] flex-shrink-0" />
+                                <span className="flex items-center gap-1 truncate text-[#5e6b67]">
+                                  <Phone className="h-3 w-3 text-[#5e6b67] flex-shrink-0" />
                                   <span>{f.phone}</span>
                                 </span>
                               </div>
                             )}
                             {f.email && (
-                              <div className="flex items-center gap-1 text-[10px] truncate text-[#48566a]">
-                                <Mail className="h-3 w-3 text-[#69778c] flex-shrink-0" />
-                                <a href={`mailto:${f.email}`} className="truncate hover:underline text-[#3c63da]">
+                              <div className="flex items-center gap-1 text-[10px] truncate text-[#5e6b67]">
+                                <Mail className="h-3 w-3 text-[#5e6b67] flex-shrink-0" />
+                                <a href={`mailto:${f.email}`} className="truncate hover:underline text-[#0f4c5c]">
                                   {f.email}
                                 </a>
                               </div>
@@ -1090,7 +1081,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                         </div>
 
                         {/* Card Actions Footer */}
-                        <div className="mt-4 pt-3 border-t border-[#e5eaf1] space-y-2">
+                        <div className="mt-4 pt-3 border-t border-[#dfe4df] space-y-2">
                           <button
                             onClick={() => {
                               onSelectTenant(f.id);
@@ -1099,7 +1090,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                             className={`w-full py-2 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
                               isCurrent
                                 ? "bg-emerald-600 text-white shadow-xs"
-                                : "bg-[#3c63da] text-white hover:bg-[#2f52c0] shadow-xs"
+                                : "bg-[#0f4c5c] text-white hover:bg-[#0b3b48] shadow-xs"
                             }`}
                           >
                             {isCurrent ? (
@@ -1122,9 +1113,9 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                                 setIsFranchiseesModalOpen(false);
                                 onNavigate("dre");
                               }}
-                              className="py-1.5 px-2 rounded-lg border border-[#e5eaf1] bg-[#f8faff] text-[10px] font-bold text-[#152238] hover:bg-[#edf2ff] hover:text-[#3c63da] hover:border-[#3c63da]/30 flex items-center justify-center gap-1 cursor-pointer transition-colors"
+                              className="py-1.5 px-2 rounded-lg border border-[#dfe4df] bg-[#f7f9f7] text-[10px] font-bold text-[#17211f] hover:bg-[#e3eff1] hover:text-[#0f4c5c] hover:border-[#0f4c5c]/30 flex items-center justify-center gap-1 cursor-pointer transition-colors"
                             >
-                              <BarChart3 className="h-3 w-3 text-[#3c63da]" />
+                              <BarChart3 className="h-3 w-3 text-[#0f4c5c]" />
                               <span>Ver DRE</span>
                             </button>
                             <button
@@ -1133,9 +1124,9 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                                 setIsFranchiseesModalOpen(false);
                                 onNavigate("lancamentos");
                               }}
-                              className="py-1.5 px-2 rounded-lg border border-[#e5eaf1] bg-[#f8faff] text-[10px] font-bold text-[#152238] hover:bg-[#edf2ff] hover:text-[#3c63da] hover:border-[#3c63da]/30 flex items-center justify-center gap-1 cursor-pointer transition-colors"
+                              className="py-1.5 px-2 rounded-lg border border-[#dfe4df] bg-[#f7f9f7] text-[10px] font-bold text-[#17211f] hover:bg-[#e3eff1] hover:text-[#0f4c5c] hover:border-[#0f4c5c]/30 flex items-center justify-center gap-1 cursor-pointer transition-colors"
                             >
-                              <Receipt className="h-3 w-3 text-[#3c63da]" />
+                              <Receipt className="h-3 w-3 text-[#0f4c5c]" />
                               <span>Lançamento</span>
                             </button>
                           </div>
@@ -1146,11 +1137,11 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                 </div>
               ) : (
                 /* Table View */
-                <div className="border border-[#e5eaf1] rounded-2xl overflow-hidden shadow-xs">
+                <div className="border border-[#dfe4df] rounded-2xl overflow-hidden shadow-xs">
                   <div className="overflow-x-auto">
                     <table className="w-full text-left text-xs border-collapse">
                       <thead>
-                        <tr className="bg-[#f8f9fc] text-[#69778c] uppercase text-[9px] tracking-wider border-b border-[#e5eaf1]">
+                        <tr className="bg-[#f7f9f7] text-[#5e6b67] text-[9px]  border-b border-[#dfe4df]">
                           <th className="p-3">Unidade / Franquia</th>
                           <th className="p-3">Rede</th>
                           <th className="p-3">Cidade / UF</th>
@@ -1162,7 +1153,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                           <th className="p-3 text-center">Ações</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-[#e5eaf1]">
+                      <tbody className="divide-y divide-[#dfe4df]">
                         {modalFilteredFranchises.map((f) => {
                           const biz = businesses.find((b) => b.id === f.businessId);
                           const isCurrent = currentTenantId === f.id;
@@ -1172,23 +1163,23 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                           return (
                             <tr
                               key={f.id}
-                              className={`hover:bg-[#f8faff] transition-colors ${
-                                isCurrent ? "bg-[#edf2ff]/40 font-semibold" : ""
+                              className={`hover:bg-[#f7f9f7] transition-colors ${
+                                isCurrent ? "bg-[#e3eff1]/40 font-semibold" : ""
                               }`}
                             >
                               <td className="p-3">
-                                <div className="font-bold text-[#152238]">{f.name}</div>
-                                <span className="font-mono text-[10px] text-[#69778c]">{f.code}</span>
+                                <div className="font-bold text-[#17211f]">{f.name}</div>
+                                <span className="font-mono text-[10px] text-[#5e6b67]">{f.code}</span>
                               </td>
                               <td className="p-3">
-                                <span className="px-2 py-0.5 rounded bg-[#edf2ff] text-[#3c63da] text-[10px] font-bold">
+                                <span className="px-2 py-0.5 rounded bg-[#e3eff1] text-[#0f4c5c] text-[10px] font-bold">
                                   {biz?.brand || f.businessId}
                                 </span>
                               </td>
-                              <td className="p-3 text-[#48566a]">{f.city}</td>
+                              <td className="p-3 text-[#5e6b67]">{f.city}</td>
                               <td className="p-3 text-[11px]">
-                                <div className="font-bold text-[#152238]">{f.resp}</div>
-                                <div className="text-[10px] text-[#69778c]">{f.phone || f.email}</div>
+                                <div className="font-bold text-[#17211f]">{f.resp}</div>
+                                <div className="text-[10px] text-[#5e6b67]">{f.phone || f.email}</div>
                               </td>
                               <td className="p-3">
                                 <span
@@ -1201,7 +1192,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                                   {f.status === "green" ? "Saudável" : "Atenção"}
                                 </span>
                               </td>
-                              <td className="p-3 text-right font-mono font-bold text-[#152238]">
+                              <td className="p-3 text-right font-mono font-bold text-[#17211f]">
                                 {formatBrl(periodRev)}
                               </td>
                               <td
@@ -1211,7 +1202,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                               >
                                 {formatBrl(unitDre.lucroLiquido)}
                               </td>
-                              <td className="p-3 text-right font-mono font-bold text-[#48566a]">
+                              <td className="p-3 text-right font-mono font-bold text-[#5e6b67]">
                                 {formatPct(unitDre.margemLiquida)}
                               </td>
                               <td className="p-3 text-center">
@@ -1224,7 +1215,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                                     className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                                       isCurrent
                                         ? "bg-emerald-600 text-white"
-                                        : "bg-[#3c63da] text-white hover:bg-[#2f52c0]"
+                                        : "bg-[#0f4c5c] text-white hover:bg-[#0b3b48]"
                                     }`}
                                   >
                                     {isCurrent ? "✓ Ativo" : "Ver Loja"}
@@ -1235,7 +1226,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                                       setIsFranchiseesModalOpen(false);
                                       onNavigate("dre");
                                     }}
-                                    className="p-1 text-[#69778c] hover:text-[#3c63da] hover:bg-[#edf2ff] rounded cursor-pointer"
+                                    className="p-1 text-[#5e6b67] hover:text-[#0f4c5c] hover:bg-[#e3eff1] rounded cursor-pointer"
                                     title="Abrir DRE"
                                   >
                                     <BarChart3 className="h-4 w-4" />
@@ -1253,15 +1244,15 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
             </div>
 
             {/* Modal Footer */}
-            <div className="p-4 bg-[#f8faff] border-t border-[#e5eaf1] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <div className="text-xs text-[#69778c]">
-                Mostrando <strong className="text-[#152238]">{modalFilteredFranchises.length}</strong> unidades. Todos os dados são sincronizados diretamente.
+            <div className="p-4 bg-[#f7f9f7] border-t border-[#dfe4df] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="text-xs text-[#5e6b67]">
+                Mostrando <strong className="text-[#17211f]">{modalFilteredFranchises.length}</strong> unidades. Todos os dados são sincronizados diretamente.
               </div>
 
               <div className="flex items-center gap-2 self-end sm:self-auto">
                 <button
                   onClick={() => setIsFranchiseesModalOpen(false)}
-                  className="rounded-xl border border-[#e5eaf1] bg-white px-4 py-2 text-xs font-bold text-[#152238] hover:bg-[#f4f7fb] transition-all cursor-pointer"
+                  className="rounded-xl border border-[#dfe4df] bg-white px-4 py-2 text-xs font-bold text-[#17211f] hover:bg-[#f0f3f0] transition-all cursor-pointer"
                 >
                   Fechar
                 </button>

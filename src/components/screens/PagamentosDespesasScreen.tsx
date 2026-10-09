@@ -127,20 +127,20 @@ export const PagamentosDespesasScreen: React.FC<PagamentosDespesasScreenProps> =
   return (
     <div className="space-y-3.5 animate-in fade-in duration-150">
       {/* Top Banner & Module Header */}
-      <div className="rounded-2xl border border-[#e5eaf1] bg-white px-4 py-3 shadow-xs">
+      <div className="rounded-2xl border border-[#dfe4df] bg-white px-4 py-3 shadow-xs">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-2.5">
           <div className="flex flex-wrap items-center gap-3">
             <div className="flex items-center gap-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-[#3c63da]/10 text-[#3c63da]">
+              <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-[#0f4c5c]/10 text-[#0f4c5c]">
                 <CreditCard className="h-4.5 w-4.5" />
               </div>
-              <h2 className="text-lg font-extrabold tracking-tight text-[#152238]">
+              <h2 className="text-lg font-extrabold tracking-tight text-[#17211f]">
                 Pagamentos / Despesas
               </h2>
             </div>
 
             {/* Inline Screen Switcher Buttons */}
-            <div className="flex flex-wrap items-center gap-1 bg-[#f8faff] p-1 rounded-xl border border-[#e5eaf1]">
+            <div className="flex flex-wrap items-center gap-1 bg-[#f7f9f7] p-1 rounded-xl border border-[#dfe4df]">
               {tabs.map((tab) => {
                 const isActive = activeTab === tab.id;
                 return (
@@ -152,8 +152,8 @@ export const PagamentosDespesasScreen: React.FC<PagamentosDespesasScreenProps> =
                     }}
                     className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                       isActive
-                        ? "bg-[#3c63da] text-white shadow-xs"
-                        : "text-[#526078] hover:text-[#152238] hover:bg-white"
+                        ? "bg-[#0f4c5c] text-white shadow-xs"
+                        : "text-[#4a5753] hover:text-[#17211f] hover:bg-white"
                     }`}
                     title={tab.subtitle}
                   >
@@ -166,11 +166,11 @@ export const PagamentosDespesasScreen: React.FC<PagamentosDespesasScreenProps> =
           </div>
 
           <div className="flex items-center gap-2 self-start lg:self-auto">
-            <span className="text-xs text-[#69778c] flex items-center gap-1.5 bg-[#f8faff] border border-[#e5eaf1] px-3 py-1.5 rounded-xl font-medium">
-              <Building2 className="h-3.5 w-3.5 text-[#3c63da]" />
+            <span className="text-xs text-[#5e6b67] flex items-center gap-1.5 bg-[#f7f9f7] border border-[#dfe4df] px-3 py-1.5 rounded-xl font-medium">
+              <Building2 className="h-3.5 w-3.5 text-[#0f4c5c]" />
               <span>
                 Unidade:{" "}
-                <strong className="text-[#152238]">
+                <strong className="text-[#17211f]">
                   {franchises.find((f) => f.id === currentTenantId)?.name
                     ? `${franchises.find((f) => f.id === currentTenantId)?.name} (${franchises.find((f) => f.id === currentTenantId)?.code})`
                     : currentTenantId === "dono" || currentTenantId === "all"

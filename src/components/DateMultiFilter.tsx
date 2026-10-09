@@ -197,13 +197,13 @@ export const DateMultiFilter: React.FC<DateMultiFilterProps> = ({
         <div className="relative">
           <label
             htmlFor="btn-filter-year"
-            className="flex items-center justify-between text-[11px] font-bold text-[#152238] mb-1.5"
+            className="flex items-center justify-between text-[11px] font-bold text-[#17211f] mb-1.5"
           >
             <span className="flex items-center gap-1.5">
-              <Calendar className="h-3.5 w-3.5 text-[#3c63da]" />
+              <Calendar className="h-3.5 w-3.5 text-[#0f4c5c]" />
               <span>Ano</span>
             </span>
-            <span className="text-[10px] text-[#69778c] font-semibold">
+            <span className="text-[10px] text-[#5e6b67] font-semibold">
               {selection.years.length} de {AVAILABLE_YEARS.length}
             </span>
           </label>
@@ -212,38 +212,38 @@ export const DateMultiFilter: React.FC<DateMultiFilterProps> = ({
             type="button"
             id="btn-filter-year"
             onClick={() => setOpenDropdown(openDropdown === "year" ? null : "year")}
-            className="w-full flex items-center justify-between gap-2 rounded-xl border border-[#cbd5e1] bg-white px-3.5 py-2.5 text-xs sm:text-sm font-semibold text-[#152238] shadow-2xs hover:border-[#94a3b8] focus:border-[#3c63da] focus:ring-2 focus:ring-[#3c63da]/15 focus:outline-none transition-all cursor-pointer text-left"
+            className="w-full flex items-center justify-between gap-2 rounded-md border border-[#c9d1cb] bg-white px-3 py-2 text-[13px] font-semibold text-[#17211f] shadow-2xs hover:border-[#93a09b] focus:border-[#0f4c5c] focus:ring-2 focus:ring-[#0f4c5c]/15 focus:outline-none transition-all cursor-pointer text-left"
           >
             <span className="truncate">{getYearLabel()}</span>
             <ChevronDown
-              className={`h-4 w-4 text-[#69778c] flex-shrink-0 transition-transform ${
-                openDropdown === "year" ? "rotate-180 text-[#3c63da]" : ""
+              className={`h-4 w-4 text-[#5e6b67] flex-shrink-0 transition-transform ${
+                openDropdown === "year" ? "rotate-180 text-[#0f4c5c]" : ""
               }`}
             />
           </button>
 
           {/* Popover Ano */}
           {openDropdown === "year" && (
-            <div className="absolute top-full left-0 mt-1.5 w-72 rounded-xl border border-[#cbd5e1] bg-white p-3 shadow-xl z-50 animate-in fade-in zoom-in-95">
-              <div className="flex items-center justify-between pb-2 border-b border-[#e5eaf1] mb-2">
-                <span className="text-xs font-extrabold text-[#152238]">Filtrar por Ano</span>
+            <div className="absolute top-full left-0 mt-1.5 w-72 rounded-xl border border-[#c9d1cb] bg-white p-3 shadow-xl z-50 animate-in fade-in zoom-in-95">
+              <div className="flex items-center justify-between pb-2 border-b border-[#dfe4df] mb-2">
+                <span className="text-xs font-extrabold text-[#17211f]">Filtrar por Ano</span>
                 <div className="flex items-center gap-1">
                   <button
                     type="button"
                     onClick={selectAllYears}
                     className={`px-2 py-0.5 rounded text-[11px] font-bold transition-colors cursor-pointer ${
                       isAllYearsSelected
-                        ? "bg-[#edf2ff] text-[#3c63da]"
-                        : "text-[#69778c] hover:text-[#152238] hover:bg-[#f4f7fb]"
+                        ? "bg-[#e3eff1] text-[#0f4c5c]"
+                        : "text-[#5e6b67] hover:text-[#17211f] hover:bg-[#f0f3f0]"
                     }`}
                   >
                     Selecionar tudo
                   </button>
-                  <span className="text-[#cbd5e1]">|</span>
+                  <span className="text-[#c9d1cb]">|</span>
                   <button
                     type="button"
                     onClick={selectOnlyCurrentYear}
-                    className="px-2 py-0.5 rounded text-[11px] font-bold text-[#69778c] hover:text-[#152238] hover:bg-[#f4f7fb] cursor-pointer"
+                    className="px-2 py-0.5 rounded text-[11px] font-bold text-[#5e6b67] hover:text-[#17211f] hover:bg-[#f0f3f0] cursor-pointer"
                   >
                     2026 (Atual)
                   </button>
@@ -259,16 +259,16 @@ export const DateMultiFilter: React.FC<DateMultiFilterProps> = ({
                       onClick={() => toggleYear(yr)}
                       className={`flex items-center justify-between px-2.5 py-2 rounded-lg text-xs font-semibold cursor-pointer transition-colors ${
                         isChecked
-                          ? "bg-[#edf2ff] text-[#3c63da]"
-                          : "hover:bg-[#f8faff] text-[#152238]"
+                          ? "bg-[#e3eff1] text-[#0f4c5c]"
+                          : "hover:bg-[#f7f9f7] text-[#17211f]"
                       }`}
                     >
                       <div className="flex items-center gap-2">
                         <div
                           className={`flex h-4 w-4 items-center justify-center rounded border transition-colors ${
                             isChecked
-                              ? "border-[#3c63da] bg-[#3c63da] text-white"
-                              : "border-[#cbd5e1] bg-white"
+                              ? "border-[#0f4c5c] bg-[#0f4c5c] text-white"
+                              : "border-[#c9d1cb] bg-white"
                           }`}
                         >
                           {isChecked && <Check className="h-3 w-3 stroke-[3]" />}
@@ -276,7 +276,7 @@ export const DateMultiFilter: React.FC<DateMultiFilterProps> = ({
                         <span>Ano {yr}</span>
                       </div>
                       {yr === 2026 && (
-                        <span className="text-[10px] uppercase font-bold text-[#3c63da] bg-white px-1.5 py-0.5 rounded border border-[#3c63da]/20">
+                        <span className="text-[10px] font-bold text-[#0f4c5c] bg-white px-1.5 py-0.5 rounded border border-[#0f4c5c]/20">
                           Corrente
                         </span>
                       )}
@@ -285,11 +285,11 @@ export const DateMultiFilter: React.FC<DateMultiFilterProps> = ({
                 })}
               </div>
 
-              <div className="mt-3 pt-2 border-t border-[#e5eaf1] flex justify-end">
+              <div className="mt-3 pt-2 border-t border-[#dfe4df] flex justify-end">
                 <button
                   type="button"
                   onClick={() => setOpenDropdown(null)}
-                  className="rounded-lg bg-[#3c63da] px-3 py-1 text-xs font-bold text-white hover:bg-[#2e52be] transition-colors cursor-pointer"
+                  className="rounded-lg bg-[#0f4c5c] px-3 py-1 text-xs font-bold text-white hover:bg-[#0b3b48] transition-colors cursor-pointer"
                 >
                   Concluir
                 </button>
@@ -304,13 +304,13 @@ export const DateMultiFilter: React.FC<DateMultiFilterProps> = ({
         <div className="relative">
           <label
             htmlFor="btn-filter-month"
-            className="flex items-center justify-between text-[11px] font-bold text-[#152238] mb-1.5"
+            className="flex items-center justify-between text-[11px] font-bold text-[#17211f] mb-1.5"
           >
             <span className="flex items-center gap-1.5">
-              <Calendar className="h-3.5 w-3.5 text-[#3c63da]" />
+              <Calendar className="h-3.5 w-3.5 text-[#0f4c5c]" />
               <span>Mês</span>
             </span>
-            <span className="text-[10px] text-[#69778c] font-semibold">
+            <span className="text-[10px] text-[#5e6b67] font-semibold">
               {selection.months.length} de 12
             </span>
           </label>
@@ -319,38 +319,38 @@ export const DateMultiFilter: React.FC<DateMultiFilterProps> = ({
             type="button"
             id="btn-filter-month"
             onClick={() => setOpenDropdown(openDropdown === "month" ? null : "month")}
-            className="w-full flex items-center justify-between gap-2 rounded-xl border border-[#cbd5e1] bg-white px-3.5 py-2.5 text-xs sm:text-sm font-semibold text-[#152238] shadow-2xs hover:border-[#94a3b8] focus:border-[#3c63da] focus:ring-2 focus:ring-[#3c63da]/15 focus:outline-none transition-all cursor-pointer text-left"
+            className="w-full flex items-center justify-between gap-2 rounded-md border border-[#c9d1cb] bg-white px-3 py-2 text-[13px] font-semibold text-[#17211f] shadow-2xs hover:border-[#93a09b] focus:border-[#0f4c5c] focus:ring-2 focus:ring-[#0f4c5c]/15 focus:outline-none transition-all cursor-pointer text-left"
           >
             <span className="truncate">{getMonthLabel()}</span>
             <ChevronDown
-              className={`h-4 w-4 text-[#69778c] flex-shrink-0 transition-transform ${
-                openDropdown === "month" ? "rotate-180 text-[#3c63da]" : ""
+              className={`h-4 w-4 text-[#5e6b67] flex-shrink-0 transition-transform ${
+                openDropdown === "month" ? "rotate-180 text-[#0f4c5c]" : ""
               }`}
             />
           </button>
 
           {/* Popover Mês */}
           {openDropdown === "month" && (
-            <div className="absolute top-full left-0 sm:-left-12 mt-1.5 w-80 rounded-xl border border-[#cbd5e1] bg-white p-3 shadow-xl z-50 animate-in fade-in zoom-in-95">
-              <div className="flex items-center justify-between pb-2 border-b border-[#e5eaf1] mb-2">
-                <span className="text-xs font-extrabold text-[#152238]">Filtrar por Mês</span>
+            <div className="absolute top-full left-0 sm:-left-12 mt-1.5 w-80 rounded-xl border border-[#c9d1cb] bg-white p-3 shadow-xl z-50 animate-in fade-in zoom-in-95">
+              <div className="flex items-center justify-between pb-2 border-b border-[#dfe4df] mb-2">
+                <span className="text-xs font-extrabold text-[#17211f]">Filtrar por Mês</span>
                 <div className="flex items-center gap-1">
                   <button
                     type="button"
                     onClick={selectAllMonths}
                     className={`px-2 py-0.5 rounded text-[11px] font-bold transition-colors cursor-pointer ${
                       isAllMonthsSelected
-                        ? "bg-[#edf2ff] text-[#3c63da]"
-                        : "text-[#69778c] hover:text-[#152238] hover:bg-[#f4f7fb]"
+                        ? "bg-[#e3eff1] text-[#0f4c5c]"
+                        : "text-[#5e6b67] hover:text-[#17211f] hover:bg-[#f0f3f0]"
                     }`}
                   >
                     Selecionar tudo
                   </button>
-                  <span className="text-[#cbd5e1]">|</span>
+                  <span className="text-[#c9d1cb]">|</span>
                   <button
                     type="button"
                     onClick={selectCurrentMonth}
-                    className="px-2 py-0.5 rounded text-[11px] font-bold text-[#69778c] hover:text-[#152238] hover:bg-[#f4f7fb] cursor-pointer"
+                    className="px-2 py-0.5 rounded text-[11px] font-bold text-[#5e6b67] hover:text-[#17211f] hover:bg-[#f0f3f0] cursor-pointer"
                   >
                     Setembro (Atual)
                   </button>
@@ -358,13 +358,13 @@ export const DateMultiFilter: React.FC<DateMultiFilterProps> = ({
               </div>
 
               {/* Atalhos rápidos por Trimestre */}
-              <div className="grid grid-cols-4 gap-1 mb-2 pb-2 border-b border-[#f1f5f9]">
+              <div className="grid grid-cols-4 gap-1 mb-2 pb-2 border-b border-[#f0f3f0]">
                 {[1, 2, 3, 4].map((q) => (
                   <button
                     key={q}
                     type="button"
                     onClick={() => selectQuarter(q)}
-                    className="px-1.5 py-1 text-[10px] font-bold text-[#69778c] hover:text-[#3c63da] hover:bg-[#edf2ff] rounded border border-[#e2e8f0] transition-colors text-center cursor-pointer"
+                    className="px-1.5 py-1 text-[10px] font-bold text-[#5e6b67] hover:text-[#0f4c5c] hover:bg-[#e3eff1] rounded border border-[#dfe4df] transition-colors text-center cursor-pointer"
                   >
                     {q}º Trimestre
                   </button>
@@ -381,23 +381,23 @@ export const DateMultiFilter: React.FC<DateMultiFilterProps> = ({
                       onClick={() => toggleMonth(m.value)}
                       className={`flex items-center justify-between px-2 py-1.5 rounded-lg text-xs font-semibold cursor-pointer transition-colors ${
                         isChecked
-                          ? "bg-[#edf2ff] text-[#3c63da]"
-                          : "hover:bg-[#f8faff] text-[#152238]"
+                          ? "bg-[#e3eff1] text-[#0f4c5c]"
+                          : "hover:bg-[#f7f9f7] text-[#17211f]"
                       }`}
                     >
                       <div className="flex items-center gap-1.5 min-w-0">
                         <div
                           className={`flex h-3.5 w-3.5 items-center justify-center rounded border flex-shrink-0 transition-colors ${
                             isChecked
-                              ? "border-[#3c63da] bg-[#3c63da] text-white"
-                              : "border-[#cbd5e1] bg-white"
+                              ? "border-[#0f4c5c] bg-[#0f4c5c] text-white"
+                              : "border-[#c9d1cb] bg-white"
                           }`}
                         >
                           {isChecked && <Check className="h-2.5 w-2.5 stroke-[3]" />}
                         </div>
                         <span className="truncate">{m.label}</span>
                       </div>
-                      <span className="text-[10px] text-[#69778c] font-mono">
+                      <span className="text-[10px] text-[#5e6b67] font-mono">
                         {m.value.toString().padStart(2, "0")}
                       </span>
                     </label>
@@ -405,14 +405,14 @@ export const DateMultiFilter: React.FC<DateMultiFilterProps> = ({
                 })}
               </div>
 
-              <div className="mt-3 pt-2 border-t border-[#e5eaf1] flex items-center justify-between">
-                <span className="text-[11px] text-[#69778c] font-semibold">
+              <div className="mt-3 pt-2 border-t border-[#dfe4df] flex items-center justify-between">
+                <span className="text-[11px] text-[#5e6b67] font-semibold">
                   {selection.months.length} selecionado(s)
                 </span>
                 <button
                   type="button"
                   onClick={() => setOpenDropdown(null)}
-                  className="rounded-lg bg-[#3c63da] px-3 py-1 text-xs font-bold text-white hover:bg-[#2e52be] transition-colors cursor-pointer"
+                  className="rounded-lg bg-[#0f4c5c] px-3 py-1 text-xs font-bold text-white hover:bg-[#0b3b48] transition-colors cursor-pointer"
                 >
                   Concluir
                 </button>
@@ -427,13 +427,13 @@ export const DateMultiFilter: React.FC<DateMultiFilterProps> = ({
         <div className="relative">
           <label
             htmlFor="btn-filter-day"
-            className="flex items-center justify-between text-[11px] font-bold text-[#152238] mb-1.5"
+            className="flex items-center justify-between text-[11px] font-bold text-[#17211f] mb-1.5"
           >
             <span className="flex items-center gap-1.5">
-              <Calendar className="h-3.5 w-3.5 text-[#3c63da]" />
+              <Calendar className="h-3.5 w-3.5 text-[#0f4c5c]" />
               <span>Dia</span>
             </span>
-            <span className="text-[10px] text-[#69778c] font-semibold">
+            <span className="text-[10px] text-[#5e6b67] font-semibold">
               {selection.days.length} de 31
             </span>
           </label>
@@ -442,28 +442,28 @@ export const DateMultiFilter: React.FC<DateMultiFilterProps> = ({
             type="button"
             id="btn-filter-day"
             onClick={() => setOpenDropdown(openDropdown === "day" ? null : "day")}
-            className="w-full flex items-center justify-between gap-2 rounded-xl border border-[#cbd5e1] bg-white px-3.5 py-2.5 text-xs sm:text-sm font-semibold text-[#152238] shadow-2xs hover:border-[#94a3b8] focus:border-[#3c63da] focus:ring-2 focus:ring-[#3c63da]/15 focus:outline-none transition-all cursor-pointer text-left"
+            className="w-full flex items-center justify-between gap-2 rounded-md border border-[#c9d1cb] bg-white px-3 py-2 text-[13px] font-semibold text-[#17211f] shadow-2xs hover:border-[#93a09b] focus:border-[#0f4c5c] focus:ring-2 focus:ring-[#0f4c5c]/15 focus:outline-none transition-all cursor-pointer text-left"
           >
             <span className="truncate">{getDayLabel()}</span>
             <ChevronDown
-              className={`h-4 w-4 text-[#69778c] flex-shrink-0 transition-transform ${
-                openDropdown === "day" ? "rotate-180 text-[#3c63da]" : ""
+              className={`h-4 w-4 text-[#5e6b67] flex-shrink-0 transition-transform ${
+                openDropdown === "day" ? "rotate-180 text-[#0f4c5c]" : ""
               }`}
             />
           </button>
 
           {/* Popover Dia */}
           {openDropdown === "day" && (
-            <div className="absolute top-full right-0 sm:left-auto mt-1.5 w-84 rounded-xl border border-[#cbd5e1] bg-white p-3 shadow-xl z-50 animate-in fade-in zoom-in-95">
-              <div className="flex items-center justify-between pb-2 border-b border-[#e5eaf1] mb-2">
-                <span className="text-xs font-extrabold text-[#152238]">Filtrar por Dia</span>
+            <div className="absolute top-full right-0 sm:left-auto mt-1.5 w-84 rounded-xl border border-[#c9d1cb] bg-white p-3 shadow-xl z-50 animate-in fade-in zoom-in-95">
+              <div className="flex items-center justify-between pb-2 border-b border-[#dfe4df] mb-2">
+                <span className="text-xs font-extrabold text-[#17211f]">Filtrar por Dia</span>
                 <button
                   type="button"
                   onClick={selectAllDays}
                   className={`px-2 py-0.5 rounded text-[11px] font-bold transition-colors cursor-pointer ${
                     isAllDaysSelected
-                      ? "bg-[#edf2ff] text-[#3c63da]"
-                      : "text-[#69778c] hover:text-[#152238] hover:bg-[#f4f7fb]"
+                      ? "bg-[#e3eff1] text-[#0f4c5c]"
+                      : "text-[#5e6b67] hover:text-[#17211f] hover:bg-[#f0f3f0]"
                   }`}
                 >
                   Selecionar tudo (31)
@@ -471,25 +471,25 @@ export const DateMultiFilter: React.FC<DateMultiFilterProps> = ({
               </div>
 
               {/* Atalhos Rápidos de Dias */}
-              <div className="grid grid-cols-3 gap-1 mb-2 pb-2 border-b border-[#f1f5f9]">
+              <div className="grid grid-cols-3 gap-1 mb-2 pb-2 border-b border-[#f0f3f0]">
                 <button
                   type="button"
                   onClick={() => selectQuinzena(1)}
-                  className="px-2 py-1 text-[10px] font-bold text-[#69778c] hover:text-[#3c63da] hover:bg-[#edf2ff] rounded border border-[#e2e8f0] transition-colors text-center cursor-pointer"
+                  className="px-2 py-1 text-[10px] font-bold text-[#5e6b67] hover:text-[#0f4c5c] hover:bg-[#e3eff1] rounded border border-[#dfe4df] transition-colors text-center cursor-pointer"
                 >
                   1ª Quinzena (1-15)
                 </button>
                 <button
                   type="button"
                   onClick={() => selectQuinzena(2)}
-                  className="px-2 py-1 text-[10px] font-bold text-[#69778c] hover:text-[#3c63da] hover:bg-[#edf2ff] rounded border border-[#e2e8f0] transition-colors text-center cursor-pointer"
+                  className="px-2 py-1 text-[10px] font-bold text-[#5e6b67] hover:text-[#0f4c5c] hover:bg-[#e3eff1] rounded border border-[#dfe4df] transition-colors text-center cursor-pointer"
                 >
                   2ª Quinzena (16-31)
                 </button>
                 <button
                   type="button"
                   onClick={selectWeekdaysOnly}
-                  className="px-2 py-1 text-[10px] font-bold text-[#69778c] hover:text-[#3c63da] hover:bg-[#edf2ff] rounded border border-[#e2e8f0] transition-colors text-center cursor-pointer"
+                  className="px-2 py-1 text-[10px] font-bold text-[#5e6b67] hover:text-[#0f4c5c] hover:bg-[#e3eff1] rounded border border-[#dfe4df] transition-colors text-center cursor-pointer"
                 >
                   Dias Úteis (1-22)
                 </button>
@@ -507,8 +507,8 @@ export const DateMultiFilter: React.FC<DateMultiFilterProps> = ({
                       title={`Dia ${d}`}
                       className={`h-8 rounded-lg text-xs font-bold transition-all flex items-center justify-center cursor-pointer ${
                         isChecked
-                          ? "bg-[#3c63da] text-white shadow-2xs font-extrabold"
-                          : "bg-[#f8faff] text-[#69778c] hover:bg-[#edf2ff] hover:text-[#152238] border border-[#e5eaf1]"
+                          ? "bg-[#0f4c5c] text-white shadow-2xs font-extrabold"
+                          : "bg-[#f7f9f7] text-[#5e6b67] hover:bg-[#e3eff1] hover:text-[#17211f] border border-[#dfe4df]"
                       }`}
                     >
                       {d}
@@ -517,14 +517,14 @@ export const DateMultiFilter: React.FC<DateMultiFilterProps> = ({
                 })}
               </div>
 
-              <div className="mt-3 pt-2 border-t border-[#e5eaf1] flex items-center justify-between">
-                <span className="text-[11px] text-[#69778c] font-semibold">
+              <div className="mt-3 pt-2 border-t border-[#dfe4df] flex items-center justify-between">
+                <span className="text-[11px] text-[#5e6b67] font-semibold">
                   {selection.days.length} dia(s) selecionado(s)
                 </span>
                 <button
                   type="button"
                   onClick={() => setOpenDropdown(null)}
-                  className="rounded-lg bg-[#3c63da] px-3 py-1 text-xs font-bold text-white hover:bg-[#2e52be] transition-colors cursor-pointer"
+                  className="rounded-lg bg-[#0f4c5c] px-3 py-1 text-xs font-bold text-white hover:bg-[#0b3b48] transition-colors cursor-pointer"
                 >
                   Concluir
                 </button>

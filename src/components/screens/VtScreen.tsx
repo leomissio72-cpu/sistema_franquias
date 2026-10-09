@@ -758,11 +758,11 @@ export const VtScreen: React.FC<VtScreenProps> = ({
       {/* Top Header & Page Title */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
         <div>
-          <h3 className="text-base font-extrabold text-[#152238] flex items-center gap-2">
-            <FileSpreadsheet className="h-4.5 w-4.5 text-[#3c63da]" />
+          <h3 className="text-base font-extrabold text-[#17211f] flex items-center gap-2">
+            <FileSpreadsheet className="h-4.5 w-4.5 text-[#0f4c5c]" />
             Vale Transporte & Mobilidade (CLT)
           </h3>
-          <p className="text-xs text-[#69778c]">
+          <p className="text-xs text-[#5e6b67]">
             Gestão de recargas, cálculo do desconto de 6% CLT e comprovantes de entrega de benefício.
           </p>
         </div>
@@ -782,16 +782,16 @@ export const VtScreen: React.FC<VtScreenProps> = ({
 
           <button
             onClick={handleDownloadCsvRecarga}
-            className="flex items-center gap-1.5 rounded-xl border border-[#e5eaf1] bg-white px-3 py-2 text-xs font-bold text-[#152238] hover:bg-[#f4f7fb] transition-all shadow-xs cursor-pointer"
+            className="flex items-center gap-1.5 rounded-xl border border-[#dfe4df] bg-white px-3 py-2 text-xs font-bold text-[#17211f] hover:bg-[#f0f3f0] transition-all shadow-xs cursor-pointer"
             title="Exportar arquivo para recarga na concessionária"
           >
-            <Download className="h-3.5 w-3.5 text-[#3c63da]" />
+            <Download className="h-3.5 w-3.5 text-[#0f4c5c]" />
             <span>Pedido Recarga (CSV)</span>
           </button>
 
           <button
             onClick={handleDownloadCsvFolha}
-            className="flex items-center gap-1.5 rounded-xl border border-[#e5eaf1] bg-white px-3 py-2 text-xs font-bold text-[#152238] hover:bg-[#f4f7fb] transition-all shadow-xs cursor-pointer"
+            className="flex items-center gap-1.5 rounded-xl border border-[#dfe4df] bg-white px-3 py-2 text-xs font-bold text-[#17211f] hover:bg-[#f0f3f0] transition-all shadow-xs cursor-pointer"
             title="Exportar resumo de descontos CLT para a folha contábil"
           >
             <FileSpreadsheet className="h-3.5 w-3.5 text-emerald-600" />
@@ -800,7 +800,7 @@ export const VtScreen: React.FC<VtScreenProps> = ({
 
           <button
             onClick={() => handleSave()}
-            className="flex items-center gap-1.5 rounded-xl bg-[#3c63da] px-4 py-2 text-xs font-bold text-white hover:bg-[#2f52c0] shadow-sm cursor-pointer transition-all"
+            className="flex items-center gap-1.5 rounded-xl bg-[#0f4c5c] px-4 py-2 text-xs font-bold text-white hover:bg-[#0b3b48] shadow-sm cursor-pointer transition-all"
           >
             {isSaved ? <CheckCircle2 className="h-4 w-4 text-emerald-300" /> : <Save className="h-4 w-4" />}
             <span>{isSaved ? "Salvo!" : "Salvar"}</span>
@@ -809,24 +809,24 @@ export const VtScreen: React.FC<VtScreenProps> = ({
       </div>
 
       {/* Automatic Business Days Banner */}
-      <div className="p-4 rounded-2xl bg-gradient-to-r from-[#edf2ff] via-white to-[#f4f7ff] border border-[#d2defa] shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-3">
+      <div className="p-4 rounded-2xl bg-gradient-to-r from-[#e3eff1] via-white to-[#f4f7ff] border border-[#d2defa] shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-3">
         <div className="flex items-center gap-3">
-          <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#3c63da] text-white shadow-xs shrink-0">
+          <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#0f4c5c] text-white shadow-xs shrink-0">
             <CalendarDays className="h-6 w-6" />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <span className="text-[10px] font-extrabold uppercase tracking-wider bg-[#3c63da]/10 text-[#3c63da] px-2 py-0.5 rounded-md">
+              <span className="text-[10px] font-extrabold bg-[#0f4c5c]/10 text-[#0f4c5c] px-2 py-0.5 rounded-md">
                 Cálculo Automático de Calendário
               </span>
-              <span className="text-xs text-[#69778c]">
+              <span className="text-xs text-[#5e6b67]">
                 {businessDaysInfo.monthName} / {businessDaysInfo.year}
               </span>
             </div>
-            <h4 className="text-sm font-bold text-[#152238] mt-0.5">
-              O mês atual tem <span className="text-[#3c63da] font-extrabold">{businessDaysInfo.businessDays} dias úteis</span> calculados de 2ª a 6ª feira.
+            <h4 className="text-sm font-bold text-[#17211f] mt-0.5">
+              O mês atual tem <span className="text-[#0f4c5c] font-extrabold">{businessDaysInfo.businessDays} dias úteis</span> calculados de 2ª a 6ª feira.
             </h4>
-            <p className="text-[11px] text-[#69778c]">
+            <p className="text-[11px] text-[#5e6b67]">
               Total de dias no mês: {businessDaysInfo.totalDays} dias. Utilize o botão ao lado para aplicar este valor a todos os cadastros.
             </p>
           </div>
@@ -835,16 +835,16 @@ export const VtScreen: React.FC<VtScreenProps> = ({
         <div className="flex items-center gap-2 self-end md:self-auto shrink-0">
           <button
             onClick={handleApplyAutoBusinessDays}
-            className="flex items-center gap-1.5 rounded-xl bg-white border border-[#3c63da] text-[#3c63da] hover:bg-[#3c63da] hover:text-white px-3.5 py-2 text-xs font-bold transition-all shadow-xs cursor-pointer"
+            className="flex items-center gap-1.5 rounded-xl bg-white border border-[#0f4c5c] text-[#0f4c5c] hover:bg-[#0f4c5c] hover:text-white px-3.5 py-2 text-xs font-bold transition-all shadow-xs cursor-pointer"
           >
             <Check className="h-4 w-4" />
             <span>Aplicar {businessDaysInfo.businessDays} Dias a Todos</span>
           </button>
           <button
             onClick={() => setIsBatchDaysModalOpen(true)}
-            className="flex items-center gap-1.5 rounded-xl border border-[#e5eaf1] bg-white px-3 py-2 text-xs font-bold text-[#152238] hover:bg-[#f8faff] cursor-pointer"
+            className="flex items-center gap-1.5 rounded-xl border border-[#dfe4df] bg-white px-3 py-2 text-xs font-bold text-[#17211f] hover:bg-[#f7f9f7] cursor-pointer"
           >
-            <Sliders className="h-3.5 w-3.5 text-[#69778c]" />
+            <Sliders className="h-3.5 w-3.5 text-[#5e6b67]" />
             <span>Personalizar</span>
           </button>
         </div>
@@ -852,20 +852,20 @@ export const VtScreen: React.FC<VtScreenProps> = ({
 
       {/* KPI Financial Overview Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4">
-        <div className="rounded-2xl border border-[#e5eaf1] bg-white p-4 shadow-xs">
-          <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#69778c] block">
+        <div className="rounded-2xl border border-[#dfe4df] bg-white p-4 shadow-xs">
+          <span className="text-[10px] font-extrabold text-[#5e6b67] block">
             Total Previsto VT Mês
           </span>
-          <strong className="text-xl sm:text-2xl font-extrabold text-[#152238] block mt-1 font-mono">
+          <strong className="text-xl sm:text-2xl font-extrabold text-[#17211f] block mt-1 font-mono">
             {formatBrl(totals.totalConcedido)}
           </strong>
-          <small className="text-[11px] text-[#69778c] block mt-0.5">
+          <small className="text-[11px] text-[#5e6b67] block mt-0.5">
             {employees.length} colaboradores ativos
           </small>
         </div>
 
         <div className="rounded-2xl border border-emerald-200 bg-emerald-50/50 p-4 shadow-xs">
-          <span className="text-[10px] font-extrabold uppercase tracking-wider text-emerald-800 block flex items-center gap-1">
+          <span className="text-[10px] font-extrabold text-emerald-800 block flex items-center gap-1">
             <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
             <span>Já Pago no Mês</span>
           </span>
@@ -880,7 +880,7 @@ export const VtScreen: React.FC<VtScreenProps> = ({
         </div>
 
         <div className="rounded-2xl border border-amber-200 bg-amber-50/50 p-4 shadow-xs">
-          <span className="text-[10px] font-extrabold uppercase tracking-wider text-amber-800 block flex items-center gap-1">
+          <span className="text-[10px] font-extrabold text-amber-800 block flex items-center gap-1">
             <AlertCircle className="h-3.5 w-3.5 text-amber-600" />
             <span>Saldo a Pagar</span>
           </span>
@@ -892,49 +892,49 @@ export const VtScreen: React.FC<VtScreenProps> = ({
           </small>
         </div>
 
-        <div className="rounded-2xl border border-[#e5eaf1] bg-white p-4 shadow-xs">
-          <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#3c63da] block">
+        <div className="rounded-2xl border border-[#dfe4df] bg-white p-4 shadow-xs">
+          <span className="text-[10px] font-extrabold text-[#0f4c5c] block">
             Custo Franqueadora
           </span>
-          <strong className="text-xl sm:text-2xl font-extrabold text-[#3c63da] block mt-1 font-mono">
+          <strong className="text-xl sm:text-2xl font-extrabold text-[#0f4c5c] block mt-1 font-mono">
             {formatBrl(totals.totalSubsidioEmpresa)}
           </strong>
-          <small className="text-[11px] text-[#69778c] block mt-0.5">
+          <small className="text-[11px] text-[#5e6b67] block mt-0.5">
             Subsídio absorvido na loja
           </small>
         </div>
 
-        <div className="rounded-2xl border border-[#e5eaf1] bg-white p-4 shadow-xs col-span-2 lg:col-span-1">
-          <span className="text-[10px] font-extrabold uppercase tracking-wider text-purple-700 block">
+        <div className="rounded-2xl border border-[#dfe4df] bg-white p-4 shadow-xs col-span-2 lg:col-span-1">
+          <span className="text-[10px] font-extrabold text-purple-700 block">
             Desconto CLT (6%)
           </span>
           <strong className="text-xl sm:text-2xl font-extrabold text-purple-700 block mt-1 font-mono">
             {formatBrl(totals.totalDescontoClt)}
           </strong>
-          <small className="text-[11px] text-[#69778c] block mt-0.5">
+          <small className="text-[11px] text-[#5e6b67] block mt-0.5">
             Desconto legal em folha
           </small>
         </div>
       </div>
 
       {/* Options & Search Filters Bar */}
-      <div className="p-4 rounded-2xl bg-white border border-[#e5eaf1] shadow-xs space-y-3">
+      <div className="p-4 rounded-2xl bg-white border border-[#dfe4df] shadow-xs space-y-3">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           {/* Search Input */}
           <div className="flex flex-1 items-center gap-2">
             <div className="relative flex-1 max-w-md">
-              <Search className="absolute left-3 top-2.5 h-4 w-4 text-[#69778c]" />
+              <Search className="absolute left-3 top-2.5 h-4 w-4 text-[#5e6b67]" />
               <input
                 type="text"
                 placeholder="Buscar por colaborador, matrícula, cartão ou operadora..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full rounded-xl border border-[#e5eaf1] bg-[#f8faff] pl-9 pr-3 py-2 text-xs font-semibold text-[#152238] focus:border-[#3c63da] focus:outline-none"
+                className="w-full rounded-xl border border-[#dfe4df] bg-[#f7f9f7] pl-9 pr-3 py-2 text-xs font-semibold text-[#17211f] focus:border-[#0f4c5c] focus:outline-none"
               />
               {searchTerm && (
                 <button
                   onClick={() => setSearchTerm("")}
-                  className="absolute right-2.5 top-2.5 text-[#69778c] hover:text-[#152238]"
+                  className="absolute right-2.5 top-2.5 text-[#5e6b67] hover:text-[#17211f]"
                 >
                   <X className="h-3.5 w-3.5" />
                 </button>
@@ -944,7 +944,7 @@ export const VtScreen: React.FC<VtScreenProps> = ({
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="rounded-xl border border-[#e5eaf1] bg-[#f8faff] px-3 py-2 text-xs font-bold text-[#152238] focus:border-[#3c63da] focus:outline-none"
+              className="rounded-xl border border-[#dfe4df] bg-[#f7f9f7] px-3 py-2 text-xs font-bold text-[#17211f] focus:border-[#0f4c5c] focus:outline-none"
             >
               <option value="all">Todos os Status de Pagamento</option>
               <option value="quitado">🟢 Totalmente Quitado</option>
@@ -953,8 +953,8 @@ export const VtScreen: React.FC<VtScreenProps> = ({
             </select>
           </div>
 
-          <div className="flex items-center gap-2 text-xs text-[#69778c]">
-            <span className="font-bold text-[#152238]">{totals.qtdQuitados}</span> quitados
+          <div className="flex items-center gap-2 text-xs text-[#5e6b67]">
+            <span className="font-bold text-[#17211f]">{totals.qtdQuitados}</span> quitados
             <span>•</span>
             <span className="font-bold text-amber-700">{totals.qtdParciais}</span> parciais
             <span>•</span>
@@ -963,16 +963,16 @@ export const VtScreen: React.FC<VtScreenProps> = ({
         </div>
 
         {/* Legal CLT Rules strip */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-2 border-t border-[#e5eaf1] text-[11px] text-[#69778c]">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-2 border-t border-[#dfe4df] text-[11px] text-[#5e6b67]">
           <div className="flex items-center gap-1.5">
-            <HelpCircle className="h-3.5 w-3.5 text-[#3c63da]" />
+            <HelpCircle className="h-3.5 w-3.5 text-[#0f4c5c]" />
             <span>
               <strong>Regra Legislação CLT (Lei 7.418/85):</strong> O desconto do VT limita-se a até <strong>6% do salário base</strong>. O excedente é subsidado pela empresa.
             </span>
           </div>
           <div className="flex items-center gap-2 self-end sm:self-auto">
             <span>Periodicidade Padrão:</span>
-            <span className="font-bold text-[#152238] bg-[#f8faff] px-2 py-0.5 rounded-md border border-[#e5eaf1]">
+            <span className="font-bold text-[#17211f] bg-[#f7f9f7] px-2 py-0.5 rounded-md border border-[#dfe4df]">
               Mensal com Recibo Fracionado
             </span>
           </div>
@@ -980,17 +980,17 @@ export const VtScreen: React.FC<VtScreenProps> = ({
       </div>
 
       {/* Main Table: Employees & VT Status */}
-      <div className="rounded-2xl border border-[#e5eaf1] bg-white shadow-xs overflow-hidden">
-        <div className="p-4 border-b border-[#e5eaf1] flex items-center justify-between bg-[#f8faff]">
+      <div className="rounded-2xl border border-[#dfe4df] bg-white shadow-xs overflow-hidden">
+        <div className="p-4 border-b border-[#dfe4df] flex items-center justify-between bg-[#f7f9f7]">
           <div className="flex items-center gap-2">
-            <h3 className="text-sm font-bold text-[#152238]">
+            <h3 className="text-sm font-bold text-[#17211f]">
               Colaboradores & Controle de Pagamentos de VT ({filteredEmployees.length})
             </h3>
-            <span className="text-[10px] bg-[#edf2ff] text-[#3c63da] font-extrabold px-2 py-0.5 rounded-full">
+            <span className="text-[10px] bg-[#e3eff1] text-[#0f4c5c] font-extrabold px-2 py-0.5 rounded-full">
               {currentTenantId}
             </span>
           </div>
-          <div className="text-xs text-[#69778c]">
+          <div className="text-xs text-[#5e6b67]">
             Clique no botão <strong>Lançar Pagamento / Recibo</strong> para registrar pagamentos por período.
           </div>
         </div>
@@ -998,7 +998,7 @@ export const VtScreen: React.FC<VtScreenProps> = ({
         <div className="max-h-[460px] overflow-y-auto">
           <table className="w-full text-left text-xs border-collapse">
             <thead>
-              <tr className="bg-[#f8f9fc] text-[#69778c] uppercase text-[9px] tracking-wider border-b border-[#e5eaf1]">
+              <tr className="bg-[#f7f9f7] text-[#5e6b67] text-[9px]  border-b border-[#dfe4df]">
                 <th className="p-3.5">Colaborador / Setor</th>
                 <th className="p-3.5">Operadora & Cartão</th>
                 <th className="p-3.5 text-center">Diária (Ida/Volta)</th>
@@ -1010,10 +1010,10 @@ export const VtScreen: React.FC<VtScreenProps> = ({
                 <th className="p-3.5 text-center">Ações & Recibo</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-[#e5eaf1]">
+            <tbody className="divide-y divide-[#dfe4df]">
               {filteredEmployees.length === 0 ? (
                 <tr>
-                  <td colSpan={9} className="p-8 text-center text-[#69778c]">
+                  <td colSpan={9} className="p-8 text-center text-[#5e6b67]">
                     Nenhum colaborador encontrado com os filtros selecionados.
                   </td>
                 </tr>
@@ -1022,25 +1022,25 @@ export const VtScreen: React.FC<VtScreenProps> = ({
                   const calc = calculateEmpValues(emp);
 
                   return (
-                    <tr key={emp.id} className="hover:bg-[#f8faff] transition-colors">
+                    <tr key={emp.id} className="hover:bg-[#f7f9f7] transition-colors">
                       {/* Employee name & sector */}
                       <td className="p-3.5">
-                        <div className="font-bold text-[#152238] flex items-center gap-1.5">
+                        <div className="font-bold text-[#17211f] flex items-center gap-1.5">
                           <span>{emp.nome}</span>
                           {(emp.historicoPagamentos && emp.historicoPagamentos.length > 0) && (
                             <span
                               title={`${emp.historicoPagamentos.length} pagamento(s) registrado(s)`}
-                              className="inline-flex items-center gap-0.5 text-[9px] font-mono font-bold bg-[#edf2ff] text-[#3c63da] px-1.5 py-0.5 rounded-full"
+                              className="inline-flex items-center gap-0.5 text-[9px] font-mono font-bold bg-[#e3eff1] text-[#0f4c5c] px-1.5 py-0.5 rounded-full"
                             >
                               <History className="h-2.5 w-2.5" />
                               {emp.historicoPagamentos.length}
                             </span>
                           )}
                         </div>
-                        <div className="text-[10px] text-[#69778c] flex items-center gap-1.5 mt-0.5">
+                        <div className="text-[10px] text-[#5e6b67] flex items-center gap-1.5 mt-0.5">
                           <span>Mat: {emp.mat}</span>
                           <span>•</span>
-                          <span className="text-[#3c63da] font-semibold">{emp.setor}</span>
+                          <span className="text-[#0f4c5c] font-semibold">{emp.setor}</span>
                           <span>•</span>
                           <span className="font-mono">Sal: {formatBrl(emp.salarioBase)}</span>
                         </div>
@@ -1048,29 +1048,29 @@ export const VtScreen: React.FC<VtScreenProps> = ({
 
                       {/* Operator & card */}
                       <td className="p-3.5">
-                        <div className="font-semibold text-[#152238]">{emp.operadora}</div>
-                        <div className="font-mono text-[10px] text-[#69778c] mt-0.5">
+                        <div className="font-semibold text-[#17211f]">{emp.operadora}</div>
+                        <div className="font-mono text-[10px] text-[#5e6b67] mt-0.5">
                           {emp.cartaoNumero || "Cartão não informado"}
                         </div>
                       </td>
 
                       {/* Daily Fare */}
                       <td className="p-3.5 text-center">
-                        <div className="font-mono font-bold text-[#152238]">
+                        <div className="font-mono font-bold text-[#17211f]">
                           {formatBrl(calc.diaria)}/dia
                         </div>
-                        <div className="text-[10px] text-[#69778c]">
+                        <div className="text-[10px] text-[#5e6b67]">
                           {formatBrl(emp.tarifaIda)} + {formatBrl(emp.tarifaVolta)}
                         </div>
                       </td>
 
                       {/* Days & Absences Controller */}
                       <td className="p-3.5 text-center">
-                        <div className="inline-flex items-center gap-1.5 bg-[#f0f4f9] px-2 py-1 rounded-xl border border-[#e5eaf1]">
-                          <span className="font-mono font-extrabold text-xs text-[#152238]">
+                        <div className="inline-flex items-center gap-1.5 bg-[#f0f3f0] px-2 py-1 rounded-xl border border-[#dfe4df]">
+                          <span className="font-mono font-extrabold text-xs text-[#17211f]">
                             {calc.diasEfetivos} dias
                           </span>
-                          <span className="text-[10px] text-[#69778c]">
+                          <span className="text-[10px] text-[#5e6b67]">
                             ({emp.faltas} falta{emp.faltas === 1 ? "" : "s"})
                           </span>
                           <div className="flex items-center gap-0.5 ml-1">
@@ -1098,7 +1098,7 @@ export const VtScreen: React.FC<VtScreenProps> = ({
                       </td>
 
                       {/* Total Expected Month */}
-                      <td className="p-3.5 text-right font-mono font-bold text-[#152238]">
+                      <td className="p-3.5 text-right font-mono font-bold text-[#17211f]">
                         {formatBrl(calc.custoTotalVt)}
                       </td>
 
@@ -1109,7 +1109,7 @@ export const VtScreen: React.FC<VtScreenProps> = ({
                             <span className="font-mono font-bold text-xs text-emerald-800">
                               {formatBrl(calc.jaPago)}
                             </span>
-                            <span className="text-[10px] text-[#69778c]">pago</span>
+                            <span className="text-[10px] text-[#5e6b67]">pago</span>
                           </div>
 
                           {/* Progress bar */}
@@ -1149,7 +1149,7 @@ export const VtScreen: React.FC<VtScreenProps> = ({
                         <div className="font-mono font-bold text-purple-700">
                           {formatBrl(calc.descontoEfetivo)}
                         </div>
-                        <span className="text-[9px] text-[#69778c]">
+                        <span className="text-[9px] text-[#5e6b67]">
                           {calc.descontoEfetivo < calc.tetoDescontoClt
                             ? "Custo menor que 6%"
                             : "Teto de 6%"}
@@ -1157,7 +1157,7 @@ export const VtScreen: React.FC<VtScreenProps> = ({
                       </td>
 
                       {/* Net Company Cost */}
-                      <td className="p-3.5 text-right font-mono font-bold text-[#3c63da]">
+                      <td className="p-3.5 text-right font-mono font-bold text-[#0f4c5c]">
                         {formatBrl(calc.subsidioEmpresa)}
                       </td>
 
@@ -1166,7 +1166,7 @@ export const VtScreen: React.FC<VtScreenProps> = ({
                         <div className="flex items-center justify-center gap-1">
                           <button
                             onClick={() => openPaymentModalForEmployee(emp)}
-                            className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-[#3c63da] text-white hover:bg-[#2f52c0] font-bold text-[11px] shadow-2xs cursor-pointer transition-all"
+                            className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-[#0f4c5c] text-white hover:bg-[#0b3b48] font-bold text-[11px] shadow-2xs cursor-pointer transition-all"
                             title="Lançar Pagamento do Período e Gerar Recibo"
                           >
                             <Receipt className="h-3.5 w-3.5" />
@@ -1179,7 +1179,7 @@ export const VtScreen: React.FC<VtScreenProps> = ({
                                 setHistoryEmp(emp);
                                 setIsHistoryModalOpen(true);
                               }}
-                              className="p-1.5 rounded-lg border border-[#e5eaf1] bg-white text-[#69778c] hover:text-[#3c63da] hover:bg-[#edf2ff] cursor-pointer transition-colors"
+                              className="p-1.5 rounded-lg border border-[#dfe4df] bg-white text-[#5e6b67] hover:text-[#0f4c5c] hover:bg-[#e3eff1] cursor-pointer transition-colors"
                               title="Ver Histórico de Pagamentos e Recibos"
                             >
                               <History className="h-3.5 w-3.5" />
@@ -1188,7 +1188,7 @@ export const VtScreen: React.FC<VtScreenProps> = ({
 
                           <button
                             onClick={() => openEditModal(emp)}
-                            className="px-2 py-1.5 rounded-lg border border-[#e5eaf1] bg-white text-[#69778c] hover:text-[#3c63da] hover:bg-[#edf2ff] cursor-pointer transition-colors inline-flex items-center gap-1 font-bold text-xs"
+                            className="px-2 py-1.5 rounded-lg border border-[#dfe4df] bg-white text-[#5e6b67] hover:text-[#0f4c5c] hover:bg-[#e3eff1] cursor-pointer transition-colors inline-flex items-center gap-1 font-bold text-xs"
                             title="Editar colaborador"
                           >
                             <Edit2 className="h-3.5 w-3.5" />
@@ -1197,7 +1197,7 @@ export const VtScreen: React.FC<VtScreenProps> = ({
 
                           <button
                             onClick={() => handleDeleteEmployee(emp.id)}
-                            className="p-1.5 rounded-lg border border-[#e5eaf1] bg-white text-[#69778c] hover:text-rose-600 hover:bg-rose-50 cursor-pointer transition-colors"
+                            className="p-1.5 rounded-lg border border-[#dfe4df] bg-white text-[#5e6b67] hover:text-rose-600 hover:bg-rose-50 cursor-pointer transition-colors"
                             title="Remover cadastro"
                           >
                             <Trash2 className="h-3.5 w-3.5" />
@@ -1213,21 +1213,21 @@ export const VtScreen: React.FC<VtScreenProps> = ({
         </div>
 
         {/* Table Footer */}
-        <div className="p-4 bg-[#f8faff] border-t border-[#e5eaf1] flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
-          <div className="text-[#69778c]">
+        <div className="p-4 bg-[#f7f9f7] border-t border-[#dfe4df] flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+          <div className="text-[#5e6b67]">
             Listando <strong>{filteredEmployees.length}</strong> colaboradores. Unidade: <strong>{currentTenantId}</strong>.
           </div>
           <div className="flex flex-wrap items-center gap-4 font-mono font-bold">
             <div>
-              <span className="text-[#69778c] font-sans text-[11px] mr-1">Previsto:</span>
-              <span className="text-[#152238]">{formatBrl(totals.totalConcedido)}</span>
+              <span className="text-[#5e6b67] font-sans text-[11px] mr-1">Previsto:</span>
+              <span className="text-[#17211f]">{formatBrl(totals.totalConcedido)}</span>
             </div>
             <div>
-              <span className="text-[#69778c] font-sans text-[11px] mr-1">Já Pago:</span>
+              <span className="text-[#5e6b67] font-sans text-[11px] mr-1">Já Pago:</span>
               <span className="text-emerald-700">{formatBrl(totals.totalJaPago)}</span>
             </div>
             <div>
-              <span className="text-[#69778c] font-sans text-[11px] mr-1">A Pagar:</span>
+              <span className="text-[#5e6b67] font-sans text-[11px] mr-1">A Pagar:</span>
               <span className="text-amber-800">{formatBrl(totals.totalSaldoRestante)}</span>
             </div>
           </div>
@@ -1239,24 +1239,24 @@ export const VtScreen: React.FC<VtScreenProps> = ({
       {/* ------------------------------------------------------------- */}
       {isPaymentModalOpen && selectedEmpForPayment && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/60 backdrop-blur-xs overflow-y-auto">
-          <div className="bg-white rounded-2xl shadow-2xl border border-[#e5eaf1] w-full max-w-xl max-h-[90vh] my-auto flex flex-col overflow-hidden animate-in zoom-in-95 duration-150">
-            <div className="shrink-0 p-4 sm:p-5 border-b border-[#e5eaf1] flex items-center justify-between bg-[#f8faff]">
+          <div className="bg-white rounded-2xl shadow-2xl border border-[#dfe4df] w-full max-w-xl max-h-[90vh] my-auto flex flex-col overflow-hidden animate-in zoom-in-95 duration-150">
+            <div className="shrink-0 p-4 sm:p-5 border-b border-[#dfe4df] flex items-center justify-between bg-[#f7f9f7]">
               <div className="flex items-center gap-2.5">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#3c63da] text-white">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#0f4c5c] text-white">
                   <Receipt className="h-5 w-5" />
                 </div>
                 <div>
-                  <h3 className="text-base font-extrabold text-[#152238]">
+                  <h3 className="text-base font-extrabold text-[#17211f]">
                     Lançar Pagamento de VT & Emitir Recibo
                   </h3>
-                  <p className="text-xs text-[#69778c]">
+                  <p className="text-xs text-[#5e6b67]">
                     Colaborador: <strong>{selectedEmpForPayment.nome}</strong> (Mat: {selectedEmpForPayment.mat})
                   </p>
                 </div>
               </div>
               <button
                 onClick={() => setIsPaymentModalOpen(false)}
-                className="h-8 w-8 rounded-lg bg-white border border-[#e5eaf1] flex items-center justify-center text-[#69778c] hover:bg-[#f4f7fb] cursor-pointer"
+                className="h-8 w-8 rounded-lg bg-white border border-[#dfe4df] flex items-center justify-center text-[#5e6b67] hover:bg-[#f0f3f0] cursor-pointer"
               >
                 <X className="h-4 w-4" />
               </button>
@@ -1268,17 +1268,17 @@ export const VtScreen: React.FC<VtScreenProps> = ({
               {(() => {
                 const c = calculateEmpValues(selectedEmpForPayment);
                 return (
-                  <div className="grid grid-cols-3 gap-2 p-3 rounded-xl bg-[#f8faff] border border-[#e5eaf1]">
+                  <div className="grid grid-cols-3 gap-2 p-3 rounded-xl bg-[#f7f9f7] border border-[#dfe4df]">
                     <div>
-                      <span className="text-[10px] text-[#69778c] uppercase font-bold block">Total Previsto Mês</span>
-                      <strong className="text-sm font-mono text-[#152238]">{formatBrl(c.custoTotalVt)}</strong>
+                      <span className="text-[10px] text-[#5e6b67] font-bold block">Total Previsto Mês</span>
+                      <strong className="text-sm font-mono text-[#17211f]">{formatBrl(c.custoTotalVt)}</strong>
                     </div>
                     <div>
-                      <span className="text-[10px] text-[#69778c] uppercase font-bold block">Já Pago Anteriormente</span>
+                      <span className="text-[10px] text-[#5e6b67] font-bold block">Já Pago Anteriormente</span>
                       <strong className="text-sm font-mono text-emerald-700">{formatBrl(c.jaPago)}</strong>
                     </div>
                     <div>
-                      <span className="text-[10px] text-[#69778c] uppercase font-bold block">Saldo Restante Mês</span>
+                      <span className="text-[10px] text-[#5e6b67] font-bold block">Saldo Restante Mês</span>
                       <strong className="text-sm font-mono text-amber-800">{formatBrl(c.saldoRestante)}</strong>
                     </div>
                   </div>
@@ -1287,7 +1287,7 @@ export const VtScreen: React.FC<VtScreenProps> = ({
 
               {/* Period Presets */}
               <div>
-                <label className="block text-[10px] font-extrabold uppercase text-[#69778c] mb-1.5">
+                <label className="block text-[10px] font-extrabold text-[#5e6b67] mb-1.5">
                   Selecione o Período de Pagamento
                 </label>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
@@ -1296,8 +1296,8 @@ export const VtScreen: React.FC<VtScreenProps> = ({
                     onClick={() => handlePeriodPresetChange("proximos_7_dias")}
                     className={`py-2 px-2.5 rounded-xl text-xs font-bold border text-center transition-all cursor-pointer ${
                       paymentForm.tipoPeriodo === "proximos_7_dias"
-                        ? "bg-[#3c63da] text-white border-[#3c63da] shadow-xs"
-                        : "bg-white text-[#152238] border-[#e5eaf1] hover:bg-[#f8faff]"
+                        ? "bg-[#0f4c5c] text-white border-[#0f4c5c] shadow-xs"
+                        : "bg-white text-[#17211f] border-[#dfe4df] hover:bg-[#f7f9f7]"
                     }`}
                   >
                     Próximos 7 Dias
@@ -1308,8 +1308,8 @@ export const VtScreen: React.FC<VtScreenProps> = ({
                     onClick={() => handlePeriodPresetChange("quinzena_1")}
                     className={`py-2 px-2.5 rounded-xl text-xs font-bold border text-center transition-all cursor-pointer ${
                       paymentForm.tipoPeriodo === "quinzena_1"
-                        ? "bg-[#3c63da] text-white border-[#3c63da] shadow-xs"
-                        : "bg-white text-[#152238] border-[#e5eaf1] hover:bg-[#f8faff]"
+                        ? "bg-[#0f4c5c] text-white border-[#0f4c5c] shadow-xs"
+                        : "bg-white text-[#17211f] border-[#dfe4df] hover:bg-[#f7f9f7]"
                     }`}
                   >
                     1ª Quinzena
@@ -1320,8 +1320,8 @@ export const VtScreen: React.FC<VtScreenProps> = ({
                     onClick={() => handlePeriodPresetChange("quinzena_2")}
                     className={`py-2 px-2.5 rounded-xl text-xs font-bold border text-center transition-all cursor-pointer ${
                       paymentForm.tipoPeriodo === "quinzena_2"
-                        ? "bg-[#3c63da] text-white border-[#3c63da] shadow-xs"
-                        : "bg-white text-[#152238] border-[#e5eaf1] hover:bg-[#f8faff]"
+                        ? "bg-[#0f4c5c] text-white border-[#0f4c5c] shadow-xs"
+                        : "bg-white text-[#17211f] border-[#dfe4df] hover:bg-[#f7f9f7]"
                     }`}
                   >
                     2ª Quinzena
@@ -1332,8 +1332,8 @@ export const VtScreen: React.FC<VtScreenProps> = ({
                     onClick={() => handlePeriodPresetChange("mes_cheio")}
                     className={`py-2 px-2.5 rounded-xl text-xs font-bold border text-center transition-all cursor-pointer ${
                       paymentForm.tipoPeriodo === "mes_cheio"
-                        ? "bg-[#3c63da] text-white border-[#3c63da] shadow-xs"
-                        : "bg-white text-[#152238] border-[#e5eaf1] hover:bg-[#f8faff]"
+                        ? "bg-[#0f4c5c] text-white border-[#0f4c5c] shadow-xs"
+                        : "bg-white text-[#17211f] border-[#dfe4df] hover:bg-[#f7f9f7]"
                     }`}
                   >
                     Mês Completo
@@ -1344,7 +1344,7 @@ export const VtScreen: React.FC<VtScreenProps> = ({
               {/* Number of Days and Dates Range */}
               <div className="grid grid-cols-3 gap-3">
                 <div>
-                  <label className="block text-[10px] font-extrabold uppercase text-[#69778c] mb-1">
+                  <label className="block text-[10px] font-extrabold text-[#5e6b67] mb-1">
                     Nº de Dias Úteis
                   </label>
                   <input
@@ -1356,31 +1356,31 @@ export const VtScreen: React.FC<VtScreenProps> = ({
                       const d = parseInt(e.target.value || "1", 10);
                       handlePeriodPresetChange("customizado", d);
                     }}
-                    className="w-full rounded-xl border border-[#e5eaf1] px-3 py-2 text-xs font-mono font-bold text-[#152238] bg-[#f8faff]"
+                    className="w-full rounded-xl border border-[#dfe4df] px-3 py-2 text-xs font-mono font-bold text-[#17211f] bg-[#f7f9f7]"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-[10px] font-extrabold uppercase text-[#69778c] mb-1">
+                  <label className="block text-[10px] font-extrabold text-[#5e6b67] mb-1">
                     Data Inicial
                   </label>
                   <input
                     type="date"
                     value={paymentForm.dataInicio}
                     onChange={(e) => setPaymentForm((p) => ({ ...p, dataInicio: e.target.value }))}
-                    className="w-full rounded-xl border border-[#e5eaf1] px-3 py-2 text-xs font-semibold text-[#152238] bg-[#f8faff]"
+                    className="w-full rounded-xl border border-[#dfe4df] px-3 py-2 text-xs font-semibold text-[#17211f] bg-[#f7f9f7]"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-[10px] font-extrabold uppercase text-[#69778c] mb-1">
+                  <label className="block text-[10px] font-extrabold text-[#5e6b67] mb-1">
                     Data Final (Est.)
                   </label>
                   <input
                     type="text"
                     value={paymentForm.dataFim}
                     onChange={(e) => setPaymentForm((p) => ({ ...p, dataFim: e.target.value }))}
-                    className="w-full rounded-xl border border-[#e5eaf1] px-3 py-2 text-xs font-semibold text-[#152238] bg-[#f8faff]"
+                    className="w-full rounded-xl border border-[#dfe4df] px-3 py-2 text-xs font-semibold text-[#17211f] bg-[#f7f9f7]"
                   />
                 </div>
               </div>
@@ -1388,7 +1388,7 @@ export const VtScreen: React.FC<VtScreenProps> = ({
               {/* Amount to be Paid (Editable) & Payment Method */}
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-[10px] font-extrabold uppercase text-[#69778c] mb-1">
+                  <label className="block text-[10px] font-extrabold text-[#5e6b67] mb-1">
                     Valor a Pagar / Creditar (R$) *
                   </label>
                   <input
@@ -1398,21 +1398,21 @@ export const VtScreen: React.FC<VtScreenProps> = ({
                     required
                     value={paymentForm.valorAjustado}
                     onChange={(e) => setPaymentForm((p) => ({ ...p, valorAjustado: parseFloat(e.target.value || "0") }))}
-                    className="w-full rounded-xl border border-[#3c63da] px-3 py-2 text-sm font-mono font-extrabold text-[#3c63da] bg-[#edf2ff] focus:outline-none"
+                    className="w-full rounded-xl border border-[#0f4c5c] px-3 py-2 text-sm font-mono font-extrabold text-[#0f4c5c] bg-[#e3eff1] focus:outline-none"
                   />
-                  <span className="text-[10px] text-[#69778c] block mt-0.5">
+                  <span className="text-[10px] text-[#5e6b67] block mt-0.5">
                     Valor calculado: {formatBrl(paymentForm.valorCalculado)}
                   </span>
                 </div>
 
                 <div>
-                  <label className="block text-[10px] font-extrabold uppercase text-[#69778c] mb-1">
+                  <label className="block text-[10px] font-extrabold text-[#5e6b67] mb-1">
                     Forma de Pagamento
                   </label>
                   <select
                     value={paymentForm.metodo}
                     onChange={(e) => setPaymentForm((p) => ({ ...p, metodo: e.target.value }))}
-                    className="w-full rounded-xl border border-[#e5eaf1] px-3 py-2.5 text-xs font-bold text-[#152238] bg-[#f8faff]"
+                    className="w-full rounded-xl border border-[#dfe4df] px-3 py-2.5 text-xs font-bold text-[#17211f] bg-[#f7f9f7]"
                   >
                     <option value="PIX">PIX / Transferência Direta</option>
                     <option value="Cartão Recarga Ticket">Cartão Recarga Ticket / TOP</option>
@@ -1424,7 +1424,7 @@ export const VtScreen: React.FC<VtScreenProps> = ({
 
               {/* Observation */}
               <div>
-                <label className="block text-[10px] font-extrabold uppercase text-[#69778c] mb-1">
+                <label className="block text-[10px] font-extrabold text-[#5e6b67] mb-1">
                   Observações no Recibo
                 </label>
                 <input
@@ -1432,7 +1432,7 @@ export const VtScreen: React.FC<VtScreenProps> = ({
                   placeholder="Ex: Adiantamento da 2ª semana do mês"
                   value={paymentForm.observacao}
                   onChange={(e) => setPaymentForm((p) => ({ ...p, observacao: e.target.value }))}
-                  className="w-full rounded-xl border border-[#e5eaf1] px-3 py-2 text-xs font-semibold text-[#152238] bg-[#f8faff]"
+                  className="w-full rounded-xl border border-[#dfe4df] px-3 py-2 text-xs font-semibold text-[#17211f] bg-[#f7f9f7]"
                 />
               </div>
 
@@ -1443,7 +1443,7 @@ export const VtScreen: React.FC<VtScreenProps> = ({
                     type="checkbox"
                     checked={paymentForm.lancarDespesa}
                     onChange={(e) => setPaymentForm((p) => ({ ...p, lancarDespesa: e.target.checked }))}
-                    className="rounded text-[#3c63da] h-4 w-4"
+                    className="rounded text-[#0f4c5c] h-4 w-4"
                   />
                   <div>
                     <span className="font-bold text-xs">Lançar automaticamente em Despesas / Extrato Financeiro</span>
@@ -1457,17 +1457,17 @@ export const VtScreen: React.FC<VtScreenProps> = ({
               </div>
 
               {/* Submit buttons */}
-              <div className="shrink-0 p-3.5 sm:p-4 border-t border-[#e5eaf1] flex items-center justify-end gap-2 bg-[#f8faff]">
+              <div className="shrink-0 p-3.5 sm:p-4 border-t border-[#dfe4df] flex items-center justify-end gap-2 bg-[#f7f9f7]">
                 <button
                   type="button"
                   onClick={() => setIsPaymentModalOpen(false)}
-                  className="rounded-xl border border-[#e5eaf1] bg-white px-4 py-2 text-xs font-bold text-[#152238] hover:bg-[#f4f7fb] cursor-pointer"
+                  className="rounded-xl border border-[#dfe4df] bg-white px-4 py-2 text-xs font-bold text-[#17211f] hover:bg-[#f0f3f0] cursor-pointer"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
-                  className="rounded-xl bg-[#3c63da] px-5 py-2 text-xs font-bold text-white hover:bg-[#2f52c0] shadow-sm cursor-pointer flex items-center gap-1.5"
+                  className="rounded-xl bg-[#0f4c5c] px-5 py-2 text-xs font-bold text-white hover:bg-[#0b3b48] shadow-sm cursor-pointer flex items-center gap-1.5"
                 >
                   <FileCheck className="h-4 w-4" />
                   <span>Confirmar & Gerar Recibo</span>
@@ -1483,33 +1483,33 @@ export const VtScreen: React.FC<VtScreenProps> = ({
       {/* ------------------------------------------------------------- */}
       {isHistoryModalOpen && historyEmp && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/60 backdrop-blur-xs overflow-y-auto">
-          <div className="bg-white rounded-2xl shadow-2xl border border-[#e5eaf1] w-full max-w-2xl max-h-[90vh] my-auto flex flex-col overflow-hidden animate-in zoom-in-95 duration-150">
-            <div className="shrink-0 p-4 border-b border-[#e5eaf1] bg-[#f8faff] flex items-center justify-between">
+          <div className="bg-white rounded-2xl shadow-2xl border border-[#dfe4df] w-full max-w-2xl max-h-[90vh] my-auto flex flex-col overflow-hidden animate-in zoom-in-95 duration-150">
+            <div className="shrink-0 p-4 border-b border-[#dfe4df] bg-[#f7f9f7] flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <History className="h-5 w-5 text-[#3c63da]" />
-                <h3 className="text-base font-extrabold text-[#152238]">
+                <History className="h-5 w-5 text-[#0f4c5c]" />
+                <h3 className="text-base font-extrabold text-[#17211f]">
                   Histórico de Pagamentos — {historyEmp.nome}
                 </h3>
               </div>
               <button
                 onClick={() => setIsHistoryModalOpen(false)}
-                className="h-8 w-8 rounded-lg bg-white border border-[#e5eaf1] flex items-center justify-center text-[#69778c] hover:bg-[#f4f7fb] cursor-pointer"
+                className="h-8 w-8 rounded-lg bg-white border border-[#dfe4df] flex items-center justify-center text-[#5e6b67] hover:bg-[#f0f3f0] cursor-pointer"
               >
                 <X className="h-4 w-4" />
               </button>
             </div>
 
             <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-4 text-xs">
-              <div className="flex justify-between items-center p-3 rounded-xl bg-[#f8faff] border border-[#e5eaf1]">
+              <div className="flex justify-between items-center p-3 rounded-xl bg-[#f7f9f7] border border-[#dfe4df]">
                 <div>Matrícula: <strong>{historyEmp.mat}</strong></div>
                 <div>Setor: <strong>{historyEmp.setor}</strong></div>
                 <div>Total Pago no Mês: <strong className="text-emerald-700 font-mono">{formatBrl(historyEmp.quantoJaFoiPagoNoMes || 0)}</strong></div>
               </div>
 
-              <div className="max-h-80 overflow-y-auto border border-[#e5eaf1] rounded-xl">
+              <div className="max-h-80 overflow-y-auto border border-[#dfe4df] rounded-xl">
                 <table className="w-full text-left border-collapse text-xs">
                   <thead>
-                    <tr className="bg-[#f8f9fc] text-[#69778c] uppercase text-[9px] border-b border-[#e5eaf1]">
+                    <tr className="bg-[#f7f9f7] text-[#5e6b67] text-[9px] border-b border-[#dfe4df]">
                       <th className="p-2.5">Data</th>
                       <th className="p-2.5">Período / Referência</th>
                       <th className="p-2.5 text-center">Dias</th>
@@ -1518,24 +1518,24 @@ export const VtScreen: React.FC<VtScreenProps> = ({
                       <th className="p-2.5 text-center">Ações</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-[#e5eaf1]">
+                  <tbody className="divide-y divide-[#dfe4df]">
                     {(!historyEmp.historicoPagamentos || historyEmp.historicoPagamentos.length === 0) ? (
                       <tr>
-                        <td colSpan={6} className="p-6 text-center text-[#69778c]">
+                        <td colSpan={6} className="p-6 text-center text-[#5e6b67]">
                           Nenhum recibo ou pagamento registrado para este colaborador.
                         </td>
                       </tr>
                     ) : (
                       historyEmp.historicoPagamentos.map((rec) => (
-                        <tr key={rec.id} className="hover:bg-[#f8faff]">
-                          <td className="p-2.5 font-mono text-[#152238] font-bold">{rec.data}</td>
+                        <tr key={rec.id} className="hover:bg-[#f7f9f7]">
+                          <td className="p-2.5 font-mono text-[#17211f] font-bold">{rec.data}</td>
                           <td className="p-2.5">
-                            <div className="font-semibold text-[#152238]">{rec.periodoRef}</div>
-                            {rec.observacao && <div className="text-[10px] text-[#69778c]">{rec.observacao}</div>}
+                            <div className="font-semibold text-[#17211f]">{rec.periodoRef}</div>
+                            {rec.observacao && <div className="text-[10px] text-[#5e6b67]">{rec.observacao}</div>}
                           </td>
                           <td className="p-2.5 text-center font-bold">{rec.dias} dias</td>
                           <td className="p-2.5 text-right font-mono font-bold text-emerald-700">{formatBrl(rec.valor)}</td>
-                          <td className="p-2.5 text-center text-[10px] font-bold bg-[#edf2ff] text-[#3c63da] rounded-md">{rec.metodo || "PIX"}</td>
+                          <td className="p-2.5 text-center text-[10px] font-bold bg-[#e3eff1] text-[#0f4c5c] rounded-md">{rec.metodo || "PIX"}</td>
                           <td className="p-2.5 text-center">
                             <div className="flex items-center justify-center gap-1">
                               <button
@@ -1544,7 +1544,7 @@ export const VtScreen: React.FC<VtScreenProps> = ({
                                   setIsHistoryModalOpen(false);
                                   setIsReceiptModalOpen(true);
                                 }}
-                                className="p-1 rounded bg-[#edf2ff] text-[#3c63da] hover:bg-[#3c63da] hover:text-white transition-colors cursor-pointer"
+                                className="p-1 rounded bg-[#e3eff1] text-[#0f4c5c] hover:bg-[#0f4c5c] hover:text-white transition-colors cursor-pointer"
                                 title="Ver / Imprimir Recibo"
                               >
                                 <Printer className="h-3.5 w-3.5" />
@@ -1566,10 +1566,10 @@ export const VtScreen: React.FC<VtScreenProps> = ({
               </div>
             </div>
 
-            <div className="shrink-0 p-3.5 sm:p-4 bg-[#f8faff] border-t border-[#e5eaf1] flex justify-end">
+            <div className="shrink-0 p-3.5 sm:p-4 bg-[#f7f9f7] border-t border-[#dfe4df] flex justify-end">
               <button
                 onClick={() => setIsHistoryModalOpen(false)}
-                className="px-4 py-2 rounded-xl bg-[#152238] text-white font-bold text-xs cursor-pointer hover:bg-[#253654]"
+                className="px-4 py-2 rounded-xl bg-[#17211f] text-white font-bold text-xs cursor-pointer hover:bg-[#253654]"
               >
                 Fechar
               </button>
@@ -1583,43 +1583,43 @@ export const VtScreen: React.FC<VtScreenProps> = ({
       {/* ------------------------------------------------------------- */}
       {isReceiptModalOpen && activeReceiptRecord && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/65 backdrop-blur-xs overflow-y-auto">
-          <div className="bg-white rounded-2xl shadow-2xl border border-[#e5eaf1] w-full max-w-2xl max-h-[90vh] my-auto flex flex-col overflow-hidden animate-in zoom-in-95 duration-150">
-            <div className="shrink-0 p-3.5 sm:p-4 border-b border-[#e5eaf1] flex items-center justify-between bg-[#f8faff] print:hidden">
+          <div className="bg-white rounded-2xl shadow-2xl border border-[#dfe4df] w-full max-w-2xl max-h-[90vh] my-auto flex flex-col overflow-hidden animate-in zoom-in-95 duration-150">
+            <div className="shrink-0 p-3.5 sm:p-4 border-b border-[#dfe4df] flex items-center justify-between bg-[#f7f9f7] print:hidden">
               <div className="flex items-center gap-2">
-                <Printer className="h-5 w-5 text-[#3c63da]" />
-                <h3 className="text-base font-extrabold text-[#152238]">
+                <Printer className="h-5 w-5 text-[#0f4c5c]" />
+                <h3 className="text-base font-extrabold text-[#17211f]">
                   Comprovante de Entrega & Declaração de Vale Transporte (CLT)
                 </h3>
               </div>
               <button
                 onClick={() => setIsReceiptModalOpen(false)}
-                className="h-8 w-8 rounded-lg bg-white border border-[#e5eaf1] flex items-center justify-center text-[#69778c] hover:bg-[#f4f7fb] cursor-pointer"
+                className="h-8 w-8 rounded-lg bg-white border border-[#dfe4df] flex items-center justify-center text-[#5e6b67] hover:bg-[#f0f3f0] cursor-pointer"
               >
                 <X className="h-4 w-4" />
               </button>
             </div>
 
             {/* Printable Document Body */}
-            <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 text-xs text-[#152238] leading-relaxed bg-white">
+            <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 text-xs text-[#17211f] leading-relaxed bg-white">
               {/* Receipt Header */}
-              <div className="flex justify-between items-start border-b-2 border-[#152238] pb-3">
+              <div className="flex justify-between items-start border-b-2 border-[#17211f] pb-3">
                 <div>
-                  <h2 className="text-lg font-extrabold uppercase tracking-tight text-[#152238]">
+                  <h2 className="text-lg font-extrabold tracking-tight text-[#17211f]">
                     Declaração e Recibo de Vale-Transporte
                   </h2>
-                  <p className="text-[11px] text-[#69778c]">
+                  <p className="text-[11px] text-[#5e6b67]">
                     Lei Federal nº 7.418/1985 e Decreto nº 95.247/1987
                   </p>
                 </div>
                 <div className="text-right">
-                  <span className="text-[10px] uppercase font-bold text-[#69778c] block">Unidade Franqueada</span>
-                  <strong className="text-sm font-extrabold text-[#3c63da]">{currentTenantId}</strong>
-                  <div className="text-[10px] text-[#69778c]">Data: {activeReceiptRecord.record.data}</div>
+                  <span className="text-[10px] font-bold text-[#5e6b67] block">Unidade Franqueada</span>
+                  <strong className="text-sm font-extrabold text-[#0f4c5c]">{currentTenantId}</strong>
+                  <div className="text-[10px] text-[#5e6b67]">Data: {activeReceiptRecord.record.data}</div>
                 </div>
               </div>
 
               {/* Employee & Unit Information */}
-              <div className="p-3.5 rounded-xl border border-[#e5eaf1] bg-[#f8f9fc] space-y-2">
+              <div className="p-3.5 rounded-xl border border-[#dfe4df] bg-[#f7f9f7] space-y-2">
                 <div className="grid grid-cols-2 gap-2 text-[11px]">
                   <div>Colaborador: <strong>{activeReceiptRecord.emp.nome}</strong></div>
                   <div>Matrícula: <strong>{activeReceiptRecord.emp.mat}</strong></div>
@@ -1631,10 +1631,10 @@ export const VtScreen: React.FC<VtScreenProps> = ({
               </div>
 
               {/* Payment Details Table */}
-              <div className="border border-[#e5eaf1] rounded-xl p-4 space-y-2 bg-white">
-                <div className="flex justify-between font-bold text-[#152238] border-b border-[#e5eaf1] pb-2">
+              <div className="border border-[#dfe4df] rounded-xl p-4 space-y-2 bg-white">
+                <div className="flex justify-between font-bold text-[#17211f] border-b border-[#dfe4df] pb-2">
                   <span>Período de Referência:</span>
-                  <span className="text-[#3c63da]">{activeReceiptRecord.record.periodoRef}</span>
+                  <span className="text-[#0f4c5c]">{activeReceiptRecord.record.periodoRef}</span>
                 </div>
                 <div className="flex justify-between">
                   <span>Dias Efetivos Beneficiados:</span>
@@ -1644,7 +1644,7 @@ export const VtScreen: React.FC<VtScreenProps> = ({
                   <span>Tarifa Diária (Ida + Volta):</span>
                   <strong>{formatBrl((activeReceiptRecord.emp.tarifaIda || 0) + (activeReceiptRecord.emp.tarifaVolta || 0))}</strong>
                 </div>
-                <div className="flex justify-between border-t border-[#e5eaf1] pt-1">
+                <div className="flex justify-between border-t border-[#dfe4df] pt-1">
                   <span>Valor Total Entregue / Creditado neste Recibo:</span>
                   <strong className="text-emerald-700 font-mono text-sm">{formatBrl(activeReceiptRecord.record.valor)}</strong>
                 </div>
@@ -1654,41 +1654,41 @@ export const VtScreen: React.FC<VtScreenProps> = ({
                     <strong className="font-mono text-sm">− {formatBrl(activeReceiptRecord.record.descontoCltAbatido)}</strong>
                   </div>
                 ) : null}
-                <div className="flex justify-between text-[#69778c] text-[10px]">
+                <div className="flex justify-between text-[#5e6b67] text-[10px]">
                   <span>Forma de Entrega:</span>
-                  <span className="font-bold text-[#152238]">{activeReceiptRecord.record.metodo || "PIX"}</span>
+                  <span className="font-bold text-[#17211f]">{activeReceiptRecord.record.metodo || "PIX"}</span>
                 </div>
               </div>
 
               {/* Legal Declaration Text */}
-              <p className="text-[10px] text-[#69778c] italic text-justify leading-relaxed border-l-2 border-[#3c63da] pl-3 py-1 bg-[#f8faff]">
+              <p className="text-[10px] text-[#5e6b67] italic text-justify leading-relaxed border-l-2 border-[#0f4c5c] pl-3 py-1 bg-[#f7f9f7]">
                 "Declaro para os devidos fins legais ter recebido a quantia/crédito acima discriminada a título de Vale-Transporte, destinada exclusivamente ao meu deslocamento diário residência-trabalho e vice-versa, estando ciente de que o uso indevido do benefício constitui falta grave nos termos do artigo 7º, §3º do Decreto nº 95.247/1987."
               </p>
 
               {/* Signature Blocks */}
               <div className="pt-8 grid grid-cols-2 gap-8 text-center text-xs">
-                <div className="border-t border-[#152238] pt-1">
-                  <span className="font-bold block text-[#152238]">Franqueadora / Empregador</span>
-                  <small className="text-[10px] text-[#69778c] block">Unidade {currentTenantId}</small>
+                <div className="border-t border-[#17211f] pt-1">
+                  <span className="font-bold block text-[#17211f]">Franqueadora / Empregador</span>
+                  <small className="text-[10px] text-[#5e6b67] block">Unidade {currentTenantId}</small>
                 </div>
-                <div className="border-t border-[#152238] pt-1">
-                  <span className="font-bold block text-[#152238]">Assinatura do Colaborador</span>
-                  <small className="text-[10px] text-[#69778c] block">{activeReceiptRecord.emp.nome}</small>
+                <div className="border-t border-[#17211f] pt-1">
+                  <span className="font-bold block text-[#17211f]">Assinatura do Colaborador</span>
+                  <small className="text-[10px] text-[#5e6b67] block">{activeReceiptRecord.emp.nome}</small>
                 </div>
               </div>
             </div>
 
             {/* Print Dialog Footer */}
-            <div className="shrink-0 p-3.5 sm:p-4 bg-[#f8faff] border-t border-[#e5eaf1] flex justify-end gap-2 print:hidden">
+            <div className="shrink-0 p-3.5 sm:p-4 bg-[#f7f9f7] border-t border-[#dfe4df] flex justify-end gap-2 print:hidden">
               <button
                 onClick={() => setIsReceiptModalOpen(false)}
-                className="px-4 py-2 rounded-xl border border-[#e5eaf1] bg-white text-xs font-bold text-[#152238] cursor-pointer hover:bg-[#f4f7fb]"
+                className="px-4 py-2 rounded-xl border border-[#dfe4df] bg-white text-xs font-bold text-[#17211f] cursor-pointer hover:bg-[#f0f3f0]"
               >
                 Fechar
               </button>
               <button
                 onClick={() => window.print()}
-                className="px-4 py-2 rounded-xl bg-[#3c63da] text-xs font-bold text-white flex items-center gap-1.5 shadow-sm cursor-pointer hover:bg-[#2f52c0]"
+                className="px-4 py-2 rounded-xl bg-[#0f4c5c] text-xs font-bold text-white flex items-center gap-1.5 shadow-sm cursor-pointer hover:bg-[#0b3b48]"
               >
                 <Printer className="h-4 w-4" />
                 <span>Imprimir Recibo (PDF)</span>
@@ -1703,24 +1703,24 @@ export const VtScreen: React.FC<VtScreenProps> = ({
       {/* ------------------------------------------------------------- */}
       {isAddModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/60 backdrop-blur-xs overflow-y-auto">
-          <div className="bg-white rounded-2xl shadow-2xl border border-[#e5eaf1] w-full max-w-lg max-h-[90vh] my-auto flex flex-col overflow-hidden animate-in zoom-in-95 duration-150">
-            <div className="shrink-0 p-4 sm:p-5 border-b border-[#e5eaf1] flex items-center justify-between bg-[#f8faff]">
+          <div className="bg-white rounded-2xl shadow-2xl border border-[#dfe4df] w-full max-w-lg max-h-[90vh] my-auto flex flex-col overflow-hidden animate-in zoom-in-95 duration-150">
+            <div className="shrink-0 p-4 sm:p-5 border-b border-[#dfe4df] flex items-center justify-between bg-[#f7f9f7]">
               <div className="flex items-center gap-2.5">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#3c63da] text-white">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#0f4c5c] text-white">
                   <CreditCard className="h-5 w-5" />
                 </div>
                 <div>
-                  <h3 className="text-base font-extrabold text-[#152238]">
+                  <h3 className="text-base font-extrabold text-[#17211f]">
                     {editingEmployee ? "Editar Colaborador VT" : "Novo Colaborador para Vale Transporte"}
                   </h3>
-                  <p className="text-xs text-[#69778c]">
+                  <p className="text-xs text-[#5e6b67]">
                     Informe os dados de transporte e salário para cálculo legal automático.
                   </p>
                 </div>
               </div>
               <button
                 onClick={() => setIsAddModalOpen(false)}
-                className="h-8 w-8 rounded-lg bg-white border border-[#e5eaf1] flex items-center justify-center text-[#69778c] hover:bg-[#f4f7fb] cursor-pointer"
+                className="h-8 w-8 rounded-lg bg-white border border-[#dfe4df] flex items-center justify-center text-[#5e6b67] hover:bg-[#f0f3f0] cursor-pointer"
               >
                 <X className="h-4 w-4" />
               </button>
@@ -1729,7 +1729,7 @@ export const VtScreen: React.FC<VtScreenProps> = ({
             <form onSubmit={handleSaveEmployee} className="flex flex-col flex-1 overflow-hidden">
               <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-3.5 text-xs">
                 <div>
-                  <label className="block text-[10px] font-extrabold uppercase text-[#69778c] mb-1">
+                  <label className="block text-[10px] font-extrabold text-[#5e6b67] mb-1">
                     Nome Completo do Colaborador *
                   </label>
                   <input
@@ -1738,13 +1738,13 @@ export const VtScreen: React.FC<VtScreenProps> = ({
                     placeholder="Ex: Amanda Silva Ribeiro"
                     value={empForm.nome || ""}
                     onChange={(e) => setEmpForm((p) => ({ ...p, nome: e.target.value }))}
-                    className="w-full rounded-xl border border-[#e5eaf1] px-3 py-2 text-xs font-semibold text-[#152238] focus:border-[#3c63da] focus:outline-none bg-[#f8faff]"
+                    className="w-full rounded-xl border border-[#dfe4df] px-3 py-2 text-xs font-semibold text-[#17211f] focus:border-[#0f4c5c] focus:outline-none bg-[#f7f9f7]"
                   />
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-[10px] font-extrabold uppercase text-[#69778c] mb-1">
+                    <label className="block text-[10px] font-extrabold text-[#5e6b67] mb-1">
                       Matrícula
                     </label>
                     <input
@@ -1752,12 +1752,12 @@ export const VtScreen: React.FC<VtScreenProps> = ({
                       placeholder="0045"
                       value={empForm.mat || ""}
                       onChange={(e) => setEmpForm((p) => ({ ...p, mat: e.target.value }))}
-                      className="w-full rounded-xl border border-[#e5eaf1] px-3 py-2 text-xs font-mono font-semibold text-[#152238] focus:border-[#3c63da] focus:outline-none bg-[#f8faff]"
+                      className="w-full rounded-xl border border-[#dfe4df] px-3 py-2 text-xs font-mono font-semibold text-[#17211f] focus:border-[#0f4c5c] focus:outline-none bg-[#f7f9f7]"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-[10px] font-extrabold uppercase text-[#69778c] mb-1">
+                    <label className="block text-[10px] font-extrabold text-[#5e6b67] mb-1">
                       Setor / Função
                     </label>
                     <input
@@ -1765,20 +1765,20 @@ export const VtScreen: React.FC<VtScreenProps> = ({
                       placeholder="Atendimento, Caixa, Estoque..."
                       value={empForm.setor || ""}
                       onChange={(e) => setEmpForm((p) => ({ ...p, setor: e.target.value }))}
-                      className="w-full rounded-xl border border-[#e5eaf1] px-3 py-2 text-xs font-semibold text-[#152238] focus:border-[#3c63da] focus:outline-none bg-[#f8faff]"
+                      className="w-full rounded-xl border border-[#dfe4df] px-3 py-2 text-xs font-semibold text-[#17211f] focus:border-[#0f4c5c] focus:outline-none bg-[#f7f9f7]"
                     />
                   </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-[10px] font-extrabold uppercase text-[#69778c] mb-1">
+                    <label className="block text-[10px] font-extrabold text-[#5e6b67] mb-1">
                       Operadora / Cartão
                     </label>
                     <select
                       value={empForm.operadora || "Bilhete Único SP (SPTrans)"}
                       onChange={(e) => setEmpForm((p) => ({ ...p, operadora: e.target.value }))}
-                      className="w-full rounded-xl border border-[#e5eaf1] px-3 py-2 text-xs font-semibold text-[#152238] focus:border-[#3c63da] focus:outline-none bg-[#f8faff]"
+                      className="w-full rounded-xl border border-[#dfe4df] px-3 py-2 text-xs font-semibold text-[#17211f] focus:border-[#0f4c5c] focus:outline-none bg-[#f7f9f7]"
                     >
                       <option value="Bilhete Único SP (SPTrans)">Bilhete Único SP (SPTrans)</option>
                       <option value="Cartão TOP Metropolitano">Cartão TOP Metropolitano</option>
@@ -1792,7 +1792,7 @@ export const VtScreen: React.FC<VtScreenProps> = ({
                   </div>
 
                   <div>
-                    <label className="block text-[10px] font-extrabold uppercase text-[#69778c] mb-1">
+                    <label className="block text-[10px] font-extrabold text-[#5e6b67] mb-1">
                       Número do Cartão
                     </label>
                     <input
@@ -1800,14 +1800,14 @@ export const VtScreen: React.FC<VtScreenProps> = ({
                       placeholder="9823.4412.0911"
                       value={empForm.cartaoNumero || ""}
                       onChange={(e) => setEmpForm((p) => ({ ...p, cartaoNumero: e.target.value }))}
-                      className="w-full rounded-xl border border-[#e5eaf1] px-3 py-2 text-xs font-mono font-semibold text-[#152238] focus:border-[#3c63da] focus:outline-none bg-[#f8faff]"
+                      className="w-full rounded-xl border border-[#dfe4df] px-3 py-2 text-xs font-mono font-semibold text-[#17211f] focus:border-[#0f4c5c] focus:outline-none bg-[#f7f9f7]"
                     />
                   </div>
                 </div>
 
                 <div className="grid grid-cols-3 gap-3">
                   <div>
-                    <label className="block text-[10px] font-extrabold uppercase text-[#69778c] mb-1">
+                    <label className="block text-[10px] font-extrabold text-[#5e6b67] mb-1">
                       Tarifa Ida (R$)
                     </label>
                     <input
@@ -1816,12 +1816,12 @@ export const VtScreen: React.FC<VtScreenProps> = ({
                       min="0"
                       value={empForm.tarifaIda ?? 5.0}
                       onChange={(e) => setEmpForm((p) => ({ ...p, tarifaIda: parseFloat(e.target.value || "0") }))}
-                      className="w-full rounded-xl border border-[#e5eaf1] px-3 py-2 text-xs font-mono font-bold text-[#152238] focus:border-[#3c63da] focus:outline-none bg-[#f8faff]"
+                      className="w-full rounded-xl border border-[#dfe4df] px-3 py-2 text-xs font-mono font-bold text-[#17211f] focus:border-[#0f4c5c] focus:outline-none bg-[#f7f9f7]"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-[10px] font-extrabold uppercase text-[#69778c] mb-1">
+                    <label className="block text-[10px] font-extrabold text-[#5e6b67] mb-1">
                       Tarifa Volta (R$)
                     </label>
                     <input
@@ -1830,12 +1830,12 @@ export const VtScreen: React.FC<VtScreenProps> = ({
                       min="0"
                       value={empForm.tarifaVolta ?? 5.0}
                       onChange={(e) => setEmpForm((p) => ({ ...p, tarifaVolta: parseFloat(e.target.value || "0") }))}
-                      className="w-full rounded-xl border border-[#e5eaf1] px-3 py-2 text-xs font-mono font-bold text-[#152238] focus:border-[#3c63da] focus:outline-none bg-[#f8faff]"
+                      className="w-full rounded-xl border border-[#dfe4df] px-3 py-2 text-xs font-mono font-bold text-[#17211f] focus:border-[#0f4c5c] focus:outline-none bg-[#f7f9f7]"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-[10px] font-extrabold uppercase text-[#69778c] mb-1">
+                    <label className="block text-[10px] font-extrabold text-[#5e6b67] mb-1">
                       Salário Base (R$)
                     </label>
                     <input
@@ -1844,14 +1844,14 @@ export const VtScreen: React.FC<VtScreenProps> = ({
                       min="0"
                       value={empForm.salarioBase ?? 2000}
                       onChange={(e) => setEmpForm((p) => ({ ...p, salarioBase: parseFloat(e.target.value || "0") }))}
-                      className="w-full rounded-xl border border-[#e5eaf1] px-3 py-2 text-xs font-mono font-bold text-[#152238] focus:border-[#3c63da] focus:outline-none bg-[#f8faff]"
+                      className="w-full rounded-xl border border-[#dfe4df] px-3 py-2 text-xs font-mono font-bold text-[#17211f] focus:border-[#0f4c5c] focus:outline-none bg-[#f7f9f7]"
                     />
                   </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-[10px] font-extrabold uppercase text-[#69778c] mb-1">
+                    <label className="block text-[10px] font-extrabold text-[#5e6b67] mb-1">
                       Dias Previstos no Mês
                     </label>
                     <input
@@ -1860,12 +1860,12 @@ export const VtScreen: React.FC<VtScreenProps> = ({
                       max="31"
                       value={empForm.diasPrevistos ?? businessDaysInfo.businessDays}
                       onChange={(e) => setEmpForm((p) => ({ ...p, diasPrevistos: parseInt(e.target.value || "22", 10) }))}
-                      className="w-full rounded-xl border border-[#e5eaf1] px-3 py-2 text-xs font-mono font-bold text-[#152238] focus:border-[#3c63da] focus:outline-none bg-[#f8faff]"
+                      className="w-full rounded-xl border border-[#dfe4df] px-3 py-2 text-xs font-mono font-bold text-[#17211f] focus:border-[#0f4c5c] focus:outline-none bg-[#f7f9f7]"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-[10px] font-extrabold uppercase text-[#69778c] mb-1">
+                    <label className="block text-[10px] font-extrabold text-[#5e6b67] mb-1">
                       Faltas
                     </label>
                     <input
@@ -1874,20 +1874,20 @@ export const VtScreen: React.FC<VtScreenProps> = ({
                       max="31"
                       value={empForm.faltas ?? 0}
                       onChange={(e) => setEmpForm((p) => ({ ...p, faltas: parseInt(e.target.value || "0", 10) }))}
-                      className="w-full rounded-xl border border-[#e5eaf1] px-3 py-2 text-xs font-mono font-bold text-[#152238] focus:border-[#3c63da] focus:outline-none bg-[#f8faff]"
+                      className="w-full rounded-xl border border-[#dfe4df] px-3 py-2 text-xs font-mono font-bold text-[#17211f] focus:border-[#0f4c5c] focus:outline-none bg-[#f7f9f7]"
                     />
                   </div>
                 </div>
 
-                <div className="p-3 bg-[#f8faff] rounded-xl border border-[#e5eaf1] flex items-center justify-between">
+                <div className="p-3 bg-[#f7f9f7] rounded-xl border border-[#dfe4df] flex items-center justify-between">
                   <div>
-                    <div className="text-[10px] font-extrabold uppercase text-[#69778c]">Diária Calculada</div>
-                    <strong className="text-sm font-mono text-[#152238]">
+                    <div className="text-[10px] font-extrabold text-[#5e6b67]">Diária Calculada</div>
+                    <strong className="text-sm font-mono text-[#17211f]">
                       {formatBrl(((empForm.tarifaIda || 0) + (empForm.tarifaVolta || 0)))}
                     </strong>
                   </div>
                   <div>
-                    <div className="text-[10px] font-extrabold uppercase text-[#69778c]">Teto CLT (6%)</div>
+                    <div className="text-[10px] font-extrabold text-[#5e6b67]">Teto CLT (6%)</div>
                     <strong className="text-sm font-mono text-purple-700">
                       {formatBrl(((empForm.salarioBase || 0) * 0.06))}
                     </strong>
@@ -1895,17 +1895,17 @@ export const VtScreen: React.FC<VtScreenProps> = ({
                 </div>
               </div>
 
-              <div className="shrink-0 p-3.5 sm:p-4 border-t border-[#e5eaf1] flex items-center justify-end gap-2 bg-[#f8faff]">
+              <div className="shrink-0 p-3.5 sm:p-4 border-t border-[#dfe4df] flex items-center justify-end gap-2 bg-[#f7f9f7]">
                 <button
                   type="button"
                   onClick={() => setIsAddModalOpen(false)}
-                  className="rounded-xl border border-[#e5eaf1] bg-white px-4 py-2 text-xs font-bold text-[#152238] hover:bg-[#f4f7fb] cursor-pointer"
+                  className="rounded-xl border border-[#dfe4df] bg-white px-4 py-2 text-xs font-bold text-[#17211f] hover:bg-[#f0f3f0] cursor-pointer"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
-                  className="rounded-xl bg-[#3c63da] px-5 py-2 text-xs font-bold text-white hover:bg-[#2f52c0] shadow-sm cursor-pointer"
+                  className="rounded-xl bg-[#0f4c5c] px-5 py-2 text-xs font-bold text-white hover:bg-[#0b3b48] shadow-sm cursor-pointer"
                 >
                   {editingEmployee ? "Salvar Alterações" : "Adicionar Colaborador"}
                 </button>
@@ -1920,22 +1920,22 @@ export const VtScreen: React.FC<VtScreenProps> = ({
       {/* ------------------------------------------------------------- */}
       {isBatchDaysModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/60 backdrop-blur-xs overflow-y-auto">
-          <div className="bg-white rounded-2xl shadow-2xl border border-[#e5eaf1] w-full max-w-sm max-h-[90vh] my-auto flex flex-col overflow-hidden animate-in zoom-in-95 duration-150">
-            <div className="shrink-0 p-4 border-b border-[#e5eaf1] bg-[#f8faff] flex items-center justify-between">
-              <h3 className="text-sm font-bold text-[#152238] flex items-center gap-2">
-                <Sliders className="h-4 w-4 text-[#3c63da]" />
+          <div className="bg-white rounded-2xl shadow-2xl border border-[#dfe4df] w-full max-w-sm max-h-[90vh] my-auto flex flex-col overflow-hidden animate-in zoom-in-95 duration-150">
+            <div className="shrink-0 p-4 border-b border-[#dfe4df] bg-[#f7f9f7] flex items-center justify-between">
+              <h3 className="text-sm font-bold text-[#17211f] flex items-center gap-2">
+                <Sliders className="h-4 w-4 text-[#0f4c5c]" />
                 <span>Definir Dias Úteis do Mês</span>
               </h3>
               <button
                 onClick={() => setIsBatchDaysModalOpen(false)}
-                className="h-7 w-7 rounded-lg bg-white border border-[#e5eaf1] flex items-center justify-center text-[#69778c] hover:bg-[#f4f7fb] cursor-pointer"
+                className="h-7 w-7 rounded-lg bg-white border border-[#dfe4df] flex items-center justify-center text-[#5e6b67] hover:bg-[#f0f3f0] cursor-pointer"
               >
                 <X className="h-3.5 w-3.5" />
               </button>
             </div>
 
             <div className="flex-1 overflow-y-auto p-4 space-y-3 text-xs">
-              <p className="text-[#69778c]">
+              <p className="text-[#5e6b67]">
                 Escolha a quantidade de dias úteis para a previsão deste período:
               </p>
 
@@ -1946,8 +1946,8 @@ export const VtScreen: React.FC<VtScreenProps> = ({
                     onClick={() => setBatchDaysValue(d)}
                     className={`py-2 rounded-xl text-xs font-bold border transition-all cursor-pointer ${
                       batchDaysValue === d
-                        ? "bg-[#3c63da] text-white border-[#3c63da] shadow-xs"
-                        : "bg-[#f8faff] text-[#152238] border-[#e5eaf1] hover:border-[#3c63da]"
+                        ? "bg-[#0f4c5c] text-white border-[#0f4c5c] shadow-xs"
+                        : "bg-[#f7f9f7] text-[#17211f] border-[#dfe4df] hover:border-[#0f4c5c]"
                     }`}
                   >
                     {d} dias
@@ -1956,7 +1956,7 @@ export const VtScreen: React.FC<VtScreenProps> = ({
               </div>
 
               <div>
-                <label className="block text-[10px] font-extrabold uppercase text-[#69778c] mb-1">
+                <label className="block text-[10px] font-extrabold text-[#5e6b67] mb-1">
                   Ou digite quantidade personalizada:
                 </label>
                 <input
@@ -1965,21 +1965,21 @@ export const VtScreen: React.FC<VtScreenProps> = ({
                   max="31"
                   value={batchDaysValue}
                   onChange={(e) => setBatchDaysValue(parseInt(e.target.value || "22", 10))}
-                  className="w-full rounded-xl border border-[#e5eaf1] px-3 py-2 text-xs font-mono font-bold text-[#152238] bg-[#f8faff]"
+                  className="w-full rounded-xl border border-[#dfe4df] px-3 py-2 text-xs font-mono font-bold text-[#17211f] bg-[#f7f9f7]"
                 />
               </div>
             </div>
 
-            <div className="shrink-0 p-3.5 sm:p-4 border-t border-[#e5eaf1] flex items-center justify-end gap-2 bg-[#f8faff]">
+            <div className="shrink-0 p-3.5 sm:p-4 border-t border-[#dfe4df] flex items-center justify-end gap-2 bg-[#f7f9f7]">
               <button
                 onClick={() => setIsBatchDaysModalOpen(false)}
-                className="px-3 py-1.5 rounded-lg border border-[#e5eaf1] bg-white text-xs font-bold text-[#152238] hover:bg-[#f4f7fb]"
+                className="px-3 py-1.5 rounded-lg border border-[#dfe4df] bg-white text-xs font-bold text-[#17211f] hover:bg-[#f0f3f0]"
               >
                 Cancelar
               </button>
               <button
                 onClick={applyBatchDays}
-                className="px-4 py-1.5 rounded-lg bg-[#3c63da] text-xs font-bold text-white shadow-xs hover:bg-[#2f52c0]"
+                className="px-4 py-1.5 rounded-lg bg-[#0f4c5c] text-xs font-bold text-white shadow-xs hover:bg-[#0b3b48]"
               >
                 Aplicar a Todos
               </button>

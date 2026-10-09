@@ -48,7 +48,7 @@ export const TenantsScreen: React.FC<TenantsScreenProps> = ({
   const [isAddingBrandInline, setIsAddingBrandInline] = useState(false);
   const [inlineBrandName, setInlineBrandName] = useState("");
   const [inlineBrandRoyalty, setInlineBrandRoyalty] = useState("6.0");
-  const [inlineBrandColor, setInlineBrandColor] = useState("#3c63da");
+  const [inlineBrandColor, setInlineBrandColor] = useState("#0f4c5c");
 
   // Form fields
   const [form, setForm] = useState({
@@ -196,7 +196,7 @@ export const TenantsScreen: React.FC<TenantsScreenProps> = ({
       id: cleanId,
       name: inlineBrandName.trim(),
       brand: inlineBrandName.trim(),
-      color: inlineBrandColor || "#3c63da",
+      color: inlineBrandColor || "#0f4c5c",
       royalty: Number.isFinite(parsedRoy) ? parsedRoy / 100 : 0.06,
     };
 
@@ -250,7 +250,7 @@ export const TenantsScreen: React.FC<TenantsScreenProps> = ({
           id: "biz_principal",
           name: "Rede Principal",
           brand: "Rede Principal",
-          color: "#3c63da",
+          color: "#0f4c5c",
           royalty: 0.06,
         };
         currentBizList = [defaultBiz];
@@ -316,14 +316,14 @@ export const TenantsScreen: React.FC<TenantsScreenProps> = ({
       {/* Top Banner */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <div className="text-[10px] font-extrabold uppercase tracking-widest text-[#3c63da]">
+          <div className="text-[10px] font-extrabold text-[#0f4c5c]">
             Cadastro de Unidades & Lojas
           </div>
-          <h2 className="text-2xl font-extrabold tracking-tight text-[#152238] flex items-center gap-2 mt-1">
-            <Store className="h-6 w-6 text-[#3c63da]" />
+          <h2 className="text-2xl font-extrabold tracking-tight text-[#17211f] flex items-center gap-2 mt-1">
+            <Store className="h-6 w-6 text-[#0f4c5c]" />
             Franqueados e Unidades ({franchises.length})
           </h2>
-          <p className="text-xs text-[#69778c] mt-1">
+          <p className="text-xs text-[#5e6b67] mt-1">
                     Gestão completa das lojas físicas, quiosques e unidades da rede de franquias, com localização confirmada pelo endereço informado.
           </p>
         </div>
@@ -334,7 +334,7 @@ export const TenantsScreen: React.FC<TenantsScreenProps> = ({
             id="btn-cadastrar-novo-franqueado"
             type="button"
             onClick={openAddModal}
-            className="flex items-center gap-1.5 rounded-xl bg-[#3c63da] hover:bg-[#2f52c0] px-4 py-2.5 text-xs font-bold text-white shadow-sm transition-all cursor-pointer"
+            className="flex items-center gap-1.5 rounded-xl bg-[#0f4c5c] hover:bg-[#0b3b48] px-4 py-2.5 text-xs font-bold text-white shadow-sm transition-all cursor-pointer"
           >
             <Plus className="h-4 w-4" />
             <span>Cadastrar Novo Franqueado</span>
@@ -343,9 +343,9 @@ export const TenantsScreen: React.FC<TenantsScreenProps> = ({
           <button
             type="button"
             onClick={() => onNavigate("network")}
-            className="flex items-center gap-1.5 rounded-xl border border-[#e5eaf1] bg-white px-3.5 py-2.5 text-xs font-bold text-[#152238] hover:bg-[#f4f7fb] shadow-2xs transition-all cursor-pointer"
+            className="flex items-center gap-1.5 rounded-xl border border-[#dfe4df] bg-white px-3.5 py-2.5 text-xs font-bold text-[#17211f] hover:bg-[#f0f3f0] shadow-2xs transition-all cursor-pointer"
           >
-            <Building2 className="h-3.5 w-3.5 text-[#3c63da]" />
+            <Building2 className="h-3.5 w-3.5 text-[#0f4c5c]" />
             <span>Visão da Rede</span>
           </button>
         </div>
@@ -362,20 +362,20 @@ export const TenantsScreen: React.FC<TenantsScreenProps> = ({
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-2.5 h-4 w-4 text-[#69778c]" />
+          <Search className="absolute left-3 top-2.5 h-4 w-4 text-[#5e6b67]" />
           <input
             type="text"
             placeholder="Buscar por nome, código, responsável ou cidade..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full rounded-xl border border-[#e5eaf1] bg-white pl-9 pr-3 py-2 text-xs font-medium text-[#152238] focus:border-[#3c63da] focus:outline-none shadow-xs"
+            className="w-full rounded-xl border border-[#dfe4df] bg-white pl-9 pr-3 py-2 text-xs font-medium text-[#17211f] focus:border-[#0f4c5c] focus:outline-none shadow-xs"
           />
         </div>
 
         <select
           value={bizFilter}
           onChange={(e) => setBizFilter(e.target.value)}
-          className="rounded-xl border border-[#e5eaf1] bg-white px-3 py-2 text-xs font-semibold text-[#152238] focus:border-[#3c63da] focus:outline-none shadow-xs"
+          className="rounded-xl border border-[#dfe4df] bg-white px-3 py-2 text-xs font-semibold text-[#17211f] focus:border-[#0f4c5c] focus:outline-none shadow-xs"
         >
           <option value="all">Todos os Modelos de Negócio</option>
           {businesses.map((b) => (
@@ -393,11 +393,11 @@ export const TenantsScreen: React.FC<TenantsScreenProps> = ({
           return (
             <div
               key={f.id}
-              className="rounded-2xl border border-[#e5eaf1] bg-white p-5 shadow-xs hover:border-[#3c63da] hover:shadow-md transition-all flex flex-col justify-between"
+              className="rounded-2xl border border-[#dfe4df] bg-white p-5 shadow-xs hover:border-[#0f4c5c] hover:shadow-md transition-all flex flex-col justify-between"
             >
               <div>
                 <div className="flex items-center justify-between gap-2 mb-2">
-                  <span className="font-mono text-xs font-extrabold text-[#3c63da] bg-[#edf2ff] px-2 py-0.5 rounded-md">
+                  <span className="font-mono text-xs font-extrabold text-[#0f4c5c] bg-[#e3eff1] px-2 py-0.5 rounded-md">
                     {f.code}
                   </span>
                   <span
@@ -411,31 +411,31 @@ export const TenantsScreen: React.FC<TenantsScreenProps> = ({
                   </span>
                 </div>
 
-                <h3 className="text-base font-extrabold text-[#152238]">{f.name}</h3>
-                <span className="text-xs text-[#69778c] block mt-0.5">{biz?.name || biz?.brand || "Franquia"}</span>
+                <h3 className="text-base font-extrabold text-[#17211f]">{f.name}</h3>
+                <span className="text-xs text-[#5e6b67] block mt-0.5">{biz?.name || biz?.brand || "Franquia"}</span>
 
-                <div className="mt-3 space-y-1.5 text-xs text-[#69778c]">
+                <div className="mt-3 space-y-1.5 text-xs text-[#5e6b67]">
                   <div className="flex items-center gap-1.5">
-                    <MapPin className="h-3.5 w-3.5 text-[#3c63da]" />
+                    <MapPin className="h-3.5 w-3.5 text-[#0f4c5c]" />
                     <span>{f.city}{f.state ? `, ${f.state}` : ` (${f.region || "Brasil"})`}</span>
                   </div>
                   <div className="flex items-center gap-1.5">
-                    <Mail className="h-3.5 w-3.5 text-[#69778c]" />
+                    <Mail className="h-3.5 w-3.5 text-[#5e6b67]" />
                     <span>{f.email || "E-mail não informado"}</span>
                   </div>
                   <div className="flex items-center gap-1.5">
-                    <Phone className="h-3.5 w-3.5 text-[#69778c]" />
+                    <Phone className="h-3.5 w-3.5 text-[#5e6b67]" />
                     <span>{f.phone || "Telefone não informado"}</span>
                   </div>
                 </div>
               </div>
 
-              <div className="pt-4 mt-4 border-t border-[#e5eaf1] flex items-center justify-between">
+              <div className="pt-4 mt-4 border-t border-[#dfe4df] flex items-center justify-between">
                 <div>
-                  <span className="text-[10px] text-[#69778c] block uppercase font-extrabold">
+                  <span className="text-[10px] text-[#5e6b67] block font-extrabold">
                     Faturamento
                   </span>
-                  <b className="text-sm font-extrabold text-[#152238] font-mono">
+                  <b className="text-sm font-extrabold text-[#17211f] font-mono">
                     {formatBrl(f.faturamento)}
                   </b>
                 </div>
@@ -444,7 +444,7 @@ export const TenantsScreen: React.FC<TenantsScreenProps> = ({
                   <button
                     type="button"
                     onClick={() => openEditModal(f)}
-                    className="flex items-center gap-1 rounded-lg border border-[#3c63da]/30 bg-[#edf2ff] px-2.5 py-1.5 text-xs font-bold text-[#3c63da] hover:bg-[#dfe8fe] transition-all cursor-pointer"
+                    className="flex items-center gap-1 rounded-lg border border-[#0f4c5c]/30 bg-[#e3eff1] px-2.5 py-1.5 text-xs font-bold text-[#0f4c5c] hover:bg-[#e3eff1] transition-all cursor-pointer"
                     title="Editar informações da franquia"
                   >
                     <Edit3 className="h-3 w-3" />
@@ -456,7 +456,7 @@ export const TenantsScreen: React.FC<TenantsScreenProps> = ({
                       onSelectTenant(f.id);
                       onNavigate("dre");
                     }}
-                    className="flex items-center gap-1 rounded-lg border border-[#e5eaf1] bg-[#f8faff] px-3 py-1.5 text-xs font-bold text-[#152238] hover:bg-[#edf2ff] transition-all cursor-pointer"
+                    className="flex items-center gap-1 rounded-lg border border-[#dfe4df] bg-[#f7f9f7] px-3 py-1.5 text-xs font-bold text-[#17211f] hover:bg-[#e3eff1] transition-all cursor-pointer"
                   >
                     <span>Abrir</span>
                     <ExternalLink className="h-3 w-3" />
@@ -471,21 +471,21 @@ export const TenantsScreen: React.FC<TenantsScreenProps> = ({
       {/* Modal: Cadastrar Novo Franqueado (Ultra-Fast, Instant UI) */}
       {showAddModal && (
         <div
-          className="fixed inset-0 z-[100] flex items-center justify-center bg-[#152238]/50 backdrop-blur-xs p-4 overflow-y-auto"
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-[#17211f]/50 backdrop-blur-xs p-4 overflow-y-auto"
           role="dialog"
           aria-modal="true"
         >
-          <div className="w-full max-w-xl rounded-2xl bg-white shadow-2xl border border-[#dbe4ef] overflow-hidden animate-in fade-in zoom-in-95 duration-150 my-8">
-            <div className="flex items-center justify-between px-5 py-4 border-b border-[#e5eaf1] bg-[#f8faff]">
+          <div className="w-full max-w-xl rounded-2xl bg-white shadow-2xl border border-[#dfe4df] overflow-hidden animate-in fade-in zoom-in-95 duration-150 my-8">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-[#dfe4df] bg-[#f7f9f7]">
               <div className="flex items-center gap-2.5">
-                <div className="p-2 rounded-xl bg-[#edf2ff] text-[#3c63da]">
+                <div className="p-2 rounded-xl bg-[#e3eff1] text-[#0f4c5c]">
                   <Store className="h-5 w-5" />
                 </div>
                 <div>
-                  <h3 className="text-base font-extrabold text-[#152238]">
+                  <h3 className="text-base font-extrabold text-[#17211f]">
                     Cadastrar Novo Franqueado
                   </h3>
-                  <p className="text-[11px] text-[#69778c]">
+                  <p className="text-[11px] text-[#5e6b67]">
                     Cadastro ágil com sincronização instantânea em toda a rede.
                   </p>
                 </div>
@@ -493,7 +493,7 @@ export const TenantsScreen: React.FC<TenantsScreenProps> = ({
               <button
                 type="button"
                 onClick={() => setShowAddModal(false)}
-                className="p-1.5 rounded-lg text-[#69778c] hover:bg-white hover:text-[#152238] transition-colors cursor-pointer"
+                className="p-1.5 rounded-lg text-[#5e6b67] hover:bg-white hover:text-[#17211f] transition-colors cursor-pointer"
               >
                 <X className="h-5 w-5" />
               </button>
@@ -509,7 +509,7 @@ export const TenantsScreen: React.FC<TenantsScreenProps> = ({
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                 {/* Nome da Franquia */}
                 <div className="sm:col-span-2">
-                  <label className="block text-xs font-bold text-[#152238] mb-1">
+                  <label className="block text-xs font-bold text-[#17211f] mb-1">
                     Nome da Loja / Franqueado *
                   </label>
                   <input
@@ -519,28 +519,28 @@ export const TenantsScreen: React.FC<TenantsScreenProps> = ({
                     placeholder="Ex: Café Bela Vista Paulista"
                     value={form.name}
                     onChange={(e) => setForm({ ...form, name: e.target.value })}
-                    className="w-full rounded-xl border border-[#dbe4ef] bg-[#f8faff] px-3.5 py-2.5 text-xs font-bold text-[#152238] focus:border-[#3c63da] focus:bg-white focus:outline-none transition-all"
+                    className="w-full rounded-xl border border-[#dfe4df] bg-[#f7f9f7] px-3.5 py-2.5 text-xs font-bold text-[#17211f] focus:border-[#0f4c5c] focus:bg-white focus:outline-none transition-all"
                   />
                 </div>
 
                 {/* Modelo / Marca */}
                 <div className="sm:col-span-2">
                   <div className="flex items-center justify-between mb-1">
-                    <label className="block text-xs font-bold text-[#152238]">
+                    <label className="block text-xs font-bold text-[#17211f]">
                       Modelo / Marca Vinculada *
                     </label>
                     <button
                       type="button"
                       onClick={() => setIsAddingBrandInline(!isAddingBrandInline)}
-                      className="text-[11px] font-bold text-[#3c63da] hover:underline cursor-pointer"
+                      className="text-[11px] font-bold text-[#0f4c5c] hover:underline cursor-pointer"
                     >
                       {isAddingBrandInline ? "Cancelar Nova Marca" : "Nova Marca Rápida"}
                     </button>
                   </div>
 
                   {isAddingBrandInline ? (
-                    <div className="p-3 rounded-xl border border-[#3c63da] bg-[#edf2ff]/30 space-y-2.5">
-                      <div className="text-[11px] font-extrabold text-[#3c63da] uppercase">
+                    <div className="p-3 rounded-xl border border-[#0f4c5c] bg-[#e3eff1]/30 space-y-2.5">
+                      <div className="text-[11px] font-extrabold text-[#0f4c5c] ">
                         Cadastrar Nova Marca / Modelo
                       </div>
                       <input
@@ -548,7 +548,7 @@ export const TenantsScreen: React.FC<TenantsScreenProps> = ({
                         placeholder="Nome da Marca (Ex: Quiosque Express)"
                         value={inlineBrandName}
                         onChange={(e) => setInlineBrandName(e.target.value)}
-                        className="w-full rounded-lg border border-[#c4cdd9] bg-white px-3 py-1.5 text-xs font-bold"
+                        className="w-full rounded-lg border border-[#c9d1cb] bg-white px-3 py-1.5 text-xs font-bold"
                       />
                       <div className="flex items-center gap-2">
                         <div className="flex-1">
@@ -558,19 +558,19 @@ export const TenantsScreen: React.FC<TenantsScreenProps> = ({
                             placeholder="Royalty % (Ex: 6.0)"
                             value={inlineBrandRoyalty}
                             onChange={(e) => setInlineBrandRoyalty(e.target.value)}
-                            className="w-full rounded-lg border border-[#c4cdd9] bg-white px-3 py-1.5 text-xs font-bold"
+                            className="w-full rounded-lg border border-[#c9d1cb] bg-white px-3 py-1.5 text-xs font-bold"
                           />
                         </div>
                         <input
                           type="color"
                           value={inlineBrandColor}
                           onChange={(e) => setInlineBrandColor(e.target.value)}
-                          className="h-8 w-10 rounded border border-[#c4cdd9] p-0.5 cursor-pointer bg-white"
+                          className="h-8 w-10 rounded border border-[#c9d1cb] p-0.5 cursor-pointer bg-white"
                         />
                         <button
                           type="button"
                           onClick={handleCreateInlineBrand}
-                          className="px-3 py-1.5 rounded-lg bg-[#3c63da] text-white text-xs font-bold hover:bg-[#2f52c0] cursor-pointer"
+                          className="px-3 py-1.5 rounded-lg bg-[#0f4c5c] text-white text-xs font-bold hover:bg-[#0b3b48] cursor-pointer"
                         >
                           Salvar Marca
                         </button>
@@ -586,7 +586,7 @@ export const TenantsScreen: React.FC<TenantsScreenProps> = ({
                           setForm({ ...form, businessId: e.target.value });
                         }
                       }}
-                      className="w-full rounded-xl border border-[#dbe4ef] bg-[#f8faff] px-3.5 py-2.5 text-xs font-bold text-[#152238] focus:border-[#3c63da] focus:bg-white focus:outline-none transition-all"
+                      className="w-full rounded-xl border border-[#dfe4df] bg-[#f7f9f7] px-3.5 py-2.5 text-xs font-bold text-[#17211f] focus:border-[#0f4c5c] focus:bg-white focus:outline-none transition-all"
                     >
                       {businesses.map((b) => (
                         <option key={b.id} value={b.id}>
@@ -601,21 +601,21 @@ export const TenantsScreen: React.FC<TenantsScreenProps> = ({
                 {/* Código */}
                 <div>
                   <div className="flex items-center justify-between mb-1">
-                    <label className="block text-xs font-bold text-[#152238]">Código da Franquia</label>
-                    <span className="text-[10px] text-[#69778c]">Auto</span>
+                    <label className="block text-xs font-bold text-[#17211f]">Código da Franquia</label>
+                    <span className="text-[10px] text-[#5e6b67]">Auto</span>
                   </div>
                   <input
                     type="text"
                     placeholder={`Ex: F${String(franchises.length + 1).padStart(3, "0")}`}
                     value={form.code}
                     onChange={(e) => setForm({ ...form, code: e.target.value })}
-                    className="w-full rounded-xl border border-[#dbe4ef] bg-[#f8faff] px-3.5 py-2 text-xs font-bold text-[#152238] focus:border-[#3c63da] focus:bg-white focus:outline-none"
+                    className="w-full rounded-xl border border-[#dfe4df] bg-[#f7f9f7] px-3.5 py-2 text-xs font-bold text-[#17211f] focus:border-[#0f4c5c] focus:bg-white focus:outline-none"
                   />
                 </div>
 
                 {/* Responsável */}
                 <div>
-                  <label className="block text-xs font-bold text-[#152238] mb-1">
+                  <label className="block text-xs font-bold text-[#17211f] mb-1">
                     Responsável (Nome do Franqueado)
                   </label>
                   <input
@@ -623,84 +623,84 @@ export const TenantsScreen: React.FC<TenantsScreenProps> = ({
                     placeholder="Nome do franqueado"
                     value={form.resp}
                     onChange={(e) => setForm({ ...form, resp: e.target.value })}
-                    className="w-full rounded-xl border border-[#dbe4ef] bg-[#f8faff] px-3.5 py-2 text-xs font-bold text-[#152238] focus:border-[#3c63da] focus:bg-white focus:outline-none"
+                    className="w-full rounded-xl border border-[#dfe4df] bg-[#f7f9f7] px-3.5 py-2 text-xs font-bold text-[#17211f] focus:border-[#0f4c5c] focus:bg-white focus:outline-none"
                   />
                 </div>
 
                 {/* Cidade - UF */}
                 <div>
-                  <label className="block text-xs font-bold text-[#152238] mb-1">Cidade - UF *</label>
+                  <label className="block text-xs font-bold text-[#17211f] mb-1">Cidade - UF *</label>
                   <input
                     type="text"
                     required
                     placeholder="Ex: Santo André - SP"
                     value={form.city}
                     onChange={(e) => setForm({ ...form, city: e.target.value })}
-                    className="w-full rounded-xl border border-[#dbe4ef] bg-[#f8faff] px-3.5 py-2 text-xs font-bold text-[#152238] focus:border-[#3c63da] focus:bg-white focus:outline-none"
+                    className="w-full rounded-xl border border-[#dfe4df] bg-[#f7f9f7] px-3.5 py-2 text-xs font-bold text-[#17211f] focus:border-[#0f4c5c] focus:bg-white focus:outline-none"
                   />
                 </div>
 
                 {/* Endereço real */}
                 <div className="sm:col-span-2">
-                  <label className="block text-xs font-bold text-[#152238] mb-1">Endereço completo *</label>
+                  <label className="block text-xs font-bold text-[#17211f] mb-1">Endereço completo *</label>
                   <input
                     type="text"
                     required
                     placeholder="Rua, número, bairro, cidade - UF, CEP"
                     value={form.address}
                     onChange={(e) => setForm({ ...form, address: e.target.value })}
-                    className="w-full rounded-xl border border-[#dbe4ef] bg-[#f8faff] px-3.5 py-2 text-xs font-bold text-[#152238] focus:border-[#3c63da] focus:bg-white focus:outline-none"
+                    className="w-full rounded-xl border border-[#dfe4df] bg-[#f7f9f7] px-3.5 py-2 text-xs font-bold text-[#17211f] focus:border-[#0f4c5c] focus:bg-white focus:outline-none"
                   />
-                  <p className="mt-1 text-[10px] text-[#69778c]">O endereço será confirmado antes de criar o pino; nenhum ponto será inventado.</p>
+                  <p className="mt-1 text-[10px] text-[#5e6b67]">O endereço será confirmado antes de criar o pino; nenhum ponto será inventado.</p>
                   <div className="mt-2 grid grid-cols-2 gap-2">
-                    <input type="number" step="any" placeholder="Latitude (opcional)" value={form.lat} onChange={(e) => setForm({ ...form, lat: e.target.value })} className="w-full rounded-lg border border-[#dbe4ef] bg-white px-2.5 py-2 text-[11px] text-[#152238] focus:border-[#3c63da] focus:outline-none" />
-                    <input type="number" step="any" placeholder="Longitude (opcional)" value={form.lng} onChange={(e) => setForm({ ...form, lng: e.target.value })} className="w-full rounded-lg border border-[#dbe4ef] bg-white px-2.5 py-2 text-[11px] text-[#152238] focus:border-[#3c63da] focus:outline-none" />
+                    <input type="number" step="any" placeholder="Latitude (opcional)" value={form.lat} onChange={(e) => setForm({ ...form, lat: e.target.value })} className="w-full rounded-lg border border-[#dfe4df] bg-white px-2.5 py-2 text-[11px] text-[#17211f] focus:border-[#0f4c5c] focus:outline-none" />
+                    <input type="number" step="any" placeholder="Longitude (opcional)" value={form.lng} onChange={(e) => setForm({ ...form, lng: e.target.value })} className="w-full rounded-lg border border-[#dfe4df] bg-white px-2.5 py-2 text-[11px] text-[#17211f] focus:border-[#0f4c5c] focus:outline-none" />
                   </div>
                 </div>
 
                 {/* Faturamento */}
                 <div>
-                  <label className="block text-xs font-bold text-[#152238] mb-1">
+                  <label className="block text-xs font-bold text-[#17211f] mb-1">
                     Faturamento Mensal Estimado (R$)
                   </label>
                   <input
                     type="number"
                     value={form.faturamento}
                     onChange={(e) => setForm({ ...form, faturamento: Number(e.target.value) })}
-                    className="w-full rounded-xl border border-[#dbe4ef] bg-[#f8faff] px-3.5 py-2 text-xs font-bold text-[#152238] focus:border-[#3c63da] focus:bg-white focus:outline-none"
+                    className="w-full rounded-xl border border-[#dfe4df] bg-[#f7f9f7] px-3.5 py-2 text-xs font-bold text-[#17211f] focus:border-[#0f4c5c] focus:bg-white focus:outline-none"
                   />
                 </div>
 
                 {/* E-mail */}
                 <div>
-                  <label className="block text-xs font-bold text-[#152238] mb-1">E-mail de Contato</label>
+                  <label className="block text-xs font-bold text-[#17211f] mb-1">E-mail de Contato</label>
                   <input
                     type="email"
                     placeholder="contato@franquia.com"
                     value={form.email}
                     onChange={(e) => setForm({ ...form, email: e.target.value })}
-                    className="w-full rounded-xl border border-[#dbe4ef] bg-[#f8faff] px-3.5 py-2 text-xs font-bold text-[#152238] focus:border-[#3c63da] focus:bg-white focus:outline-none"
+                    className="w-full rounded-xl border border-[#dfe4df] bg-[#f7f9f7] px-3.5 py-2 text-xs font-bold text-[#17211f] focus:border-[#0f4c5c] focus:bg-white focus:outline-none"
                   />
                 </div>
 
                 {/* Telefone */}
                 <div>
-                  <label className="block text-xs font-bold text-[#152238] mb-1">Telefone</label>
+                  <label className="block text-xs font-bold text-[#17211f] mb-1">Telefone</label>
                   <input
                     type="text"
                     placeholder="(11) 98765-4321"
                     value={form.phone}
                     onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                    className="w-full rounded-xl border border-[#dbe4ef] bg-[#f8faff] px-3.5 py-2 text-xs font-bold text-[#152238] focus:border-[#3c63da] focus:bg-white focus:outline-none"
+                    className="w-full rounded-xl border border-[#dfe4df] bg-[#f7f9f7] px-3.5 py-2 text-xs font-bold text-[#17211f] focus:border-[#0f4c5c] focus:bg-white focus:outline-none"
                   />
                 </div>
               </div>
 
-              <div className="flex items-center justify-end gap-2.5 pt-4 border-t border-[#e5eaf1]">
+              <div className="flex items-center justify-end gap-2.5 pt-4 border-t border-[#dfe4df]">
                 <button
                   type="button"
                   onClick={() => setShowAddModal(false)}
-                  className="rounded-xl border border-[#dbe4ef] px-4 py-2 text-xs font-bold text-[#69778c] hover:bg-[#f8faff] hover:text-[#152238] transition-colors cursor-pointer"
+                  className="rounded-xl border border-[#dfe4df] px-4 py-2 text-xs font-bold text-[#5e6b67] hover:bg-[#f7f9f7] hover:text-[#17211f] transition-colors cursor-pointer"
                 >
                   Cancelar
                 </button>
@@ -708,7 +708,7 @@ export const TenantsScreen: React.FC<TenantsScreenProps> = ({
                   type="submit"
                   id="btn-confirm-add-franqueado"
                   disabled={isSubmitting}
-                  className="flex items-center gap-1.5 rounded-xl bg-[#3c63da] hover:bg-[#2f52c0] px-5 py-2 text-xs font-bold text-white shadow-sm disabled:opacity-50 transition-all cursor-pointer"
+                  className="flex items-center gap-1.5 rounded-xl bg-[#0f4c5c] hover:bg-[#0b3b48] px-5 py-2 text-xs font-bold text-white shadow-sm disabled:opacity-50 transition-all cursor-pointer"
                 >
                   <Plus className="h-4 w-4" />
                   <span>{isSubmitting ? "Cadastrando..." : "Cadastrar Novo Franqueado"}</span>
@@ -722,21 +722,21 @@ export const TenantsScreen: React.FC<TenantsScreenProps> = ({
       {/* Modal: Editar Franqueado Existente (Salvar Fixo) */}
       {showEditModal && (
         <div
-          className="fixed inset-0 z-[100] flex items-center justify-center bg-[#152238]/50 backdrop-blur-xs p-4 overflow-y-auto"
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-[#17211f]/50 backdrop-blur-xs p-4 overflow-y-auto"
           role="dialog"
           aria-modal="true"
         >
-          <div className="w-full max-w-xl rounded-2xl bg-white shadow-2xl border border-[#dbe4ef] overflow-hidden animate-in fade-in zoom-in-95 duration-150 my-8">
-            <div className="flex items-center justify-between px-5 py-4 border-b border-[#e5eaf1] bg-[#f8faff]">
+          <div className="w-full max-w-xl rounded-2xl bg-white shadow-2xl border border-[#dfe4df] overflow-hidden animate-in fade-in zoom-in-95 duration-150 my-8">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-[#dfe4df] bg-[#f7f9f7]">
               <div className="flex items-center gap-2.5">
                 <div className="p-2 rounded-xl bg-amber-50 text-amber-700">
                   <Edit3 className="h-5 w-5" />
                 </div>
                 <div>
-                  <h3 className="text-base font-extrabold text-[#152238]">
+                  <h3 className="text-base font-extrabold text-[#17211f]">
                     Alterar Informações do Franqueado
                   </h3>
-                  <p className="text-[11px] text-[#69778c]">
+                  <p className="text-[11px] text-[#5e6b67]">
                     Edição permanente com sincronização e fixação imediata.
                   </p>
                 </div>
@@ -744,7 +744,7 @@ export const TenantsScreen: React.FC<TenantsScreenProps> = ({
               <button
                 type="button"
                 onClick={() => setShowEditModal(false)}
-                className="p-1.5 rounded-lg text-[#69778c] hover:bg-white hover:text-[#152238] transition-colors cursor-pointer"
+                className="p-1.5 rounded-lg text-[#5e6b67] hover:bg-white hover:text-[#17211f] transition-colors cursor-pointer"
               >
                 <X className="h-5 w-5" />
               </button>
@@ -759,7 +759,7 @@ export const TenantsScreen: React.FC<TenantsScreenProps> = ({
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                 <div className="sm:col-span-2">
-                  <label className="block text-xs font-bold text-[#152238] mb-1">
+                  <label className="block text-xs font-bold text-[#17211f] mb-1">
                     Nome da Loja / Franqueado *
                   </label>
                   <input
@@ -767,18 +767,18 @@ export const TenantsScreen: React.FC<TenantsScreenProps> = ({
                     required
                     value={editForm.name}
                     onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
-                    className="w-full rounded-xl border border-[#dbe4ef] bg-[#f8faff] px-3.5 py-2.5 text-xs font-bold text-[#152238] focus:border-[#3c63da] focus:bg-white focus:outline-none transition-all"
+                    className="w-full rounded-xl border border-[#dfe4df] bg-[#f7f9f7] px-3.5 py-2.5 text-xs font-bold text-[#17211f] focus:border-[#0f4c5c] focus:bg-white focus:outline-none transition-all"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-[#152238] mb-1">
+                  <label className="block text-xs font-bold text-[#17211f] mb-1">
                     Modelo / Marca *
                   </label>
                   <select
                     value={editForm.businessId}
                     onChange={(e) => setEditForm({ ...editForm, businessId: e.target.value })}
-                    className="w-full rounded-xl border border-[#dbe4ef] bg-[#f8faff] px-3 py-2.5 text-xs font-bold text-[#152238] focus:border-[#3c63da] focus:bg-white focus:outline-none"
+                    className="w-full rounded-xl border border-[#dfe4df] bg-[#f7f9f7] px-3 py-2.5 text-xs font-bold text-[#17211f] focus:border-[#0f4c5c] focus:bg-white focus:outline-none"
                   >
                     {businesses.map((b) => (
                       <option key={b.id} value={b.id}>
@@ -789,7 +789,7 @@ export const TenantsScreen: React.FC<TenantsScreenProps> = ({
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-[#152238] mb-1">
+                  <label className="block text-xs font-bold text-[#17211f] mb-1">
                     Código da Loja *
                   </label>
                   <input
@@ -797,66 +797,66 @@ export const TenantsScreen: React.FC<TenantsScreenProps> = ({
                     required
                     value={editForm.code}
                     onChange={(e) => setEditForm({ ...editForm, code: e.target.value })}
-                    className="w-full rounded-xl border border-[#dbe4ef] bg-[#f8faff] px-3.5 py-2.5 text-xs font-mono font-bold text-[#152238] focus:border-[#3c63da] focus:bg-white focus:outline-none"
+                    className="w-full rounded-xl border border-[#dfe4df] bg-[#f7f9f7] px-3.5 py-2.5 text-xs font-mono font-bold text-[#17211f] focus:border-[#0f4c5c] focus:bg-white focus:outline-none"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-[#152238] mb-1">
+                  <label className="block text-xs font-bold text-[#17211f] mb-1">
                     Responsável (Nome)
                   </label>
                   <input
                     type="text"
                     value={editForm.resp}
                     onChange={(e) => setEditForm({ ...editForm, resp: e.target.value })}
-                    className="w-full rounded-xl border border-[#dbe4ef] bg-[#f8faff] px-3.5 py-2.5 text-xs font-bold text-[#152238] focus:border-[#3c63da] focus:bg-white focus:outline-none"
+                    className="w-full rounded-xl border border-[#dfe4df] bg-[#f7f9f7] px-3.5 py-2.5 text-xs font-bold text-[#17211f] focus:border-[#0f4c5c] focus:bg-white focus:outline-none"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-[#152238] mb-1">
+                  <label className="block text-xs font-bold text-[#17211f] mb-1">
                     Cidade - UF
                   </label>
                   <input
                     type="text"
                     value={editForm.city}
                     onChange={(e) => setEditForm({ ...editForm, city: e.target.value })}
-                    className="w-full rounded-xl border border-[#dbe4ef] bg-[#f8faff] px-3.5 py-2.5 text-xs font-bold text-[#152238] focus:border-[#3c63da] focus:bg-white focus:outline-none"
+                    className="w-full rounded-xl border border-[#dfe4df] bg-[#f7f9f7] px-3.5 py-2.5 text-xs font-bold text-[#17211f] focus:border-[#0f4c5c] focus:bg-white focus:outline-none"
                   />
                 </div>
 
                 <div className="sm:col-span-2">
-                  <label className="block text-xs font-bold text-[#152238] mb-1">
+                  <label className="block text-xs font-bold text-[#17211f] mb-1">
                     Endereço Completo
                   </label>
                   <input
                     type="text"
                     value={editForm.address}
                     onChange={(e) => setEditForm({ ...editForm, address: e.target.value })}
-                    className="w-full rounded-xl border border-[#dbe4ef] bg-[#f8faff] px-3.5 py-2.5 text-xs font-bold text-[#152238] focus:border-[#3c63da] focus:bg-white focus:outline-none"
+                    className="w-full rounded-xl border border-[#dfe4df] bg-[#f7f9f7] px-3.5 py-2.5 text-xs font-bold text-[#17211f] focus:border-[#0f4c5c] focus:bg-white focus:outline-none"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-[#152238] mb-1">
+                  <label className="block text-xs font-bold text-[#17211f] mb-1">
                     Faturamento Mensal (R$)
                   </label>
                   <input
                     type="number"
                     value={editForm.faturamento}
                     onChange={(e) => setEditForm({ ...editForm, faturamento: Number(e.target.value) })}
-                    className="w-full rounded-xl border border-[#dbe4ef] bg-[#f8faff] px-3.5 py-2 text-xs font-mono font-bold text-[#152238] focus:border-[#3c63da] focus:bg-white focus:outline-none"
+                    className="w-full rounded-xl border border-[#dfe4df] bg-[#f7f9f7] px-3.5 py-2 text-xs font-mono font-bold text-[#17211f] focus:border-[#0f4c5c] focus:bg-white focus:outline-none"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-[#152238] mb-1">
+                  <label className="block text-xs font-bold text-[#17211f] mb-1">
                     Status da Unidade
                   </label>
                   <select
                     value={editForm.status}
                     onChange={(e) => setEditForm({ ...editForm, status: e.target.value as any })}
-                    className="w-full rounded-xl border border-[#dbe4ef] bg-[#f8faff] px-3 py-2 text-xs font-bold text-[#152238] focus:border-[#3c63da] focus:bg-white focus:outline-none"
+                    className="w-full rounded-xl border border-[#dfe4df] bg-[#f7f9f7] px-3 py-2 text-xs font-bold text-[#17211f] focus:border-[#0f4c5c] focus:bg-white focus:outline-none"
                   >
                     <option value="green">Verde (Saudável)</option>
                     <option value="yellow">Amarelo (Atenção)</option>
@@ -865,27 +865,27 @@ export const TenantsScreen: React.FC<TenantsScreenProps> = ({
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-[#152238] mb-1">E-mail</label>
+                  <label className="block text-xs font-bold text-[#17211f] mb-1">E-mail</label>
                   <input
                     type="email"
                     value={editForm.email}
                     onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
-                    className="w-full rounded-xl border border-[#dbe4ef] bg-[#f8faff] px-3.5 py-2 text-xs font-bold text-[#152238] focus:border-[#3c63da] focus:bg-white focus:outline-none"
+                    className="w-full rounded-xl border border-[#dfe4df] bg-[#f7f9f7] px-3.5 py-2 text-xs font-bold text-[#17211f] focus:border-[#0f4c5c] focus:bg-white focus:outline-none"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-[#152238] mb-1">Telefone</label>
+                  <label className="block text-xs font-bold text-[#17211f] mb-1">Telefone</label>
                   <input
                     type="text"
                     value={editForm.phone}
                     onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })}
-                    className="w-full rounded-xl border border-[#dbe4ef] bg-[#f8faff] px-3.5 py-2 text-xs font-bold text-[#152238] focus:border-[#3c63da] focus:bg-white focus:outline-none"
+                    className="w-full rounded-xl border border-[#dfe4df] bg-[#f7f9f7] px-3.5 py-2 text-xs font-bold text-[#17211f] focus:border-[#0f4c5c] focus:bg-white focus:outline-none"
                   />
                 </div>
               </div>
 
-              <div className="flex items-center justify-between pt-4 border-t border-[#e5eaf1]">
+              <div className="flex items-center justify-between pt-4 border-t border-[#dfe4df]">
                 <button
                   type="button"
                   onClick={() => editingUnitId && handleDeleteUnit(editingUnitId, editForm.name)}
@@ -899,7 +899,7 @@ export const TenantsScreen: React.FC<TenantsScreenProps> = ({
                   <button
                     type="button"
                     onClick={() => setShowEditModal(false)}
-                    className="rounded-xl border border-[#dbe4ef] px-4 py-2 text-xs font-bold text-[#69778c] hover:bg-[#f8faff] hover:text-[#152238] transition-colors cursor-pointer"
+                    className="rounded-xl border border-[#dfe4df] px-4 py-2 text-xs font-bold text-[#5e6b67] hover:bg-[#f7f9f7] hover:text-[#17211f] transition-colors cursor-pointer"
                   >
                     Cancelar
                   </button>

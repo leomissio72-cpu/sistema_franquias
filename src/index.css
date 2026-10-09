@@ -1,108 +1,211 @@
 @import "tailwindcss";
 
+/* ───────── Identidade visual: "livro-caixa" ─────────
+   Uma família só (Archivo). A largura da letra faz a hierarquia:
+   títulos mais largos, texto normal, números sempre alinhados em coluna. */
+@font-face {
+  font-family: "Archivo Variable";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 900;
+  font-stretch: 62% 125%;
+  src: url("./assets/fonts/archivo-latin-ext-standard-normal.woff2") format("woff2-variations");
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: "Archivo Variable";
+  font-style: normal;
+  font-display: swap;
+  font-weight: 100 900;
+  font-stretch: 62% 125%;
+  src: url("./assets/fonts/archivo-latin-standard-normal.woff2") format("woff2-variations");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@theme {
+  --font-sans: "Archivo Variable", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  /* valores monetários usam a mesma família, com algarismos tabulares */
+  --font-mono: "Archivo Variable", ui-sans-serif, system-ui, sans-serif;
+
+  --font-weight-medium: 480;
+  --font-weight-semibold: 560;
+  --font-weight-bold: 620;
+  --font-weight-extrabold: 700;
+  --font-weight-black: 780;
+
+  --radius-sm: 0.1875rem;
+  --radius-md: 0.25rem;
+  --radius-lg: 0.375rem;
+  --radius-xl: 0.5rem;
+  --radius-2xl: 0.625rem;
+  --radius-3xl: 0.875rem;
+
+  --shadow-2xs: 0 0 0 1px rgb(23 33 31 / 0.03);
+  --shadow-xs: 0 1px 0 rgb(23 33 31 / 0.04);
+  --shadow-sm: 0 1px 2px rgb(23 33 31 / 0.06);
+  --shadow-md: 0 2px 6px -1px rgb(23 33 31 / 0.10);
+  --shadow-lg: 0 10px 24px -8px rgb(23 33 31 / 0.18);
+
+  /* petróleo: cor da marca e das ações */
+  --color-petrol-50: #eef6f7;
+  --color-petrol-100: #e3eff1;
+  --color-petrol-200: #b9d5da;
+  --color-petrol-300: #8fbac2;
+  --color-petrol-400: #5a97a3;
+  --color-petrol-500: #2f7785;
+  --color-petrol-600: #17606f;
+  --color-petrol-700: #0f4c5c;
+  --color-petrol-800: #0b3b48;
+  --color-petrol-900: #082e38;
+  --color-petrol-950: #051f26;
+  --color-ocre: #e0a526;
+
+  /* as escalas azuis antigas passam a apontar para o petróleo */
+  --color-blue-50: #eef6f7;   --color-indigo-50: #eef6f7;   --color-sky-50: #eef6f7;
+  --color-blue-100: #e3eff1;  --color-indigo-100: #e3eff1;  --color-sky-100: #e3eff1;
+  --color-blue-200: #b9d5da;  --color-indigo-200: #b9d5da;  --color-sky-200: #b9d5da;
+  --color-blue-300: #8fbac2;  --color-indigo-300: #8fbac2;  --color-sky-300: #8fbac2;
+  --color-blue-400: #5a97a3;  --color-indigo-400: #5a97a3;  --color-sky-400: #5a97a3;
+  --color-blue-500: #2f7785;  --color-indigo-500: #2f7785;  --color-sky-500: #2f7785;
+  --color-blue-600: #17606f;  --color-indigo-600: #17606f;  --color-sky-600: #17606f;
+  --color-blue-700: #0f4c5c;  --color-indigo-700: #0f4c5c;  --color-sky-700: #0f4c5c;
+  --color-blue-800: #0b3b48;  --color-indigo-800: #0b3b48;  --color-sky-800: #0b3b48;
+  --color-blue-900: #082e38;  --color-indigo-900: #082e38;  --color-sky-900: #082e38;
+  --color-blue-950: #051f26;  --color-indigo-950: #051f26;  --color-sky-950: #051f26;
+
+  /* neutros levemente esverdeados, no lugar do cinza-azulado */
+  --color-slate-50: #f7f9f7;  --color-gray-50: #f7f9f7;
+  --color-slate-100: #f0f3f0; --color-gray-100: #f0f3f0;
+  --color-slate-200: #dfe4df; --color-gray-200: #dfe4df;
+  --color-slate-300: #c9d1cb; --color-gray-300: #c9d1cb;
+  --color-slate-400: #93a09b; --color-gray-400: #93a09b;
+  --color-slate-500: #5e6b67; --color-gray-500: #5e6b67;
+  --color-slate-600: #4a5753; --color-gray-600: #4a5753;
+  --color-slate-700: #3a4743; --color-gray-700: #3a4743;
+  --color-slate-800: #24332f; --color-gray-800: #24332f;
+  --color-slate-900: #17211f; --color-gray-900: #17211f;
+  --color-slate-950: #0e1614; --color-gray-950: #0e1614;
+}
+
+@layer base {
+  html { font-feature-settings: "tnum" 1, "ss01" 0; }
+  body { font-family: var(--font-sans); font-stretch: 100%; letter-spacing: -0.003em; }
+  h1, h2, h3 { font-stretch: 112%; letter-spacing: -0.012em; }
+  /* números grandes de indicador: mais largos e mais firmes, como total de livro-caixa */
+  .text-2xl, .text-3xl, .text-4xl { font-stretch: 108%; letter-spacing: -0.02em; }
+  /* rótulos pequenos: um pouco mais estreitos para caber sem caixa alta */
+  .text-\[9px\], .text-\[10px\], .text-\[11px\] { font-stretch: 96%; letter-spacing: 0.005em; }
+  .font-mono { font-variant-numeric: tabular-nums; letter-spacing: 0; }
+  :focus-visible { outline: 2px solid #e0a526; outline-offset: 2px; }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
+  }
+}
+
+
 html.theme-dark,
 html.theme-dark body {
-  background: #0b1220;
-  color: #e5edf8;
+  background: #0a1517;
+  color: #e6efed;
 }
 
 html.theme-dark .app-shell {
-  background: #0b1220 !important;
-  color: #e5edf8 !important;
+  background: #0a1517 !important;
+  color: #e6efed !important;
 }
 
 html.theme-dark #main-topbar {
-  background: #111b2d !important;
-  border-color: #263957 !important;
+  background: #101e21 !important;
+  border-color: #25393d !important;
 }
 
 html.theme-dark #main-topbar h1,
 html.theme-dark #main-topbar p,
 html.theme-dark #main-topbar button,
 html.theme-dark #main-topbar svg {
-  color: #e5edf8 !important;
+  color: #e6efed !important;
 }
 
 html.theme-dark aside,
 html.theme-dark aside > div,
 html.theme-dark .bg-white {
-  background-color: #111b2d !important;
-  border-color: #263957 !important;
+  background-color: #101e21 !important;
+  border-color: #25393d !important;
 }
 
 html.theme-dark input,
 html.theme-dark select,
 html.theme-dark textarea {
-  background-color: #17263d !important;
-  border-color: #385071 !important;
-  color: #edf4ff !important;
+  background-color: #16282c !important;
+  border-color: #345157 !important;
+  color: #eaf3f1 !important;
 }
 
 html.theme-dark input::placeholder,
 html.theme-dark textarea::placeholder {
-  color: #8fa3bf !important;
+  color: #8aa09b !important;
 }
 
 html.theme-dark option {
-  background: #17263d;
-  color: #edf4ff;
+  background: #16282c;
+  color: #eaf3f1;
 }
 
 /* Surfaces used throughout the screens */
-html.theme-dark .bg-\[\#f8faff\],
-html.theme-dark .bg-\[\#f8fafc\],
-html.theme-dark .bg-\[\#fbfcff\],
-html.theme-dark .bg-\[\#f3f6fb\],
-html.theme-dark .bg-\[\#f4f7fb\],
-html.theme-dark .bg-\[\#eef2f8\],
-html.theme-dark .bg-\[\#edf2ff\],
-html.theme-dark .bg-\[\#eff6ff\],
-html.theme-dark .bg-\[\#f0f5ff\] {
-  background-color: #17243a !important;
+html.theme-dark .bg-\[\#f7f9f7\],
+html.theme-dark .bg-\[\#f7f9f7\],
+html.theme-dark .bg-\[\#f7f9f7\],
+html.theme-dark .bg-\[\#f0f3f0\],
+html.theme-dark .bg-\[\#f0f3f0\],
+html.theme-dark .bg-\[\#f0f3f0\],
+html.theme-dark .bg-\[\#e3eff1\],
+html.theme-dark .bg-\[\#e3eff1\],
+html.theme-dark .bg-\[\#e3eff1\] {
+  background-color: #16282c !important;
 }
 
-html.theme-dark .hover\:bg-\[\#f4f7fb\]:hover,
-html.theme-dark .hover\:bg-\[\#f8faff\]:hover,
-html.theme-dark .hover\:bg-\[\#f8fafc\]:hover,
+html.theme-dark .hover\:bg-\[\#f0f3f0\]:hover,
+html.theme-dark .hover\:bg-\[\#f7f9f7\]:hover,
+html.theme-dark .hover\:bg-\[\#f7f9f7\]:hover,
 html.theme-dark .hover\:bg-white:hover {
-  background-color: #213452 !important;
+  background-color: #1e353a !important;
 }
 
 /* Text contrast */
-html.theme-dark .text-\[\#152238\],
-html.theme-dark .text-\[\#0f172a\],
-html.theme-dark .text-\[\#334155\],
-html.theme-dark .text-\[\#475569\],
-html.theme-dark .text-\[\#526078\],
-html.theme-dark .text-\[\#1e293b\] {
-  color: #e5edf8 !important;
+html.theme-dark .text-\[\#17211f\],
+html.theme-dark .text-\[\#17211f\],
+html.theme-dark .text-\[\#3a4743\],
+html.theme-dark .text-\[\#3a4743\],
+html.theme-dark .text-\[\#4a5753\],
+html.theme-dark .text-\[\#17211f\] {
+  color: #e6efed !important;
 }
 
-html.theme-dark .text-\[\#69778c\],
-html.theme-dark .text-\[\#64748b\],
-html.theme-dark .text-\[\#94a3b8\],
+html.theme-dark .text-\[\#5e6b67\],
+html.theme-dark .text-\[\#5e6b67\],
+html.theme-dark .text-\[\#93a09b\],
 html.theme-dark .text-\[\#6b7280\] {
-  color: #a9b8cf !important;
+  color: #a3b5b1 !important;
 }
 
-html.theme-dark .text-\[\#315bc5\],
-html.theme-dark .text-\[\#3c63da\],
-html.theme-dark .text-\[\#2563eb\] {
-  color: #8db4ff !important;
+html.theme-dark .text-\[\#0b3b48\],
+html.theme-dark .text-\[\#0f4c5c\],
+html.theme-dark .text-\[\#0f4c5c\] {
+  color: #7fc4d1 !important;
 }
 
 /* Borders and separators */
-html.theme-dark .border-\[\#e5eaf1\],
-html.theme-dark .border-\[\#e2e8f0\],
-html.theme-dark .border-\[\#dbe3ee\],
-html.theme-dark .border-\[\#cbd5e1\],
-html.theme-dark .border-\[\#eef2f7\],
-html.theme-dark .border-\[\#f0f4f9\] {
-  border-color: #2b4161 !important;
+html.theme-dark .border-\[\#dfe4df\],
+html.theme-dark .border-\[\#dfe4df\],
+html.theme-dark .border-\[\#dfe4df\],
+html.theme-dark .border-\[\#c9d1cb\],
+html.theme-dark .border-\[\#f0f3f0\],
+html.theme-dark .border-\[\#f0f3f0\] {
+  border-color: #25393d !important;
 }
 
-html.theme-dark .divide-\[\#eef2f7\] > :not([hidden]) ~ :not([hidden]) {
-  border-color: #2b4161 !important;
+html.theme-dark .divide-\[\#f0f3f0\] > :not([hidden]) ~ :not([hidden]) {
+  border-color: #25393d !important;
 }
 
 html.theme-dark .shadow-xs,
@@ -112,30 +215,30 @@ html.theme-dark .shadow-md {
 }
 
 /* Keep primary actions readable in both modes */
-html.theme-dark .bg-\[\#152238\] {
-  background-color: #2e5fc4 !important;
+html.theme-dark .bg-\[\#17211f\] {
+  background-color: #1f7384 !important;
 }
 
-html.theme-dark .hover\:bg-\[\#25395a\]:hover {
-  background-color: #3a70dc !important;
+html.theme-dark .hover\:bg-\[\#24332f\]:hover {
+  background-color: #2a8799 !important;
 }
 
-html.theme-dark .bg-\[\#3c63da\] {
-  background-color: #3c70e5 !important;
+html.theme-dark .bg-\[\#0f4c5c\] {
+  background-color: #1f7384 !important;
 }
 
 html.theme-dark .text-white {
   color: #ffffff !important;
 }
 
-html.theme-dark .ring-\[\#3c63da\]\/20 {
-  --tw-ring-color: rgb(91 141 255 / 0.28) !important;
+html.theme-dark .ring-\[\#0f4c5c\]\/20 {
+  --tw-ring-color: rgb(127 196 209 / 0.3) !important;
 }
 
 /* Universal & Custom Screen Scrollbars */
 * {
   scrollbar-width: thin;
-  scrollbar-color: #cbd5e1 #f1f5f9;
+  scrollbar-color: #c9d1cb #f0f3f0;
 }
 
 ::-webkit-scrollbar {
@@ -144,18 +247,18 @@ html.theme-dark .ring-\[\#3c63da\]\/20 {
 }
 
 ::-webkit-scrollbar-track {
-  background: #f1f5f9;
+  background: #f0f3f0;
   border-radius: 9999px;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
+  background: #c9d1cb;
   border-radius: 9999px;
-  border: 2px solid #f1f5f9;
+  border: 2px solid #f0f3f0;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
+  background: #93a09b;
 }
 
 /* Screen Scroller Utility */
@@ -171,23 +274,23 @@ html.theme-dark .ring-\[\#3c63da\]\/20 {
 }
 
 .custom-screen-scroller::-webkit-scrollbar-track {
-  background: #f1f5f9;
+  background: #f0f3f0;
   border-radius: 9999px;
 }
 
 .custom-screen-scroller::-webkit-scrollbar-thumb {
-  background: #94a3b8;
+  background: #93a09b;
   border-radius: 9999px;
-  border: 1px solid #f1f5f9;
+  border: 1px solid #f0f3f0;
 }
 
 .custom-screen-scroller::-webkit-scrollbar-thumb:hover {
-  background: #3c63da;
+  background: #0f4c5c;
 }
 
 /* Dark mode scrollbars */
 html.theme-dark * {
-  scrollbar-color: #2b4161 #0b1220;
+  scrollbar-color: #25393d #0a1517;
 }
 
 html.theme-dark ::-webkit-scrollbar {
@@ -196,30 +299,30 @@ html.theme-dark ::-webkit-scrollbar {
 }
 
 html.theme-dark ::-webkit-scrollbar-track {
-  background: #0b1220;
+  background: #0a1517;
 }
 
 html.theme-dark ::-webkit-scrollbar-thumb {
-  background: #2b4161;
+  background: #25393d;
   border-radius: 999px;
-  border: 1px solid #0b1220;
+  border: 1px solid #0a1517;
 }
 
 html.theme-dark ::-webkit-scrollbar-thumb:hover {
-  background: #41618e;
+  background: #3f6168;
 }
 
 html.theme-dark .custom-screen-scroller::-webkit-scrollbar-track {
-  background: #111b2d;
+  background: #101e21;
 }
 
 html.theme-dark .custom-screen-scroller::-webkit-scrollbar-thumb {
-  background: #3b5278;
-  border-color: #111b2d;
+  background: #345157;
+  border-color: #101e21;
 }
 
 html.theme-dark .custom-screen-scroller::-webkit-scrollbar-thumb:hover {
-  background: #5b7fb5;
+  background: #5a97a3;
 }
 
 

@@ -195,25 +195,25 @@ export const DreParamsScreen: React.FC<DreParamsScreenProps> = ({
     <div className="space-y-6 animate-in fade-in duration-150">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <div className="text-[10px] font-extrabold uppercase tracking-widest text-[#3c63da]">
+          <div className="text-[10px] font-extrabold text-[#0f4c5c]">
             Configuração do DRE
           </div>
-          <h2 className="text-2xl font-extrabold tracking-tight text-[#152238] flex items-center gap-2 mt-1">
-            <SlidersHorizontal className="h-6 w-6 text-[#3c63da]" />
+          <h2 className="text-2xl font-extrabold tracking-tight text-[#17211f] flex items-center gap-2 mt-1">
+            <SlidersHorizontal className="h-6 w-6 text-[#0f4c5c]" />
             Parâmetros do DRE — {tenantName}
           </h2>
-          <p className="text-xs text-[#69778c] mt-1">
+          <p className="text-xs text-[#5e6b67] mt-1">
             Defina as alíquotas de impostos, percentual de CMV e peso de cada despesa operacional para esta unidade.
           </p>
         </div>
 
         <div className="flex items-center gap-2 flex-wrap">
-          <div className="flex items-center gap-1.5 bg-white border border-[#cbd5e1] rounded-xl px-2.5 py-1.5 shadow-2xs">
-            <Store className="h-3.5 w-3.5 text-[#3c63da]" />
+          <div className="flex items-center gap-1.5 bg-white border border-[#c9d1cb] rounded-xl px-2.5 py-1.5 shadow-2xs">
+            <Store className="h-3.5 w-3.5 text-[#0f4c5c]" />
             <select
               value={activeTenant}
               onChange={(e) => setActiveTenant(e.target.value)}
-              className="text-xs font-bold text-[#152238] bg-transparent focus:outline-none cursor-pointer"
+              className="text-xs font-bold text-[#17211f] bg-transparent focus:outline-none cursor-pointer"
             >
               <option value="dono">Padrão da Franqueadora (Rede)</option>
               {franchises.map((f) => (
@@ -226,7 +226,7 @@ export const DreParamsScreen: React.FC<DreParamsScreenProps> = ({
 
           <button
             onClick={handleReset}
-            className="flex items-center gap-1.5 rounded-lg border border-[#e5eaf1] bg-white px-3 py-2 text-xs font-bold text-[#152238] hover:bg-[#f4f7fb] cursor-pointer"
+            className="flex items-center gap-1.5 rounded-lg border border-[#dfe4df] bg-white px-3 py-2 text-xs font-bold text-[#17211f] hover:bg-[#f0f3f0] cursor-pointer"
           >
             <RotateCcw className="h-3.5 w-3.5" />
             <span>Restaurar Padrão</span>
@@ -234,7 +234,7 @@ export const DreParamsScreen: React.FC<DreParamsScreenProps> = ({
           <button
             onClick={handleSave}
             disabled={isSaving}
-            className="flex items-center gap-1.5 rounded-lg bg-[#3c63da] px-4 py-2 text-xs font-bold text-white hover:bg-[#2f52c0] shadow-sm disabled:opacity-50 cursor-pointer"
+            className="flex items-center gap-1.5 rounded-lg bg-[#0f4c5c] px-4 py-2 text-xs font-bold text-white hover:bg-[#0b3b48] shadow-sm disabled:opacity-50 cursor-pointer"
           >
             {isSaved ? <CheckCircle2 className="h-3.5 w-3.5 text-emerald-300" /> : <Save className="h-3.5 w-3.5" />}
             <span>{isSaved ? "Parâmetros Salvos!" : isSaving ? "Salvando..." : "Salvar Parâmetros"}</span>
@@ -252,14 +252,14 @@ export const DreParamsScreen: React.FC<DreParamsScreenProps> = ({
         {/* Left: Inputs */}
         <div className="lg:col-span-2 space-y-5">
           {/* General Rates */}
-          <div className="rounded-xl border border-[#e5eaf1] bg-white p-5 shadow-xs space-y-4">
-            <h3 className="text-sm font-bold text-[#152238] border-b border-[#e5eaf1] pb-2">
+          <div className="rounded-xl border border-[#dfe4df] bg-white p-5 shadow-xs space-y-4">
+            <h3 className="text-sm font-bold text-[#17211f] border-b border-[#dfe4df] pb-2">
               Alíquotas Gerais (% sobre a receita)
             </h3>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-[10px] font-extrabold uppercase text-[#69778c] mb-1">
+                <label className="block text-[10px] font-extrabold text-[#5e6b67] mb-1">
                   Impostos sobre Vendas (%)
                 </label>
                 <div className="relative">
@@ -268,14 +268,14 @@ export const DreParamsScreen: React.FC<DreParamsScreenProps> = ({
                     inputMode="decimal"
                     value={rawGeneral.impostos !== undefined ? rawGeneral.impostos : (form.impostos * 100).toFixed(2)}
                     onChange={(e) => handleGeneralChange("impostos", e.target.value)}
-                    className="w-full rounded-lg border border-[#e5eaf1] px-3 py-2 text-xs font-mono font-bold text-[#152238] focus:border-[#3c63da] focus:outline-none"
+                    className="w-full rounded-lg border border-[#dfe4df] px-3 py-2 text-xs font-mono font-bold text-[#17211f] focus:border-[#0f4c5c] focus:outline-none"
                   />
-                  <span className="absolute right-3 top-2 text-xs font-bold text-[#69778c]">%</span>
+                  <span className="absolute right-3 top-2 text-xs font-bold text-[#5e6b67]">%</span>
                 </div>
               </div>
 
               <div>
-                <label className="block text-[10px] font-extrabold uppercase text-[#69778c] mb-1">
+                <label className="block text-[10px] font-extrabold text-[#5e6b67] mb-1">
                   CMV / Insumos (%)
                 </label>
                 <div className="relative">
@@ -284,14 +284,14 @@ export const DreParamsScreen: React.FC<DreParamsScreenProps> = ({
                     inputMode="decimal"
                     value={rawGeneral.cmv !== undefined ? rawGeneral.cmv : (form.cmv * 100).toFixed(2)}
                     onChange={(e) => handleGeneralChange("cmv", e.target.value)}
-                    className="w-full rounded-lg border border-[#e5eaf1] px-3 py-2 text-xs font-mono font-bold text-[#152238] focus:border-[#3c63da] focus:outline-none"
+                    className="w-full rounded-lg border border-[#dfe4df] px-3 py-2 text-xs font-mono font-bold text-[#17211f] focus:border-[#0f4c5c] focus:outline-none"
                   />
-                  <span className="absolute right-3 top-2 text-xs font-bold text-[#69778c]">%</span>
+                  <span className="absolute right-3 top-2 text-xs font-bold text-[#5e6b67]">%</span>
                 </div>
               </div>
 
               <div>
-                <label className="block text-[10px] font-extrabold uppercase text-[#69778c] mb-1">
+                <label className="block text-[10px] font-extrabold text-[#5e6b67] mb-1">
                   Taxa Média de Negócio (Cartão/PIX) (%)
                 </label>
                 <div className="relative">
@@ -300,14 +300,14 @@ export const DreParamsScreen: React.FC<DreParamsScreenProps> = ({
                     inputMode="decimal"
                     value={rawGeneral.fees !== undefined ? rawGeneral.fees : (form.fees * 100).toFixed(2)}
                     onChange={(e) => handleGeneralChange("fees", e.target.value)}
-                    className="w-full rounded-lg border border-[#e5eaf1] px-3 py-2 text-xs font-mono font-bold text-[#152238] focus:border-[#3c63da] focus:outline-none"
+                    className="w-full rounded-lg border border-[#dfe4df] px-3 py-2 text-xs font-mono font-bold text-[#17211f] focus:border-[#0f4c5c] focus:outline-none"
                   />
-                  <span className="absolute right-3 top-2 text-xs font-bold text-[#69778c]">%</span>
+                  <span className="absolute right-3 top-2 text-xs font-bold text-[#5e6b67]">%</span>
                 </div>
               </div>
 
               <div>
-                <label className="block text-[10px] font-extrabold uppercase text-[#69778c] mb-1">
+                <label className="block text-[10px] font-extrabold text-[#5e6b67] mb-1">
                   Desconto Médio Concedido (%)
                 </label>
                 <div className="relative">
@@ -316,17 +316,17 @@ export const DreParamsScreen: React.FC<DreParamsScreenProps> = ({
                     inputMode="decimal"
                     value={rawGeneral.discount !== undefined ? rawGeneral.discount : (form.discount * 100).toFixed(2)}
                     onChange={(e) => handleGeneralChange("discount", e.target.value)}
-                    className="w-full rounded-lg border border-[#e5eaf1] px-3 py-2 text-xs font-mono font-bold text-[#152238] focus:border-[#3c63da] focus:outline-none"
+                    className="w-full rounded-lg border border-[#dfe4df] px-3 py-2 text-xs font-mono font-bold text-[#17211f] focus:border-[#0f4c5c] focus:outline-none"
                   />
-                  <span className="absolute right-3 top-2 text-xs font-bold text-[#69778c]">%</span>
+                  <span className="absolute right-3 top-2 text-xs font-bold text-[#5e6b67]">%</span>
                 </div>
               </div>
             </div>
           </div>
 
           {/* Operational Expenses */}
-          <div className="rounded-xl border border-[#e5eaf1] bg-white p-5 shadow-xs space-y-4">
-            <h3 className="text-sm font-bold text-[#152238] border-b border-[#e5eaf1] pb-2">
+          <div className="rounded-xl border border-[#dfe4df] bg-white p-5 shadow-xs space-y-4">
+            <h3 className="text-sm font-bold text-[#17211f] border-b border-[#dfe4df] pb-2">
               Despesas Operacionais (% sobre a receita)
             </h3>
 
@@ -335,8 +335,8 @@ export const DreParamsScreen: React.FC<DreParamsScreenProps> = ({
                 const currentRate = form.despesas[e.id] ?? e.pct;
                 const strVal = rawExpenses[e.id] !== undefined ? rawExpenses[e.id] : (currentRate * 100).toFixed(2);
                 return (
-                  <div key={e.id} className="rounded-lg border border-[#e5eaf1] bg-[#f8faff] p-3">
-                    <div className="flex items-center justify-between text-xs font-bold text-[#152238] mb-1.5">
+                  <div key={e.id} className="rounded-lg border border-[#dfe4df] bg-[#f7f9f7] p-3">
+                    <div className="flex items-center justify-between text-xs font-bold text-[#17211f] mb-1.5">
                       <span className="flex items-center gap-1.5 truncate">
                         <span>{e.icon}</span>
                         <span className="truncate">{e.name}</span>
@@ -348,9 +348,9 @@ export const DreParamsScreen: React.FC<DreParamsScreenProps> = ({
                         inputMode="decimal"
                         value={strVal}
                         onChange={(ev) => handleExpenseChange(e.id, ev.target.value)}
-                        className="w-full rounded-md border border-[#e5eaf1] bg-white px-2.5 py-1.5 text-xs font-mono font-bold text-[#152238] focus:border-[#3c63da] focus:outline-none"
+                        className="w-full rounded-md border border-[#dfe4df] bg-white px-2.5 py-1.5 text-xs font-mono font-bold text-[#17211f] focus:border-[#0f4c5c] focus:outline-none"
                       />
-                      <span className="absolute right-2.5 top-1.5 text-[11px] font-bold text-[#69778c]">%</span>
+                      <span className="absolute right-2.5 top-1.5 text-[11px] font-bold text-[#5e6b67]">%</span>
                     </div>
                   </div>
                 );
@@ -361,38 +361,38 @@ export const DreParamsScreen: React.FC<DreParamsScreenProps> = ({
 
         {/* Right: Live Preview */}
         <div className="space-y-4">
-          <div className="rounded-xl border border-[#e5eaf1] bg-white p-5 shadow-xs space-y-3 sticky top-20">
-            <h3 className="text-sm font-bold text-[#152238] border-b border-[#e5eaf1] pb-2">
+          <div className="rounded-xl border border-[#dfe4df] bg-white p-5 shadow-xs space-y-3 sticky top-20">
+            <h3 className="text-sm font-bold text-[#17211f] border-b border-[#dfe4df] pb-2">
               Prévia do DRE em Tempo Real
             </h3>
-            <p className="text-[11px] text-[#69778c]">
+            <p className="text-[11px] text-[#5e6b67]">
               Simulação sobre uma receita de <b>{formatBrl(sampleFat)}</b> com os parâmetros editados.
             </p>
 
-            <div className="space-y-2 text-xs divide-y divide-[#e5eaf1] pt-1">
+            <div className="space-y-2 text-xs divide-y divide-[#dfe4df] pt-1">
               <div className="flex justify-between pt-1.5">
-                <span className="text-[#69778c]">Receita Bruta:</span>
+                <span className="text-[#5e6b67]">Receita Bruta:</span>
                 <b className="font-mono">{formatBrl(previewDre.fatBruta)}</b>
               </div>
               <div className="flex justify-between pt-1.5">
-                <span className="text-[#69778c]">(-) Descontos:</span>
-                <span className="font-mono text-[#b44b4b]">- {formatBrl(previewDre.desconto)}</span>
+                <span className="text-[#5e6b67]">(-) Descontos:</span>
+                <span className="font-mono text-[#b93a48]">- {formatBrl(previewDre.desconto)}</span>
               </div>
               <div className="flex justify-between pt-1.5">
-                <span className="text-[#69778c]">(-) Impostos:</span>
-                <span className="font-mono text-[#b44b4b]">- {formatBrl(previewDre.impostos)}</span>
+                <span className="text-[#5e6b67]">(-) Impostos:</span>
+                <span className="font-mono text-[#b93a48]">- {formatBrl(previewDre.impostos)}</span>
               </div>
               <div className="flex justify-between pt-1.5">
-                <span className="text-[#69778c]">(-) CMV:</span>
-                <span className="font-mono text-[#b44b4b]">- {formatBrl(previewDre.cmv)}</span>
+                <span className="text-[#5e6b67]">(-) CMV:</span>
+                <span className="font-mono text-[#b93a48]">- {formatBrl(previewDre.cmv)}</span>
               </div>
-              <div className="flex justify-between pt-1.5 font-bold text-[#3c63da]">
+              <div className="flex justify-between pt-1.5 font-bold text-[#0f4c5c]">
                 <span>= Lucro Bruto:</span>
                 <span className="font-mono">{formatBrl(previewDre.lucroBruto)} ({formatPct(previewDre.margemBruta)})</span>
               </div>
               <div className="flex justify-between pt-1.5">
-                <span className="text-[#69778c]">(-) Despesas Operacionais:</span>
-                <span className="font-mono text-[#b44b4b]">- {formatBrl(previewDre.totalDesp)}</span>
+                <span className="text-[#5e6b67]">(-) Despesas Operacionais:</span>
+                <span className="font-mono text-[#b93a48]">- {formatBrl(previewDre.totalDesp)}</span>
               </div>
               <div className="flex justify-between pt-2 text-sm font-extrabold text-emerald-700 bg-emerald-50 p-2 rounded-lg">
                 <span>= Lucro Líquido:</span>
@@ -403,7 +403,7 @@ export const DreParamsScreen: React.FC<DreParamsScreenProps> = ({
             <button
               onClick={handleSave}
               disabled={isSaving}
-              className="w-full mt-3 rounded-lg bg-[#3c63da] py-2.5 text-xs font-bold text-white hover:bg-[#2f52c0] shadow-xs cursor-pointer"
+              className="w-full mt-3 rounded-lg bg-[#0f4c5c] py-2.5 text-xs font-bold text-white hover:bg-[#0b3b48] shadow-xs cursor-pointer"
             >
               Aplicar ao DRE desta Unidade
             </button>

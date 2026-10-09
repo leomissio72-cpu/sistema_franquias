@@ -520,10 +520,10 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
 
             // Background & Border colors
             let labelBgColor = "rgba(255, 255, 255, 0.95)";
-            let textColor = "#152238";
-            let borderColor = dataset.borderColor || dataset.backgroundColor || "#3c63da";
+            let textColor = "#17211f";
+            let borderColor = dataset.borderColor || dataset.backgroundColor || "#0f4c5c";
             if (typeof borderColor === "object" && Array.isArray(borderColor)) {
-              borderColor = borderColor[index] || "#3c63da";
+              borderColor = borderColor[index] || "#0f4c5c";
             }
 
             ctx.fillStyle = labelBgColor;
@@ -570,7 +570,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
             {
               label: "Faturamento Mensal (R$)",
               data: dataFatMes,
-              borderColor: "#3c63da",
+              borderColor: "#0f4c5c",
               backgroundColor: "rgba(60, 99, 218, 0.08)",
               fill: true,
               tension: 0.35,
@@ -580,7 +580,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
             {
               label: "Lucro Líquido (R$)",
               data: dataLucroMes,
-              borderColor: "#118464",
+              borderColor: "#1a7f5a",
               backgroundColor: "transparent",
               tension: 0.35,
               pointRadius: 4,
@@ -631,7 +631,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
           },
           scales: {
             y: {
-              grid: { color: "#f1f5f9" },
+              grid: { color: "#f0f3f0" },
               ticks: { callback: (v) => "R$ " + (Number(v) / 1000).toFixed(0) + "k" },
             },
             x: { grid: { display: false } },
@@ -650,7 +650,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
       const sortedByFat = [...unitCalculations].sort((a, b) => b.fat - a.fat);
       const labels = sortedByFat.map((u) => u.f.name.replace("Café ", "").replace("Beleza ", "").replace("EduKids ", ""));
       const dataFats = sortedByFat.map((u) => u.fat);
-      const backgroundColors = sortedByFat.map((u) => (u.f.status === "green" ? "#3c63da" : "#f59e0b"));
+      const backgroundColors = sortedByFat.map((u) => (u.f.status === "green" ? "#0f4c5c" : "#f59e0b"));
 
       unitsChartInstance.current = new Chart(unitsCanvasRef.current, {
         type: "bar",
@@ -684,7 +684,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
           },
           scales: {
             y: {
-              grid: { color: "#f1f5f9" },
+              grid: { color: "#f0f3f0" },
               ticks: { callback: (v) => "R$ " + (Number(v) / 1000).toFixed(0) + "k" },
             },
             x: {
@@ -714,7 +714,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
             {
               label: "Lucro Líquido",
               data: sortedUnits.map((u) => Math.max(0, u.d.lucroLiquido)),
-              backgroundColor: "#118464", // Verde
+              backgroundColor: "#1a7f5a", // Verde
               stack: "Stack 0",
               borderRadius: 0,
             },
@@ -727,7 +727,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
             {
               label: "Despesas Operacionais",
               data: sortedUnits.map((u) => u.d.totalDesp),
-              backgroundColor: "#3c63da", // Azul
+              backgroundColor: "#0f4c5c", // Azul
               stack: "Stack 0",
             },
             {
@@ -739,7 +739,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
             {
               label: "Impostos Fiscais",
               data: sortedUnits.map((u) => u.d.impostos),
-              backgroundColor: "#94a3b8", // Cinza Ardósia
+              backgroundColor: "#93a09b", // Cinza Ardósia
               stack: "Stack 0",
               borderRadius: { topLeft: 6, topRight: 6 },
             },
@@ -771,7 +771,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
             },
             y: {
               stacked: true,
-              grid: { color: "#f1f5f9" },
+              grid: { color: "#f0f3f0" },
               ticks: { callback: (v) => "R$ " + (Number(v) / 1000).toFixed(0) + "k" },
             },
           },
@@ -827,7 +827,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
           },
           scales: {
             y: {
-              grid: { color: "#f1f5f9" },
+              grid: { color: "#f0f3f0" },
               ticks: { callback: (v) => "R$ " + (Number(v) / 1000).toFixed(0) + "k" },
             },
             x: { grid: { display: false }, ticks: { font: { size: 10 } } },
@@ -849,7 +849,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
         if (selectedState === "all" || d.state === selectedState) {
           return "#6a4ecb";
         }
-        return "#cbd5e1";
+        return "#c9d1cb";
       });
 
       stateChartInstance.current = new Chart(stateCanvasRef.current, {
@@ -884,7 +884,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
           },
           scales: {
             y: {
-              grid: { color: "#f1f5f9" },
+              grid: { color: "#f0f3f0" },
               ticks: { callback: (v) => "R$ " + (Number(v) / 1000).toFixed(0) + "k" },
             },
             x: {
@@ -916,7 +916,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                 Math.max(0, totalImp),
                 Math.max(0, totalLucro),
               ],
-              backgroundColor: ["#f43f5e", "#d97706", "#3c63da", "#94a3b8", "#10b981"],
+              backgroundColor: ["#f43f5e", "#d97706", "#0f4c5c", "#93a09b", "#10b981"],
               borderWidth: 2,
               borderColor: "#ffffff",
             },
@@ -984,7 +984,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
           },
           scales: {
             y: {
-              grid: { color: "#f1f5f9" },
+              grid: { color: "#f0f3f0" },
               ticks: { callback: (v) => `${v}%` },
             },
             x: { grid: { display: false } },
@@ -1068,10 +1068,10 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
             if (pillY < 2) pillY = 2;
 
             let labelBgColor = "rgba(255, 255, 255, 0.95)";
-            let textColor = "#152238";
-            let borderColor = dataset.borderColor || dataset.backgroundColor || "#3c63da";
+            let textColor = "#17211f";
+            let borderColor = dataset.borderColor || dataset.backgroundColor || "#0f4c5c";
             if (typeof borderColor === "object" && Array.isArray(borderColor)) {
-              borderColor = borderColor[index] || "#3c63da";
+              borderColor = borderColor[index] || "#0f4c5c";
             }
 
             ctx.fillStyle = labelBgColor;
@@ -1114,7 +1114,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
             {
               label: "Faturamento Mensal (R$)",
               data: dataFatMes,
-              borderColor: "#3c63da",
+              borderColor: "#0f4c5c",
               backgroundColor: "rgba(60, 99, 218, 0.08)",
               fill: true,
               tension: 0.35,
@@ -1124,7 +1124,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
             {
               label: "Lucro Líquido (R$)",
               data: dataLucroMes,
-              borderColor: "#118464",
+              borderColor: "#1a7f5a",
               backgroundColor: "transparent",
               tension: 0.35,
               pointRadius: 5,
@@ -1159,7 +1159,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
           },
           scales: {
             y: {
-              grid: { color: "#f1f5f9" },
+              grid: { color: "#f0f3f0" },
               ticks: { callback: (v: any) => "R$ " + (Number(v) / 1000).toFixed(0) + "k" },
             },
             x: { grid: { display: false } },
@@ -1171,7 +1171,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
       const sortedByFat = [...unitCalculations].sort((a, b) => b.fat - a.fat);
       const labels = sortedByFat.map((u) => u.f.name.replace("Café ", "").replace("Beleza ", "").replace("EduKids ", ""));
       const dataFats = sortedByFat.map((u) => u.fat);
-      const backgroundColors = sortedByFat.map((u) => (u.f.status === "green" ? "#3c63da" : "#f59e0b"));
+      const backgroundColors = sortedByFat.map((u) => (u.f.status === "green" ? "#0f4c5c" : "#f59e0b"));
 
       config = {
         type: "bar",
@@ -1205,7 +1205,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
           },
           scales: {
             y: {
-              grid: { color: "#f1f5f9" },
+              grid: { color: "#f0f3f0" },
               ticks: { callback: (v: any) => "R$ " + (Number(v) / 1000).toFixed(0) + "k" },
             },
             x: { grid: { display: false }, ticks: { font: { size: 11, weight: 600 } } },
@@ -1225,7 +1225,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
             {
               label: "Lucro Líquido",
               data: sortedByFat.map((u) => u.d.lucroLiquido),
-              backgroundColor: "#118464",
+              backgroundColor: "#1a7f5a",
               borderRadius: 6,
               barThickness: 28,
             },
@@ -1239,7 +1239,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
             {
               label: "Despesas",
               data: sortedByFat.map((u) => u.d.totalDesp),
-              backgroundColor: "#3c63da",
+              backgroundColor: "#0f4c5c",
               borderRadius: 6,
               barThickness: 28,
             },
@@ -1253,7 +1253,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
             {
               label: "Impostos",
               data: sortedByFat.map((u) => u.d.impostos),
-              backgroundColor: "#94a3b8",
+              backgroundColor: "#93a09b",
               borderRadius: 6,
               barThickness: 28,
             },
@@ -1278,7 +1278,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
             x: { stacked: true, grid: { display: false }, ticks: { font: { size: 11, weight: 600 } } },
             y: {
               stacked: true,
-              grid: { color: "#f1f5f9" },
+              grid: { color: "#f0f3f0" },
               ticks: { callback: (v: any) => "R$ " + (Number(v) / 1000).toFixed(0) + "k" },
             },
           },
@@ -1327,7 +1327,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
           },
           scales: {
             y: {
-              grid: { color: "#f1f5f9" },
+              grid: { color: "#f0f3f0" },
               ticks: { callback: (v: any) => "R$ " + (Number(v) / 1000).toFixed(0) + "k" },
             },
             x: { grid: { display: false }, ticks: { font: { size: 11, weight: 600 } } },
@@ -1342,7 +1342,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
         if (selectedState === "all" || d.state === selectedState) {
           return "#6a4ecb";
         }
-        return "#cbd5e1";
+        return "#c9d1cb";
       });
 
       config = {
@@ -1377,7 +1377,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
           },
           scales: {
             y: {
-              grid: { color: "#f1f5f9" },
+              grid: { color: "#f0f3f0" },
               ticks: { callback: (v: any) => "R$ " + (Number(v) / 1000).toFixed(0) + "k" },
             },
             x: {
@@ -1462,24 +1462,24 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
       {/* ------------------------------------------------------------- */}
       {/* 2. BARRA DE FILTROS COMPLETOS (ANO, MÊS, DIA, REDE, UNIDADE, STATUS) */}
       {/* ------------------------------------------------------------- */}
-      <div className="rounded-2xl border border-[#e5eaf1] bg-white p-4.5 shadow-xs space-y-4">
+      <div className="rounded-2xl border border-[#dfe4df] bg-white p-4.5 shadow-xs space-y-4">
         {/* Header dos Filtros */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-[#f1f5f9]">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-[#f0f3f0]">
           <div className="flex items-center gap-2">
-            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#edf2ff] text-[#3c63da]">
+            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#e3eff1] text-[#0f4c5c]">
               <Filter className="h-4 w-4" />
             </div>
             <div>
-              <span className="text-xs font-black text-[#152238] uppercase tracking-wide">
+              <span className="text-xs font-black text-[#17211f] ">
                 Filtros do Analítico
               </span>
-              <p className="text-[11px] text-[#69778c]">
+              <p className="text-[11px] text-[#5e6b67]">
                 Filtro temporal separado por Ano, Mês e Dia com seleção múltipla, além de Rede e Unidades
               </p>
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <span className="text-[11px] font-bold text-[#3c63da] bg-[#edf2ff] px-2.5 py-1 rounded-full border border-[#3c63da]/20">
+            <span className="text-[11px] font-bold text-[#0f4c5c] bg-[#e3eff1] px-2.5 py-1 rounded-full border border-[#0f4c5c]/20">
               {filteredUnits.length} unidade(s) filtrada(s)
             </span>
           </div>
@@ -1491,14 +1491,14 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
         </div>
 
         {/* 2. FILTROS DA REDE / OPERACIONAIS */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 pt-3 border-t border-[#f1f5f9]">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 pt-3 border-t border-[#f0f3f0]">
           {/* Filtro 1: Rede / Marca */}
           <div>
             <label
               htmlFor="filter-analytics-business"
-              className="flex items-center gap-1.5 text-[11px] font-bold text-[#152238] mb-1.5"
+              className="flex items-center gap-1.5 text-[11px] font-bold text-[#17211f] mb-1.5"
             >
-              <Building2 className="h-3.5 w-3.5 text-[#3c63da]" />
+              <Building2 className="h-3.5 w-3.5 text-[#0f4c5c]" />
               <span>Rede / Marca</span>
             </label>
             <select
@@ -1511,7 +1511,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                 setViewMode("consolidated");
                 onSelectTenant(val === "all" ? "dono" : val);
               }}
-              className="w-full rounded-xl border border-[#cbd5e1] bg-white px-3.5 py-2.5 text-xs sm:text-sm font-semibold text-[#152238] shadow-2xs hover:border-[#94a3b8] focus:border-[#3c63da] focus:ring-2 focus:ring-[#3c63da]/15 focus:outline-none cursor-pointer transition-all"
+              className="w-full rounded-md border border-[#c9d1cb] bg-white px-3 py-2 text-[13px] font-semibold text-[#17211f] shadow-2xs hover:border-[#93a09b] focus:border-[#0f4c5c] focus:ring-2 focus:ring-[#0f4c5c]/15 focus:outline-none cursor-pointer transition-all"
             >
               <option value="all">Todas as Redes e Marcas</option>
               {businesses.map((b) => (
@@ -1526,9 +1526,9 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
           <div>
             <label
               htmlFor="filter-analytics-franchise"
-              className="flex items-center gap-1.5 text-[11px] font-bold text-[#152238] mb-1.5"
+              className="flex items-center gap-1.5 text-[11px] font-bold text-[#17211f] mb-1.5"
             >
-              <Store className="h-3.5 w-3.5 text-[#3c63da]" />
+              <Store className="h-3.5 w-3.5 text-[#0f4c5c]" />
               <span>Unidade Franqueada</span>
             </label>
             <select
@@ -1545,7 +1545,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                   onSelectTenant(selectedBusiness === "all" ? "dono" : selectedBusiness);
                 }
               }}
-              className="w-full rounded-xl border border-[#cbd5e1] bg-white px-3.5 py-2.5 text-xs sm:text-sm font-semibold text-[#152238] shadow-2xs hover:border-[#94a3b8] focus:border-[#3c63da] focus:ring-2 focus:ring-[#3c63da]/15 focus:outline-none cursor-pointer transition-all"
+              className="w-full rounded-md border border-[#c9d1cb] bg-white px-3 py-2 text-[13px] font-semibold text-[#17211f] shadow-2xs hover:border-[#93a09b] focus:border-[#0f4c5c] focus:ring-2 focus:ring-[#0f4c5c]/15 focus:outline-none cursor-pointer transition-all"
             >
               {!isFranchisee && (
                 <option value="all">
@@ -1566,16 +1566,16 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
           <div>
             <label
               htmlFor="filter-analytics-status"
-              className="flex items-center gap-1.5 text-[11px] font-bold text-[#152238] mb-1.5"
+              className="flex items-center gap-1.5 text-[11px] font-bold text-[#17211f] mb-1.5"
             >
-              <ShieldCheck className="h-3.5 w-3.5 text-[#3c63da]" />
+              <ShieldCheck className="h-3.5 w-3.5 text-[#0f4c5c]" />
               <span>Status Operacional</span>
             </label>
             <select
               id="filter-analytics-status"
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value as any)}
-              className="w-full rounded-xl border border-[#cbd5e1] bg-white px-3.5 py-2.5 text-xs sm:text-sm font-semibold text-[#152238] shadow-2xs hover:border-[#94a3b8] focus:border-[#3c63da] focus:ring-2 focus:ring-[#3c63da]/15 focus:outline-none cursor-pointer transition-all"
+              className="w-full rounded-md border border-[#c9d1cb] bg-white px-3 py-2 text-[13px] font-semibold text-[#17211f] shadow-2xs hover:border-[#93a09b] focus:border-[#0f4c5c] focus:ring-2 focus:ring-[#0f4c5c]/15 focus:outline-none cursor-pointer transition-all"
             >
               <option value="all">Todos os Status</option>
               <option value="green">🟢 Operação Saudável</option>
@@ -1587,16 +1587,16 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
           <div>
             <label
               htmlFor="filter-analytics-state"
-              className="flex items-center gap-1.5 text-[11px] font-bold text-[#152238] mb-1.5"
+              className="flex items-center gap-1.5 text-[11px] font-bold text-[#17211f] mb-1.5"
             >
-              <Sliders className="h-3.5 w-3.5 text-[#3c63da]" />
+              <Sliders className="h-3.5 w-3.5 text-[#0f4c5c]" />
               <span>Estado (UF)</span>
             </label>
             <select
               id="filter-analytics-state"
               value={selectedState}
               onChange={(e) => setSelectedState(e.target.value)}
-              className="w-full rounded-xl border border-[#cbd5e1] bg-white px-3.5 py-2.5 text-xs sm:text-sm font-semibold text-[#152238] shadow-2xs hover:border-[#94a3b8] focus:border-[#3c63da] focus:ring-2 focus:ring-[#3c63da]/15 focus:outline-none cursor-pointer transition-all"
+              className="w-full rounded-md border border-[#c9d1cb] bg-white px-3 py-2 text-[13px] font-semibold text-[#17211f] shadow-2xs hover:border-[#93a09b] focus:border-[#0f4c5c] focus:ring-2 focus:ring-[#0f4c5c]/15 focus:outline-none cursor-pointer transition-all"
             >
               <option value="all">Todos os Estados ({availableStates.length})</option>
               {availableStates.map((st) => (
@@ -1622,7 +1622,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
               setSelectedFranchise(isFranchisee ? allowedUnits[0]?.id || "f1" : "all");
               setStatusFilter("all");
             }}
-            className="text-[11px] font-bold text-[#69778c] hover:text-[#3c63da] transition-colors cursor-pointer"
+            className="text-[11px] font-bold text-[#5e6b67] hover:text-[#0f4c5c] transition-colors cursor-pointer"
           >
             Redefinir Filtros Padrão
           </button>
@@ -1633,31 +1633,31 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
       {/* PAINEL ANALÍTICO & GRÁFICOS                                   */}
       {/* ============================================================= */}
       <div className="space-y-6">
-          <div className="rounded-2xl border border-[#e5eaf1] bg-white p-4 sm:p-5 shadow-xs">
+          <div className="rounded-2xl border border-[#dfe4df] bg-white p-4 sm:p-5 shadow-xs">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3">
               <div>
-                <h3 className="text-sm font-extrabold text-[#152238] flex items-center gap-2"><AlertTriangle className="h-4 w-4 text-amber-600" />Pressão de caixa por vencimento</h3>
-                <p className="text-[11px] text-[#69778c] mt-1">Alertas calculados a partir dos compromissos da unidade ou rede selecionada.</p>
+                <h3 className="text-sm font-extrabold text-[#17211f] flex items-center gap-2"><AlertTriangle className="h-4 w-4 text-amber-600" />Pressão de caixa por vencimento</h3>
+                <p className="text-[11px] text-[#5e6b67] mt-1">Alertas calculados a partir dos compromissos da unidade ou rede selecionada.</p>
               </div>
-              <button type="button" onClick={() => onNavigate("pagamentos_despesas")} className="text-[11px] font-extrabold text-[#3c63da] hover:underline">Abrir contas a pagar →</button>
+              <button type="button" onClick={() => onNavigate("pagamentos_despesas")} className="text-[11px] font-extrabold text-[#0f4c5c] hover:underline">Abrir contas a pagar →</button>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-              <div className="rounded-xl border border-rose-200 bg-rose-50/70 p-3"><div className="flex items-center justify-between"><span className="h-2.5 w-2.5 rounded-full bg-rose-600" /><span className="text-[10px] font-black uppercase tracking-wider text-rose-700">Vencidas</span></div><strong className="block mt-1 text-lg font-black text-rose-800">{formatBrl2(billSummary.overdue.amount)}</strong><span className="text-[10px] text-rose-700">{billSummary.overdue.count} compromisso(s)</span></div>
-              <div className="rounded-xl border border-amber-200 bg-amber-50/70 p-3"><div className="flex items-center justify-between"><span className="h-2.5 w-2.5 rounded-full bg-amber-500" /><span className="text-[10px] font-black uppercase tracking-wider text-amber-800">Próximos 7 dias</span></div><strong className="block mt-1 text-lg font-black text-amber-900">{formatBrl2(billSummary.today.amount + billSummary.soon.amount)}</strong><span className="text-[10px] text-amber-800">{billSummary.today.count + billSummary.soon.count} compromisso(s)</span></div>
-              <div className="rounded-xl border border-emerald-200 bg-emerald-50/70 p-3"><div className="flex items-center justify-between"><span className="h-2.5 w-2.5 rounded-full bg-emerald-600" /><span className="text-[10px] font-black uppercase tracking-wider text-emerald-800">No prazo / pagos</span></div><strong className="block mt-1 text-lg font-black text-emerald-800">{formatBrl2(billSummary.scheduled.amount + billSummary.paid.amount)}</strong><span className="text-[10px] text-emerald-700">{billSummary.scheduled.count + billSummary.paid.count} compromisso(s)</span></div>
+              <div className="rounded-xl border border-rose-200 bg-rose-50/70 p-3"><div className="flex items-center justify-between"><span className="h-2.5 w-2.5 rounded-full bg-rose-600" /><span className="text-[10px] font-black text-rose-700">Vencidas</span></div><strong className="block mt-1 text-lg font-black text-rose-800">{formatBrl2(billSummary.overdue.amount)}</strong><span className="text-[10px] text-rose-700">{billSummary.overdue.count} compromisso(s)</span></div>
+              <div className="rounded-xl border border-amber-200 bg-amber-50/70 p-3"><div className="flex items-center justify-between"><span className="h-2.5 w-2.5 rounded-full bg-amber-500" /><span className="text-[10px] font-black text-amber-800">Próximos 7 dias</span></div><strong className="block mt-1 text-lg font-black text-amber-900">{formatBrl2(billSummary.today.amount + billSummary.soon.amount)}</strong><span className="text-[10px] text-amber-800">{billSummary.today.count + billSummary.soon.count} compromisso(s)</span></div>
+              <div className="rounded-xl border border-emerald-200 bg-emerald-50/70 p-3"><div className="flex items-center justify-between"><span className="h-2.5 w-2.5 rounded-full bg-emerald-600" /><span className="text-[10px] font-black text-emerald-800">No prazo / pagos</span></div><strong className="block mt-1 text-lg font-black text-emerald-800">{formatBrl2(billSummary.scheduled.amount + billSummary.paid.amount)}</strong><span className="text-[10px] text-emerald-700">{billSummary.scheduled.count + billSummary.paid.count} compromisso(s)</span></div>
             </div>
           </div>
 
           {/* ----------------------------------------------------------- */}
           {/* SELETOR DE MODO DE VISÃO: CONSOLIDADO VS UNIDADE INDIVIDUAL  */}
           {/* ----------------------------------------------------------- */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 rounded-2xl bg-gradient-to-r from-[#f8faff] via-white to-[#f1f5f9] border border-[#e5eaf1] shadow-2xs">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 rounded-2xl bg-gradient-to-r from-[#f7f9f7] via-white to-[#f0f3f0] border border-[#dfe4df] shadow-2xs">
             <div className="flex items-center gap-2.5">
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#3c63da]/10 text-[#3c63da]">
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#0f4c5c]/10 text-[#0f4c5c]">
                 <Store className="h-5 w-5" />
               </div>
               <div>
-                <span className="text-xs font-extrabold text-[#152238] flex items-center gap-1.5">
+                <span className="text-xs font-extrabold text-[#17211f] flex items-center gap-1.5">
                   Visualização de Desempenho
                   {isFranchisee && (
                     <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-blue-100 text-blue-800">
@@ -1665,7 +1665,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                     </span>
                   )}
                 </span>
-                <p className="text-[11px] text-[#69778c]">
+                <p className="text-[11px] text-[#5e6b67]">
                   {viewMode === "unit"
                     ? `Acompanhando indicadores específicos de: ${activeUnit.name} (${activeUnit.code})`
                     : "Visão agregada e consolidada de todas as lojas da rede"}
@@ -1673,7 +1673,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
               </div>
             </div>
 
-            <div className="flex items-center gap-1.5 p-1 bg-white border border-[#e5eaf1] rounded-xl shadow-2xs">
+            <div className="flex items-center gap-1.5 p-1 bg-white border border-[#dfe4df] rounded-xl shadow-2xs">
               {!isFranchisee && (
                 <button
                   type="button"
@@ -1685,8 +1685,8 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                   }}
                   className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                     viewMode === "consolidated"
-                      ? "bg-[#3c63da] text-white shadow-xs"
-                      : "text-[#69778c] hover:text-[#152238] hover:bg-[#f8faff]"
+                      ? "bg-[#0f4c5c] text-white shadow-xs"
+                      : "text-[#5e6b67] hover:text-[#17211f] hover:bg-[#f7f9f7]"
                   }`}
                 >
                   <Building2 className="h-3.5 w-3.5" />
@@ -1708,8 +1708,8 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                 }}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                   viewMode === "unit"
-                    ? "bg-[#3c63da] text-white shadow-xs"
-                    : "text-[#69778c] hover:text-[#152238] hover:bg-[#f8faff]"
+                    ? "bg-[#0f4c5c] text-white shadow-xs"
+                    : "text-[#5e6b67] hover:text-[#17211f] hover:bg-[#f7f9f7]"
                 }`}
               >
                 <Store className="h-3.5 w-3.5" />
@@ -1727,21 +1727,21 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
           {viewMode === "unit" ? (
             <div className="space-y-6">
               {/* Header da Unidade Ativa */}
-              <div className="rounded-2xl border border-[#e5eaf1] bg-white p-4.5 shadow-xs">
+              <div className="rounded-2xl border border-[#dfe4df] bg-white p-4.5 shadow-xs">
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                   <div className="flex items-start gap-3.5">
                     <div
                       className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl text-white font-extrabold text-sm shadow-xs"
-                      style={{ backgroundColor: activeBiz?.color || "#3c63da" }}
+                      style={{ backgroundColor: activeBiz?.color || "#0f4c5c" }}
                     >
                       {activeBiz?.brand || "HQ"}
                     </div>
                     <div>
                       <div className="flex flex-wrap items-center gap-2">
-                        <h2 className="text-base sm:text-lg font-black text-[#152238]">
+                        <h2 className="text-base sm:text-lg font-black text-[#17211f]">
                           {activeUnit.name}
                         </h2>
-                        <span className="px-2 py-0.5 rounded-md bg-[#f1f5f9] text-[#294285] font-mono text-[11px] font-bold">
+                        <span className="px-2 py-0.5 rounded-md bg-[#f0f3f0] text-[#0b3b48] font-mono text-[11px] font-bold">
                           {activeUnit.code}
                         </span>
                         <span
@@ -1759,17 +1759,17 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                           {activeUnit.status === "green" ? "Operação Saudável" : "Em Atenção Operacional"}
                         </span>
                       </div>
-                      <div className="flex flex-wrap items-center gap-y-1 gap-x-3 text-xs text-[#69778c] mt-1">
+                      <div className="flex flex-wrap items-center gap-y-1 gap-x-3 text-xs text-[#5e6b67] mt-1">
                         <span>
-                          <strong className="text-[#152238]">Rede:</strong> {activeBiz?.name}
+                          <strong className="text-[#17211f]">Rede:</strong> {activeBiz?.name}
                         </span>
                         <span>•</span>
                         <span>
-                          <strong className="text-[#152238]">Responsável:</strong> {activeUnit.resp}
+                          <strong className="text-[#17211f]">Responsável:</strong> {activeUnit.resp}
                         </span>
                         <span>•</span>
                         <span>
-                          <strong className="text-[#152238]">Localização:</strong> {activeUnit.city}/{activeUnit.state || "SP"}
+                          <strong className="text-[#17211f]">Localização:</strong> {activeUnit.city}/{activeUnit.state || "SP"}
                         </span>
                       </div>
                     </div>
@@ -1777,8 +1777,8 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
 
                   {/* Seletor Rápido de Unidade do Usuário */}
                   {allowedUnits.length > 1 && (
-                    <div className="flex items-center gap-2 self-start md:self-auto bg-[#f8faff] p-2 rounded-xl border border-[#e5eaf1]">
-                      <span className="text-[11px] font-bold text-[#69778c]">Trocar Loja:</span>
+                    <div className="flex items-center gap-2 self-start md:self-auto bg-[#f7f9f7] p-2 rounded-xl border border-[#dfe4df]">
+                      <span className="text-[11px] font-bold text-[#5e6b67]">Trocar Loja:</span>
                       <select
                         id="quick-unit-selector"
                         value={activeUnit.id}
@@ -1787,7 +1787,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                           setSelectedFranchise(val);
                           onSelectTenant(val);
                         }}
-                        className="rounded-lg border border-[#e5eaf1] bg-white py-1 px-2 text-xs font-bold text-[#152238] focus:border-[#3c63da] focus:outline-none shadow-2xs cursor-pointer"
+                        className="rounded-lg border border-[#dfe4df] bg-white py-1 px-2 text-xs font-bold text-[#17211f] focus:border-[#0f4c5c] focus:outline-none shadow-2xs cursor-pointer"
                       >
                         {allowedUnits.map((u) => (
                           <option key={u.id} value={u.id}>
@@ -1806,17 +1806,17 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
               {/* ------------------------------------------------------- */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {/* CARD 1: TOTAL DE VENDAS */}
-                <div className="rounded-2xl border-2 border-[#3c63da]/20 bg-gradient-to-br from-[#3c63da]/5 via-white to-white p-5 shadow-xs relative overflow-hidden">
+                <div className="rounded-2xl border-2 border-[#0f4c5c]/20 bg-gradient-to-br from-[#0f4c5c]/5 via-white to-white p-5 shadow-xs relative overflow-hidden">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#3c63da] text-white shadow-xs">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#0f4c5c] text-white shadow-xs">
                         <ShoppingBag className="h-5 w-5" />
                       </div>
                       <div>
-                        <span className="text-[11px] font-black uppercase tracking-wider text-[#3c63da] block">
+                        <span className="text-[11px] font-black text-[#0f4c5c] block">
                           Total de Vendas
                         </span>
-                        <span className="text-[11px] text-[#69778c]">Faturamento da Unidade</span>
+                        <span className="text-[11px] text-[#5e6b67]">Faturamento da Unidade</span>
                       </div>
                     </div>
                     <span className="inline-flex items-center gap-1 text-[11px] font-extrabold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
@@ -1826,24 +1826,24 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                   </div>
 
                   <div className="mt-4">
-                    <strong className="text-2xl sm:text-3xl font-black text-[#152238] block tracking-tight">
+                    <strong className="text-2xl sm:text-3xl font-black text-[#17211f] block tracking-tight">
                       {formatBrl(unitFat)}
                     </strong>
-                    <div className="flex items-center justify-between text-xs text-[#69778c] mt-2">
-                      <span>Média diária: <strong className="text-[#152238]">{formatBrl(unitDailyAvg)}/dia</strong></span>
+                    <div className="flex items-center justify-between text-xs text-[#5e6b67] mt-2">
+                      <span>Média diária: <strong className="text-[#17211f]">{formatBrl(unitDailyAvg)}/dia</strong></span>
                       <span><strong>{unitEstimatedOrders.toLocaleString("pt-BR")}</strong> pedidos</span>
                     </div>
                   </div>
 
                   {/* Barra de Progresso de Meta da Unidade */}
-                  <div className="mt-3.5 pt-3 border-t border-[#e5eaf1]">
+                  <div className="mt-3.5 pt-3 border-t border-[#dfe4df]">
                     <div className="flex items-center justify-between text-[11px] mb-1">
-                      <span className="font-bold text-[#69778c]">Meta do Período ({unitTargetAtingido}%)</span>
-                      <span className="font-extrabold text-[#152238]">{formatBrl(unitSalesTarget)}</span>
+                      <span className="font-bold text-[#5e6b67]">Meta do Período ({unitTargetAtingido}%)</span>
+                      <span className="font-extrabold text-[#17211f]">{formatBrl(unitSalesTarget)}</span>
                     </div>
-                    <div className="h-2 w-full rounded-full bg-[#e5eaf1] overflow-hidden">
+                    <div className="h-2 w-full rounded-full bg-[#dfe4df] overflow-hidden">
                       <div
-                        className="h-full rounded-full bg-gradient-to-r from-[#3c63da] to-indigo-500 transition-all duration-500"
+                        className="h-full rounded-full bg-gradient-to-r from-[#0f4c5c] to-indigo-500 transition-all duration-500"
                         style={{ width: `${Math.min(100, unitTargetAtingido)}%` }}
                       />
                     </div>
@@ -1858,10 +1858,10 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                         <TrendingUp className="h-5 w-5" />
                       </div>
                       <div>
-                        <span className="text-[11px] font-black uppercase tracking-wider text-emerald-800 block">
+                        <span className="text-[11px] font-black text-emerald-800 block">
                           Margem Líquida
                         </span>
-                        <span className="text-[11px] text-[#69778c]">Rentabilidade Real</span>
+                        <span className="text-[11px] text-[#5e6b67]">Rentabilidade Real</span>
                       </div>
                     </div>
                     <span
@@ -1880,15 +1880,15 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                     <strong className="text-2xl sm:text-3xl font-black text-emerald-700 block tracking-tight">
                       {formatPct(unitMargem)}
                     </strong>
-                    <div className="flex items-center justify-between text-xs text-[#69778c] mt-2">
+                    <div className="flex items-center justify-between text-xs text-[#5e6b67] mt-2">
                       <span>Lucro líquido: <strong className="text-emerald-800 font-bold">{formatBrl(unitLucro)}</strong></span>
-                      <span>Margem bruta: <strong className="text-[#152238]">{formatPct(unitMargemBruta)}</strong></span>
+                      <span>Margem bruta: <strong className="text-[#17211f]">{formatPct(unitMargemBruta)}</strong></span>
                     </div>
                   </div>
 
                   {/* Classificação de Saúde Financeira */}
-                  <div className="mt-3.5 pt-3 border-t border-[#e5eaf1] flex items-center justify-between text-[11px]">
-                    <span className="font-bold text-[#69778c]">Diagnóstico Operacional:</span>
+                  <div className="mt-3.5 pt-3 border-t border-[#dfe4df] flex items-center justify-between text-[11px]">
+                    <span className="font-bold text-[#5e6b67]">Diagnóstico Operacional:</span>
                     <span className="font-extrabold text-emerald-700 flex items-center gap-1">
                       <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
                       {unitMargem >= 0.18 ? "Rentabilidade Excelente" : "Rentabilidade Saudável"}
@@ -1904,10 +1904,10 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                         <Receipt className="h-5 w-5" />
                       </div>
                       <div>
-                        <span className="text-[11px] font-black uppercase tracking-wider text-amber-800 block">
+                        <span className="text-[11px] font-black text-amber-800 block">
                           Ticket Médio
                         </span>
-                        <span className="text-[11px] text-[#69778c]">Gasto Médio por Venda</span>
+                        <span className="text-[11px] text-[#5e6b67]">Gasto Médio por Venda</span>
                       </div>
                     </div>
                     <span
@@ -1926,16 +1926,16 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                     <strong className="text-2xl sm:text-3xl font-black text-amber-900 block tracking-tight">
                       {formatBrl2(unitRealTicket)}
                     </strong>
-                    <div className="flex items-center justify-between text-xs text-[#69778c] mt-2">
-                      <span>Volume: <strong className="text-[#152238]">{unitEstimatedOrders.toLocaleString("pt-BR")} transações</strong></span>
-                      <span>Média rede: <strong className="text-[#152238]">{formatBrl2(networkAvgTicket)}</strong></span>
+                    <div className="flex items-center justify-between text-xs text-[#5e6b67] mt-2">
+                      <span>Volume: <strong className="text-[#17211f]">{unitEstimatedOrders.toLocaleString("pt-BR")} transações</strong></span>
+                      <span>Média rede: <strong className="text-[#17211f]">{formatBrl2(networkAvgTicket)}</strong></span>
                     </div>
                   </div>
 
                   {/* Indicador de Desempenho do Ticket */}
-                  <div className="mt-3.5 pt-3 border-t border-[#e5eaf1] flex items-center justify-between text-[11px]">
-                    <span className="font-bold text-[#69778c]">Média de Itens/Cupom:</span>
-                    <span className="font-extrabold text-[#152238] flex items-center gap-1">
+                  <div className="mt-3.5 pt-3 border-t border-[#dfe4df] flex items-center justify-between text-[11px]">
+                    <span className="font-bold text-[#5e6b67]">Média de Itens/Cupom:</span>
+                    <span className="font-extrabold text-[#17211f] flex items-center gap-1">
                       <Sparkles className="h-3.5 w-3.5 text-amber-600" />
                       2.4 produtos por atendimento
                     </span>
@@ -1948,47 +1948,47 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
               {/* ------------------------------------------------------- */}
               <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4">
                 {/* 1. Lucro Líquido Real */}
-                <div className="rounded-xl border border-[#e5eaf1] bg-white p-4 shadow-xs">
-                  <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#69778c] block">
+                <div className="rounded-xl border border-[#dfe4df] bg-white p-4 shadow-xs">
+                  <span className="text-[10px] font-extrabold text-[#5e6b67] block">
                     Lucro Líquido Real
                   </span>
                   <strong className="text-lg sm:text-xl font-extrabold text-emerald-700 block mt-1">
                     {formatBrl(unitLucro)}
                   </strong>
-                  <span className="text-[10px] text-[#69778c] block mt-1">
+                  <span className="text-[10px] text-[#5e6b67] block mt-1">
                     Retenção líquida da unidade
                   </span>
                 </div>
 
                 {/* 2. CMV da Loja (Insumos) */}
-                <div className="rounded-xl border border-[#e5eaf1] bg-white p-4 shadow-xs">
-                  <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#69778c] block">
+                <div className="rounded-xl border border-[#dfe4df] bg-white p-4 shadow-xs">
+                  <span className="text-[10px] font-extrabold text-[#5e6b67] block">
                     CMV (Insumos/Produtos)
                   </span>
-                  <strong className="text-lg sm:text-xl font-extrabold text-[#b44b4b] block mt-1">
+                  <strong className="text-lg sm:text-xl font-extrabold text-[#b93a48] block mt-1">
                     {formatBrl(unitDre.cmv)}
                   </strong>
-                  <span className="text-[10px] text-[#69778c] block mt-1">
+                  <span className="text-[10px] text-[#5e6b67] block mt-1">
                     {unitFat > 0 ? ((unitDre.cmv / unitFat) * 100).toFixed(1) : 0}% das vendas
                   </span>
                 </div>
 
                 {/* 3. Despesas Fixas e Pessoal */}
-                <div className="rounded-xl border border-[#e5eaf1] bg-white p-4 shadow-xs">
-                  <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#69778c] block">
+                <div className="rounded-xl border border-[#dfe4df] bg-white p-4 shadow-xs">
+                  <span className="text-[10px] font-extrabold text-[#5e6b67] block">
                     Despesas Operacionais
                   </span>
-                  <strong className="text-lg sm:text-xl font-extrabold text-[#294285] block mt-1">
+                  <strong className="text-lg sm:text-xl font-extrabold text-[#0b3b48] block mt-1">
                     {formatBrl(unitDre.totalDesp)}
                   </strong>
-                  <span className="text-[10px] text-[#69778c] block mt-1">
+                  <span className="text-[10px] text-[#5e6b67] block mt-1">
                     Equipe, aluguel & ocupação
                   </span>
                 </div>
 
                 {/* 4. Royalties & FPP Devidos */}
-                <div className="rounded-xl border border-[#e5eaf1] bg-amber-50/40 border-amber-200/70 p-4 shadow-xs">
-                  <span className="text-[10px] font-extrabold uppercase tracking-wider text-amber-800 block">
+                <div className="rounded-xl border border-[#dfe4df] bg-amber-50/40 border-amber-200/70 p-4 shadow-xs">
+                  <span className="text-[10px] font-extrabold text-amber-800 block">
                     Royalties & FPP Devidos
                   </span>
                   <strong className="text-lg sm:text-xl font-extrabold text-amber-900 block mt-1">
@@ -2000,11 +2000,11 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                 </div>
 
                 {/* 5. Ponto de Equilíbrio (Break-Even) */}
-                <div className="col-span-2 lg:col-span-1 rounded-xl border border-[#e5eaf1] bg-[#f8faff] p-4 shadow-xs">
-                  <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#3c63da] block">
+                <div className="col-span-2 lg:col-span-1 rounded-xl border border-[#dfe4df] bg-[#f7f9f7] p-4 shadow-xs">
+                  <span className="text-[10px] font-extrabold text-[#0f4c5c] block">
                     Break-Even (Ponto Equilíbrio)
                   </span>
-                  <strong className="text-lg sm:text-xl font-extrabold text-[#152238] block mt-1">
+                  <strong className="text-lg sm:text-xl font-extrabold text-[#17211f] block mt-1">
                     {formatBrl(unitBreakEven)}
                   </strong>
                   <span className="text-[10px] text-emerald-700 font-bold block mt-1">
@@ -2016,14 +2016,14 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
               {/* ------------------------------------------------------- */}
               {/* RAIO-X: DESTINO DE CADA R$ 100 FATURADOS PELA UNIDADE   */}
               {/* ------------------------------------------------------- */}
-              <div className="rounded-2xl border border-[#e5eaf1] bg-white p-5 shadow-xs">
+              <div className="rounded-2xl border border-[#dfe4df] bg-white p-5 shadow-xs">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
                   <div>
-                    <h3 className="text-sm font-extrabold text-[#152238] flex items-center gap-2">
-                      <Target className="h-4 w-4 text-[#3c63da]" />
+                    <h3 className="text-sm font-extrabold text-[#17211f] flex items-center gap-2">
+                      <Target className="h-4 w-4 text-[#0f4c5c]" />
                       Raio-X Financeiro: Onde vai cada R$ 100,00 faturados por esta unidade?
                     </h3>
-                    <p className="text-xs text-[#69778c]">
+                    <p className="text-xs text-[#5e6b67]">
                       Distribuição matemática dos custos, tributos, taxas de franquia e margem líquida retida pela loja.
                     </p>
                   </div>
@@ -2036,14 +2036,14 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                 <div className="h-6 w-full rounded-xl overflow-hidden flex shadow-2xs">
                   <div
                     style={{ width: `${Math.max(5, (unitDre.cmv / (unitFat || 1)) * 100)}%` }}
-                    className="bg-[#b44b4b] h-full flex items-center justify-center text-[10px] text-white font-extrabold"
+                    className="bg-[#b93a48] h-full flex items-center justify-center text-[10px] text-white font-extrabold"
                     title={`CMV: ${formatPct(unitDre.cmv / unitFat)}`}
                   >
                     CMV
                   </div>
                   <div
                     style={{ width: `${Math.max(5, (unitDre.totalDesp / (unitFat || 1)) * 100)}%` }}
-                    className="bg-[#294285] h-full flex items-center justify-center text-[10px] text-white font-extrabold"
+                    className="bg-[#0b3b48] h-full flex items-center justify-center text-[10px] text-white font-extrabold"
                     title={`Despesas: ${formatPct(unitDre.totalDesp / unitFat)}`}
                   >
                     Desp.
@@ -2072,33 +2072,33 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                 </div>
 
                 {/* Legenda Detalhada */}
-                <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mt-4 pt-3 border-t border-[#e5eaf1] text-xs">
+                <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mt-4 pt-3 border-t border-[#dfe4df] text-xs">
                   <div className="flex items-center gap-2">
-                    <span className="h-3 w-3 rounded-md bg-[#b44b4b] shrink-0" />
+                    <span className="h-3 w-3 rounded-md bg-[#b93a48] shrink-0" />
                     <div>
-                      <span className="text-[#69778c] block text-[10px]">Insumos (CMV)</span>
-                      <strong className="text-[#152238]">R$ {unitFat > 0 ? ((unitDre.cmv / unitFat) * 100).toFixed(1) : 0}</strong>
+                      <span className="text-[#5e6b67] block text-[10px]">Insumos (CMV)</span>
+                      <strong className="text-[#17211f]">R$ {unitFat > 0 ? ((unitDre.cmv / unitFat) * 100).toFixed(1) : 0}</strong>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="h-3 w-3 rounded-md bg-[#294285] shrink-0" />
+                    <span className="h-3 w-3 rounded-md bg-[#0b3b48] shrink-0" />
                     <div>
-                      <span className="text-[#69778c] block text-[10px]">Despesas & Equipe</span>
-                      <strong className="text-[#152238]">R$ {unitFat > 0 ? ((unitDre.totalDesp / unitFat) * 100).toFixed(1) : 0}</strong>
+                      <span className="text-[#5e6b67] block text-[10px]">Despesas & Equipe</span>
+                      <strong className="text-[#17211f]">R$ {unitFat > 0 ? ((unitDre.totalDesp / unitFat) * 100).toFixed(1) : 0}</strong>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
                     <span className="h-3 w-3 rounded-md bg-[#8b5cf6] shrink-0" />
                     <div>
-                      <span className="text-[#69778c] block text-[10px]">Impostos Fiscais</span>
-                      <strong className="text-[#152238]">R$ {unitFat > 0 ? ((unitDre.impostos / unitFat) * 100).toFixed(1) : 0}</strong>
+                      <span className="text-[#5e6b67] block text-[10px]">Impostos Fiscais</span>
+                      <strong className="text-[#17211f]">R$ {unitFat > 0 ? ((unitDre.impostos / unitFat) * 100).toFixed(1) : 0}</strong>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
                     <span className="h-3 w-3 rounded-md bg-[#f59e0b] shrink-0" />
                     <div>
-                      <span className="text-[#69778c] block text-[10px]">Royalties & FPP</span>
-                      <strong className="text-[#152238]">R$ {unitFat > 0 ? ((unitDevidoMatriz / unitFat) * 100).toFixed(1) : 0}</strong>
+                      <span className="text-[#5e6b67] block text-[10px]">Royalties & FPP</span>
+                      <strong className="text-[#17211f]">R$ {unitFat > 0 ? ((unitDevidoMatriz / unitFat) * 100).toFixed(1) : 0}</strong>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
@@ -2112,17 +2112,17 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
               </div>
 
               {/* Tabela de Metas & Comparativo com a Rede */}
-              <div className="rounded-2xl border border-[#e5eaf1] bg-white p-5 shadow-xs">
+              <div className="rounded-2xl border border-[#dfe4df] bg-white p-5 shadow-xs">
                 <div className="flex items-center justify-between mb-3">
-                  <h3 className="text-sm font-extrabold text-[#152238] flex items-center gap-2">
-                    <Scale className="h-4 w-4 text-[#3c63da]" />
+                  <h3 className="text-sm font-extrabold text-[#17211f] flex items-center gap-2">
+                    <Scale className="h-4 w-4 text-[#0f4c5c]" />
                     Benchmark Comparativo: Unidade vs Padrão da Rede Franqueadora
                   </h3>
                 </div>
                 <div className="overflow-x-auto">
                   <table className="w-full text-left text-xs">
                     <thead>
-                      <tr className="border-b border-[#e5eaf1] bg-[#f8faff] text-[11px] font-extrabold uppercase tracking-wider text-[#69778c]">
+                      <tr className="border-b border-[#dfe4df] bg-[#f7f9f7] text-[11px] font-extrabold text-[#5e6b67]">
                         <th className="py-2.5 px-3">Indicador de Desempenho</th>
                         <th className="py-2.5 px-3">Esta Unidade ({activeUnit.code})</th>
                         <th className="py-2.5 px-3">Média da Rede</th>
@@ -2130,14 +2130,14 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                         <th className="py-2.5 px-3">Classificação</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-[#e5eaf1] font-medium">
+                    <tbody className="divide-y divide-[#dfe4df] font-medium">
                       <tr>
-                        <td className="py-3 px-3 font-bold text-[#152238] flex items-center gap-1.5">
-                          <ShoppingBag className="h-3.5 w-3.5 text-[#3c63da]" />
+                        <td className="py-3 px-3 font-bold text-[#17211f] flex items-center gap-1.5">
+                          <ShoppingBag className="h-3.5 w-3.5 text-[#0f4c5c]" />
                           Total de Vendas / Faturamento
                         </td>
-                        <td className="py-3 px-3 font-extrabold text-[#152238]">{formatBrl(unitFat)}</td>
-                        <td className="py-3 px-3 text-[#69778c]">{formatBrl(avgFatPerUnit)}</td>
+                        <td className="py-3 px-3 font-extrabold text-[#17211f]">{formatBrl(unitFat)}</td>
+                        <td className="py-3 px-3 text-[#5e6b67]">{formatBrl(avgFatPerUnit)}</td>
                         <td className="py-3 px-3 text-emerald-700 font-bold">
                           {unitFat >= avgFatPerUnit ? "+" : ""}
                           {avgFatPerUnit > 0 ? (((unitFat - avgFatPerUnit) / avgFatPerUnit) * 100).toFixed(1) : 0}%
@@ -2149,12 +2149,12 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                         </td>
                       </tr>
                       <tr>
-                        <td className="py-3 px-3 font-bold text-[#152238] flex items-center gap-1.5">
+                        <td className="py-3 px-3 font-bold text-[#17211f] flex items-center gap-1.5">
                           <TrendingUp className="h-3.5 w-3.5 text-emerald-600" />
                           Margem Líquida da Operação
                         </td>
                         <td className="py-3 px-3 font-extrabold text-emerald-700">{formatPct(unitMargem)}</td>
-                        <td className="py-3 px-3 text-[#69778c]">{formatPct(networkAvgMargin)}</td>
+                        <td className="py-3 px-3 text-[#5e6b67]">{formatPct(networkAvgMargin)}</td>
                         <td className="py-3 px-3 text-emerald-700 font-bold">
                           {marginDeltaPp >= 0 ? "+" : ""}
                           {marginDeltaPp.toFixed(1)} p.p.
@@ -2166,12 +2166,12 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                         </td>
                       </tr>
                       <tr>
-                        <td className="py-3 px-3 font-bold text-[#152238] flex items-center gap-1.5">
+                        <td className="py-3 px-3 font-bold text-[#17211f] flex items-center gap-1.5">
                           <Receipt className="h-3.5 w-3.5 text-amber-600" />
                           Ticket Médio por Venda
                         </td>
                         <td className="py-3 px-3 font-extrabold text-amber-900">{formatBrl2(unitRealTicket)}</td>
-                        <td className="py-3 px-3 text-[#69778c]">{formatBrl2(networkAvgTicket)}</td>
+                        <td className="py-3 px-3 text-[#5e6b67]">{formatBrl2(networkAvgTicket)}</td>
                         <td className="py-3 px-3 text-emerald-700 font-bold">
                           {ticketDeltaPct >= 0 ? "+" : ""}
                           {ticketDeltaPct.toFixed(1)}%
@@ -2183,14 +2183,14 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                         </td>
                       </tr>
                       <tr>
-                        <td className="py-3 px-3 font-bold text-[#152238] flex items-center gap-1.5">
-                          <Scale className="h-3.5 w-3.5 text-[#b44b4b]" />
+                        <td className="py-3 px-3 font-bold text-[#17211f] flex items-center gap-1.5">
+                          <Scale className="h-3.5 w-3.5 text-[#b93a48]" />
                           CMV % (Custo Mercadorias Vendidas)
                         </td>
-                        <td className="py-3 px-3 font-extrabold text-[#b44b4b]">
+                        <td className="py-3 px-3 font-extrabold text-[#b93a48]">
                           {unitFat > 0 ? formatPct(unitDre.cmv / unitFat) : "0%"}
                         </td>
-                        <td className="py-3 px-3 text-[#69778c]">
+                        <td className="py-3 px-3 text-[#5e6b67]">
                           {totalFat > 0 ? formatPct(totalCmv / totalFat) : "35.0%"}
                         </td>
                         <td className="py-3 px-3 text-emerald-700 font-bold">
@@ -2215,7 +2215,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
               {/* Banner convite para visão individual */}
               <div className="p-3.5 rounded-xl border border-blue-200 bg-blue-50/60 flex items-center justify-between gap-3 text-xs">
                 <div className="flex items-center gap-2 text-blue-900">
-                  <Store className="h-4 w-4 text-[#3c63da]" />
+                  <Store className="h-4 w-4 text-[#0f4c5c]" />
                   <span>
                     Deseja inspecionar uma loja individualmente com <strong>Total de Vendas</strong>, <strong>Margem Líquida</strong> e <strong>Ticket Médio</strong>?
                   </span>
@@ -2232,7 +2232,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                       }
                     }
                   }}
-                  className="px-3 py-1.5 rounded-lg bg-[#3c63da] text-white font-extrabold text-xs shadow-xs hover:bg-[#294285] transition-all cursor-pointer flex items-center gap-1"
+                  className="px-3 py-1.5 rounded-lg bg-[#0f4c5c] text-white font-extrabold text-xs shadow-xs hover:bg-[#0b3b48] transition-all cursor-pointer flex items-center gap-1"
                 >
                   <span>Abrir KPIs da Loja</span>
                   <ChevronRight className="h-3.5 w-3.5" />
@@ -2242,30 +2242,30 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
               {/* 8 Cards Analíticos Consolidados */}
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
                 {/* 1. Faturamento Total */}
-                <div className="rounded-xl border border-[#e5eaf1] bg-white p-4 shadow-xs">
-                  <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#69778c] block">
+                <div className="rounded-xl border border-[#dfe4df] bg-white p-4 shadow-xs">
+                  <span className="text-[10px] font-extrabold text-[#5e6b67] block">
                     Faturamento Bruto
                   </span>
-                  <strong className="text-xl sm:text-2xl font-extrabold text-[#152238] block mt-1">
+                  <strong className="text-xl sm:text-2xl font-extrabold text-[#17211f] block mt-1">
                     {formatBrl(totalFat)}
                   </strong>
                   <div className="flex items-center gap-1.5 mt-1">
                     <span className="inline-block text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full">
                       +6.2% MoM
                     </span>
-                    <span className="text-[10px] text-[#69778c]">vs período ant.</span>
+                    <span className="text-[10px] text-[#5e6b67]">vs período ant.</span>
                   </div>
                 </div>
 
                 {/* 2. Faturamento Médio por Loja */}
-                <div className="rounded-xl border border-[#e5eaf1] bg-white p-4 shadow-xs">
-                  <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#69778c] block">
+                <div className="rounded-xl border border-[#dfe4df] bg-white p-4 shadow-xs">
+                  <span className="text-[10px] font-extrabold text-[#5e6b67] block">
                     Média por Unidade
                   </span>
-                  <strong className="text-xl sm:text-2xl font-extrabold text-[#3c63da] block mt-1">
+                  <strong className="text-xl sm:text-2xl font-extrabold text-[#0f4c5c] block mt-1">
                     {formatBrl(avgFatPerUnit)}
                   </strong>
-                  <span className="text-[10px] text-[#69778c] block mt-1">
+                  <span className="text-[10px] text-[#5e6b67] block mt-1">
                     {filteredUnits.length} lojas ativas no filtro
                   </span>
                 </div>
@@ -2273,7 +2273,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                 {/* 3. Valor dos Royalties (DESTACADO EXPLICITAMENTE SOLICITADO) */}
                 <div className="rounded-xl border-2 border-amber-300 bg-gradient-to-br from-amber-50/60 via-white to-amber-50/30 p-4 shadow-xs">
                   <div className="flex items-center justify-between">
-                    <span className="text-[10px] font-extrabold uppercase tracking-wider text-amber-800">
+                    <span className="text-[10px] font-extrabold text-amber-800">
                       Valor dos Royalties
                     </span>
                     <span className="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 text-[10px] font-extrabold">
@@ -2290,24 +2290,24 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                 </div>
 
                 {/* 4. Fundo de Propaganda (FPP) */}
-                <div className="rounded-xl border border-[#e5eaf1] bg-white p-4 shadow-xs">
-                  <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#69778c] block">
+                <div className="rounded-xl border border-[#dfe4df] bg-white p-4 shadow-xs">
+                  <span className="text-[10px] font-extrabold text-[#5e6b67] block">
                     Fundo Propaganda (FPP)
                   </span>
                   <strong className="text-xl sm:text-2xl font-extrabold text-purple-700 block mt-1">
                     {formatBrl(totalFpp)}
                   </strong>
-                  <span className="text-[10px] text-[#69778c] block mt-1">
+                  <span className="text-[10px] text-[#5e6b67] block mt-1">
                     2.0% padrão da rede franqueada
                   </span>
                 </div>
 
                 {/* 5. Lucro Líquido Real DRE */}
-                <div className="rounded-xl border border-[#e5eaf1] bg-white p-4 shadow-xs">
-                  <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#69778c] block">
+                <div className="rounded-xl border border-[#dfe4df] bg-white p-4 shadow-xs">
+                  <span className="text-[10px] font-extrabold text-[#5e6b67] block">
                     Lucro Líquido Consolidado
                   </span>
-                  <strong className="text-xl sm:text-2xl font-extrabold text-[#118464] block mt-1">
+                  <strong className="text-xl sm:text-2xl font-extrabold text-[#1a7f5a] block mt-1">
                     {formatBrl(totalLucro)}
                   </strong>
                   <span className="text-[10px] text-emerald-700 font-bold block mt-1">
@@ -2316,37 +2316,37 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                 </div>
 
                 {/* 6. CMV Total (Insumos) */}
-                <div className="rounded-xl border border-[#e5eaf1] bg-white p-4 shadow-xs">
-                  <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#69778c] block">
+                <div className="rounded-xl border border-[#dfe4df] bg-white p-4 shadow-xs">
+                  <span className="text-[10px] font-extrabold text-[#5e6b67] block">
                     CMV Consolidado (Insumos)
                   </span>
-                  <strong className="text-xl sm:text-2xl font-extrabold text-[#b44b4b] block mt-1">
+                  <strong className="text-xl sm:text-2xl font-extrabold text-[#b93a48] block mt-1">
                     {formatBrl(totalCmv)}
                   </strong>
-                  <span className="text-[10px] text-[#69778c] block mt-1">
+                  <span className="text-[10px] text-[#5e6b67] block mt-1">
                     {totalFat > 0 ? ((totalCmv / totalFat) * 100).toFixed(1) : 0}% do faturamento
                   </span>
                 </div>
 
                 {/* 7. Despesas Operacionais Totais */}
-                <div className="rounded-xl border border-[#e5eaf1] bg-white p-4 shadow-xs">
-                  <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#69778c] block">
+                <div className="rounded-xl border border-[#dfe4df] bg-white p-4 shadow-xs">
+                  <span className="text-[10px] font-extrabold text-[#5e6b67] block">
                     Despesas Operacionais
                   </span>
-                  <strong className="text-xl sm:text-2xl font-extrabold text-[#294285] block mt-1">
+                  <strong className="text-xl sm:text-2xl font-extrabold text-[#0b3b48] block mt-1">
                     {formatBrl(totalDesp)}
                   </strong>
-                  <span className="text-[10px] text-[#69778c] block mt-1">
+                  <span className="text-[10px] text-[#5e6b67] block mt-1">
                     Pessoal, ocupação & utilidades
                   </span>
                 </div>
 
                 {/* 8. Total Devido à Matriz (Royalties + FPP) */}
-                <div className="rounded-xl border border-[#e5eaf1] bg-[#f8faff] p-4 shadow-xs">
-                  <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#3c63da] block">
+                <div className="rounded-xl border border-[#dfe4df] bg-[#f7f9f7] p-4 shadow-xs">
+                  <span className="text-[10px] font-extrabold text-[#0f4c5c] block">
                     Total Faturado à Matriz
                   </span>
-                  <strong className="text-xl sm:text-2xl font-extrabold text-[#152238] block mt-1">
+                  <strong className="text-xl sm:text-2xl font-extrabold text-[#17211f] block mt-1">
                     {formatBrl(totalRoyalties + totalFpp)}
                   </strong>
                   <span className="text-[10px] text-emerald-700 font-bold block mt-1">
@@ -2360,15 +2360,15 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
           {/* ----------------------------------------------------------- */}
           {/* SELETOR DE FOCO DE GRÁFICOS & CONTROLE DE RÓTULOS           */}
           {/* ----------------------------------------------------------- */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-end gap-3 p-3 bg-[#f8faff] rounded-2xl border border-[#e5eaf1]">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-end gap-3 p-3 bg-[#f7f9f7] rounded-2xl border border-[#dfe4df]">
             {/* Toggle Rótulos de Dados do Painel */}
             <button
               type="button"
               onClick={() => setShowDataLabels((prev) => !prev)}
               className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all border cursor-pointer whitespace-nowrap ${
                 showDataLabels
-                  ? "bg-[#3c63da] text-white border-[#3c63da] shadow-xs"
-                  : "bg-white text-[#69778c] border-[#cbd5e1] hover:bg-[#f8faff]"
+                  ? "bg-[#0f4c5c] text-white border-[#0f4c5c] shadow-xs"
+                  : "bg-white text-[#5e6b67] border-[#c9d1cb] hover:bg-[#f7f9f7]"
               }`}
               title="Ligar ou desligar rótulos de dados nos gráficos"
             >
@@ -2383,14 +2383,14 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
               {/* Gráfico 1: Faturamento por Unidade */}
               {(activeChartFilter === "all" || activeChartFilter === "unidades") && (
-                <div className="rounded-2xl border border-[#e5eaf1] bg-white p-5 shadow-xs">
+                <div className="rounded-2xl border border-[#dfe4df] bg-white p-5 shadow-xs">
                   <div className="flex items-center justify-between mb-4">
                     <div>
-                      <h3 className="text-sm font-extrabold text-[#152238] flex items-center gap-2">
-                        <Store className="h-4 w-4 text-[#3c63da]" />
+                      <h3 className="text-sm font-extrabold text-[#17211f] flex items-center gap-2">
+                        <Store className="h-4 w-4 text-[#0f4c5c]" />
                         Faturamento por Unidade (R$)
                       </h3>
-                      <p className="text-[11px] text-[#69778c] mt-0.5">
+                      <p className="text-[11px] text-[#5e6b67] mt-0.5">
                         Comparativo de receita bruta das lojas franqueadas
                       </p>
                     </div>
@@ -2398,13 +2398,13 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                       <button
                         type="button"
                         onClick={() => setExpandedChart("unidades")}
-                        className="p-1.5 rounded-lg border border-[#e5eaf1] bg-white text-[#69778c] hover:text-[#3c63da] hover:bg-[#edf2ff] cursor-pointer transition-all flex items-center gap-1 text-[10px] font-extrabold"
+                        className="p-1.5 rounded-lg border border-[#dfe4df] bg-white text-[#5e6b67] hover:text-[#0f4c5c] hover:bg-[#e3eff1] cursor-pointer transition-all flex items-center gap-1 text-[10px] font-extrabold"
                         title="Ampliar gráfico"
                       >
                         <Maximize2 className="h-3.5 w-3.5" />
                         <span>Ampliar</span>
                       </button>
-                      <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-[#edf2ff] text-[#3c63da]">
+                      <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-[#e3eff1] text-[#0f4c5c]">
                         {filteredUnits.length} Lojas
                       </span>
                     </div>
@@ -2417,14 +2417,14 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
 
               {/* Gráfico 2: Faturamento por Mês */}
               {(activeChartFilter === "all" || activeChartFilter === "mensal") && (
-                <div className="rounded-2xl border border-[#e5eaf1] bg-white p-5 shadow-xs">
+                <div className="rounded-2xl border border-[#dfe4df] bg-white p-5 shadow-xs">
                   <div className="flex items-center justify-between mb-4">
                     <div>
-                      <h3 className="text-sm font-extrabold text-[#152238] flex items-center gap-2">
-                        <TrendingUp className="h-4 w-4 text-[#3c63da]" />
+                      <h3 className="text-sm font-extrabold text-[#17211f] flex items-center gap-2">
+                        <TrendingUp className="h-4 w-4 text-[#0f4c5c]" />
                         Faturamento por Mês (Evolução Temporal)
                       </h3>
-                      <p className="text-[11px] text-[#69778c] mt-0.5">
+                      <p className="text-[11px] text-[#5e6b67] mt-0.5">
                         Tendência mês a mês: Faturamento, Lucro Líquido e Royalties
                       </p>
                     </div>
@@ -2432,7 +2432,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                       <button
                         type="button"
                         onClick={() => setExpandedChart("mensal")}
-                        className="p-1.5 rounded-lg border border-[#e5eaf1] bg-white text-[#69778c] hover:text-[#3c63da] hover:bg-[#edf2ff] cursor-pointer transition-all flex items-center gap-1 text-[10px] font-extrabold"
+                        className="p-1.5 rounded-lg border border-[#dfe4df] bg-white text-[#5e6b67] hover:text-[#0f4c5c] hover:bg-[#e3eff1] cursor-pointer transition-all flex items-center gap-1 text-[10px] font-extrabold"
                         title="Ampliar gráfico"
                       >
                         <Maximize2 className="h-3.5 w-3.5" />
@@ -2455,11 +2455,11 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
           {/* GRÁFICO 3: GRÁFICO DE COLUNAS EMPILHADAS                    */}
           {/* ----------------------------------------------------------- */}
           {(activeChartFilter === "all" || activeChartFilter === "empilhado") && (
-            <div className="rounded-2xl border border-[#e5eaf1] bg-white p-5 shadow-xs">
+            <div className="rounded-2xl border border-[#dfe4df] bg-white p-5 shadow-xs">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
                 <div>
                   <div className="flex items-center gap-2">
-                    <h3 className="text-sm font-extrabold text-[#152238] flex items-center gap-2">
+                    <h3 className="text-sm font-extrabold text-[#17211f] flex items-center gap-2">
                       <Layers className="h-4 w-4 text-emerald-600" />
                       Gráfico de Colunas Empilhadas (Decomposição Estrutural de Custos & Lucro)
                     </h3>
@@ -2467,7 +2467,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                       Empilhado
                     </span>
                   </div>
-                  <p className="text-[11px] text-[#69778c] mt-0.5">
+                  <p className="text-[11px] text-[#5e6b67] mt-0.5">
                     Decomposição exata de cada unidade em: Lucro Líquido, Royalties, Despesas Operacionais, CMV e Impostos.
                   </p>
                 </div>
@@ -2475,18 +2475,18 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                   <button
                     type="button"
                     onClick={() => setExpandedChart("empilhado")}
-                    className="p-1.5 rounded-lg border border-[#e5eaf1] bg-white text-[#69778c] hover:text-[#3c63da] hover:bg-[#edf2ff] cursor-pointer transition-all flex items-center gap-1 text-[10px] font-extrabold shadow-2xs"
+                    className="p-1.5 rounded-lg border border-[#dfe4df] bg-white text-[#5e6b67] hover:text-[#0f4c5c] hover:bg-[#e3eff1] cursor-pointer transition-all flex items-center gap-1 text-[10px] font-extrabold shadow-2xs"
                     title="Ampliar gráfico"
                   >
                     <Maximize2 className="h-3.5 w-3.5" />
                     <span>Ampliar</span>
                   </button>
-                  <div className="flex items-center gap-3 text-[10px] font-bold text-[#69778c]">
-                    <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-[#118464]" /> Lucro</span>
+                  <div className="flex items-center gap-3 text-[10px] font-bold text-[#5e6b67]">
+                    <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-[#1a7f5a]" /> Lucro</span>
                     <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-[#eab308]" /> Royalties</span>
-                    <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-[#3c63da]" /> Despesas</span>
+                    <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-[#0f4c5c]" /> Despesas</span>
                     <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-[#f43f5e]" /> CMV</span>
-                    <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-[#94a3b8]" /> Impostos</span>
+                    <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-[#93a09b]" /> Impostos</span>
                   </div>
                 </div>
               </div>
@@ -2502,14 +2502,14 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
           {(activeChartFilter === "all" || activeChartFilter === "royalties") && (
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
               {/* Gráfico de Barras dos Royalties */}
-              <div className="lg:col-span-5 rounded-2xl border border-[#e5eaf1] bg-white p-5 shadow-xs">
+              <div className="lg:col-span-5 rounded-2xl border border-[#dfe4df] bg-white p-5 shadow-xs">
                 <div className="flex items-center justify-between mb-4">
                   <div>
-                    <h3 className="text-sm font-extrabold text-[#152238] flex items-center gap-2">
+                    <h3 className="text-sm font-extrabold text-[#17211f] flex items-center gap-2">
                       <Coins className="h-4 w-4 text-amber-600" />
                       Valor dos Royalties por Unidade
                     </h3>
-                    <p className="text-[11px] text-[#69778c] mt-0.5">
+                    <p className="text-[11px] text-[#5e6b67] mt-0.5">
                       Royalties contratuais vs Fundo de Propaganda
                     </p>
                   </div>
@@ -2517,7 +2517,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                     <button
                       type="button"
                       onClick={() => setExpandedChart("royalties")}
-                      className="p-1.5 rounded-lg border border-[#e5eaf1] bg-white text-[#69778c] hover:text-[#3c63da] hover:bg-[#edf2ff] cursor-pointer transition-all flex items-center gap-1 text-[10px] font-extrabold"
+                      className="p-1.5 rounded-lg border border-[#dfe4df] bg-white text-[#5e6b67] hover:text-[#0f4c5c] hover:bg-[#e3eff1] cursor-pointer transition-all flex items-center gap-1 text-[10px] font-extrabold"
                       title="Ampliar gráfico"
                     >
                       <Maximize2 className="h-3.5 w-3.5" />
@@ -2534,16 +2534,16 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
               </div>
 
               {/* Tabela Analítica de Royalties das Lojas */}
-              <div className="lg:col-span-7 rounded-2xl border border-[#e5eaf1] bg-white p-5 shadow-xs flex flex-col justify-between">
+              <div className="lg:col-span-7 rounded-2xl border border-[#dfe4df] bg-white p-5 shadow-xs flex flex-col justify-between">
                 <div>
                   <div className="flex items-center justify-between mb-3">
-                    <h3 className="text-sm font-extrabold text-[#152238] flex items-center gap-2">
+                    <h3 className="text-sm font-extrabold text-[#17211f] flex items-center gap-2">
                       <DollarSign className="h-4 w-4 text-emerald-600" />
                       Tabela de Apuração de Royalties da Rede
                     </h3>
                     <button
                       onClick={exportRoyaltiesReport}
-                      className="flex items-center gap-1 text-[11px] font-extrabold text-[#3c63da] hover:underline cursor-pointer"
+                      className="flex items-center gap-1 text-[11px] font-extrabold text-[#0f4c5c] hover:underline cursor-pointer"
                     >
                       <Download className="h-3.5 w-3.5" />
                       <span>Exportar CSV</span>
@@ -2553,7 +2553,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                   <div className="overflow-x-auto">
                     <table className="w-full text-left text-xs">
                       <thead>
-                        <tr className="border-b border-[#e5eaf1] text-[10px] font-extrabold uppercase tracking-wider text-[#69778c]">
+                        <tr className="border-b border-[#dfe4df] text-[10px] font-extrabold text-[#5e6b67]">
                           <th className="pb-2">Unidade / Código</th>
                           <th className="pb-2">Faturamento</th>
                           <th className="pb-2 text-center">Taxa</th>
@@ -2562,14 +2562,14 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                           <th className="pb-2 text-right">Total Matriz</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-[#f0f4f8]">
+                      <tbody className="divide-y divide-[#f0f3f0]">
                         {unitCalculations.slice(0, 7).map((u) => (
-                          <tr key={u.f.id} className="hover:bg-[#f8faff] transition-colors">
+                          <tr key={u.f.id} className="hover:bg-[#f7f9f7] transition-colors">
                             <td className="py-2.5">
-                              <span className="font-extrabold text-[#152238] block">{u.f.name}</span>
-                              <span className="text-[10px] text-[#69778c] font-mono">{u.f.code}</span>
+                              <span className="font-extrabold text-[#17211f] block">{u.f.name}</span>
+                              <span className="text-[10px] text-[#5e6b67] font-mono">{u.f.code}</span>
                             </td>
-                            <td className="py-2.5 font-medium text-[#152238]">{formatBrl(u.fat)}</td>
+                            <td className="py-2.5 font-medium text-[#17211f]">{formatBrl(u.fat)}</td>
                             <td className="py-2.5 text-center">
                               <span className="px-1.5 py-0.5 rounded bg-amber-50 text-amber-800 font-extrabold text-[10px]">
                                 {(u.royPct * 100).toFixed(0)}%
@@ -2581,7 +2581,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                             <td className="py-2.5 text-right text-purple-700 font-medium">
                               {formatBrl(u.fppValue)}
                             </td>
-                            <td className="py-2.5 text-right font-black text-[#152238]">
+                            <td className="py-2.5 text-right font-black text-[#17211f]">
                               {formatBrl(u.totalDevidoMatriz)}
                             </td>
                           </tr>
@@ -2591,7 +2591,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                   </div>
                 </div>
 
-                <div className="mt-4 pt-3 border-t border-[#e5eaf1] flex items-center justify-between text-xs font-bold text-[#152238]">
+                <div className="mt-4 pt-3 border-t border-[#dfe4df] flex items-center justify-between text-xs font-bold text-[#17211f]">
                   <span>Total Consolidado da Rede:</span>
                   <span className="text-emerald-700 font-black text-sm">
                     {formatBrl(totalRoyalties + totalFpp)}
@@ -2605,14 +2605,14 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
           {/* GRÁFICO 5: FATURAMENTO POR ESTADO                           */}
           {/* ----------------------------------------------------------- */}
           {(activeChartFilter === "all" || activeChartFilter === "estados") && (
-            <div className="rounded-2xl border border-[#e5eaf1] bg-white p-5 shadow-xs">
+            <div className="rounded-2xl border border-[#dfe4df] bg-white p-5 shadow-xs">
               <div className="flex items-center justify-between mb-4">
                 <div>
-                  <h3 className="text-sm font-extrabold text-[#152238] flex items-center gap-2">
+                  <h3 className="text-sm font-extrabold text-[#17211f] flex items-center gap-2">
                     <Sliders className="h-4 w-4 text-[#6a4ecb]" />
                     Faturamento Consolidado por Estado (R$)
                   </h3>
-                  <p className="text-[11px] text-[#69778c] mt-0.5">
+                  <p className="text-[11px] text-[#5e6b67] mt-0.5">
                     Visão geográfica do faturamento da rede de franquias
                   </p>
                 </div>
@@ -2620,7 +2620,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                   <button
                     type="button"
                     onClick={() => setExpandedChart("estados")}
-                    className="p-1.5 rounded-lg border border-[#e5eaf1] bg-white text-[#69778c] hover:text-[#3c63da] hover:bg-[#edf2ff] cursor-pointer transition-all flex items-center gap-1 text-[10px] font-extrabold shadow-2xs"
+                    className="p-1.5 rounded-lg border border-[#dfe4df] bg-white text-[#5e6b67] hover:text-[#0f4c5c] hover:bg-[#e3eff1] cursor-pointer transition-all flex items-center gap-1 text-[10px] font-extrabold shadow-2xs"
                     title="Ampliar gráfico"
                   >
                     <Maximize2 className="h-3.5 w-3.5" />
@@ -2640,19 +2640,19 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
           {/* ----------------------------------------------------------- */}
           {/* RANKING COMPLETO E COMPARATIVO DE PERFORMANCE               */}
           {/* ----------------------------------------------------------- */}
-          <div className="rounded-2xl border border-[#e5eaf1] bg-white p-5 shadow-xs">
+          <div className="rounded-2xl border border-[#dfe4df] bg-white p-5 shadow-xs">
             <div className="flex items-center justify-between mb-4">
               <div>
-                <h3 className="text-sm font-extrabold text-[#152238]">
+                <h3 className="text-sm font-extrabold text-[#17211f]">
                   Ranking de Performance Financeira das Franquias
                 </h3>
-                <p className="text-[11px] text-[#69778c] mt-0.5">
+                <p className="text-[11px] text-[#5e6b67] mt-0.5">
                   Ordenado por maior lucratividade líquida e eficiência operacional apurada
                 </p>
               </div>
               <button
                 onClick={() => onNavigate("dre")}
-                className="flex items-center gap-1 text-xs font-extrabold text-[#3c63da] hover:underline cursor-pointer"
+                className="flex items-center gap-1 text-xs font-extrabold text-[#0f4c5c] hover:underline cursor-pointer"
               >
                 <span>Ver DRE Completo</span>
                 <ArrowUpRight className="h-3.5 w-3.5" />
@@ -2662,7 +2662,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs">
                 <thead>
-                  <tr className="border-b border-[#e5eaf1] text-[10px] font-extrabold uppercase tracking-wider text-[#69778c]">
+                  <tr className="border-b border-[#dfe4df] text-[10px] font-extrabold text-[#5e6b67]">
                     <th className="pb-2.5">Pos.</th>
                     <th className="pb-2.5">Franquia</th>
                     <th className="pb-2.5">Rede</th>
@@ -2674,26 +2674,26 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                     <th className="pb-2.5 text-center">Saúde</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-[#f0f4f8]">
+                <tbody className="divide-y divide-[#f0f3f0]">
                   {[...unitCalculations]
                     .sort((a, b) => b.d.lucroLiquido - a.d.lucroLiquido)
                     .map((u, idx) => (
-                      <tr key={u.f.id} className="hover:bg-[#f8faff] transition-colors">
-                        <td className="py-3 font-bold text-[#69778c]">#{idx + 1}</td>
+                      <tr key={u.f.id} className="hover:bg-[#f7f9f7] transition-colors">
+                        <td className="py-3 font-bold text-[#5e6b67]">#{idx + 1}</td>
                         <td className="py-3">
                           <button
                             onClick={() => onSelectTenant(u.f.id)}
-                            className="font-extrabold text-[#152238] hover:text-[#3c63da] text-left cursor-pointer"
+                            className="font-extrabold text-[#17211f] hover:text-[#0f4c5c] text-left cursor-pointer"
                           >
                             {u.f.name}
                           </button>
-                          <span className="block text-[10px] text-[#69778c]">{u.f.city} — Resp: {u.f.resp}</span>
+                          <span className="block text-[10px] text-[#5e6b67]">{u.f.city} — Resp: {u.f.resp}</span>
                         </td>
-                        <td className="py-3 font-medium text-[#69778c]">{u.biz?.brand || "Rede"}</td>
-                        <td className="py-3 text-right font-extrabold text-[#152238]">{formatBrl(u.fat)}</td>
-                        <td className="py-3 text-right text-[#b44b4b]">{formatBrl(u.d.cmv)}</td>
+                        <td className="py-3 font-medium text-[#5e6b67]">{u.biz?.brand || "Rede"}</td>
+                        <td className="py-3 text-right font-extrabold text-[#17211f]">{formatBrl(u.fat)}</td>
+                        <td className="py-3 text-right text-[#b93a48]">{formatBrl(u.d.cmv)}</td>
                         <td className="py-3 text-right text-amber-800 font-bold">{formatBrl(u.royValue)}</td>
-                        <td className="py-3 text-right font-black text-[#118464]">{formatBrl(u.d.lucroLiquido)}</td>
+                        <td className="py-3 text-right font-black text-[#1a7f5a]">{formatBrl(u.d.lucroLiquido)}</td>
                         <td className="py-3 text-center">
                           <span className="px-2 py-0.5 rounded-full font-bold text-[10px] bg-emerald-50 text-emerald-800">
                             {formatPct(u.d.margemLiquida)}
@@ -2723,19 +2723,19 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
       {/* ------------------------------------------------------------- */}
       {expandedChart && (
         <div 
-          className="fixed inset-0 bg-[#152238]/60 backdrop-blur-xs z-50 flex items-center justify-center p-4 sm:p-6"
+          className="fixed inset-0 bg-[#17211f]/60 backdrop-blur-xs z-50 flex items-center justify-center p-4 sm:p-6"
           onClick={() => setExpandedChart(null)}
         >
           <div 
-            className="bg-white rounded-2xl border border-[#cbd5e1] shadow-2xl w-full max-w-5xl h-[80vh] flex flex-col p-6 animate-in zoom-in-95 duration-200"
+            className="bg-white rounded-2xl border border-[#c9d1cb] shadow-2xl w-full max-w-5xl h-[80vh] flex flex-col p-6 animate-in zoom-in-95 duration-200"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-center justify-between pb-4 border-b border-[#f1f5f9] mb-4">
+            <div className="flex items-center justify-between pb-4 border-b border-[#f0f3f0] mb-4">
               <div>
-                <span className="text-[10px] font-extrabold uppercase tracking-widest text-[#3c63da]">
+                <span className="text-[10px] font-extrabold text-[#0f4c5c]">
                   Visualização em Alta Resolução
                 </span>
-                <h2 className="text-lg font-black text-[#152238]">
+                <h2 className="text-lg font-black text-[#17211f]">
                   {expandedChart === "mensal" && "Evolução Temporal Mensal"}
                   {expandedChart === "unidades" && "Faturamento por Unidade"}
                   {expandedChart === "empilhado" && "Colunas Empilhadas - Estrutura de Custos"}
