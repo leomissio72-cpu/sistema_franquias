@@ -341,21 +341,24 @@ html.theme-dark .custom-screen-scroller::-webkit-scrollbar-thumb:hover {
 
 .unit-pin-wrapper { background: none; border: 0; }
 .unit-pin {
-  width: 36px;
-  height: 36px;
-  border-radius: 9999px;
+  width: 34px;
+  height: 34px;
+  /* gota girada: a ponta fica para baixo */
+  border-radius: 50% 50% 50% 0;
+  transform: rotate(-45deg);
+  transform-origin: 50% 50%;
   display: grid;
   place-items: center;
   border: 3px solid #fff;
   color: #fff;
   font-size: 12px;
   font-weight: 800;
-  letter-spacing: 0.01em;
-  box-shadow: 0 6px 14px -4px rgba(21, 34, 56, 0.5), 0 0 0 1px rgba(21, 34, 56, 0.08);
-  transition: transform 0.15s ease;
+  box-shadow: -3px 3px 8px rgba(21, 34, 56, 0.4);
+  transition: filter 0.15s ease;
   cursor: pointer;
 }
-.unit-pin:hover { transform: scale(1.12); }
+.unit-pin > span { transform: rotate(45deg); line-height: 1; }
+.unit-pin:hover { filter: brightness(1.12); }
 .unit-pin--ok { background: #118464; }
 .unit-pin--warn { background: #d97706; }
 
