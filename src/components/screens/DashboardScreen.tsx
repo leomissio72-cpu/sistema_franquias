@@ -45,7 +45,6 @@ import {
 import Chart from "chart.js/auto";
 import {
   DateMultiFilter,
-  monthsWithEntries,
   DateFilterSelection,
   AVAILABLE_MONTHS,
   AVAILABLE_YEARS,
@@ -1488,7 +1487,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
 
         {/* 1. SELETORES TEMPORAIS SEPARADOS: ANO, MÊS E DIA (Com Múltipla Escolha e Selecionar Tudo) */}
         <div>
-          <DateMultiFilter selection={dateSelection} onChange={setDateSelection} activeMonths={monthsWithEntries(manualEntries)} />
+          <DateMultiFilter selection={dateSelection} onChange={setDateSelection} />
         </div>
 
         {/* 2. FILTROS DA REDE / OPERACIONAIS */}
@@ -2482,7 +2481,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                     <Maximize2 className="h-3.5 w-3.5" />
                     <span>Ampliar</span>
                   </button>
-                  <div className="flex items-center gap-3 text-[10px] font-bold text-[#69778c]">
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] font-bold text-[#69778c]">
                     <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-[#118464]" /> Lucro</span>
                     <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-[#eab308]" /> Royalties</span>
                     <span className="flex items-center gap-1"><span className="h-2 w-2 rounded-full bg-[#3c63da]" /> Despesas</span>

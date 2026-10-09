@@ -20,18 +20,6 @@ interface DateMultiFilterProps {
   selection: DateFilterSelection;
   onChange: (newSelection: DateFilterSelection) => void;
   className?: string;
-  /** Meses que têm lançamentos, no formato "AAAA-MM". Quando informado, eles ganham destaque. */
-  activeMonths?: string[];
-}
-
-/** Lista os meses ("AAAA-MM") em que existe ao menos um lançamento. */
-export function monthsWithEntries(entries: Array<{ date?: string }> | undefined): string[] {
-  const found = new Set<string>();
-  for (const entry of entries || []) {
-    const ym = (entry.date || "").slice(0, 7);
-    if (/^\d{4}-\d{2}$/.test(ym)) found.add(ym);
-  }
-  return [...found];
 }
 
 export const CURRENT_YEAR = new Date().getFullYear();
@@ -59,13 +47,8 @@ export const DateMultiFilter: React.FC<DateMultiFilterProps> = ({
   selection,
   onChange,
   className = "",
-  activeMonths,
 }) => {
   const [openDropdown, setOpenDropdown] = useState<"year" | "month" | "day" | null>(null);
-  // "Somar": com ele ligado, cada clique acrescenta ou retira um mês/ano em vez de trocar.
-  const [isAdding, setIsAdding] = useState(
-    () => (selection.months.length > 1 && selection.months.length < 12) || selection.years.length > 1,
-  );
 
   const containerRef = useRef<HTMLDivElement | null>(null);
 
@@ -163,21 +146,21 @@ export const DateMultiFilter: React.FC<DateMultiFilterProps> = ({
   // --- Labels formatters ---
   const getYearLabel = () => {
     if (selection.years.length === AVAILABLE_YEARS.length) {
-      return `Todos os Anos (${AVAILABLE_YEARS.length})`;
+      return "Todos os anos";
     }
     if (selection.years.length === 1) {
-      return `Ano ${selection.years[0]}`;
+      return String(selection.years[0]);
     }
-    return `${selection.years.join(", ")} (${selection.years.length} anos)`;
+    return [...selection.years].sort((x, y) => x - y).join(", ");
   };
 
   const getMonthLabel = () => {
     if (selection.months.length === AVAILABLE_MONTHS.length) {
-      return `Todos os Meses (12)`;
+      return "Todos os meses";
     }
     if (selection.months.length === 1) {
       const m = AVAILABLE_MONTHS.find((item) => item.value === selection.months[0]);
-      return m ? `${m.label} (${m.short})` : "1 mês";
+      return m ? m.label : "1 mês";
     }
     if (selection.months.length <= 3) {
       return selection.months
@@ -185,12 +168,12 @@ export const DateMultiFilter: React.FC<DateMultiFilterProps> = ({
         .filter(Boolean)
         .join(", ");
     }
-    return `${selection.months.length} meses selecionados`;
+    return `${selection.months.length} meses`;
   };
 
   const getDayLabel = () => {
     if (selection.days.length === AVAILABLE_DAYS.length) {
-      return `Todos os Dias (31 dias)`;
+      return "Todos os dias";
     }
     if (selection.days.length === 1) {
       return `Dia ${selection.days[0].toString().padStart(2, "0")}`;
@@ -198,221 +181,182 @@ export const DateMultiFilter: React.FC<DateMultiFilterProps> = ({
     if (selection.days.length <= 4) {
       return `Dias ${selection.days.map((d) => d.toString().padStart(2, "0")).join(", ")}`;
     }
-    return `${selection.days.length} dias selecionados`;
+    return `${selection.days.length} dias`;
   };
 
   const isAllYearsSelected = selection.years.length === AVAILABLE_YEARS.length;
   const isAllMonthsSelected = selection.months.length === AVAILABLE_MONTHS.length;
   const isAllDaysSelected = selection.days.length === AVAILABLE_DAYS.length;
 
-  const years = [...AVAILABLE_YEARS].sort((x, y) => x - y);
-  const activeSet = new Set(activeMonths || []);
-  const monthHasData = (month: number) =>
-    selection.years.some((year) => activeSet.has(`${year}-${String(month).padStart(2, "0")}`));
+  const currentMonthLabel = AVAILABLE_MONTHS.find((m) => m.value === CURRENT_MONTH)?.label || "Mês atual";
+  const toggle = (which: "year" | "month" | "day") => setOpenDropdown(openDropdown === which ? null : which);
 
-  const pickYear = (year: number, additive: boolean) => {
-    if (additive) toggleYear(year);
-    else onChange({ ...selection, years: [year] });
-  };
-  const pickMonth = (month: number, additive: boolean) => {
-    if (additive) toggleMonth(month);
-    else onChange({ ...selection, months: [month] });
-  };
+  // Peças visuais compartilhadas pelos três menus
+  const triggerClass = (open: boolean) =>
+    `w-full flex items-center justify-between gap-2 rounded-xl border bg-white px-3.5 h-11 text-sm font-semibold text-[#152238] transition-colors cursor-pointer focus:outline-none ${
+      open
+        ? "border-[#3c63da] ring-4 ring-[#3c63da]/10"
+        : "border-[#cbd5e1] hover:border-[#94a3b8] focus-visible:border-[#3c63da] focus-visible:ring-4 focus-visible:ring-[#3c63da]/10"
+    }`;
+  const labelClass = "mb-1.5 flex items-center gap-1.5 text-[11px] font-bold text-[#152238]";
+  const panelClass =
+    "absolute top-full z-50 mt-2 w-auto right-0 sm:right-auto sm:w-80 rounded-2xl border border-[#e5eaf1] bg-white p-4 shadow-[0_18px_40px_-12px_rgba(21,34,56,0.28)]";
+  const shortcutClass = (active: boolean) =>
+    `rounded-full border px-2.5 py-1 text-[11px] font-bold transition-colors cursor-pointer ${
+      active
+        ? "border-[#3c63da] bg-[#edf2ff] text-[#3c63da]"
+        : "border-[#e5eaf1] bg-white text-[#526078] hover:border-[#3c63da] hover:text-[#3c63da]"
+    }`;
+  const optionClass = (selected: boolean) =>
+    `rounded-lg border text-xs font-bold transition-colors cursor-pointer select-none ${
+      selected
+        ? "border-[#3c63da] bg-[#3c63da] text-white"
+        : "border-transparent bg-[#f4f7fb] text-[#475569] hover:bg-[#edf2ff] hover:text-[#3c63da]"
+    }`;
 
-  const periodSummary = (() => {
-    const yearText = selection.years.length === 1 ? String(selection.years[0]) : [...selection.years].sort((x, y) => x - y).join(", ");
-    let monthText: string;
-    if (isAllMonthsSelected) monthText = "Ano todo";
-    else if (selection.months.length === 1) monthText = AVAILABLE_MONTHS.find((m) => m.value === selection.months[0])?.label || "";
-    else if (selection.months.length <= 4) monthText = selection.months.map((mv) => AVAILABLE_MONTHS.find((m) => m.value === mv)?.short).join(", ");
-    else monthText = `${selection.months.length} meses`;
-    const dayText = isAllDaysSelected ? "" : `, ${getDayLabel().toLowerCase()}`;
-    return isAllMonthsSelected ? `Ano de ${yearText}, todos os meses${dayText}` : `${monthText} de ${yearText}${dayText}`;
-  })();
+  const sameSet = (a: number[], b: number[]) => a.length === b.length && b.every((value) => a.includes(value));
+  const quarterMonths = (q: number) => [(q - 1) * 3 + 1, (q - 1) * 3 + 2, (q - 1) * 3 + 3];
+  const firstHalf = Array.from({ length: 15 }, (_, i) => i + 1);
+  const secondHalf = Array.from({ length: 16 }, (_, i) => i + 16);
 
-  const chipBase = "h-9 rounded-lg border text-xs font-bold transition-colors cursor-pointer select-none";
-  const chipOn = "border-[#3c63da] bg-[#3c63da] text-white shadow-2xs";
-  const chipOff = "border-[#e5eaf1] bg-white text-[#526078] hover:border-[#3c63da] hover:text-[#3c63da]";
-  const chipData = "border-[#cbdafc] bg-[#edf2ff] text-[#3c63da] hover:border-[#3c63da]";
-  const linkBase = "rounded-md px-2 py-1 text-[11px] font-bold transition-colors cursor-pointer";
+  const Footer = ({ text }: { text: string }) => (
+    <div className="mt-4 flex items-center justify-between border-t border-[#eef2f7] pt-3">
+      <span className="text-[11px] font-semibold text-[#69778c]">{text}</span>
+      <button
+        type="button"
+        onClick={() => setOpenDropdown(null)}
+        className="rounded-lg bg-[#3c63da] px-3.5 py-1.5 text-xs font-bold text-white hover:bg-[#2e52be] transition-colors cursor-pointer"
+      >
+        Concluir
+      </button>
+    </div>
+  );
 
   return (
     <div ref={containerRef} className={`relative ${className}`}>
-      <div className="flex flex-col lg:flex-row lg:items-center gap-2.5">
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
         {/* Ano */}
-        <div className="flex items-center gap-1.5" role="group" aria-label="Ano">
-          <Calendar className="h-4 w-4 text-[#3c63da] flex-shrink-0" aria-hidden="true" />
-          {years.map((year) => {
-            const on = selection.years.includes(year);
-            return (
-              <button
-                key={year}
-                type="button"
-                aria-pressed={on}
-                onClick={(event) => pickYear(year, isAdding || event.ctrlKey || event.metaKey || event.shiftKey)}
-                className={`${chipBase} px-3 ${on ? chipOn : chipOff}`}
-              >
-                {year}
-              </button>
-            );
-          })}
-        </div>
+        <div className="sm:relative">
+          <label htmlFor="btn-filter-year" className={labelClass}>
+            <Calendar className="h-3.5 w-3.5 text-[#3c63da]" />
+            <span>Ano</span>
+          </label>
+          <button type="button" id="btn-filter-year" aria-expanded={openDropdown === "year"} onClick={() => toggle("year")} className={triggerClass(openDropdown === "year")}>
+            <span className="truncate">{getYearLabel()}</span>
+            <ChevronDown className={`h-4 w-4 flex-shrink-0 transition-transform ${openDropdown === "year" ? "rotate-180 text-[#3c63da]" : "text-[#69778c]"}`} />
+          </button>
 
-        <span className="hidden lg:block h-6 w-px bg-[#e5eaf1]" aria-hidden="true" />
-
-        {/* Meses: sempre à vista */}
-        <div className="min-w-0 flex-1" role="group" aria-label="Mês">
-          <div className="grid grid-cols-6 lg:grid-cols-12 gap-1.5">
-            {AVAILABLE_MONTHS.map((month) => {
-              const on = selection.months.includes(month.value);
-              const hasData = monthHasData(month.value);
-              return (
-                <button
-                  key={month.value}
-                  type="button"
-                  aria-pressed={on}
-                  title={`${month.label}${hasData ? " (tem lançamentos)" : ""}`}
-                  onClick={(event) => pickMonth(month.value, isAdding || event.ctrlKey || event.metaKey || event.shiftKey)}
-                  className={`${chipBase} ${on ? chipOn : hasData ? chipData : chipOff}`}
-                >
-                  {month.short}
+          {openDropdown === "year" && (
+            <div className={`${panelClass} left-0`}>
+              <div className="flex flex-wrap items-center gap-1.5">
+                <button type="button" onClick={selectOnlyCurrentYear} className={shortcutClass(sameSet(selection.years, [CURRENT_YEAR]))}>
+                  Este ano
                 </button>
-              );
-            })}
-          </div>
+                <button type="button" onClick={selectAllYears} className={shortcutClass(isAllYearsSelected)}>
+                  Todos os anos
+                </button>
+              </div>
+              <div className="keep-cols mt-3 grid grid-cols-3 gap-1.5">
+                {[...AVAILABLE_YEARS].sort((x, y) => x - y).map((yr) => (
+                  <button key={yr} type="button" aria-pressed={selection.years.includes(yr)} onClick={() => toggleYear(yr)} className={`${optionClass(selection.years.includes(yr))} h-10`}>
+                    {yr}
+                  </button>
+                ))}
+              </div>
+              <Footer text={selection.years.length === 1 ? "1 ano selecionado" : `${selection.years.length} anos selecionados`} />
+            </div>
+          )}
         </div>
-      </div>
 
-      {/* Linha de apoio: resumo do período e ajustes */}
-      <div className="mt-2 flex flex-wrap items-center justify-between gap-x-3 gap-y-1.5">
-        <p className="text-[11px] text-[#69778c]">
-          <span className="font-bold text-[#152238]">{periodSummary}</span>
-          {activeMonths && activeMonths.length > 0 && <span className="ml-2">Em azul claro, os meses com lançamentos.</span>}
-        </p>
-
-        <div className="flex flex-wrap items-center gap-1">
-          <button
-            type="button"
-            onClick={selectCurrentMonth}
-            className={`${linkBase} text-[#69778c] hover:bg-[#f4f7fb] hover:text-[#152238]`}
-          >
-            Mês atual
-          </button>
-          <button
-            type="button"
-            aria-pressed={isAllMonthsSelected}
-            onClick={selectAllMonths}
-            className={`${linkBase} ${isAllMonthsSelected ? "bg-[#edf2ff] text-[#3c63da]" : "text-[#69778c] hover:bg-[#f4f7fb] hover:text-[#152238]"}`}
-          >
-            Ano todo
-          </button>
-          <button
-            type="button"
-            aria-pressed={isAdding}
-            onClick={() => setIsAdding((value) => !value)}
-            title="Ligado: cada clique acrescenta ou retira um mês ou ano. Desligado: cada clique troca o período."
-            className={`${linkBase} ${isAdding ? "bg-[#edf2ff] text-[#3c63da]" : "text-[#69778c] hover:bg-[#f4f7fb] hover:text-[#152238]"}`}
-          >
-            {isAdding ? "Somando meses" : "Somar meses"}
+        {/* Mês */}
+        <div className="sm:relative">
+          <label htmlFor="btn-filter-month" className={labelClass}>
+            <Calendar className="h-3.5 w-3.5 text-[#3c63da]" />
+            <span>Mês</span>
+          </label>
+          <button type="button" id="btn-filter-month" aria-expanded={openDropdown === "month"} onClick={() => toggle("month")} className={triggerClass(openDropdown === "month")}>
+            <span className="truncate">{getMonthLabel()}</span>
+            <ChevronDown className={`h-4 w-4 flex-shrink-0 transition-transform ${openDropdown === "month" ? "rotate-180 text-[#3c63da]" : "text-[#69778c]"}`} />
           </button>
 
-          {/* Dias */}
-          <div className="relative">
-            <button
-              type="button"
-              id="btn-filter-day"
-              aria-expanded={openDropdown === "day"}
-              onClick={() => setOpenDropdown(openDropdown === "day" ? null : "day")}
-              className={`flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-[11px] font-bold transition-colors cursor-pointer ${
-                isAllDaysSelected
-                  ? "border-[#e5eaf1] bg-white text-[#526078] hover:border-[#3c63da] hover:text-[#3c63da]"
-                  : "border-[#cbdafc] bg-[#edf2ff] text-[#3c63da]"
-              }`}
-            >
-              <span>{isAllDaysSelected ? "Dias: todos" : getDayLabel()}</span>
-              <ChevronDown className={`h-3.5 w-3.5 transition-transform ${openDropdown === "day" ? "rotate-180" : ""}`} />
-            </button>
+          {openDropdown === "month" && (
+            <div className={`${panelClass} left-0`}>
+              <div className="flex flex-wrap items-center gap-1.5">
+                <button type="button" onClick={selectCurrentMonth} className={shortcutClass(sameSet(selection.months, [CURRENT_MONTH]))}>
+                  {currentMonthLabel}
+                </button>
+                {[1, 2, 3, 4].map((q) => (
+                  <button key={q} type="button" onClick={() => selectQuarter(q)} className={shortcutClass(sameSet(selection.months, quarterMonths(q)))}>
+                    {q}º tri
+                  </button>
+                ))}
+                <button type="button" onClick={selectAllMonths} className={shortcutClass(isAllMonthsSelected)}>
+                  Ano todo
+                </button>
+              </div>
+              <div className="keep-cols mt-3 grid grid-cols-3 gap-1.5">
+                {AVAILABLE_MONTHS.map((m) => (
+                  <button key={m.value} type="button" aria-pressed={selection.months.includes(m.value)} onClick={() => toggleMonth(m.value)} className={`${optionClass(selection.months.includes(m.value))} h-10`}>
+                    {m.label}
+                  </button>
+                ))}
+              </div>
+              <Footer text={selection.months.length === 1 ? "1 mês selecionado" : `${selection.months.length} meses selecionados`} />
+            </div>
+          )}
+        </div>
 
-          {/* Popover Dia */}
+        {/* Dia */}
+        <div className="col-span-2 sm:col-span-1 sm:relative">
+          <label htmlFor="btn-filter-day" className={labelClass}>
+            <Calendar className="h-3.5 w-3.5 text-[#3c63da]" />
+            <span>Dia</span>
+          </label>
+          <button type="button" id="btn-filter-day" aria-expanded={openDropdown === "day"} onClick={() => toggle("day")} className={triggerClass(openDropdown === "day")}>
+            <span className="truncate">{getDayLabel()}</span>
+            <ChevronDown className={`h-4 w-4 flex-shrink-0 transition-transform ${openDropdown === "day" ? "rotate-180 text-[#3c63da]" : "text-[#69778c]"}`} />
+          </button>
+
           {openDropdown === "day" && (
-            <div className="absolute top-full right-0 sm:left-auto mt-1.5 w-84 rounded-xl border border-[#cbd5e1] bg-white p-3 shadow-xl z-50 animate-in fade-in zoom-in-95">
-              <div className="flex items-center justify-between pb-2 border-b border-[#e5eaf1] mb-2">
-                <span className="text-xs font-extrabold text-[#152238]">Filtrar por Dia</span>
-                <button
-                  type="button"
-                  onClick={selectAllDays}
-                  className={`px-2 py-0.5 rounded text-[11px] font-bold transition-colors cursor-pointer ${
-                    isAllDaysSelected
-                      ? "bg-[#edf2ff] text-[#3c63da]"
-                      : "text-[#69778c] hover:text-[#152238] hover:bg-[#f4f7fb]"
-                  }`}
-                >
-                  Selecionar tudo (31)
+            <div className={`${panelClass} left-0 sm:left-auto sm:!right-0`}>
+              <div className="flex flex-wrap items-center gap-1.5">
+                <button type="button" onClick={selectAllDays} className={shortcutClass(isAllDaysSelected)}>
+                  Mês inteiro
+                </button>
+                <button type="button" onClick={() => selectQuinzena(1)} className={shortcutClass(sameSet(selection.days, firstHalf))}>
+                  1ª quinzena
+                </button>
+                <button type="button" onClick={() => selectQuinzena(2)} className={shortcutClass(sameSet(selection.days, secondHalf))}>
+                  2ª quinzena
                 </button>
               </div>
-
-              {/* Atalhos Rápidos de Dias */}
-              <div className="grid grid-cols-3 gap-1 mb-2 pb-2 border-b border-[#f1f5f9]">
-                <button
-                  type="button"
-                  onClick={() => selectQuinzena(1)}
-                  className="px-2 py-1 text-[10px] font-bold text-[#69778c] hover:text-[#3c63da] hover:bg-[#edf2ff] rounded border border-[#e2e8f0] transition-colors text-center cursor-pointer"
-                >
-                  1ª Quinzena (1-15)
-                </button>
-                <button
-                  type="button"
-                  onClick={() => selectQuinzena(2)}
-                  className="px-2 py-1 text-[10px] font-bold text-[#69778c] hover:text-[#3c63da] hover:bg-[#edf2ff] rounded border border-[#e2e8f0] transition-colors text-center cursor-pointer"
-                >
-                  2ª Quinzena (16-31)
-                </button>
-                <button
-                  type="button"
-                  onClick={selectWeekdaysOnly}
-                  className="px-2 py-1 text-[10px] font-bold text-[#69778c] hover:text-[#3c63da] hover:bg-[#edf2ff] rounded border border-[#e2e8f0] transition-colors text-center cursor-pointer"
-                >
-                  Dias Úteis (1-22)
-                </button>
-              </div>
-
-              {/* Grid 7 colunas de Dias 1 a 31 */}
-              <div className="grid grid-cols-7 gap-1">
+              <div className="mt-3 grid grid-cols-7 gap-1">
                 {AVAILABLE_DAYS.map((d) => {
-                  const isChecked = selection.days.includes(d);
+                  const selected = selection.days.includes(d);
+                  // Mês inteiro é o estado neutro: fica em tom suave, sem pintar a grade toda.
+                  const className = isAllDaysSelected
+                    ? "border-transparent bg-[#edf2ff] text-[#3c63da] hover:bg-[#dfe8fe]"
+                    : selected
+                    ? "border-[#3c63da] bg-[#3c63da] text-white"
+                    : "border-transparent bg-[#f4f7fb] text-[#475569] hover:bg-[#edf2ff] hover:text-[#3c63da]";
                   return (
                     <button
                       key={d}
                       type="button"
-                      onClick={() => toggleDay(d)}
+                      aria-pressed={selected}
                       title={`Dia ${d}`}
-                      className={`h-8 rounded-lg text-xs font-bold transition-all flex items-center justify-center cursor-pointer ${
-                        isChecked
-                          ? "bg-[#3c63da] text-white shadow-2xs font-extrabold"
-                          : "bg-[#f8faff] text-[#69778c] hover:bg-[#edf2ff] hover:text-[#152238] border border-[#e5eaf1]"
-                      }`}
+                      // Com o mês inteiro marcado, clicar em um dia passa a filtrar só por ele.
+                      onClick={() => (isAllDaysSelected ? onChange({ ...selection, days: [d] }) : toggleDay(d))}
+                      className={`h-9 rounded-lg border text-xs font-bold transition-colors cursor-pointer select-none ${className}`}
                     >
                       {d}
                     </button>
                   );
                 })}
               </div>
-
-              <div className="mt-3 pt-2 border-t border-[#e5eaf1] flex items-center justify-between">
-                <span className="text-[11px] text-[#69778c] font-semibold">
-                  {selection.days.length} dia(s) selecionado(s)
-                </span>
-                <button
-                  type="button"
-                  onClick={() => setOpenDropdown(null)}
-                  className="rounded-lg bg-[#3c63da] px-3 py-1 text-xs font-bold text-white hover:bg-[#2e52be] transition-colors cursor-pointer"
-                >
-                  Concluir
-                </button>
-              </div>
+              <Footer text={isAllDaysSelected ? "Mês inteiro" : selection.days.length === 1 ? "1 dia selecionado" : `${selection.days.length} dias selecionados`} />
             </div>
           )}
-          </div>
         </div>
       </div>
     </div>

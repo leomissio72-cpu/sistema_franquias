@@ -43,7 +43,6 @@ import {
 import toast from "react-hot-toast";
 import {
   DateMultiFilter,
-  monthsWithEntries,
   DateFilterSelection,
   AVAILABLE_DAYS,
   AVAILABLE_MONTHS,
@@ -1046,7 +1045,7 @@ export const DreScreen: React.FC<DreScreenProps> = ({
             </div>
 
             {/* Filtro de período do extrato: Ano, Mês e Dia */}
-            <DateMultiFilter selection={dateSelection} onChange={setDateSelection} activeMonths={monthsWithEntries(manualEntries)} />
+            <DateMultiFilter selection={dateSelection} onChange={setDateSelection} />
 
             {/* Summary Cards */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -1206,7 +1205,7 @@ export const DreScreen: React.FC<DreScreenProps> = ({
             </div>
 
             {/* Seletor Temporal Separado: Ano, Mês e Dia */}
-            <DateMultiFilter selection={dateSelection} onChange={setDateSelection} activeMonths={monthsWithEntries(manualEntries)} />
+            <DateMultiFilter selection={dateSelection} onChange={setDateSelection} />
 
             {/* Filtros Operacionais: Marca e Unidade */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-3 border-t border-[#f1f5f9]">
@@ -1391,8 +1390,8 @@ export const DreScreen: React.FC<DreScreenProps> = ({
                 </p>
               </div>
 
-              <div className="flex items-center gap-3">
-                <div className="flex items-center gap-1.5">
+              <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+                <div className="flex flex-wrap items-center gap-1.5">
                   <button
                     type="button"
                     onClick={handleExportCsv}
