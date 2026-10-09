@@ -26,7 +26,8 @@ function appRequest(
       const address = server.address() as any;
       const port = address.port;
       const postData = body !== undefined ? JSON.stringify(body) : undefined;
-      const reqHeaders = { ...headers };
+      // Os testes simulam o painel aberto em um navegador; a API recusa clientes sem identificação.
+      const reqHeaders: Record<string, string> = { "User-Agent": "Mozilla/5.0 (auditoria) Chrome/126 Safari/537.36", ...headers };
       if (postData) {
         reqHeaders["Content-Type"] = "application/json";
         reqHeaders["Content-Length"] = Buffer.byteLength(postData).toString();

@@ -72,7 +72,7 @@ import { ProdutosHomologadosScreen } from "./components/screens/ProdutosHomologa
 import { PagamentosDespesasScreen, PagamentoSubTab } from "./components/screens/PagamentosDespesasScreen";
 import { InstrucoesScreen } from "./components/screens/InstrucoesScreen";
 import { Cloud, Loader2 } from "lucide-react";
-import { Toaster } from "react-hot-toast";
+import toast, { Toaster } from "react-hot-toast";
 
 export const App: React.FC = () => {
   // Navigation & Routing
@@ -187,10 +187,34 @@ export const App: React.FC = () => {
   });
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
 
-  // Keep URL hash synchronized
+  // O endereço fica sempre limpo: a tela aberta não aparece na barra do navegador.
   useEffect(() => {
-    window.location.hash = currentScreen;
+    if (window.location.pathname !== "/" || window.location.hash || window.location.search) {
+      window.history.replaceState(null, "", "/");
+    }
   }, [currentScreen]);
+
+  // Saída automática após 30 minutos sem uso; é preciso entrar de novo.
+  useEffect(() => {
+    if (!userSession) return;
+    const IDLE_LIMIT_MS = 30 * 60 * 1000;
+    let lastActivity = Date.now();
+    const markActivity = () => { lastActivity = Date.now(); };
+    const events = ["mousedown", "keydown", "touchstart", "scroll", "mousemove"] as const;
+    events.forEach((name) => window.addEventListener(name, markActivity, { passive: true, capture: true }));
+    const check = window.setInterval(() => {
+      if (Date.now() - lastActivity >= IDLE_LIMIT_MS) {
+        void logoutAPI().catch(() => undefined);
+        setUserSession(null);
+        setIsLoginOpen(true);
+        toast("Sessão encerrada por inatividade. Entre novamente.");
+      }
+    }, 15000);
+    return () => {
+      window.clearInterval(check);
+      events.forEach((name) => window.removeEventListener(name, markActivity, { capture: true } as EventListenerOptions));
+    };
+  }, [userSession]);
 
   useEffect(() => {
     document.documentElement.classList.toggle("theme-dark", isDarkMode);

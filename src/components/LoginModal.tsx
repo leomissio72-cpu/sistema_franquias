@@ -12,7 +12,7 @@ interface LoginModalProps {
 type MfaState = { mode: "setup" | "login"; token: string; secret?: string; otpauth?: string; user: any } | null;
 
 export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onSuccess, onClose }) => {
-  const [username, setUsername] = useState("admin");
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [mfaCode, setMfaCode] = useState("");
   const [mfaState, setMfaState] = useState<MfaState>(null);

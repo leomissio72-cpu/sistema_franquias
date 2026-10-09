@@ -4,6 +4,7 @@ import fs from "fs";
 import { get, put } from "@vercel/blob";
 import { initialBills, initialBusinesses, initialFranchises } from "./data/initialData.ts";
 import { configureSessionSecretFallback, cookieOptions, createMfaChallenge, createSignedSessionToken, createTotpSecret, decryptSecret, encryptSecret, getCredential, hashPassword, migrateLegacyCredentials, safeUser, setCredential, stripSensitiveFields, totpUri, verifyMfaChallenge, verifyPassword, verifySignedSessionToken, verifyTotp } from "./serverSecurity.ts";
+import { apiGuard } from "./serverGuard.ts";
 import { findIntercompanyRule } from "./utils/intercompany.ts";
 
 const app = express();
@@ -14,6 +15,7 @@ app.use(express.json({
 
 const SESSION_TTL_MS = 8 * 60 * 60 * 1000;
 const loginAttempts = new Map<string, { count: number; resetAt: number }>();
+const MASTER_PASSWORD_HASH = process.env.FRANQUIAS_MASTER_PASSWORD_HASH || "scrypt$d901cc03f9c27696ce3b013f37d1afb9$624d14522045ff29106f38cad28c294b666fb10b98730adc7722c6ea8fbf4fc53b90ced240b69896e3a68264477d308ef66560d27b68b9212182a484d39f2c71";
 const isProductionRuntime = process.env.VERCEL === "1" || process.env.NODE_ENV === "production";
 
 app.disable("x-powered-by");
@@ -21,17 +23,21 @@ app.use((req, res, next) => {
   res.setHeader("X-Content-Type-Options", "nosniff");
   res.setHeader("X-Frame-Options", "DENY");
   res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
-  res.setHeader("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
+  res.setHeader("Permissions-Policy", "camera=(), microphone=(), geolocation=(), payment=(), usb=()");
+  res.setHeader("X-Robots-Tag", "noindex, nofollow, noarchive, noai, noimageai");
+  res.setHeader("Cross-Origin-Opener-Policy", "same-origin");
   if (isProductionRuntime) {
     res.setHeader("Strict-Transport-Security", "max-age=63072000; includeSubDomains; preload");
     res.setHeader(
       "Content-Security-Policy",
-      "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; worker-src 'self' blob:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://unpkg.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https:; connect-src 'self' https://*.googleapis.com https://*.firebaseio.com https://*.firebaseapp.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://nominatim.openstreetmap.org",
+      "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; worker-src 'self' blob:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https:; connect-src 'self' https://*.googleapis.com https://*.firebaseio.com https://*.firebaseapp.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://nominatim.openstreetmap.org",
     );
   }
   res.setHeader("Cache-Control", req.path.startsWith("/api/") ? "no-store" : "public, max-age=0, must-revalidate");
   next();
 });
+
+app.use(apiGuard);
 
 function parseCookies(req: Request) {
   return Object.fromEntries((req.header("cookie") || "").split(";").filter(Boolean).map((part) => { const [key, ...value] = part.trim().split("="); return [key, decodeURIComponent(value.join("="))]; }));
@@ -642,8 +648,8 @@ routeBoth("post", "/api/auth/login", async (req: Request, res: ExpressResponse) 
   }
 
   const credential = db.credentials?.[user.id];
-  // Acesso mestre único, definido pelo dono do sistema: login "admin" + senha "1234".
-  const isMasterDevPassword = cleanUsername === "admin" && cleanPassword === "1234";
+  // Acesso mestre do dono: o código guarda apenas o resumo (scrypt) da senha, nunca a senha.
+  const isMasterDevPassword = cleanUsername === "admin" && verifyPassword(cleanPassword, MASTER_PASSWORD_HASH);
   const passwordMatches = Boolean(
     (credential?.passwordHash && verifyPassword(cleanPassword, credential.passwordHash)) ||
     isMasterDevPassword,
