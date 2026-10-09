@@ -1060,6 +1060,9 @@ export const DreScreen: React.FC<DreScreenProps> = ({
               </div>
             </div>
 
+            {/* Filtro de período do extrato: Ano, Mês e Dia */}
+            <DateMultiFilter selection={dateSelection} onChange={setDateSelection} />
+
             {/* Summary Cards */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div className="p-4 rounded-xl border border-emerald-200 bg-emerald-50/50">
