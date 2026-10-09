@@ -188,20 +188,7 @@ export const NetworkScreen: React.FC<NetworkScreenProps> = ({
   return (
     <div className="space-y-6 animate-in fade-in duration-150">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <div className="text-[10px] font-extrabold uppercase tracking-widest text-[#3c63da]">
-            Franqueadora · Dados Consolidados em Tempo Real
-          </div>
-          <h2 className="text-2xl font-extrabold tracking-tight text-[#152238] flex items-center gap-2 mt-1">
-            <Building2 className="h-6 w-6 text-[#3c63da]" />
-            Rede e Unidades
-          </h2>
-          <p className="text-xs text-[#69778c] mt-1 max-w-2xl">
-            Vários negócios, vários franqueados. A diretoria acompanha o ecossistema completo; cada rede e
-            unidade opera no seu respectivo escopo.
-          </p>
-        </div>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-end gap-4">
 
         <div className="flex flex-wrap items-center gap-2">
           <button
