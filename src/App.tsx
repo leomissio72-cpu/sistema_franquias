@@ -691,6 +691,7 @@ export const App: React.FC = () => {
               onNavigate={setCurrentScreen}
               dreParams={dreParams}
               royalties={royalties}
+              manualEntries={manualEntries}
             />
           )}
 
@@ -755,6 +756,7 @@ export const App: React.FC = () => {
               dreParams={dreParams}
               royalties={royalties}
               onRefreshData={loadState}
+              manualEntries={manualEntries}
             />
           )}
 
@@ -770,6 +772,7 @@ export const App: React.FC = () => {
               royalties={royalties}
               bills={bills}
               userSession={userSession}
+              manualEntries={manualEntries}
             />
           )}
 

@@ -1,5 +1,108 @@
-import { BillItem, DreCalculation, DreParams, PaymentMethod, DreExpenseItem, Business } from "../types";
+import { BillItem, DreCalculation, DreParams, PaymentMethod, DreExpenseItem, Business, ManualEntry, FranchiseUnit } from "../types";
 import { dreExpenseDefs } from "../data/initialData";
+
+export function isEntryInScope(
+  entryTenant: string | undefined,
+  currentTenantId: string,
+  franchises: FranchiseUnit[] = []
+): boolean {
+  if (!entryTenant) return true;
+  if (currentTenantId === "dono" || currentTenantId === "all" || currentTenantId === "equipe") return true;
+  if (entryTenant === currentTenantId) return true;
+  if (entryTenant === "dono") return true;
+
+  if (currentTenantId.startsWith("biz")) {
+    const unit = franchises.find((f) => f.id === entryTenant);
+    return unit?.businessId === currentTenantId;
+  }
+
+  return false;
+}
+
+export function getUnitRealFinancials(
+  unitId: string,
+  manualEntries: ManualEntry[] | undefined,
+  dateFilter?: { years?: number[]; months?: number[]; days?: number[] }
+): { faturamento: number; despesas: number; count: number; lucroReal: number } {
+  if (!manualEntries || manualEntries.length === 0) {
+    return { faturamento: 0, despesas: 0, count: 0, lucroReal: 0 };
+  }
+
+  let faturamento = 0;
+  let despesas = 0;
+  let count = 0;
+
+  for (const entry of manualEntries) {
+    if (entry.tenant !== unitId) continue;
+    if (entry.isIntercompany || entry.excludedFromDre || entry.catId === "intercompany") continue;
+
+    if (dateFilter && entry.date) {
+      const parts = entry.date.split("-");
+      if (parts.length >= 3) {
+        const y = parseInt(parts[0], 10);
+        const m = parseInt(parts[1], 10);
+        const d = parseInt(parts[2], 10);
+        if (dateFilter.years?.length && !dateFilter.years.includes(y)) continue;
+        if (dateFilter.months?.length && !dateFilter.months.includes(m)) continue;
+        if (dateFilter.days?.length && !dateFilter.days.includes(d)) continue;
+      }
+    }
+
+    const val = Number(entry.value) || 0;
+    if (entry.type === "entrada") {
+      faturamento += val;
+      count++;
+    } else if (entry.type === "despesa") {
+      despesas += val;
+      count++;
+    }
+  }
+
+  return { faturamento, despesas, count, lucroReal: faturamento - despesas };
+}
+
+export function getScopeRealFinancials(
+  scopeTenantId: string,
+  franchises: FranchiseUnit[] = [],
+  manualEntries: ManualEntry[] | undefined,
+  dateFilter?: { years?: number[]; months?: number[]; days?: number[] }
+): { faturamento: number; despesas: number; count: number; lucroReal: number } {
+  if (!manualEntries || manualEntries.length === 0) {
+    return { faturamento: 0, despesas: 0, count: 0, lucroReal: 0 };
+  }
+
+  let faturamento = 0;
+  let despesas = 0;
+  let count = 0;
+
+  for (const entry of manualEntries) {
+    if (!isEntryInScope(entry.tenant, scopeTenantId, franchises)) continue;
+    if (entry.isIntercompany || entry.excludedFromDre || entry.catId === "intercompany") continue;
+
+    if (dateFilter && entry.date) {
+      const parts = entry.date.split("-");
+      if (parts.length >= 3) {
+        const y = parseInt(parts[0], 10);
+        const m = parseInt(parts[1], 10);
+        const d = parseInt(parts[2], 10);
+        if (dateFilter.years?.length && !dateFilter.years.includes(y)) continue;
+        if (dateFilter.months?.length && !dateFilter.months.includes(m)) continue;
+        if (dateFilter.days?.length && !dateFilter.days.includes(d)) continue;
+      }
+    }
+
+    const val = Number(entry.value) || 0;
+    if (entry.type === "entrada") {
+      faturamento += val;
+      count++;
+    } else if (entry.type === "despesa") {
+      despesas += val;
+      count++;
+    }
+  }
+
+  return { faturamento, despesas, count, lucroReal: faturamento - despesas };
+}
 
 export const formatBrl = (n: number | string): string => {
   const num = Number(n) || 0;

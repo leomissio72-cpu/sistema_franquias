@@ -199,6 +199,7 @@ export const PagamentosDespesasScreen: React.FC<PagamentosDespesasScreenProps> =
             bills={bills}
             onSaveBills={onSaveBills}
             onCreateEntry={onCreateEntry}
+            franchises={franchises}
           />
         )}
 

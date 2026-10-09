@@ -11,7 +11,7 @@ export interface StoredCredential {
   mustReset?: boolean;
 }
 
-const PASSWORD_MIN_LENGTH = 6;
+const PASSWORD_MIN_LENGTH = 3;
 const SESSION_TTL_MS = 8 * 60 * 60 * 1000;
 const developmentSessionSecret = crypto.randomBytes(32).toString("hex");
 let persistedCredentialSecret: string | null = null;

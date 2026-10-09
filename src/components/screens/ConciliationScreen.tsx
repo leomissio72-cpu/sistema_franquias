@@ -1,8 +1,9 @@
 import React, { useEffect, useRef, useState } from "react";
-import { BillItem, ConciliationItem, IntercompanyRule, ManualEntry, ScreenType, UserSession } from "../../types";
+import { BillItem, ConciliationItem, IntercompanyRule, ManualEntry, ScreenType, UserSession, FranchiseUnit } from "../../types";
 import { classifyIntercompanyItem, findIntercompanyRule } from "../../utils/intercompany";
 import { decodeBankText, repairMojibake } from "../../utils/textEncoding";
 import { detectApelido } from "../../utils/apelidos";
+import { isEntryInScope } from "../../utils/calculations";
 import ExcelJS from "exceljs";
 import JSZip from "jszip";
 import * as pdfjsLib from "pdfjs-dist/legacy/build/pdf.mjs";
@@ -78,6 +79,7 @@ interface ConciliationScreenProps {
   bills?: BillItem[];
   onSaveBills?: (bills: BillItem[]) => Promise<void>;
   onCreateEntry?: (entry: Partial<ManualEntry>) => Promise<void>;
+  franchises?: FranchiseUnit[];
 }
 
 const parseAmount = (value: unknown) => {
@@ -340,10 +342,11 @@ export const ConciliationScreen: React.FC<ConciliationScreenProps> = ({
   bills = [],
   onSaveBills,
   onCreateEntry,
+  franchises = [],
   }) => {
   const scopedEntries = () => removeDuplicateItems(
     manualEntries
-      .filter((entry) => entry.tenant === currentTenantId && entry.conciliationStatus !== "matched")
+      .filter((entry) => isEntryInScope(entry.tenant, currentTenantId, franchises) && entry.conciliationStatus !== "matched")
       .map(entryToItem)
       .map((item) => classifyIntercompanyItem(item, intercompanyRules, {
         tenantId: currentTenantId,
@@ -363,6 +366,21 @@ export const ConciliationScreen: React.FC<ConciliationScreenProps> = ({
   const [importError, setImportError] = useState<string | null>(null);
   const [editingItem, setEditingItem] = useState<ConciliationItem | null>(null);
   const [isBatchEditing, setIsBatchEditing] = useState(false);
+
+  const [importTargetUnit, setImportTargetUnit] = useState<string>(() => {
+    if (currentTenantId !== "dono" && !currentTenantId.startsWith("biz")) return currentTenantId;
+    const match = franchises?.find((f) => currentBusinessId === "all" || f.businessId === currentBusinessId);
+    return match?.id || currentTenantId;
+  });
+
+  useEffect(() => {
+    if (currentTenantId !== "dono" && !currentTenantId.startsWith("biz")) {
+      setImportTargetUnit(currentTenantId);
+    } else {
+      const match = franchises?.find((f) => currentBusinessId === "all" || f.businessId === currentBusinessId);
+      if (match) setImportTargetUnit(match.id);
+    }
+  }, [currentTenantId, currentBusinessId, franchises]);
 
   // Recurrence states
   const [clearedRecurrences, setClearedRecurrences] = useState<ClearedRecurrence[]>([]);
@@ -610,7 +628,7 @@ export const ConciliationScreen: React.FC<ConciliationScreenProps> = ({
   const buildEntriesFromItems = (sourceItems: ConciliationItem[]): Array<Partial<ManualEntry>> => sourceItems
     .filter((item) => item.isImportPreview && !item.entryId)
     .map((item) => ({
-      tenant: currentTenantId,
+      tenant: (currentTenantId !== "dono" && !currentTenantId.startsWith("biz")) ? currentTenantId : (importTargetUnit || currentTenantId),
       type: item.numericValue >= 0 ? "entrada" as const : "despesa" as const,
       date: item.date,
       value: Math.abs(item.numericValue),
@@ -1039,6 +1057,30 @@ export const ConciliationScreen: React.FC<ConciliationScreenProps> = ({
           {uploadedFileName && (
             <span className="text-xs font-semibold text-[#152238] bg-white px-3 py-1.5 rounded-lg border border-[#e5eaf1]">
               Arquivo atual: <b>{uploadedFileName}</b>
+            </span>
+          )}
+        </div>
+
+        {/* Destino da unidade para conciliação */}
+        <div className="mt-3 flex items-center justify-center gap-2 flex-wrap">
+          <span className="text-xs font-semibold text-[#69778c]">Destino dos lançamentos:</span>
+          {currentTenantId === "dono" || currentTenantId.startsWith("biz") ? (
+            <select
+              value={importTargetUnit}
+              onChange={(e) => setImportTargetUnit(e.target.value)}
+              className="rounded-lg border border-[#cbd5e1] bg-white px-2.5 py-1 text-xs font-bold text-[#152238] shadow-xs cursor-pointer focus:outline-none focus:border-[#3c63da]"
+            >
+              {franchises
+                .filter((f) => currentBusinessId === "all" || f.businessId === currentBusinessId)
+                .map((f) => (
+                  <option key={f.id} value={f.id}>
+                    {f.name} ({f.code})
+                  </option>
+                ))}
+            </select>
+          ) : (
+            <span className="text-xs font-bold text-[#152238] bg-[#eff6ff] px-2.5 py-1 rounded-md border border-[#bfdbfe]">
+              {franchises.find((f) => f.id === currentTenantId)?.name || currentTenantId}
             </span>
           )}
         </div>

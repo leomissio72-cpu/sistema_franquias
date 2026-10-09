@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
-import { FranchiseUnit, Business, ScreenType } from "../../types";
-import { formatBrl, formatPct, calculateDre } from "../../utils/calculations";
+import { FranchiseUnit, Business, ScreenType, ManualEntry } from "../../types";
+import { formatBrl, formatPct, calculateDre, getUnitRealFinancials } from "../../utils/calculations";
 import {
   Building2,
   MapPin,
@@ -26,6 +26,7 @@ interface NetworkScreenProps {
   royalties: Record<string, number>;
   onRefreshData?: () => void;
   initialFocus?: "map" | "overview";
+  manualEntries?: ManualEntry[];
 }
 
 export const NetworkScreen: React.FC<NetworkScreenProps> = ({
@@ -38,6 +39,7 @@ export const NetworkScreen: React.FC<NetworkScreenProps> = ({
   royalties,
   onRefreshData,
   initialFocus = "overview",
+  manualEntries = [],
 }) => {
   const mapSectionRef = useRef<HTMLDivElement>(null);
   const mapContainerRef = useRef<HTMLDivElement>(null);
@@ -63,19 +65,25 @@ export const NetworkScreen: React.FC<NetworkScreenProps> = ({
       Number.isFinite(unit.lat) && Number.isFinite(unit.lng) && unit.coordinatesVerified !== false
   );
 
-  const totalFat = visibleUnits.reduce((s, f) => s + f.faturamento, 0);
+  const getUnitEffectiveRev = (f: FranchiseUnit): number => {
+    const unitFin = getUnitRealFinancials(f.id, manualEntries);
+    return unitFin.count > 0 ? unitFin.faturamento : f.faturamento;
+  };
+
+  const totalFat = visibleUnits.reduce((s, f) => s + getUnitEffectiveRev(f), 0);
   let totalLucro = 0;
   visibleUnits.forEach((f) => {
+    const rev = getUnitEffectiveRev(f);
     const p = dreParams[f.id] || dreParams["dono"];
     const roy = royalties[f.businessId];
-    const calc = calculateDre(f.faturamento, p, roy);
+    const calc = calculateDre(rev, p, roy);
     totalLucro += calc.lucroLiquido;
   });
 
   const margemConsolidada = totalFat ? totalLucro / totalFat : 0;
   const healthyCount = visibleUnits.filter((f) => f.status === "green").length;
   const warnCount = visibleUnits.filter((f) => f.status !== "green").length;
-  const maxFat = Math.max(...visibleUnits.map((f) => f.faturamento), 1);
+  const maxFat = Math.max(...visibleUnits.map((f) => getUnitEffectiveRev(f)), 1);
   const healthRate = visibleUnits.length ? Math.round((healthyCount / visibleUnits.length) * 100) : 0;
   const citiesCount = new Set(mappedUnits.map((f) => f.city)).size;
 
@@ -121,7 +129,8 @@ export const NetworkScreen: React.FC<NetworkScreenProps> = ({
       mappedUnits.forEach((f) => {
         const biz = businesses.find((b) => b.id === f.businessId);
         const pinColor = f.status === "green" ? "#118464" : "#a86a08";
-        const calc = calculateDre(f.faturamento, dreParams[f.id] || dreParams["dono"], royalties[f.businessId]);
+        const unitRev = getUnitEffectiveRev(f);
+        const calc = calculateDre(unitRev, dreParams[f.id] || dreParams["dono"], royalties[f.businessId]);
 
         const customIcon = L.divIcon({
           className: "",
@@ -364,8 +373,9 @@ export const NetworkScreen: React.FC<NetworkScreenProps> = ({
             ) : visibleUnits.map((f) => {
               const p = dreParams[f.id] || dreParams["dono"];
               const roy = royalties[f.businessId];
-              const calc = calculateDre(f.faturamento, p, roy);
-              const pctFat = (f.faturamento / maxFat) * 100;
+              const unitRev = getUnitEffectiveRev(f);
+              const calc = calculateDre(unitRev, p, roy);
+              const pctFat = (unitRev / maxFat) * 100;
               const pctLucro = (calc.lucroLiquido / maxFat) * 100;
 
               return (
@@ -381,7 +391,7 @@ export const NetworkScreen: React.FC<NetworkScreenProps> = ({
                       <span className="text-[10px] text-[#69778c]">· {f.code}</span>
                     </span>
                     <span className="font-mono text-xs">
-                      {formatBrl(f.faturamento)}{" "}
+                      {formatBrl(unitRev)}{" "}
                       <span className="text-[10px] text-[#69778c]">
                         ({formatPct(calc.margemLiquida)} margem)
                       </span>

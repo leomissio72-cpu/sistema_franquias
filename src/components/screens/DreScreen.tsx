@@ -202,14 +202,21 @@ export const DreScreen: React.FC<DreScreenProps> = ({
       }
 
       // 3. Unit filter
-      if (selectedFranchise !== "all" && entry.tenant !== selectedFranchise && entry.tenant !== "dono") {
-        return false;
+      if (selectedFranchise !== "all") {
+        if (selectedFranchise.startsWith("biz")) {
+          const u = franchises.find((f) => f.id === entry.tenant);
+          if (entry.tenant !== selectedFranchise && (!u || u.businessId !== selectedFranchise)) {
+            return false;
+          }
+        } else if (entry.tenant !== selectedFranchise && entry.tenant !== "dono") {
+          return false;
+        }
       }
 
       // 4. Business filter
       if (selectedBusiness !== "all") {
         const unit = franchises.find((f) => f.id === entry.tenant);
-        if (unit && unit.businessId !== selectedBusiness) return false;
+        if (entry.tenant !== selectedBusiness && (!unit || unit.businessId !== selectedBusiness)) return false;
       }
 
       // 5. Date filter

@@ -1,11 +1,12 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { BillItem, FranchiseUnit, Business, ScreenType, UserSession } from "../../types";
+import { BillItem, FranchiseUnit, Business, ScreenType, UserSession, ManualEntry } from "../../types";
 import {
   formatBrl,
   formatBrl2,
   formatPct,
   formatPct2,
-  calculateDre
+  calculateDre,
+  getUnitRealFinancials,
 } from "../../utils/calculations";
 import { getBillDueStatus } from "../../utils/calculations";
 import {
@@ -63,6 +64,7 @@ interface DashboardScreenProps {
   royalties: Record<string, number>;
   bills?: BillItem[];
   userSession?: UserSession | null;
+  manualEntries?: ManualEntry[];
 }
 
 type PeriodType = "mes_atual" | "mes_anterior" | "trimestre" | "semestre" | "ano";
@@ -79,6 +81,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
   royalties,
   bills = [],
   userSession,
+  manualEntries = [],
 }) => {
   // Franqueado permission check
   const isFranchisee = userSession?.profile === "franqueado" || userSession?.profile === "operador";
@@ -295,14 +298,15 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
 
     baseUnits.forEach((f) => {
       const state = getUnitState(f);
-      const fat = f.faturamento * periodMultiplier;
+      const unitFin = getUnitRealFinancials(f.id, manualEntries, dateSelection);
+      const fat = unitFin.count > 0 ? unitFin.faturamento : f.faturamento * periodMultiplier;
       map[state] = (map[state] || 0) + fat;
     });
 
     return Object.entries(map)
       .map(([state, value]) => ({ state, value }))
       .sort((a, b) => b.value - a.value);
-  }, [allowedUnits, selectedBusiness, selectedFranchise, statusFilter, periodMultiplier]);
+  }, [allowedUnits, selectedBusiness, selectedFranchise, statusFilter, periodMultiplier, manualEntries, dateSelection]);
 
   // Calculate Aggregates
   let totalFat = 0;
@@ -315,7 +319,8 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
   let totalFpp = 0; // Fundo de Propaganda e Promoção (2% standard)
 
   const unitCalculations = filteredUnits.map((f) => {
-    const fat = f.faturamento * periodMultiplier;
+    const unitFin = getUnitRealFinancials(f.id, manualEntries, dateSelection);
+    const fat = unitFin.count > 0 ? unitFin.faturamento : f.faturamento * periodMultiplier;
     const p = dreParams[f.id] || dreParams["dono"];
     const royPct = royalties[f.businessId] ?? (f.businessId === "biz1" ? 0.06 : f.businessId === "biz2" ? 0.05 : 0.07);
     const d = calculateDre(fat, p, royPct);
@@ -380,7 +385,8 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
   const activeBiz = businesses.find((b) => b.id === activeUnit.businessId);
 
   // Dedicated metrics for activeUnit
-  const unitFat = activeUnit.faturamento * periodMultiplier;
+  const activeUnitFin = getUnitRealFinancials(activeUnit.id, manualEntries, dateSelection);
+  const unitFat = activeUnitFin.count > 0 ? activeUnitFin.faturamento : activeUnit.faturamento * periodMultiplier;
   const unitDreParams = dreParams[activeUnit.id] || dreParams["dono"];
   const unitRoyPct = royalties[activeUnit.businessId] ?? (activeUnit.businessId === "biz1" ? 0.06 : activeUnit.businessId === "biz2" ? 0.05 : 0.07);
   const unitDre = calculateDre(unitFat, unitDreParams, unitRoyPct);
@@ -513,14 +519,32 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
       const dataRoyMes: number[] = [];
       const baseMonthly = (totalFat / (periodMultiplier || 1)) * (dateSelection.days.length / 31);
 
+      const getMonthReal = (mVal: number, yrVal: number) => {
+        if (!manualEntries || manualEntries.length === 0) return { fat: 0, count: 0 };
+        const prefix = `${yrVal}-${String(mVal).padStart(2, "0")}`;
+        const unitIds = new Set(filteredUnits.map((u) => u.id));
+        let sum = 0;
+        let count = 0;
+        for (const e of manualEntries) {
+          if (e.type !== "entrada" || e.excludedFromDre || e.isIntercompany) continue;
+          if (!unitIds.has(e.tenant) && e.tenant !== currentTenantId && currentTenantId !== "dono") continue;
+          if ((e.date || "").startsWith(prefix)) {
+            sum += Number(e.value) || 0;
+            count++;
+          }
+        }
+        return { fat: sum, count };
+      };
+
       if (dateSelection.months.length > 1) {
         const sortedMonths = [...dateSelection.months].sort((a, b) => a - b);
         const yr = dateSelection.years[0] || 2026;
         sortedMonths.forEach((mVal) => {
           const mObj = AVAILABLE_MONTHS.find((m) => m.value === mVal);
           monthsLabels.push(`${mObj?.short || mVal}/${yr.toString().slice(-2)}`.toUpperCase());
+          const realM = getMonthReal(mVal, yr);
           const factor = 1 + ((mVal % 3) - 1) * 0.04;
-          const valFat = Math.round(baseMonthly * factor);
+          const valFat = realM.count > 0 ? Math.round(realM.fat) : Math.round(baseMonthly * factor);
           const valLucro = Math.round(valFat * (margem || 0.18));
           const valRoy = Math.round(valFat * (avgRoyaltiesRate / 100));
           dataFatMes.push(valFat);
@@ -534,8 +558,9 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
           const mIndex = ((targetMonth - 1 - i + 12) % 12) + 1;
           const mObj = AVAILABLE_MONTHS.find((m) => m.value === mIndex);
           monthsLabels.push(`${mObj?.short || mIndex}/${yr.toString().slice(-2)}`.toUpperCase());
+          const realM = getMonthReal(mIndex, yr);
           const factor = 1 + (5 - i) * 0.02 + ((i % 3) - 1) * 0.03;
-          const valFat = Math.round(baseMonthly * factor);
+          const valFat = realM.count > 0 ? Math.round(realM.fat) : Math.round(baseMonthly * factor);
           const valLucro = Math.round(valFat * (margem || 0.18));
           const valRoy = Math.round(valFat * (avgRoyaltiesRate / 100));
           dataFatMes.push(valFat);

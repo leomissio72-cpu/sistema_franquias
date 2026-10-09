@@ -259,11 +259,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
       {!isCollapsed ? (
         <div className="my-4 border-b border-[#e2e8f0] pb-4">
 
-          {/* Seletor de Rede/Negócio para Administrador/Dono */}
+          {/* Seletor de Franquia / Rede para Administrador/Dono */}
           {!isFranchisee && (
             <div className="mt-2.5">
               <label className="block text-[9px] font-extrabold uppercase tracking-wider text-[#8ea1be] mb-1">
-                Rede
+                Franquia
               </label>
               <select
                 id="select-business-context"
@@ -273,7 +273,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 className="w-full rounded-lg bg-white border border-[#cbd5e1] px-2.5 py-1.5 text-xs font-semibold text-[#0f172a] focus:outline-none focus:border-[#2563eb] disabled:opacity-75 truncate"
               >
                 {isOwner && (
-                  <option value="all">Todas as redes</option>
+                  <option value="all">Todas as franquias (Rede)</option>
                 )}
                 {businesses.map((b) => (
                   <option key={b.id} value={b.id}>
@@ -284,11 +284,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
             </div>
           )}
 
-          {/* Seletor da unidade */}
+          {/* Seletor do Franqueado / Unidade */}
           <div className="mt-2.5">
             <div className="flex items-center justify-between mb-1">
               <label className="block text-[9px] font-extrabold uppercase tracking-wider text-[#8ea1be]">
-                Unidade
+                Franqueado
               </label>
               {isFranchisee && (
                 <span className="text-[9px] font-semibold text-[#8ea1be]">
@@ -310,19 +310,26 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <select
                 id="select-tenant-context"
                 value={currentTenantId}
-                onChange={(e) => onSelectTenant(e.target.value)}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  onSelectTenant(val);
+                  const u = franchises.find((f) => f.id === val);
+                  if (u) {
+                    onSelectBusiness(u.businessId);
+                  } else if (val === "dono") {
+                    onSelectBusiness("all");
+                  }
+                }}
                 className="w-full rounded-lg bg-white border border-[#cbd5e1] px-2.5 py-1.5 text-xs font-semibold text-[#0f172a] focus:outline-none focus:border-[#2563eb] cursor-pointer truncate"
               >
-                {isOwner && (
+                {isOwner && currentBusinessId === "all" && (
                   <option value="dono">Todas as unidades (Consolidado)</option>
                 )}
-                {businesses
-                  .filter((b) => currentBusinessId === "all" || b.id === currentBusinessId)
-                  .map((b) => (
-                    <option key={`matriz_${b.id}`} value={b.id}>
-                      Matriz {b?.brand || b?.name || b?.id}
-                    </option>
-                  ))}
+                {isOwner && currentBusinessId !== "all" && (
+                  <option value={currentBusinessId}>
+                    Todas as unidades ({businesses.find((b) => b.id === currentBusinessId)?.name || "Franquia"})
+                  </option>
+                )}
                 {availableFranchises.map((f) => (
                   <option key={f.id} value={f.id}>
                     {f?.name || f?.code} ({f?.code})

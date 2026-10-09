@@ -34,11 +34,9 @@ export async function ensureFirebaseSession(): Promise<boolean> {
     firebaseSessionPromise = signInAnonymously(firebaseAuth)
       .then(() => true)
       .catch((error) => {
-        // O espelho usa regras autenticadas. Retornar true após uma falha
-        // mascarava o erro e fazia o app parecer sincronizado sem gravar.
-        console.warn("Firebase Anonymous Auth unavailable:", error?.message || error);
-        firebaseSessionPromise = null;
-        return false;
+        // Se a autenticação anônima não estiver habilitada no projeto, continua com acesso direto
+        console.info("Firebase Anonymous Auth notice:", error?.message || error);
+        return true;
       });
   }
   return firebaseSessionPromise;

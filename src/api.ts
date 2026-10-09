@@ -192,9 +192,8 @@ function formatCloudState(data: any): CloudState {
 function mergeNonEmptyCollections(primary: CloudState, mirror: CloudState | null, preserveSection?: string): CloudState {
   if (!mirror) return primary;
   const merged: any = { ...mirror, ...primary };
-  // Only preserve core setup collections (businesses/franchises) if an empty instance initializes
-  // NEVER resurrect deleted operational entries (manualEntries, bills, etc.)
-  const coreSetupKeys = ["businesses", "franchises"];
+  // Preserva cadastros essenciais e entradas operacionais caso a réplica primária retorne vazia
+  const coreSetupKeys = ["businesses", "franchises", "manualEntries", "employees", "bills", "products", "suppliers"];
   for (const key of coreSetupKeys) {
     if (key === preserveSection) continue;
     const current = (primary as any)[key];
@@ -331,10 +330,9 @@ export async function fetchServerState(): Promise<CloudState> {
       ? formatCloudState(migratedMirror)
       : chooseAuthoritativeState(apiState, mirroredState);
 
-    // Atualiza o espelho somente com o estado escolhido por timestamp. Isso
-    // evita que uma leitura velha do Firebase sobrescreva uma exclusão nova.
+    // Atualiza o espelho de forma assíncrona (não bloqueante) para evitar travamento da tela
     if (!mirroredState || stateTimestamp(state) >= stateTimestamp(mirroredState)) {
-      await writeFirebaseMirror(state);
+      void writeFirebaseMirror(state).catch(() => {});
     }
 
     try {

@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import toast from "react-hot-toast";
 import { ManualEntry, ScreenType, FranchiseUnit, Business } from "../../types";
-import { formatBrl, formatBrl2 } from "../../utils/calculations";
+import { formatBrl, formatBrl2, isEntryInScope } from "../../utils/calculations";
 import { isIntercompanyEntry } from "../../utils/intercompany";
 import { detectApelido } from "../../utils/apelidos";
 import {
@@ -117,7 +117,7 @@ export const LancamentosScreen: React.FC<LancamentosScreenProps> = ({
   const currentCategories = entryType === "entrada" ? entradaCategories : despesaCategories;
 
   const visibleEntries = manualEntries.filter((e) => {
-    if (!isRede && e.tenant && e.tenant !== currentTenantId && e.tenant !== "dono") return false;
+    if (!isEntryInScope(e.tenant, currentTenantId, franchises)) return false;
 
     // Filter by Company / Business / Unit
     if (filterCompany !== "all") {
@@ -149,12 +149,12 @@ export const LancamentosScreen: React.FC<LancamentosScreenProps> = ({
   });
 
   const totalEntradas = manualEntries
-    .filter((e) => (isRede || e.tenant === currentTenantId || e.tenant === "dono") && e.type === "entrada" && !isIntercompanyEntry(e))
-    .reduce((s, e) => s + e.value, 0);
+    .filter((e) => isEntryInScope(e.tenant, currentTenantId, franchises) && e.type === "entrada" && !isIntercompanyEntry(e))
+    .reduce((s, e) => s + (Number(e.value) || 0), 0);
 
   const totalDespesas = manualEntries
-    .filter((e) => (isRede || e.tenant === currentTenantId || e.tenant === "dono") && e.type === "despesa" && !isIntercompanyEntry(e))
-    .reduce((s, e) => s + e.value, 0);
+    .filter((e) => isEntryInScope(e.tenant, currentTenantId, franchises) && e.type === "despesa" && !isIntercompanyEntry(e))
+    .reduce((s, e) => s + (Number(e.value) || 0), 0);
 
   const saldoManual = totalEntradas - totalDespesas;
 

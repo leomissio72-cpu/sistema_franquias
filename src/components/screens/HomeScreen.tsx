@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
-import { FranchiseUnit, Business, ScreenType, UserSession } from "../../types";
-import { formatBrl, formatPct, calculateDre } from "../../utils/calculations";
+import { FranchiseUnit, Business, ScreenType, UserSession, ManualEntry } from "../../types";
+import { formatBrl, formatPct, calculateDre, getUnitRealFinancials } from "../../utils/calculations";
 import {
   TrendingUp,
   ArrowRight,
@@ -53,6 +53,7 @@ interface HomeScreenProps {
   onNavigate: (screen: ScreenType) => void;
   dreParams: Record<string, any>;
   royalties: Record<string, number>;
+  manualEntries?: ManualEntry[];
 }
 
 export const HomeScreen: React.FC<HomeScreenProps> = ({
@@ -66,6 +67,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
   onNavigate,
   dreParams,
   royalties,
+  manualEntries = [],
 }) => {
   // -------------------------------------------------------------
   // Filters: Data / Período (Ano, Mês, Dia), Negócio, Franqueado
@@ -170,13 +172,24 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
   });
   const mappedFilteredUnits = filteredUnits.filter((f): f is FranchiseUnit & { lat: number; lng: number } => Number.isFinite(f.lat) && Number.isFinite(f.lng) && f.coordinatesVerified !== false);
 
-  // Calculate totals for filtered scope
-  const totalFat = filteredUnits.reduce((s, f) => s + f.faturamento * periodMultiplier, 0);
-  let totalLucro = 0;
-  filteredUnits.forEach((f) => {
+  // Helper para obter faturamento operacional real da unidade baseado nas entradas conciliadas da base
+  const getUnitEffectiveRev = (f: FranchiseUnit): number => {
+    const realFin = getUnitRealFinancials(f.id, manualEntries, dateSelection);
+    return realFin.count > 0 ? realFin.faturamento : f.faturamento * periodMultiplier;
+  };
+
+  const getUnitEffectiveDre = (f: FranchiseUnit) => {
+    const rev = getUnitEffectiveRev(f);
     const params = dreParams[f.id] || dreParams["dono"];
     const roy = royalties[f.businessId];
-    const calc = calculateDre(f.faturamento * periodMultiplier, params, roy);
+    return calculateDre(rev, params, roy);
+  };
+
+  // Calculate totals for filtered scope
+  const totalFat = filteredUnits.reduce((s, f) => s + getUnitEffectiveRev(f), 0);
+  let totalLucro = 0;
+  filteredUnits.forEach((f) => {
+    const calc = getUnitEffectiveDre(f);
     totalLucro += calc.lucroLiquido;
   });
 
@@ -185,7 +198,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
   const totalRp = filteredUnits.reduce((s, f) => s + f.rpDone, 0);
   const healthyCount = filteredUnits.filter((f) => f.status === "green").length;
   const warnCount = filteredUnits.filter((f) => f.status !== "green").length;
-  const maxFat = Math.max(...filteredUnits.map((f) => f.faturamento * periodMultiplier), 1);
+  const maxFat = Math.max(...filteredUnits.map((f) => getUnitEffectiveRev(f)), 1);
 
   // Active unit info
   const currentUnit = franchises.find((f) => f.id === currentTenantId);
@@ -338,7 +351,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
       if (modalStatusFilter !== "all" && f.status !== modalStatusFilter) return false;
 
       // 4. Revenue Range Filter
-      const rev = f.faturamento * periodMultiplier;
+      const rev = getUnitEffectiveRev(f);
       if (modalRevenueRange === "low" && rev >= 50000) return false;
       if (modalRevenueRange === "mid" && (rev < 50000 || rev > 80000)) return false;
       if (modalRevenueRange === "high" && rev <= 80000) return false;
@@ -346,15 +359,15 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
       return true;
     })
     .sort((a, b) => {
-      const revA = a.faturamento * periodMultiplier;
-      const revB = b.faturamento * periodMultiplier;
+      const revA = getUnitEffectiveRev(a);
+      const revB = getUnitEffectiveRev(b);
       if (modalSort === "fat_desc") return revB - revA;
       if (modalSort === "fat_asc") return revA - revB;
       if (modalSort === "name_asc") return (a.name || "").localeCompare(b.name || "");
       if (modalSort === "city_asc") return (a.city || "").localeCompare(b.city || "");
       if (modalSort === "margin_desc") {
-        const margA = calculateDre(revA, dreParams[a.id] || dreParams["dono"], royalties[a.businessId]).margemLiquida;
-        const margB = calculateDre(revB, dreParams[b.id] || dreParams["dono"], royalties[b.businessId]).margemLiquida;
+        const margA = getUnitEffectiveDre(a).margemLiquida;
+        const margB = getUnitEffectiveDre(b).margemLiquida;
         return margB - margA;
       }
       return 0;
@@ -586,9 +599,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
 
             {filteredUnits.map((f) => {
               const isCurrent = currentTenantId === f.id;
-              const p = dreParams[f.id] || dreParams["dono"];
-              const roy = royalties[f.businessId];
-              const calc = calculateDre(f.faturamento * periodMultiplier, p, roy);
+              const unitRev = getUnitEffectiveRev(f);
 
               return (
                 <div
@@ -620,7 +631,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
 
                   <div className="mt-2 pt-2 border-t border-[#f0f4f9] flex items-center justify-between">
                     <span className="font-mono font-bold text-xs text-[#152238]">
-                      {formatBrl(f.faturamento * periodMultiplier)}
+                      {formatBrl(unitRev)}
                     </span>
                     <button
                       onClick={(e) => {
@@ -673,10 +684,9 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
 
             <div className="space-y-3">
               {filteredUnits.map((f) => {
-                const p = dreParams[f.id] || dreParams["dono"];
-                const roy = royalties[f.businessId];
-                const calc = calculateDre(f.faturamento * periodMultiplier, p, roy);
-                const pctFat = ((f.faturamento * periodMultiplier) / maxFat) * 100;
+                const calc = getUnitEffectiveDre(f);
+                const unitRev = getUnitEffectiveRev(f);
+                const pctFat = (unitRev / maxFat) * 100;
                 const pctLucro = (calc.lucroLiquido / maxFat) * 100;
                 const isCurrent = currentTenantId === f.id;
 
@@ -706,7 +716,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                         )}
                       </span>
                       <span className="font-mono text-xs text-[#152238]">
-                        {formatBrl(f.faturamento * periodMultiplier)}{" "}
+                        {formatBrl(unitRev)}{" "}
                         <span className="text-[10px] text-emerald-700 font-bold">
                           ({formatPct(calc.margemLiquida)})
                         </span>
@@ -972,8 +982,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                   {modalFilteredFranchises.map((f) => {
                     const biz = businesses.find((b) => b.id === f.businessId);
                     const isCurrent = currentTenantId === f.id;
-                    const periodRev = f.faturamento * periodMultiplier;
-                    const unitDre = calculateDre(periodRev, dreParams[f.id] || dreParams["dono"], royalties[f.businessId]);
+                    const periodRev = getUnitEffectiveRev(f);
+                    const unitDre = getUnitEffectiveDre(f);
                     const cleanPhone = (f.phone || "").replace(/\D/g, "");
 
                     return (
@@ -1155,8 +1165,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
                         {modalFilteredFranchises.map((f) => {
                           const biz = businesses.find((b) => b.id === f.businessId);
                           const isCurrent = currentTenantId === f.id;
-                          const periodRev = f.faturamento * periodMultiplier;
-                          const unitDre = calculateDre(periodRev, dreParams[f.id] || dreParams["dono"], royalties[f.businessId]);
+                          const periodRev = getUnitEffectiveRev(f);
+                          const unitDre = getUnitEffectiveDre(f);
 
                           return (
                             <tr

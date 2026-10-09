@@ -154,45 +154,50 @@ export async function readFirebaseMirror(timeoutMs = 2000): Promise<CloudState |
 export async function writeFirebaseMirror(state: CloudState, options: { allowEmptyReset?: boolean } = {}): Promise<boolean> {
   if (writeQuotaExhausted || !isFirebaseConfigured() || !state) return false;
 
-  const writeOperation = async () => {
+  const writeOperation = async (): Promise<boolean> => {
     if (writeQuotaExhausted) return false;
-    try {
-      if (!(await ensureFirebaseSession())) {
-        mirrorAvailable = false;
-        return false;
-      }
-      const operationalKeys: Array<keyof CloudState> = [
-        "businesses", "franchises", "employees", "manualEntries", "bills", "products", "suppliers", "intercompanyRules",
-      ];
-      const incomingIsGloballyEmpty = operationalKeys.every((key) => Array.isArray(state[key]) && state[key].length === 0);
-      
-      if (incomingIsGloballyEmpty && !options.allowEmptyReset) {
-        return false;
-      }
+    const execute = async () => {
+      try {
+        if (!(await ensureFirebaseSession())) {
+          mirrorAvailable = false;
+          return false;
+        }
+        const operationalKeys: Array<keyof CloudState> = [
+          "businesses", "franchises", "employees", "manualEntries", "bills", "products", "suppliers", "intercompanyRules",
+        ];
+        const incomingIsGloballyEmpty = operationalKeys.every((key) => Array.isArray(state[key]) && state[key].length === 0);
+        
+        if (incomingIsGloballyEmpty && !options.allowEmptyReset) {
+          return false;
+        }
 
-      const updatedAt = new Date().toISOString();
-      const batch = writeBatch(firebaseDb);
-      STATE_KEYS.filter((key) => state[key] !== undefined).forEach((key) => {
-        batch.set(
-          doc(firebaseDb, STATE_COLLECTION, String(key)),
-          { value: stripSensitive(state[key]), updatedAt },
-          { merge: true },
-        );
-      });
-      await batch.commit();
-      mirrorAvailable = true;
-      return true;
-    } catch (error: any) {
-      if (isQuotaExhaustedError(error)) {
-        setWriteQuotaExhausted();
+        const updatedAt = new Date().toISOString();
+        const batch = writeBatch(firebaseDb);
+        STATE_KEYS.filter((key) => state[key] !== undefined).forEach((key) => {
+          batch.set(
+            doc(firebaseDb, STATE_COLLECTION, String(key)),
+            { value: stripSensitive(state[key]), updatedAt },
+            { merge: true },
+          );
+        });
+        await batch.commit();
+        mirrorAvailable = true;
+        return true;
+      } catch (error: any) {
+        if (isQuotaExhaustedError(error)) {
+          setWriteQuotaExhausted();
+          mirrorAvailable = false;
+          console.info("Firebase Firestore cota de escrita atingida; pausando sincronização no espelho para evitar erros.");
+          return false;
+        }
         mirrorAvailable = false;
-        console.info("Firebase Firestore cota de escrita atingida; pausando sincronização no espelho para evitar erros.");
+        console.warn("Firebase mirror write unavailable; authenticated API remains active:", error?.message || error);
         return false;
       }
-      mirrorAvailable = false;
-      console.warn("Firebase mirror write unavailable; authenticated API remains active:", error?.message || error);
-      return false;
-    }
+    };
+
+    const timeout = new Promise<boolean>((resolve) => setTimeout(() => resolve(false), 3000));
+    return Promise.race([execute(), timeout]);
   };
 
   const queuedWrite = mirrorWriteChain.then(writeOperation, writeOperation);
