@@ -3,7 +3,7 @@
   "outputDirectory": "dist",
   "functions": {
     "api/index.js": {
-      "includeFiles": ["data/database.json"]
+      "includeFiles": "data/database.json"
     }
   },
   "routes": [
