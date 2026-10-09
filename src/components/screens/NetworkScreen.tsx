@@ -272,58 +272,6 @@ export const NetworkScreen: React.FC<NetworkScreenProps> = ({
       {/* MAPA DAS UNIDADES & REDE INTEGRADOS NA MESMA PÁGINA           */}
       {/* ------------------------------------------------------------- */}
       <div ref={mapSectionRef} className="rounded-2xl border border-[#e5eaf1] bg-white p-4 sm:p-5 shadow-xs space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[#e5eaf1]">
-          <div>
-            <div className="flex items-center gap-2">
-              <div className="h-7 w-7 rounded-lg bg-[#3c63da]/10 text-[#3c63da] flex items-center justify-center">
-                <MapPin className="h-4 w-4" />
-              </div>
-              <h3 className="text-sm font-extrabold text-[#152238]">
-                Mapa Georreferenciado das Unidades (Presença Nacional)
-              </h3>
-              <span className="text-[11px] font-bold text-[#3c63da] bg-[#3c63da]/10 px-2 py-0.5 rounded-full">
-                {mappedUnits.length} geolocalizadas · {citiesCount} cidades
-              </span>
-            </div>
-            <p className="text-xs text-[#69778c] mt-1">
-              Visualize a distribuição geográfica de todas as unidades da franquia no mapa interativo em tempo real. Clique nos pins para abrir indicadores e DRE.
-            </p>
-          </div>
-
-          {/* Filtros do Mapa */}
-          <div className="flex items-center gap-1.5 bg-[#f8fafc] p-1 rounded-xl border border-[#e5eaf1] self-start sm:self-auto">
-            <button
-              type="button"
-              onClick={() => setMapFilter("all")}
-              className={`px-2.5 py-1 text-xs font-bold rounded-lg transition-all cursor-pointer ${
-                mapFilter === "all" ? "bg-[#3c63da] text-white shadow-xs" : "text-[#69778c] hover:text-[#152238]"
-              }`}
-            >
-              Todas ({visibleUnits.length})
-            </button>
-            <button
-              type="button"
-              onClick={() => setMapFilter("green")}
-              className={`px-2.5 py-1 text-xs font-bold rounded-lg transition-all cursor-pointer flex items-center gap-1 ${
-                mapFilter === "green" ? "bg-emerald-600 text-white shadow-xs" : "text-[#69778c] hover:text-[#152238]"
-              }`}
-            >
-              <span className="h-2 w-2 rounded-full bg-emerald-400" />
-              <span>Saudáveis ({healthyCount})</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setMapFilter("amber")}
-              className={`px-2.5 py-1 text-xs font-bold rounded-lg transition-all cursor-pointer flex items-center gap-1 ${
-                mapFilter === "amber" ? "bg-amber-600 text-white shadow-xs" : "text-[#69778c] hover:text-[#152238]"
-              }`}
-            >
-              <span className="h-2 w-2 rounded-full bg-amber-400" />
-              <span>Atenção ({warnCount})</span>
-            </button>
-          </div>
-        </div>
-
         {/* Container do Mapa Leaflet */}
         <div className="relative w-full h-[360px] sm:h-[420px] rounded-xl overflow-hidden border border-[#dbe4ef] shadow-inner bg-[#f1f5f9]">
           <div ref={mapContainerRef} className="w-full h-full" style={{ minHeight: "360px" }} />
