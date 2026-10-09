@@ -256,7 +256,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
       setSelectedFranchise(matchingUnit.id);
       setSelectedBusiness(matchingUnit.businessId);
       setViewMode("unit");
-    } else if (currentTenantId && currentTenantId.startsWith("biz")) {
+    } else if (currentTenantId && (currentTenantId.startsWith("biz") || businesses.some((b) => b.id === currentTenantId))) {
       setSelectedBusiness(currentTenantId);
       setSelectedFranchise("all");
       setViewMode("consolidated");

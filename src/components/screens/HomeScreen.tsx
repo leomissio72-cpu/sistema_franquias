@@ -206,7 +206,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
 
   const getGestaoTitle = () => {
     if (currentUnit?.name) return `Gestão: ${currentUnit.name}`;
-    if (currentTenantId.startsWith("biz") && currentBiz) return `Gestão: Matriz ${currentBiz.brand || currentBiz.name}`;
+    if (currentBiz && (currentTenantId === currentBiz.id || currentTenantId.startsWith("biz"))) return `Gestão: Matriz ${currentBiz.brand || currentBiz.name}`;
     if (currentTenantId === "dono") return "Gestão: Rede Consolidada";
     return `Gestão: ${currentTenantId}`;
   };

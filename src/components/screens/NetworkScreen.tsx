@@ -51,7 +51,7 @@ export const NetworkScreen: React.FC<NetworkScreenProps> = ({
 
   const visibleUnits = franchises.filter((f) => {
     if (currentTenantId === "dono" || currentTenantId === "equipe") return true;
-    if (currentTenantId.startsWith("biz")) return f.businessId === currentTenantId;
+    if (currentTenantId.startsWith("biz") || businesses.some((b) => b.id === currentTenantId)) return f.businessId === currentTenantId;
     return f.id === currentTenantId;
   });
 

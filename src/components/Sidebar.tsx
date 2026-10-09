@@ -116,7 +116,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   const getGestaoTitle = () => {
     if (activeFranchise?.name) return `Gestão: ${activeFranchise.name}`;
-    if (currentTenantId.startsWith("biz") && activeBiz) return `Gestão: Matriz ${activeBiz.brand || activeBiz.name}`;
+    if (activeBiz && (currentTenantId === activeBiz.id || currentTenantId.startsWith("biz"))) {
+      return `Gestão: Matriz ${activeBiz.brand || activeBiz.name}`;
+    }
     if (currentTenantId === "dono") return "Gestão: Rede Consolidada";
     return `Gestão: ${currentTenantId}`;
   };
@@ -311,14 +313,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 id="select-tenant-context"
                 value={currentTenantId}
                 onChange={(e) => {
-                  const val = e.target.value;
-                  onSelectTenant(val);
-                  const u = franchises.find((f) => f.id === val);
-                  if (u) {
-                    onSelectBusiness(u.businessId);
-                  } else if (val === "dono") {
-                    onSelectBusiness("all");
-                  }
+                  onSelectTenant(e.target.value);
                 }}
                 className="w-full rounded-lg bg-white border border-[#cbd5e1] px-2.5 py-1.5 text-xs font-semibold text-[#0f172a] focus:outline-none focus:border-[#2563eb] cursor-pointer truncate"
               >

@@ -203,7 +203,8 @@ export const DreScreen: React.FC<DreScreenProps> = ({
 
       // 3. Unit filter
       if (selectedFranchise !== "all") {
-        if (selectedFranchise.startsWith("biz")) {
+        const isBizScope = selectedFranchise.startsWith("biz") || businesses.some((b) => b.id === selectedFranchise);
+        if (isBizScope) {
           const u = franchises.find((f) => f.id === entry.tenant);
           if (entry.tenant !== selectedFranchise && (!u || u.businessId !== selectedFranchise)) {
             return false;

@@ -94,7 +94,7 @@ export const LancamentosScreen: React.FC<LancamentosScreenProps> = ({
     setRecurrence("1");
   };
 
-  const isRede = currentTenantId === "dono" || currentTenantId === "equipe" || currentTenantId.startsWith("biz");
+  const isRede = currentTenantId === "dono" || currentTenantId === "equipe" || currentTenantId.startsWith("biz") || businesses.some((b) => b.id === currentTenantId);
 
   const entradaCategories = [
     { id: "receita", name: "Receita operacional" },

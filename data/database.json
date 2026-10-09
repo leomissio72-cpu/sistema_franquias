@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "lastUpdated": "2026-10-09T15:41:32.637Z",
+  "lastUpdated": "2026-10-09T16:16:38.471Z",
   "configs": [
     {
       "value": "Gestão de Franquias — SaaS Financeiro para Franquias",
@@ -265,7 +265,7 @@
       "email": "leomissio72@gmail.com",
       "unidade": "dono",
       "nome": "Administrador",
-      "last": "15:12"
+      "last": "15:50"
     }
   ],
   "manualEntries": [
@@ -5850,7 +5850,9 @@
     "biz_auditoria_1791555884743": 0.065,
     "biz_auditoria_1791556089465": 0.065,
     "biz_auditoria_1791556201167": 0.065,
-    "biz_auditoria_1791560492306": 0.065
+    "biz_auditoria_1791560492306": 0.065,
+    "biz_auditoria_1791561954027": 0.065,
+    "biz_auditoria_1791562598147": 0.065
   },
   "permissions": {},
   "vtConfigs": {},
@@ -5861,10 +5863,10 @@
   },
   "credentials": {
     "u1": {
-      "passwordHash": "scrypt$7a15a83eb1b477bd8ad45a9dea9c0a10$eed59d00f0cc6e2218cd583d4c81883753baf2d077d814f60a4affbd13c229ea6da28cc1881c29b0ec9c7e9197c251bfb297964014d2ec1bb2a0e971f9c9fdf2",
-      "version": 6,
+      "passwordHash": "scrypt$6e78721edab98a3389bcfc0a580456a8$e9cfd9c849f1160329df4cba1ab6c4d89f7d777aac610f652f91594b34e76d8d784fbbd3e21eaa2584bda4b71f319f82215ed9d4ca3184991b896df3f5c67543",
+      "version": 9,
       "createdAt": "2026-10-09T14:24:44.597Z",
-      "updatedAt": "2026-10-09T15:41:32.223Z",
+      "updatedAt": "2026-10-09T16:16:38.050Z",
       "mustReset": false
     }
   },

@@ -11,9 +11,9 @@ export function isEntryInScope(
   if (entryTenant === currentTenantId) return true;
   if (entryTenant === "dono") return true;
 
-  if (currentTenantId.startsWith("biz")) {
-    const unit = franchises.find((f) => f.id === entryTenant);
-    return unit?.businessId === currentTenantId;
+  const unit = franchises.find((f) => f.id === entryTenant);
+  if (unit && (unit.businessId === currentTenantId || currentTenantId.startsWith("biz"))) {
+    return true;
   }
 
   return false;

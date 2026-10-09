@@ -30,6 +30,7 @@ import {
   SearchCheck,
   CalendarDays,
   DollarSign,
+  ArrowRight,
 } from "lucide-react";
 import toast from "react-hot-toast";
 
@@ -346,7 +347,7 @@ export const ConciliationScreen: React.FC<ConciliationScreenProps> = ({
   }) => {
   const scopedEntries = () => removeDuplicateItems(
     manualEntries
-      .filter((entry) => isEntryInScope(entry.tenant, currentTenantId, franchises) && entry.conciliationStatus !== "matched")
+      .filter((entry) => isEntryInScope(entry.tenant, currentTenantId, franchises))
       .map(entryToItem)
       .map((item) => classifyIntercompanyItem(item, intercompanyRules, {
         tenantId: currentTenantId,
@@ -367,18 +368,23 @@ export const ConciliationScreen: React.FC<ConciliationScreenProps> = ({
   const [editingItem, setEditingItem] = useState<ConciliationItem | null>(null);
   const [isBatchEditing, setIsBatchEditing] = useState(false);
 
+  const isSpecificUnit = franchises.some((f) => f.id === currentTenantId);
+  const activeUnit = franchises.find((f) => f.id === currentTenantId);
+
   const [importTargetUnit, setImportTargetUnit] = useState<string>(() => {
-    if (currentTenantId !== "dono" && !currentTenantId.startsWith("biz")) return currentTenantId;
+    if (franchises.some((f) => f.id === currentTenantId)) return currentTenantId;
     const match = franchises?.find((f) => currentBusinessId === "all" || f.businessId === currentBusinessId);
-    return match?.id || currentTenantId;
+    return match?.id || franchises?.[0]?.id || currentTenantId;
   });
 
   useEffect(() => {
-    if (currentTenantId !== "dono" && !currentTenantId.startsWith("biz")) {
+    if (franchises.some((f) => f.id === currentTenantId)) {
       setImportTargetUnit(currentTenantId);
     } else {
-      const match = franchises?.find((f) => currentBusinessId === "all" || f.businessId === currentBusinessId);
-      if (match) setImportTargetUnit(match.id);
+      const available = franchises.filter((f) => currentBusinessId === "all" || f.businessId === currentBusinessId);
+      if (available.length > 0 && !available.some((f) => f.id === importTargetUnit)) {
+        setImportTargetUnit(available[0].id);
+      }
     }
   }, [currentTenantId, currentBusinessId, franchises]);
 
@@ -628,7 +634,7 @@ export const ConciliationScreen: React.FC<ConciliationScreenProps> = ({
   const buildEntriesFromItems = (sourceItems: ConciliationItem[]): Array<Partial<ManualEntry>> => sourceItems
     .filter((item) => item.isImportPreview && !item.entryId)
     .map((item) => ({
-      tenant: (currentTenantId !== "dono" && !currentTenantId.startsWith("biz")) ? currentTenantId : (importTargetUnit || currentTenantId),
+      tenant: isSpecificUnit ? currentTenantId : (importTargetUnit || franchises[0]?.id || currentTenantId),
       type: item.numericValue >= 0 ? "entrada" as const : "despesa" as const,
       date: item.date,
       value: Math.abs(item.numericValue),
@@ -666,9 +672,9 @@ export const ConciliationScreen: React.FC<ConciliationScreenProps> = ({
       return;
     }
     const selectedSet = new Set(selectedItems);
-    setItems((previous) => previous.filter((item) => !selectedSet.has(item)));
+    setItems((previous) => previous.map((item) => selectedSet.has(item) ? { ...item, status: "match", tone: "green", match: "Conciliação confirmada", label: "Conciliado" } : item));
     setHasPendingImport(items.some((item) => item.isImportPreview && !selectedSet.has(item)));
-    toast.success(`${selectedItems.length} movimentação(ões) aprovadas e movidas para a Caixa/Lançamentos.`);
+    toast.success(`${selectedItems.length} movimentação(ões) aprovadas e confirmadas.`);
     setSelectedIds([]);
   };
 
@@ -860,7 +866,7 @@ export const ConciliationScreen: React.FC<ConciliationScreenProps> = ({
         businessId: currentBusinessId,
       }));
       const previewItems = classifiedImported.map((item) => ({ ...item, isImportPreview: true }));
-      setItems(previewItems);
+      setItems([...previewItems, ...scopedEntries()]);
       setHasPendingImport(true);
       setUploadedFileName(file.name);
       const ignored = imported.length - uniqueImported.length;
@@ -886,9 +892,9 @@ export const ConciliationScreen: React.FC<ConciliationScreenProps> = ({
     setIsImporting(true);
     try {
       await onImportEntries(entries);
-      toast.success(`${entries.length} lançamento(s) importado(s) para a unidade selecionada.`);
-      setItems([]);
+      toast.success(`${entries.length} lançamento(s) importado(s) e conciliado(s) com sucesso.`);
       setHasPendingImport(false);
+      setUploadedFileName(null);
     } catch (error: any) {
       setImportError(error?.message || "Não foi possível salvar os lançamentos.");
     } finally {
@@ -1064,7 +1070,11 @@ export const ConciliationScreen: React.FC<ConciliationScreenProps> = ({
         {/* Destino da unidade para conciliação */}
         <div className="mt-3 flex items-center justify-center gap-2 flex-wrap">
           <span className="text-xs font-semibold text-[#69778c]">Destino dos lançamentos:</span>
-          {currentTenantId === "dono" || currentTenantId.startsWith("biz") ? (
+          {isSpecificUnit && activeUnit ? (
+            <span className="text-xs font-bold text-[#152238] bg-[#eff6ff] px-2.5 py-1 rounded-md border border-[#bfdbfe]">
+              {activeUnit.name} ({activeUnit.code})
+            </span>
+          ) : (
             <select
               value={importTargetUnit}
               onChange={(e) => setImportTargetUnit(e.target.value)}
@@ -1078,10 +1088,6 @@ export const ConciliationScreen: React.FC<ConciliationScreenProps> = ({
                   </option>
                 ))}
             </select>
-          ) : (
-            <span className="text-xs font-bold text-[#152238] bg-[#eff6ff] px-2.5 py-1 rounded-md border border-[#bfdbfe]">
-              {franchises.find((f) => f.id === currentTenantId)?.name || currentTenantId}
-            </span>
           )}
         </div>
         {items.some(item => item.isImportPreview) && (
@@ -1219,37 +1225,64 @@ export const ConciliationScreen: React.FC<ConciliationScreenProps> = ({
       <div className="rounded-2xl border border-[#e5eaf1] bg-white p-5 sm:p-6 shadow-xs space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[#e5eaf1]">
           <div>
-            <h3 className="text-sm font-bold text-[#152238]">Revisar Correspondências</h3>
-            <p className="text-[11px] text-[#69778c]">Marque os itens validados para conciliar em lote. Transferências entre empresas continuam registradas para auditoria, mas não entram no DRE.</p>
+            <h3 className="text-sm font-bold text-[#152238]">Movimentações e Correspondências</h3>
+            <p className="text-[11px] text-[#69778c]">Extrato e lançamentos sincronizados no sistema. Transferências entre empresas continuam registradas para auditoria, mas não entram no DRE.</p>
           </div>
 
           <div className="flex items-center gap-1 bg-[#f8faff] p-1 rounded-lg border border-[#e5eaf1]">
             <button
               onClick={() => setFilter("all")}
-              className={`rounded px-2.5 py-1 text-xs font-bold transition-all ${
-                filter === "all" ? "bg-[#3c63da] text-white" : "text-[#69778c]"
+              className={`rounded px-2.5 py-1 text-xs font-bold transition-all cursor-pointer ${
+                filter === "all" ? "bg-[#3c63da] text-white" : "text-[#69778c] hover:text-[#152238]"
               }`}
             >
               Todos ({items.length})
             </button>
             <button
               onClick={() => setFilter("match")}
-              className={`rounded px-2.5 py-1 text-xs font-bold transition-all ${
-                filter === "match" ? "bg-emerald-600 text-white" : "text-[#69778c]"
+              className={`rounded px-2.5 py-1 text-xs font-bold transition-all cursor-pointer ${
+                filter === "match" ? "bg-emerald-600 text-white" : "text-[#69778c] hover:text-[#152238]"
               }`}
             >
-              Encontrados ({matchCount})
+              Conciliados ({matchCount})
             </button>
             <button
               onClick={() => setFilter("review")}
-              className={`rounded px-2.5 py-1 text-xs font-bold transition-all ${
-                filter === "review" ? "bg-amber-600 text-white" : "text-[#69778c]"
+              className={`rounded px-2.5 py-1 text-xs font-bold transition-all cursor-pointer ${
+                filter === "review" ? "bg-amber-600 text-white" : "text-[#69778c] hover:text-[#152238]"
               }`}
             >
-              Revisar ({reviewCount})
+              Pendentes ({reviewCount})
             </button>
           </div>
         </div>
+
+        {/* Banner informativo de persistência segura */}
+        {items.length > 0 && (
+          <div className="rounded-xl border border-emerald-200 bg-emerald-50/70 p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5">
+              <CheckCheck className="h-5 w-5 text-emerald-600 shrink-0" />
+              <div>
+                <p className="text-xs font-extrabold text-emerald-950">
+                  {items.length} movimentações salvas e disponíveis nesta unidade ({franchises.find((f) => f.id === currentTenantId)?.name || "Unidade"}).
+                </p>
+                <p className="text-[11px] text-emerald-800">
+                  Todos os lançamentos do extrato estão preservados no banco de dados e refletem em Lançamentos, Caixa, DRE e Analítico.
+                </p>
+              </div>
+            </div>
+            {onNavigate && (
+              <button
+                type="button"
+                onClick={() => onNavigate("lancamentos")}
+                className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-emerald-700 shadow-2xs shrink-0 cursor-pointer"
+              >
+                <span>Ver em Lançamentos ({items.length})</span>
+                <ArrowRight className="h-3.5 w-3.5" />
+              </button>
+            )}
+          </div>
+        )}
 
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs border-collapse">
