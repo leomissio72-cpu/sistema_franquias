@@ -24,15 +24,16 @@ function markerLabel(unit: { code?: string; name?: string }): string {
   return (unit.name || "?").trim().charAt(0).toUpperCase();
 }
 
-/** Pino circular com o número da unidade; a cor indica a situação (saudável ou atenção). */
+/** Alfinete com o número da unidade; a cor indica a situação (saudável ou atenção). */
 export function unitMarkerIcon(unit: { code?: string; name?: string; status?: string }): L.DivIcon {
   const healthy = unit.status === "green";
   return L.divIcon({
     className: "unit-pin-wrapper",
     html: `<div class="unit-pin ${healthy ? "unit-pin--ok" : "unit-pin--warn"}" title="${escapeHtml(unit.name)}"><span>${escapeHtml(markerLabel(unit))}</span></div>`,
-    iconSize: [36, 36],
-    iconAnchor: [18, 18],
-    popupAnchor: [0, -20],
+    iconSize: [34, 44],
+    // a ponta do alfinete marca o endereço
+    iconAnchor: [17, 44],
+    popupAnchor: [0, -42],
   });
 }
 
