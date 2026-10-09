@@ -211,6 +211,30 @@ function stateTimestamp(state: CloudState | null | undefined): number {
   return Number.isFinite(timestamp) ? timestamp : 0;
 }
 
+function mergeIntercompanyMigrations(apiState: CloudState, mirror: CloudState | null): CloudState | null {
+  if (!mirror) return null;
+  const apiVersion = Number(apiState.intercompanySeedVersion || 0);
+  const mirrorVersion = Number(mirror.intercompanySeedVersion || 0);
+  if (apiVersion <= mirrorVersion) return mirror;
+  return formatCloudState({
+    ...mirror,
+    intercompanyRules: apiState.intercompanyRules || mirror.intercompanyRules || [],
+    intercompanySeedVersion: apiVersion,
+  });
+}
+
+function mirrorHasRecoverableData(state: CloudState | null): boolean {
+  if (!state) return false;
+  const collectionKeys: Array<keyof CloudState> = [
+    "businesses", "franchises", "employees", "manualEntries", "bills", "products", "suppliers",
+  ];
+  if (collectionKeys.some((key) => Array.isArray(state[key]) && state[key].length > 0)) return true;
+  return Boolean(
+    (state.dreParams && Object.keys(state.dreParams).length > 0)
+    || (state.vtConfigs && Object.keys(state.vtConfigs).length > 0),
+  );
+}
+
 /**
  * A API é a fonte autoritativa quando acabou de responder uma gravação. O
  * espelho Firebase pode estar alguns milissegundos atrasado em outro aparelho;
@@ -242,18 +266,6 @@ function chooseAuthoritativeState(apiState: CloudState, mirror: CloudState | nul
     return mergeNonEmptyCollections(formatCloudState(mirror), apiState);
   }
   return mergeNonEmptyCollections(formatCloudState(apiState), mirror);
-}
-
-function mergeIntercompanyMigrations(apiState: CloudState, mirror: CloudState | null): CloudState | null {
-  if (!mirror) return null;
-  const apiVersion = Number(apiState.intercompanySeedVersion || 0);
-  const mirrorVersion = Number(mirror.intercompanySeedVersion || 0);
-  if (apiVersion <= mirrorVersion) return mirror;
-  return formatCloudState({
-    ...mirror,
-    intercompanyRules: apiState.intercompanyRules || mirror.intercompanyRules || [],
-    intercompanySeedVersion: apiVersion,
-  });
 }
 
 function getLocalFallbackState(): CloudState {
@@ -309,11 +321,13 @@ export async function fetchServerState(): Promise<CloudState> {
     const res = await fetchWithTimeout("/api/state", {}, 15000);
     const data = await safeResponseJSON(res, "Failed to load server state");
     const apiState = formatCloudState(data);
-    // Em Vercel sem BLOB_READ_WRITE_TOKEN, a instância pode voltar ao estado
-    // inicial após um cold start. O espelho Firebase é a cópia durável criada
-    // após cada salvamento e deve prevalecer nesse modo, quando disponível.
+    // Em Vercel sem BLOB_READ_WRITE_TOKEN, a instância pode voltar ao seed após
+    // um cold start. O espelho Firestore é a cópia durável criada após cada
+    // salvamento e deve prevalecer nesse modo. As gravações confirmadas pelos
+    // handlers aguardam a escrita do espelho antes de atualizar a tela, então
+    // uma importação nova não é substituída por uma cópia antiga.
     const migratedMirror = mergeIntercompanyMigrations(apiState, mirroredState);
-    let state = health?.storage === "ephemeral-fallback" && migratedMirror
+    const state = health?.storage === "ephemeral-fallback" && migratedMirror && mirrorHasRecoverableData(migratedMirror)
       ? formatCloudState(migratedMirror)
       : chooseAuthoritativeState(apiState, mirroredState);
 
@@ -532,6 +546,27 @@ export async function createManualEntriesBulkAPI(entries: Array<Partial<ManualEn
   return safeResponseJSON(res, "Failed to create bulk entries");
 }
 
+function manualEntryIdentity(entry: Pick<ManualEntry, "tenant" | "date" | "value" | "desc">): string {
+  const normalizedText = String(entry.desc || "")
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/\s+/g, " ");
+  const numericValue = Number(entry.value);
+  const valueKey = Number.isFinite(numericValue) ? numericValue.toFixed(2) : String(entry.value || "");
+  return [String(entry.tenant || "dono"), String(entry.date || "").slice(0, 10), valueKey, normalizedText].join("|");
+}
+
+async function persistReturnedState(state: CloudState): Promise<CloudState> {
+  const formatted = formatCloudState(state);
+  await writeFirebaseMirror(formatted);
+  try {
+    localStorage.setItem("gestaofranquias_cloud_state", JSON.stringify(sanitizeClientValue(formatted)));
+  } catch {}
+  return formatted;
+}
+
 export async function createManualEntry(entry: Partial<ManualEntry>, userName?: string, userId?: string): Promise<CloudState> {
   let backendState: any = null;
   try {
@@ -540,6 +575,11 @@ export async function createManualEntry(entry: Partial<ManualEntry>, userName?: 
   } catch (err) {
     console.warn("Backend create entry API notice, syncing directly with cloud:", err);
   }
+
+  // A resposta do backend acabou de confirmar a gravação e contém o ID real,
+  // as deduplicações e a classificação intercompany. Nunca a substitua por
+  // uma leitura possivelmente atrasada do espelho Firebase.
+  if (backendState) return persistReturnedState(backendState);
 
   const currentState = (await readFirebaseMirror()) || getLocalFallbackState();
   const currentEntries = Array.isArray(currentState.manualEntries) ? currentState.manualEntries : [];
@@ -591,33 +631,47 @@ export async function createManualEntriesBulk(entries: Array<Partial<ManualEntry
     console.warn("Backend bulk entry API notice, syncing directly with cloud:", err);
   }
 
+  // O backend é a fonte autoritativa da importação: ele gera os IDs finais,
+  // ignora duplicatas e aplica as regras LAVO/intercompany. Recriar as linhas
+  // no cliente fazia a mesma base aparecer com outros IDs e podia reintroduzir
+  // um espelho Firebase antigo nas demais telas.
+  if (backendState) return persistReturnedState(backendState);
+
   const currentState = (await readFirebaseMirror()) || getLocalFallbackState();
   const existingEntries = Array.isArray(currentState.manualEntries) ? currentState.manualEntries : [];
   const now = Date.now();
 
-  const newFullEntries: ManualEntry[] = entries.map((e, idx) => ({
-    id: e.id || `m_${now}_${idx}_${Math.random().toString(36).substring(2, 6)}`,
-    tenant: e.tenant || "dono",
-    type: e.type || "despesa",
-    date: e.date || new Date().toISOString().slice(0, 10),
-    value: Number(e.value) || 0,
-    desc: e.desc || "Lançamento",
-    apelido: e.apelido,
-    catId: e.catId || (e.type === "entrada" ? "receita" : "outros"),
-    catName: e.catName || "Despesa",
-    pay: e.pay || "Importação",
-    note: e.note,
-    sourceFile: e.sourceFile,
-    conciliationStatus: e.conciliationStatus || "matched",
-    isIntercompany: e.isIntercompany,
-    excludedFromDre: e.excludedFromDre,
-    intercompanyRuleId: e.intercompanyRuleId,
-    intercompanyReason: e.intercompanyReason,
-    counterpartyDocument: e.counterpartyDocument,
-    sourceAccount: e.sourceAccount,
-    destinationAccount: e.destinationAccount,
-    created: e.created || new Date().toISOString(),
-  }));
+  const knownIdentities = new Set(existingEntries.map((entry) => manualEntryIdentity(entry)));
+  const newFullEntries: ManualEntry[] = entries
+    .map((e, idx) => ({
+      id: e.id || `m_${now}_${idx}_${Math.random().toString(36).substring(2, 6)}`,
+      tenant: e.tenant || "dono",
+      type: e.type || "despesa",
+      date: e.date || new Date().toISOString().slice(0, 10),
+      value: Number(e.value) || 0,
+      desc: e.desc || "Lançamento",
+      apelido: e.apelido,
+      catId: e.catId || (e.type === "entrada" ? "receita" : "outros"),
+      catName: e.catName || "Despesa",
+      pay: e.pay || "Importação",
+      note: e.note,
+      sourceFile: e.sourceFile,
+      conciliationStatus: e.conciliationStatus || "matched",
+      isIntercompany: e.isIntercompany,
+      excludedFromDre: e.excludedFromDre,
+      intercompanyRuleId: e.intercompanyRuleId,
+      intercompanyReason: e.intercompanyReason,
+      counterpartyDocument: e.counterpartyDocument,
+      sourceAccount: e.sourceAccount,
+      destinationAccount: e.destinationAccount,
+      created: e.created || new Date().toISOString(),
+    }))
+    .filter((entry) => {
+      const identity = manualEntryIdentity(entry);
+      if (knownIdentities.has(identity)) return false;
+      knownIdentities.add(identity);
+      return true;
+    });
 
   const newIds = new Set(newFullEntries.map((e) => e.id));
   const combinedEntries = [...newFullEntries, ...existingEntries.filter((e) => !newIds.has(e.id))];

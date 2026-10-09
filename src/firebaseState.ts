@@ -41,12 +41,15 @@ const STATE_KEYS: Array<keyof CloudState> = [
 ];
 
 let mirrorWriteChain: Promise<void> = Promise.resolve();
+let mirrorAvailable = false;
 // Disjuntor para cotas de escrita gratuita esgotadas no Firestore
 let writeQuotaExhausted = false;
+const QUOTA_FLAG_KEY = "fs_write_quota_exhausted_v2";
+const QUOTA_MARKED_AT_KEY = "fs_write_quota_marked_at_v2";
 try {
   if (typeof window !== "undefined") {
-    const isExhausted = window.localStorage?.getItem("fs_write_quota_exhausted") === "1";
-    const markedAt = Number(window.localStorage?.getItem("fs_write_quota_marked_at") || 0);
+    const isExhausted = window.localStorage?.getItem(QUOTA_FLAG_KEY) === "1";
+    const markedAt = Number(window.localStorage?.getItem(QUOTA_MARKED_AT_KEY) || 0);
     // Permite retentar após 8 horas ou se foi redefinido manualmente
     if (isExhausted && Date.now() - markedAt < 8 * 60 * 60 * 1000) {
       writeQuotaExhausted = true;
@@ -73,8 +76,8 @@ function setWriteQuotaExhausted() {
   writeQuotaExhausted = true;
   try {
     if (typeof window !== "undefined") {
-      window.localStorage?.setItem("fs_write_quota_exhausted", "1");
-      window.localStorage?.setItem("fs_write_quota_marked_at", String(Date.now()));
+      window.localStorage?.setItem(QUOTA_FLAG_KEY, "1");
+      window.localStorage?.setItem(QUOTA_MARKED_AT_KEY, String(Date.now()));
     }
   } catch {}
 }
@@ -93,12 +96,19 @@ function isFirebaseConfigured() {
   return Boolean(firebaseDb);
 }
 
+export function isFirebaseMirrorAvailable(): boolean {
+  return mirrorAvailable;
+}
+
 /**
  * Reads the optional Firebase mirror with a strict timeout. The API remains the authoritative,
  * authenticated source; Firebase is only used when this mirror is available.
  */
 export async function readFirebaseMirror(timeoutMs = 2000): Promise<CloudState | null> {
-  if (!isFirebaseConfigured()) return null;
+  if (!isFirebaseConfigured()) {
+    mirrorAvailable = false;
+    return null;
+  }
 
   const timeoutPromise = new Promise<null>((resolve) => {
     setTimeout(() => resolve(null), timeoutMs);
@@ -106,8 +116,12 @@ export async function readFirebaseMirror(timeoutMs = 2000): Promise<CloudState |
 
   const readPromise = (async (): Promise<CloudState | null> => {
     try {
-      if (!(await ensureFirebaseSession())) return null;
+      if (!(await ensureFirebaseSession())) {
+        mirrorAvailable = false;
+        return null;
+      }
       const snapshot = await getDocs(collection(firebaseDb, STATE_COLLECTION));
+      mirrorAvailable = true;
       if (snapshot.empty) return null;
       const state: Record<string, any> = {};
       snapshot.forEach((item) => {
@@ -120,9 +134,11 @@ export async function readFirebaseMirror(timeoutMs = 2000): Promise<CloudState |
     } catch (error: any) {
       if (isQuotaExhaustedError(error)) {
         setWriteQuotaExhausted();
+        mirrorAvailable = false;
         console.info("Firebase Firestore limite de cota atingido; operando com API central.");
         return null;
       }
+      mirrorAvailable = false;
       console.warn("Firebase mirror read unavailable; using authenticated API:", error?.message || error);
       return null;
     }
@@ -141,7 +157,10 @@ export async function writeFirebaseMirror(state: CloudState, options: { allowEmp
   const writeOperation = async () => {
     if (writeQuotaExhausted) return false;
     try {
-      if (!(await ensureFirebaseSession())) return false;
+      if (!(await ensureFirebaseSession())) {
+        mirrorAvailable = false;
+        return false;
+      }
       const operationalKeys: Array<keyof CloudState> = [
         "businesses", "franchises", "employees", "manualEntries", "bills", "products", "suppliers", "intercompanyRules",
       ];
@@ -161,13 +180,16 @@ export async function writeFirebaseMirror(state: CloudState, options: { allowEmp
         );
       });
       await batch.commit();
+      mirrorAvailable = true;
       return true;
     } catch (error: any) {
       if (isQuotaExhaustedError(error)) {
         setWriteQuotaExhausted();
+        mirrorAvailable = false;
         console.info("Firebase Firestore cota de escrita atingida; pausando sincronização no espelho para evitar erros.");
         return false;
       }
+      mirrorAvailable = false;
       console.warn("Firebase mirror write unavailable; authenticated API remains active:", error?.message || error);
       return false;
     }

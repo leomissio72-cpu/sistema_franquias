@@ -112,10 +112,10 @@ export const Header: React.FC<HeaderProps> = ({
       <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
         <div
           className={`hidden items-center gap-1.5 rounded-lg border px-2 py-1.5 text-[10px] font-bold sm:flex ${isCloudConnected ? "border-emerald-200 bg-emerald-50 text-emerald-700" : "border-amber-200 bg-amber-50 text-amber-800"}`}
-          title={isCloudConnected ? `Backend durável${lastSyncTime ? ` · última sincronização ${lastSyncTime}` : ""}` : "Backend em fallback efêmero. Configure BLOB_READ_WRITE_TOKEN no Vercel para persistência entre cold starts."}
+          title={isCloudConnected ? `Dados sincronizados em nuvem${lastSyncTime ? ` · última sincronização ${lastSyncTime}` : ""}` : "Sincronização em nuvem não confirmada. Verifique a configuração do Firebase ou BLOB_READ_WRITE_TOKEN no Vercel."}
         >
           <Cloud className="h-3.5 w-3.5" />
-          <span>{isCloudConnected ? "Nuvem durável" : "Fallback efêmero"}</span>
+          <span>{isCloudConnected ? "Nuvem sincronizada" : "Sincronização pendente"}</span>
         </div>
         {onNavigate && (
           <button

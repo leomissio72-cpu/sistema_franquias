@@ -420,9 +420,10 @@ As regras iniciais fornecidas para esta rede foram cadastradas para: **LAVO Vila
 
 ## 8. Persistência, sincronização e auditoria
 
-- A API autenticada é a fonte operacional principal.
-- O estado é espelhado no Firestore quando o projeto Firebase está configurado, preservando o estado entre navegadores quando as regras do banco permitem o acesso autenticado.
-- Para o backend Vercel ficar durável entre cold starts, o mesmo projeto deve ter um Blob privado e a variável `BLOB_READ_WRITE_TOKEN`. O health deve mostrar `storage: "durable"`; se mostrar `ephemeral-fallback`, a variável ainda não está configurada e não se deve considerar a nuvem do backend concluída.
+- A API autenticada é a fonte operacional principal durante cada operação.
+- O estado confirmado é espelhado no Firestore do projeto **gestao-de-franquias**, com autenticação anônima habilitada, para manter a mesma base entre navegadores e dispositivos autorizados.
+- O indicador **Nuvem sincronizada** significa que o espelho Firestore foi lido ou gravado com sucesso. Se aparecer **Sincronização pendente**, não feche a página: verifique a conexão e tente atualizar.
+- O Blob privado (`BLOB_READ_WRITE_TOKEN`) é uma camada adicional para tornar também o backend Vercel durável entre cold starts. Sem ele, o health pode mostrar `storage: "ephemeral-fallback"`, mas o estado continua compartilhado quando o espelho Firestore estiver disponível.
 - Coleções vazias não devem sobrescrever uma base não vazia por acidente.
 - O botão de atualização força nova leitura do estado central.
 - A sincronização de seções registra o usuário e atualiza o estado retornado para a tela.

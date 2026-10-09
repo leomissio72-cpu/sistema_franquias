@@ -48,6 +48,7 @@ import {
   logoutAPI,
   setAuthToken,
 } from "./api";
+import { isFirebaseMirrorAvailable } from "./firebaseState";
 import { Header } from "./components/Header";
 import { Sidebar } from "./components/Sidebar";
 import { LoginModal } from "./components/LoginModal";
@@ -174,7 +175,7 @@ export const App: React.FC = () => {
       setServerState(state);
       setLoadError("");
       setLastSyncTime(new Date(state.lastUpdated || Date.now()).toLocaleTimeString("pt-BR"));
-      setIsCloudConnected(health?.storage === "durable");
+      setIsCloudConnected(health?.storage === "durable" || isFirebaseMirrorAvailable());
 
       const logsRes = await fetchAuditLogs();
       if (logsRes.auditLogs) {
@@ -233,13 +234,13 @@ export const App: React.FC = () => {
         };
       });
       setLastSyncTime(new Date(newState.lastUpdated || Date.now()).toLocaleTimeString("pt-BR"));
-      setIsCloudConnected(true);
+      setIsCloudConnected(isFirebaseMirrorAvailable());
 
       // refresh logs on state update
       fetchAuditLogs().then((res) => {
         if (res.auditLogs) setAuditLogs(res.auditLogs);
       }).catch(console.error);
-    }, (durable) => setIsCloudConnected(durable));
+    }, (durable) => setIsCloudConnected(durable || isFirebaseMirrorAvailable()));
 
     return () => {
       unsubscribe();

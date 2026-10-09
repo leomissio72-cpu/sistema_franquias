@@ -1,12 +1,9 @@
 {
-  "projectId": "gen-lang-client-0437799415",
-  "appId": "1:136049213376:web:2b3c40e55b8012aaae5225",
-  "apiKey": "AIzaSyDRHJlPY3Y8ZyhzEFdhTD6AJVDph5Kahv4",
-  "authDomain": "gen-lang-client-0437799415.firebaseapp.com",
-  "firestoreDatabaseId": "ai-studio-gestodefranquias-d20476d4-f92b-4dc9-8a5b-ceb3165e648a",
-  "storageBucket": "gen-lang-client-0437799415.firebasestorage.app",
-  "messagingSenderId": "136049213376",
-  "measurementId": "",
-  "oAuthClientId": "136049213376-08h46e7lqrmr0sgsu0hd3qun6fpf02eq.apps.googleusercontent.com",
-  "recaptchaSiteKey": ""
+  "apiKey": "AIzaSyDDx2A4irYyhWhkPrhQwx64UBGRkoqMi7A",
+  "authDomain": "gestao-de-franquias.firebaseapp.com",
+  "projectId": "gestao-de-franquias",
+  "storageBucket": "gestao-de-franquias.firebasestorage.app",
+  "messagingSenderId": "1043124205322",
+  "appId": "1:1043124205322:web:4ad767e92e124b5d6cacf3",
+  "measurementId": "G-N8SY71N98Z"
 }

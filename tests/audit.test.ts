@@ -315,6 +315,20 @@ test("AUDITORIA 8: Importação ignora duplicidades e operador não exclui conci
   const importedId = resBulk.body.entries[0].id;
   assert.ok(importedId);
 
+  const resRepeatedBulk = await appRequest(
+    "POST",
+    "/api/entries/bulk",
+    { Cookie: `gestao_session=${encodeURIComponent(donoToken)}` },
+    { entries: [{ ...duplicateEntry, sourceFile: "extrato-recarregado.ofx" }] },
+  );
+  assert.equal(resRepeatedBulk.status, 200);
+  assert.equal(resRepeatedBulk.body.count, 0);
+  assert.equal(resRepeatedBulk.body.duplicateCount, 1);
+  assert.equal(
+    resRepeatedBulk.body.state.manualEntries.filter((entry: any) => entry.id === importedId).length,
+    1,
+  );
+
   const operador = {
     id: "u_op_conciliation_test",
     nome: "Operador Conciliação",
