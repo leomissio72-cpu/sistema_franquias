@@ -1,11 +1,10 @@
 import L from "leaflet";
 
-/** Base cartográfica clara e discreta (CARTO Positron), para os pinos se destacarem. */
+/** Fundo do mapa: OpenStreetMap, que não exige chave de acesso. */
 export function addBaseLayer(map: L.Map): void {
-  L.tileLayer("https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png", {
-    maxZoom: 19,
-    subdomains: "abcd",
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
+  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+    maxZoom: 18,
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
   }).addTo(map);
 }
 
