@@ -368,7 +368,8 @@ export const ConciliationScreen: React.FC<ConciliationScreenProps> = ({
   const canDeleteEntries = ["dono", "equipe", "admin", "franqueado"].includes(userSession.profile);
   const [items, setItems] = useState<ConciliationItem[]>(() => scopedEntries());
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
-  const [filter, setFilter] = useState<"all" | "match" | "review">("all");
+  // Por padrão a lista mostra só o que ainda falta conciliar.
+  const [filter, setFilter] = useState<"all" | "match" | "review">("review");
   const [uploadedFileName, setUploadedFileName] = useState<string | null>(null);
   const [isDragOver, setIsDragOver] = useState(false);
   const [isReadingFile, setIsReadingFile] = useState(false);
@@ -629,10 +630,19 @@ export const ConciliationScreen: React.FC<ConciliationScreenProps> = ({
     }
   }, [currentTenantId, manualEntries, isImporting, hasPendingImport]);
 
+  // Conciliado = já salvo e confirmado. Linhas de um arquivo recém-lido continuam
+  // pendentes até a confirmação, mesmo quando o sistema já encontrou a correspondência.
+  const isConciliated = (item: ConciliationItem) => item.status === "match" && !item.isImportPreview;
   const filteredItems = items.filter((item) => {
     if (filter === "all") return true;
-    return item.status === filter;
+    return filter === "match" ? isConciliated(item) : !isConciliated(item);
   });
+  const conciliatedCount = items.filter(isConciliated).length;
+  const pendingCount = items.length - conciliatedCount;
+  const changeFilter = (next: "all" | "match" | "review") => {
+    setFilter(next);
+    setSelectedIds([]);
+  };
 
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
@@ -1241,28 +1251,28 @@ export const ConciliationScreen: React.FC<ConciliationScreenProps> = ({
 
           <div className="flex items-center gap-1 bg-[#f8faff] p-1 rounded-lg border border-[#e5eaf1]">
             <button
-              onClick={() => setFilter("all")}
+              onClick={() => changeFilter("review")}
+              className={`rounded px-2.5 py-1 text-xs font-bold transition-all cursor-pointer ${
+                filter === "review" ? "bg-amber-600 text-white" : "text-[#69778c] hover:text-[#152238]"
+              }`}
+            >
+              Pendentes ({pendingCount})
+            </button>
+            <button
+              onClick={() => changeFilter("match")}
+              className={`rounded px-2.5 py-1 text-xs font-bold transition-all cursor-pointer ${
+                filter === "match" ? "bg-emerald-600 text-white" : "text-[#69778c] hover:text-[#152238]"
+              }`}
+            >
+              Conciliados ({conciliatedCount})
+            </button>
+            <button
+              onClick={() => changeFilter("all")}
               className={`rounded px-2.5 py-1 text-xs font-bold transition-all cursor-pointer ${
                 filter === "all" ? "bg-[#3c63da] text-white" : "text-[#69778c] hover:text-[#152238]"
               }`}
             >
               Todos ({items.length})
-            </button>
-            <button
-              onClick={() => setFilter("match")}
-              className={`rounded px-2.5 py-1 text-xs font-bold transition-all cursor-pointer ${
-                filter === "match" ? "bg-emerald-600 text-white" : "text-[#69778c] hover:text-[#152238]"
-              }`}
-            >
-              Conciliados ({matchCount})
-            </button>
-            <button
-              onClick={() => setFilter("review")}
-              className={`rounded px-2.5 py-1 text-xs font-bold transition-all cursor-pointer ${
-                filter === "review" ? "bg-amber-600 text-white" : "text-[#69778c] hover:text-[#152238]"
-              }`}
-            >
-              Pendentes ({reviewCount})
             </button>
           </div>
         </div>
@@ -1316,6 +1326,23 @@ export const ConciliationScreen: React.FC<ConciliationScreenProps> = ({
               </tr>
             </thead>
             <tbody className="divide-y divide-[#e5eaf1]">
+              {filteredItems.length === 0 && (
+                <tr>
+                  <td colSpan={9} className="px-4 py-10 text-center">
+                    <p className="text-sm font-bold text-[#152238]">
+                      {filter === "review" ? "Nada pendente de conciliação." : "Nenhuma movimentação nesta visão."}
+                    </p>
+                    {filter === "review" && conciliatedCount > 0 && (
+                      <p className="mt-1 text-xs text-[#69778c]">
+                        {conciliatedCount} movimentação(ões) já conciliada(s) saíram desta lista.{" "}
+                        <button type="button" onClick={() => changeFilter("match")} className="font-bold text-[#3c63da] hover:underline cursor-pointer">
+                          Ver conciliadas
+                        </button>
+                      </p>
+                    )}
+                  </td>
+                </tr>
+              )}
               {filteredItems.map((item, idx) => {
                 const isSelected = selectedIds.includes(idx);
                 const isPositive = item.numericValue > 0;
