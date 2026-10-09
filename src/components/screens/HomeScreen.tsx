@@ -32,6 +32,7 @@ import {
   RotateCcw
 } from "lucide-react";
 import L from "leaflet";
+import { addBaseLayer, unitMarkerIcon, unitPopup } from "../../utils/mapStyle";
 import {
   DateMultiFilter,
   DateFilterSelection,
@@ -93,6 +94,8 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
 
   // Map references
   const mapContainerRef = useRef<HTMLDivElement>(null);
+  const markersSignatureRef = useRef("");
+  const boundsKeyRef = useRef("");
   const mapInstanceRef = useRef<L.Map | null>(null);
   const markersGroupRef = useRef<L.LayerGroup | null>(null);
 
@@ -247,10 +250,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
         tapHold: true,
       }).setView([-15.5, -48.0], 4);
 
-      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-        maxZoom: 18,
-        attribution: "&copy; OpenStreetMap",
-      }).addTo(map);
+      addBaseLayer(map);
 
       // Re-enable touch drag for mobile nicely
       if (L.Browser.mobile) {
@@ -266,55 +266,53 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
     const markersGroup = markersGroupRef.current;
 
     if (markersGroup) {
-      markersGroup.clearLayers();
-
       const mapUnits = mappedFilteredUnits.filter((f) => {
         if (mapStatusFilter !== "all" && f.status !== mapStatusFilter) return false;
         return true;
       });
 
+      // Só redesenha os pinos quando algo neles muda de fato. Sem isso, cada atualização
+      // automática de dados fechava o balão aberto e recentralizava o mapa.
+      const signature = JSON.stringify(
+        mapUnits.map((f) => {
+          const c = getUnitEffectiveDre(f);
+          return [f.id, f.lat, f.lng, f.status, f.name, Math.round(c.fatBruta), Math.round(c.lucroLiquido)];
+        }),
+      );
+      if (signature === markersSignatureRef.current) return;
+      markersSignatureRef.current = signature;
+      markersGroup.clearLayers();
+
       mapUnits.forEach((f) => {
         const biz = businesses.find((b) => b.id === f.businessId);
-        const pinColor = f.status === "green" ? "#118464" : "#a86a08";
         const calc = getUnitEffectiveDre(f);
 
-        const customIcon = L.divIcon({
-          className: "",
-          html: `<div style="background:${pinColor};width:32px;height:32px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);border:2.5px solid #fff;box-shadow:0 4px 10px rgba(0,0,0,0.3);display:grid;place-items:center;">
-            <span style="transform:rotate(45deg);color:#fff;font-size:12px;font-weight:900;">📍</span>
-          </div>`,
-          iconSize: [32, 32],
-          iconAnchor: [16, 32],
-          popupAnchor: [0, -32],
-        });
+        const customIcon = unitMarkerIcon(f);
 
         const marker = L.marker([f.lat, f.lng], { icon: customIcon }).addTo(markersGroup);
 
-        const popupDiv = document.createElement("div");
-        popupDiv.className = "p-1 font-sans";
-        popupDiv.innerHTML = `
-          <div style="font-size:9px;font-weight:800;color:${biz?.color || "#3c63da"};margin-bottom:2px;">${biz?.name || ""}</div>
-          <div style="font-weight:800;font-size:13px;color:#152238;">${f.name}</div>
-          <div style="font-size:10px;color:#69778c;margin-bottom:6px;">${f.address}</div>
-          <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:2px;"><span>Faturamento:</span><b>${formatBrl(f.faturamento * periodMultiplier)}</b></div>
-          <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:2px;"><span>Lucro:</span><b style="color:#118464">${formatBrl(calc.lucroLiquido)}</b></div>
-          <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:6px;"><span>Margem:</span><b>${formatPct(calc.margemLiquida)}</b></div>
-        `;
-
-        const btn = document.createElement("button");
-        btn.innerText = "Mudar Visão para Esta Unidade";
-        btn.className = "w-full rounded-lg bg-[#3c63da] text-white py-1.5 text-xs font-bold hover:bg-[#2f52c0] cursor-pointer shadow-xs";
-        btn.onclick = () => {
-          onSelectTenant(f.id);
-        };
-        popupDiv.appendChild(btn);
-
-        marker.bindPopup(popupDiv);
+        marker.bindPopup(
+          unitPopup({
+            brand: biz?.name,
+            brandColor: biz?.color,
+            name: f.name,
+            address: f.address,
+            rows: [
+              { label: "Faturamento", value: formatBrl(calc.fatBruta) },
+              { label: "Lucro", value: formatBrl(calc.lucroLiquido), tone: calc.lucroLiquido < 0 ? "negative" : "positive" },
+              { label: "Margem", value: formatPct(calc.margemLiquida) },
+            ],
+            actionLabel: "Ver esta unidade",
+            onAction: () => onSelectTenant(f.id),
+          }),
+        );
       });
 
-      if (mapUnits.length > 0) {
+      const boundsKey = mapUnits.map((f) => `${f.id}:${f.lat}:${f.lng}`).join("|");
+      if (mapUnits.length > 0 && boundsKey !== boundsKeyRef.current) {
+        boundsKeyRef.current = boundsKey;
         const bounds = L.latLngBounds(mapUnits.map((f) => [f.lat, f.lng]));
-        map.fitBounds(bounds, { padding: [40, 40], maxZoom: 13 });
+        map.fitBounds(bounds, { padding: [48, 48], maxZoom: 13 });
       }
     }
 

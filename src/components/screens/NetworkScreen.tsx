@@ -15,6 +15,7 @@ import {
   Check
 } from "lucide-react";
 import L from "leaflet";
+import { addBaseLayer, unitMarkerIcon, unitPopup } from "../../utils/mapStyle";
 
 interface NetworkScreenProps {
   franchises: FranchiseUnit[];
@@ -43,6 +44,8 @@ export const NetworkScreen: React.FC<NetworkScreenProps> = ({
 }) => {
   const mapSectionRef = useRef<HTMLDivElement>(null);
   const mapContainerRef = useRef<HTMLDivElement>(null);
+  const markersSignatureRef = useRef("");
+  const boundsKeyRef = useRef("");
   const mapInstanceRef = useRef<L.Map | null>(null);
   const markersGroupRef = useRef<L.LayerGroup | null>(null);
 
@@ -110,10 +113,7 @@ export const NetworkScreen: React.FC<NetworkScreenProps> = ({
         scrollWheelZoom: true,
       }).setView([-15.5, -48.0], 4);
 
-      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-        maxZoom: 18,
-        attribution: "&copy; OpenStreetMap",
-      }).addTo(map);
+      addBaseLayer(map);
 
       const markersGroup = L.layerGroup().addTo(map);
       mapInstanceRef.current = map;
@@ -124,55 +124,55 @@ export const NetworkScreen: React.FC<NetworkScreenProps> = ({
     const markersGroup = markersGroupRef.current;
 
     if (markersGroup) {
+      // Só redesenha os pinos quando algo neles muda de fato. Sem isso, cada atualização
+      // automática de dados fechava o balão aberto e recentralizava o mapa.
+      const signature = JSON.stringify(
+        mappedUnits.map((f) => {
+          const c = getUnitEffectiveDre(f);
+          return [f.id, f.lat, f.lng, f.status, f.name, Math.round(c.fatBruta), Math.round(c.lucroLiquido)];
+        }),
+      );
+      if (signature === markersSignatureRef.current) return;
+      markersSignatureRef.current = signature;
       markersGroup.clearLayers();
 
       const markers: L.Marker[] = [];
 
       mappedUnits.forEach((f) => {
         const biz = businesses.find((b) => b.id === f.businessId);
-        const pinColor = f.status === "green" ? "#118464" : "#a86a08";
         const unitRev = getUnitEffectiveRev(f);
         const calc = getUnitEffectiveDre(f);
 
-        const customIcon = L.divIcon({
-          className: "",
-          html: `<div style="background:${pinColor};width:32px;height:32px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);border:2.5px solid #fff;box-shadow:0 4px 12px rgba(0,0,0,0.3);display:grid;place-items:center;">
-            <span style="transform:rotate(45deg);color:#fff;font-size:12px;font-weight:900;">📍</span>
-          </div>`,
-          iconSize: [32, 32],
-          iconAnchor: [16, 32],
-          popupAnchor: [0, -32],
-        });
+        const customIcon = unitMarkerIcon(f);
 
         const marker = L.marker([f.lat, f.lng], { icon: customIcon }).addTo(markersGroup);
 
-        const popupContent = document.createElement("div");
-        popupContent.className = "p-1 font-sans";
-        popupContent.innerHTML = `
-          <div style="font-size:9px;font-weight:800;color:${biz?.color || "#3c63da"};margin-bottom:2px;">${biz?.name || ""}</div>
-          <div style="font-weight:800;font-size:13px;color:#152238;">${f.name}</div>
-          <div style="font-size:10px;color:#69778c;margin-bottom:8px;line-height:1.4;">${f.address}</div>
-          <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px;"><span>Faturamento:</span><b>${formatBrl(f.faturamento)}</b></div>
-          <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px;"><span>Lucro Líquido:</span><b style="color:#118464">${formatBrl(calc.lucroLiquido)}</b></div>
-          <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:8px;"><span>Margem:</span><b>${formatPct(calc.margemLiquida)}</b></div>
-        `;
-
-        const btn = document.createElement("button");
-        btn.innerText = "Ver DRE da Unidade";
-        btn.className = "w-full rounded bg-[#3c63da] text-white py-1.5 text-xs font-bold hover:bg-[#2f52c0] cursor-pointer";
-        btn.onclick = () => {
-          onSelectTenant(f.id);
-          onNavigate("dre");
-        };
-        popupContent.appendChild(btn);
-
-        marker.bindPopup(popupContent);
+        marker.bindPopup(
+          unitPopup({
+            brand: biz?.name,
+            brandColor: biz?.color,
+            name: f.name,
+            address: f.address,
+            rows: [
+              { label: "Faturamento", value: formatBrl(calc.fatBruta) },
+              { label: "Lucro líquido", value: formatBrl(calc.lucroLiquido), tone: calc.lucroLiquido < 0 ? "negative" : "positive" },
+              { label: "Margem", value: formatPct(calc.margemLiquida) },
+            ],
+            actionLabel: "Ver DRE da unidade",
+            onAction: () => {
+              onSelectTenant(f.id);
+              onNavigate("dre");
+            },
+          }),
+        );
         markers.push(marker);
       });
 
-      if (mappedUnits.length > 0) {
+      const boundsKey = mappedUnits.map((f) => `${f.id}:${f.lat}:${f.lng}`).join("|");
+      if (mappedUnits.length > 0 && boundsKey !== boundsKeyRef.current) {
+        boundsKeyRef.current = boundsKey;
         const bounds = L.latLngBounds(mappedUnits.map((f) => [f.lat, f.lng]));
-        map.fitBounds(bounds, { padding: [40, 40], maxZoom: 13 });
+        map.fitBounds(bounds, { padding: [48, 48], maxZoom: 13 });
       }
     }
 

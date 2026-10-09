@@ -20,7 +20,12 @@ import {
   Layers,
   Lock,
   ShieldCheck,
-  Info
+  Info,
+  Banknote,
+  QrCode,
+  CreditCard,
+  Wallet,
+  ArrowLeftRight,
 } from "lucide-react";
 
 interface FeesScreenProps {
@@ -34,6 +39,20 @@ interface FeesScreenProps {
   onNavigate: (screen: ScreenType) => void;
   userSession?: UserSession | null;
 }
+
+// Os meios de pagamento guardam o nome do ícone; aqui ele vira o desenho.
+const METHOD_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
+  Banknote,
+  QrCode,
+  CreditCard,
+  Wallet,
+  ArrowLeftRight,
+};
+const MethodIcon: React.FC<{ name?: string }> = ({ name }) => {
+  const Icon = name ? METHOD_ICONS[name] : undefined;
+  if (Icon) return <Icon className="h-4 w-4 text-[#3c63da]" />;
+  return <span className="text-base">{name}</span>;
+};
 
 export const FeesScreen: React.FC<FeesScreenProps> = ({
   currentTenantId,
@@ -191,7 +210,7 @@ export const FeesScreen: React.FC<FeesScreenProps> = ({
                   <tr key={m.id} className="hover:bg-[#f8faff] transition-colors">
                     <td className="p-3">
                       <div className="flex items-center gap-2">
-                        <span className="text-base">{m.icon}</span>
+                        <MethodIcon name={m.icon} />
                         <div>
                           <b className="text-[#152238] block">{m.name}</b>
                           <span className="text-[10px] text-[#69778c]">
@@ -309,7 +328,7 @@ export const FeesScreen: React.FC<FeesScreenProps> = ({
               >
                 {methods.map((m) => (
                   <option key={m.id} value={m.id}>
-                    {m.icon} {m.name} ({(m.fee * 100).toFixed(2)}%)
+                    {METHOD_ICONS[m.icon] ? "" : `${m.icon} `}{m.name} ({(m.fee * 100).toFixed(2)}%)
                   </option>
                 ))}
               </select>
