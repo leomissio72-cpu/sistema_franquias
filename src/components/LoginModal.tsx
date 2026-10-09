@@ -86,21 +86,12 @@ export const LoginModal: React.FC<LoginModalProps> = ({ isOpen, onSuccess, onClo
         <div className="relative p-6 sm:p-8">
           {onClose && <button type="button" onClick={onClose} className="absolute right-4 top-4 rounded-lg p-1.5 text-[#69778c] transition hover:bg-[#f4f7fb] hover:text-[#152238]" aria-label="Fechar login"><X className="h-5 w-5" /></button>}
           <div className="mb-6 text-center">
-            <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center overflow-hidden rounded-2xl border border-[#d7e2fb] bg-[#f0f5ff] shadow-sm"><img src="/login-visual.svg" alt="" className="h-full w-full object-cover object-[50%_42%]" /></div>
             <h1 id="login-title" className="text-2xl font-extrabold tracking-tight text-[#152238]">Gestão de Franquias</h1>
 
           </div>
 
           {errorMsg && <div className="mb-4 rounded-xl border border-[#f0d0d0] bg-[#fff0f0] p-3 text-xs font-semibold text-[#b44b4b]" role="alert">{errorMsg}</div>}
           {infoMsg && <div className="mb-4 rounded-xl border border-[#cfe0ff] bg-[#f1f6ff] p-3 text-xs font-semibold text-[#315bc5]" role="status">{infoMsg}</div>}
-
-          <div className="mb-4 rounded-xl border border-blue-100 bg-blue-50/80 p-3 text-xs text-blue-950">
-            <p className="font-extrabold text-[11px] uppercase tracking-wider text-blue-700">Acesso Administrativo:</p>
-            <div className="mt-1.5 flex flex-wrap gap-2 text-[11px]">
-              <span>Login: <strong className="font-mono bg-white px-1.5 py-0.5 rounded border border-blue-200">admin</strong></span>
-              <span>Senha: <strong className="font-mono bg-white px-1.5 py-0.5 rounded border border-blue-200">SenhaMaster2026!</strong> ou <strong className="font-mono bg-white px-1.5 py-0.5 rounded border border-blue-200">123456</strong></span>
-            </div>
-          </div>
 
           {!mfaState ? (
             <form onSubmit={handleSubmit} className="space-y-4">
