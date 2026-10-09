@@ -3,7 +3,7 @@ import path from "path";
 import fs from "fs";
 import { get, put } from "@vercel/blob";
 import { initialBills, initialBusinesses, initialFranchises } from "./data/initialData.ts";
-import { cookieOptions, createMfaChallenge, createSignedSessionToken, createTotpSecret, decryptSecret, encryptSecret, getCredential, hashPassword, migrateLegacyCredentials, safeUser, setCredential, stripSensitiveFields, totpUri, verifyMfaChallenge, verifyPassword, verifySignedSessionToken, verifyTotp } from "./serverSecurity.ts";
+import { configureSessionSecretFallback, cookieOptions, createMfaChallenge, createSignedSessionToken, createTotpSecret, decryptSecret, encryptSecret, getCredential, hashPassword, migrateLegacyCredentials, safeUser, setCredential, stripSensitiveFields, totpUri, verifyMfaChallenge, verifyPassword, verifySignedSessionToken, verifyTotp } from "./serverSecurity.ts";
 import { findIntercompanyRule } from "./utils/intercompany.ts";
 
 const app = express();
@@ -528,6 +528,10 @@ function getFullState(database: DatabaseState) {
 let db = loadDatabase();
 const migratedCredentials = migrateLegacyCredentials(db);
 db = migratedCredentials.database as DatabaseState;
+const refreshSessionSecretFallback = () => configureSessionSecretFallback(
+  Object.values(db.credentials || {}).map((credential: any) => credential?.passwordHash),
+);
+refreshSessionSecretFallback();
 
 // Garantir o usuário master sem criar ou redefinir uma senha fixa no código.
 // Em uma instalação nova, a primeira senha deve vir apenas do ambiente privado.
@@ -551,6 +555,7 @@ masterUser.status = "ativo";
 const bootstrapPassword = String(process.env.FRANQUIAS_BOOTSTRAP_PASSWORD || "").trim();
 if (!db.credentials[masterUser.id] && bootstrapPassword) {
   Object.assign(db, setCredential(db, masterUser.id, bootstrapPassword));
+  refreshSessionSecretFallback();
 }
 
 type SSEClient = { id: string; res: ExpressResponse };
@@ -937,6 +942,7 @@ routeBoth("post", "/api/state/sync", requireSession, async (req: Request, res: E
     if (credential?.userId && credential?.password) {
       if (!authenticatedUser || !["dono", "equipe", "admin"].includes(authenticatedUser.perfil)) return res.status(403).json({ error: "Você não pode alterar esta credencial." });
       Object.assign(db, setCredential(db, String(credential.userId), String(credential.password)));
+      refreshSessionSecretFallback();
     }
     db.auditLogs.unshift({
       id: `audit_${Date.now()}`,

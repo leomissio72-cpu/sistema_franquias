@@ -301,6 +301,7 @@ var import_node_crypto = __toESM(require("node:crypto"), 1);
 var PASSWORD_MIN_LENGTH = 6;
 var SESSION_TTL_MS = 8 * 60 * 60 * 1e3;
 var developmentSessionSecret = import_node_crypto.default.randomBytes(32).toString("hex");
+var persistedCredentialSecret = null;
 function isScryptHash(value) {
   return typeof value === "string" && /^scrypt\$[0-9a-f]{32}\$[0-9a-f]{128}$/i.test(value);
 }
@@ -321,9 +322,14 @@ function verifyPassword(password, storedHash) {
     return false;
   }
 }
+function configureSessionSecretFallback(passwordHashes) {
+  const hashes = (Array.isArray(passwordHashes) ? passwordHashes : [passwordHashes]).filter(isScryptHash).sort();
+  persistedCredentialSecret = hashes.length > 0 ? import_node_crypto.default.createHash("sha256").update("gestao-franquias-session-fallback:v1\0").update(hashes.join("\0")).digest("hex") : null;
+}
 function sessionSecret() {
   const configured = process.env.FRANQUIAS_SESSION_SECRET;
   if (configured && configured.length >= 32) return configured;
+  if (persistedCredentialSecret) return persistedCredentialSecret;
   if (process.env.VERCEL === "1" || process.env.NODE_ENV === "production") {
     throw new Error("FRANQUIAS_SESSION_SECRET n\xE3o configurado ou muito curto.");
   }
@@ -988,6 +994,10 @@ function getFullState(database) {
 var db = loadDatabase();
 var migratedCredentials = migrateLegacyCredentials(db);
 db = migratedCredentials.database;
+var refreshSessionSecretFallback = () => configureSessionSecretFallback(
+  Object.values(db.credentials || {}).map((credential) => credential?.passwordHash)
+);
+refreshSessionSecretFallback();
 if (!db.credentials) db.credentials = {};
 var masterUser = db.users.find((u) => u.perfil === "dono" || u.login === "admin" || u.login === "dono");
 if (!masterUser) {
@@ -1008,6 +1018,7 @@ masterUser.status = "ativo";
 var bootstrapPassword = String(process.env.FRANQUIAS_BOOTSTRAP_PASSWORD || "").trim();
 if (!db.credentials[masterUser.id] && bootstrapPassword) {
   Object.assign(db, setCredential(db, masterUser.id, bootstrapPassword));
+  refreshSessionSecretFallback();
 }
 var sseClients = [];
 function broadcastUpdate(eventType, payload) {
@@ -1347,6 +1358,7 @@ routeBoth("post", "/api/state/sync", requireSession, async (req, res) => {
     if (credential?.userId && credential?.password) {
       if (!authenticatedUser || !["dono", "equipe", "admin"].includes(authenticatedUser.perfil)) return res.status(403).json({ error: "Voc\xEA n\xE3o pode alterar esta credencial." });
       Object.assign(db, setCredential(db, String(credential.userId), String(credential.password)));
+      refreshSessionSecretFallback();
     }
     db.auditLogs.unshift({
       id: `audit_${Date.now()}`,

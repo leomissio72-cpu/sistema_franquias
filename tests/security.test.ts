@@ -4,6 +4,7 @@ import {
   createMfaChallenge,
   createSignedSessionToken,
   createTotpSecret,
+  configureSessionSecretFallback,
   hashPassword,
   migrateLegacyCredentials,
   totpCode,
@@ -38,6 +39,25 @@ test("sessão assinada expira e a assinatura não pode ser forjada", () => {
   assert.equal(decoded?.sub, "u1");
   assert.equal(decoded?.cv, 3);
   assert.equal(verifySignedSessionToken(`${token}x`), null);
+});
+
+test("fallback de sessão em produção usa somente hash persistido, nunca senha fixa", () => {
+  const previousSecret = process.env.FRANQUIAS_SESSION_SECRET;
+  const previousNodeEnv = process.env.NODE_ENV;
+  const passwordHash = hashPassword("Senha-Forte-de-Teste-2026!");
+  delete process.env.FRANQUIAS_SESSION_SECRET;
+  process.env.NODE_ENV = "production";
+  configureSessionSecretFallback([passwordHash]);
+  try {
+    const token = createSignedSessionToken("u1", 1, true);
+    assert.equal(verifySignedSessionToken(token)?.sub, "u1");
+  } finally {
+    configureSessionSecretFallback(null);
+    if (previousSecret === undefined) delete process.env.FRANQUIAS_SESSION_SECRET;
+    else process.env.FRANQUIAS_SESSION_SECRET = previousSecret;
+    if (previousNodeEnv === undefined) delete process.env.NODE_ENV;
+    else process.env.NODE_ENV = previousNodeEnv;
+  }
 });
 
 test("desafio MFA aceita o código TOTP do intervalo atual", () => {

@@ -14,6 +14,7 @@ export interface StoredCredential {
 const PASSWORD_MIN_LENGTH = 6;
 const SESSION_TTL_MS = 8 * 60 * 60 * 1000;
 const developmentSessionSecret = crypto.randomBytes(32).toString("hex");
+let persistedCredentialSecret: string | null = null;
 
 export function isScryptHash(value: unknown): value is string {
   return typeof value === "string" && /^scrypt\$[0-9a-f]{32}\$[0-9a-f]{128}$/i.test(value);
@@ -38,9 +39,29 @@ export function verifyPassword(password: string, storedHash: unknown): boolean {
   }
 }
 
+/**
+ * Compatibilidade segura para instalações que ainda não receberam
+ * FRANQUIAS_SESSION_SECRET no ambiente de produção. O fallback nunca usa a
+ * senha em texto: ele é derivado dos hashes persistidos e invalida as sessões
+ * quando qualquer credencial é alterada. A variável de ambiente continua
+ * sendo a opção preferencial para produção.
+ */
+export function configureSessionSecretFallback(passwordHashes: unknown): void {
+  const hashes = (Array.isArray(passwordHashes) ? passwordHashes : [passwordHashes])
+    .filter(isScryptHash)
+    .sort();
+  persistedCredentialSecret = hashes.length > 0
+    ? crypto.createHash("sha256")
+      .update("gestao-franquias-session-fallback:v1\0")
+      .update(hashes.join("\0"))
+      .digest("hex")
+    : null;
+}
+
 function sessionSecret(): string {
   const configured = process.env.FRANQUIAS_SESSION_SECRET;
   if (configured && configured.length >= 32) return configured;
+  if (persistedCredentialSecret) return persistedCredentialSecret;
   if (process.env.VERCEL === "1" || process.env.NODE_ENV === "production") {
     throw new Error("FRANQUIAS_SESSION_SECRET não configurado ou muito curto.");
   }
