@@ -5,7 +5,7 @@ import {
   formatBrl2,
   formatPct,
   formatPct2,
-  calculateDre,
+  calculateUnitDre,
   getUnitRealFinancials,
 } from "../../utils/calculations";
 import { getBillDueStatus } from "../../utils/calculations";
@@ -323,7 +323,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
     const fat = unitFin.count > 0 ? unitFin.faturamento : f.faturamento * periodMultiplier;
     const p = dreParams[f.id] || dreParams["dono"];
     const royPct = royalties[f.businessId] ?? (f.businessId === "biz1" ? 0.06 : f.businessId === "biz2" ? 0.05 : 0.07);
-    const d = calculateDre(fat, p, royPct);
+    const d = calculateUnitDre(fat, p, royPct, unitFin);
     const royValue = fat * royPct;
     const fppValue = fat * 0.02;
 
@@ -353,6 +353,49 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
   const margem = totalFat > 0 ? totalLucro / totalFat : 0;
   const avgFatPerUnit = filteredUnits.length > 0 ? totalFat / filteredUnits.length : 0;
   const avgRoyaltiesRate = totalFat > 0 ? (totalRoyalties / totalFat) * 100 : 6;
+
+  // Série mensal do gráfico de tendência: usa somente lançamentos reais.
+  // Meses sem lançamento aparecem zerados, nunca com valores estimados.
+  const buildMonthlySeries = () => {
+    const labels: string[] = [];
+    const fat: number[] = [];
+    const lucro: number[] = [];
+    const roy: number[] = [];
+    const unitIds = new Set(filteredUnits.map((u) => u.id));
+    const monthTotals = (mVal: number, yrVal: number) => {
+      const prefix = `${yrVal}-${String(mVal).padStart(2, "0")}`;
+      let receitas = 0;
+      let despesas = 0;
+      for (const e of manualEntries || []) {
+        if (e.excludedFromDre || e.isIntercompany || e.catId === "intercompany") continue;
+        if (!unitIds.has(e.tenant)) continue;
+        if (!(e.date || "").startsWith(prefix)) continue;
+        if (e.type === "entrada") receitas += Number(e.value) || 0;
+        else if (e.type === "despesa") despesas += Number(e.value) || 0;
+      }
+      return { receitas, despesas };
+    };
+    const push = (mVal: number, yrVal: number) => {
+      const mObj = AVAILABLE_MONTHS.find((m) => m.value === mVal);
+      labels.push(`${mObj?.short || mVal}/${yrVal.toString().slice(-2)}`.toUpperCase());
+      const totals = monthTotals(mVal, yrVal);
+      const valFat = Math.round(totals.receitas);
+      fat.push(valFat);
+      lucro.push(Math.round(totals.receitas - totals.despesas));
+      roy.push(Math.round(valFat * (avgRoyaltiesRate / 100)));
+    };
+    const yr = dateSelection.years[0] || new Date().getFullYear();
+    if (dateSelection.months.length > 1) {
+      [...dateSelection.months].sort((a, b) => a - b).forEach((mVal) => push(mVal, yr));
+    } else {
+      const targetMonth = dateSelection.months[0] || new Date().getMonth() + 1;
+      for (let i = 5; i >= 0; i--) {
+        const offset = targetMonth - 1 - i;
+        push(((offset % 12) + 12) % 12 + 1, yr + Math.floor(offset / 12));
+      }
+    }
+    return { labels, fat, lucro, roy };
+  };
 
   // Active Unit for Individual Unit View (KPIs de Unidades Individuais)
   const activeUnitId =
@@ -389,7 +432,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
   const unitFat = activeUnitFin.count > 0 ? activeUnitFin.faturamento : activeUnit.faturamento * periodMultiplier;
   const unitDreParams = dreParams[activeUnit.id] || dreParams["dono"];
   const unitRoyPct = royalties[activeUnit.businessId] ?? (activeUnit.businessId === "biz1" ? 0.06 : activeUnit.businessId === "biz2" ? 0.05 : 0.07);
-  const unitDre = calculateDre(unitFat, unitDreParams, unitRoyPct);
+  const unitDre = calculateUnitDre(unitFat, unitDreParams, unitRoyPct, activeUnitFin);
   const unitRoyValue = unitFat * unitRoyPct;
   const unitFppValue = unitFat * 0.02;
   const unitDevidoMatriz = unitRoyValue + unitFppValue;
@@ -513,61 +556,11 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
         monthlyChartInstance.current.destroy();
       }
 
-      const monthsLabels: string[] = [];
-      const dataFatMes: number[] = [];
-      const dataLucroMes: number[] = [];
-      const dataRoyMes: number[] = [];
-      const baseMonthly = (totalFat / (periodMultiplier || 1)) * (dateSelection.days.length / 31);
-
-      const getMonthReal = (mVal: number, yrVal: number) => {
-        if (!manualEntries || manualEntries.length === 0) return { fat: 0, count: 0 };
-        const prefix = `${yrVal}-${String(mVal).padStart(2, "0")}`;
-        const unitIds = new Set(filteredUnits.map((u) => u.id));
-        let sum = 0;
-        let count = 0;
-        for (const e of manualEntries) {
-          if (e.type !== "entrada" || e.excludedFromDre || e.isIntercompany) continue;
-          if (!unitIds.has(e.tenant) && e.tenant !== currentTenantId && currentTenantId !== "dono") continue;
-          if ((e.date || "").startsWith(prefix)) {
-            sum += Number(e.value) || 0;
-            count++;
-          }
-        }
-        return { fat: sum, count };
-      };
-
-      if (dateSelection.months.length > 1) {
-        const sortedMonths = [...dateSelection.months].sort((a, b) => a - b);
-        const yr = dateSelection.years[0] || 2026;
-        sortedMonths.forEach((mVal) => {
-          const mObj = AVAILABLE_MONTHS.find((m) => m.value === mVal);
-          monthsLabels.push(`${mObj?.short || mVal}/${yr.toString().slice(-2)}`.toUpperCase());
-          const realM = getMonthReal(mVal, yr);
-          const factor = 1 + ((mVal % 3) - 1) * 0.04;
-          const valFat = realM.count > 0 ? Math.round(realM.fat) : Math.round(baseMonthly * factor);
-          const valLucro = Math.round(valFat * (margem || 0.18));
-          const valRoy = Math.round(valFat * (avgRoyaltiesRate / 100));
-          dataFatMes.push(valFat);
-          dataLucroMes.push(valLucro);
-          dataRoyMes.push(valRoy);
-        });
-      } else {
-        const targetMonth = dateSelection.months[0] || 9;
-        const yr = dateSelection.years[0] || 2026;
-        for (let i = 5; i >= 0; i--) {
-          const mIndex = ((targetMonth - 1 - i + 12) % 12) + 1;
-          const mObj = AVAILABLE_MONTHS.find((m) => m.value === mIndex);
-          monthsLabels.push(`${mObj?.short || mIndex}/${yr.toString().slice(-2)}`.toUpperCase());
-          const realM = getMonthReal(mIndex, yr);
-          const factor = 1 + (5 - i) * 0.02 + ((i % 3) - 1) * 0.03;
-          const valFat = realM.count > 0 ? Math.round(realM.fat) : Math.round(baseMonthly * factor);
-          const valLucro = Math.round(valFat * (margem || 0.18));
-          const valRoy = Math.round(valFat * (avgRoyaltiesRate / 100));
-          dataFatMes.push(valFat);
-          dataLucroMes.push(valLucro);
-          dataRoyMes.push(valRoy);
-        }
-      }
+      const monthlySeries = buildMonthlySeries();
+      const monthsLabels = monthlySeries.labels;
+      const dataFatMes = monthlySeries.fat;
+      const dataLucroMes = monthlySeries.lucro;
+      const dataRoyMes = monthlySeries.roy;
 
       monthlyChartInstance.current = new Chart(monthlyCanvasRef.current, {
         type: "line",
@@ -1107,42 +1100,11 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
     let config: any = null;
 
     if (expandedChart === "mensal") {
-      const monthsLabels: string[] = [];
-      const dataFatMes: number[] = [];
-      const dataLucroMes: number[] = [];
-      const dataRoyMes: number[] = [];
-      const baseMonthly = (totalFat / (periodMultiplier || 1)) * (dateSelection.days.length / 31);
-
-      if (dateSelection.months.length > 1) {
-        const sortedMonths = [...dateSelection.months].sort((a, b) => a - b);
-        const yr = dateSelection.years[0] || 2026;
-        sortedMonths.forEach((mVal) => {
-          const mObj = AVAILABLE_MONTHS.find((m) => m.value === mVal);
-          monthsLabels.push(`${mObj?.short || mVal}/${yr.toString().slice(-2)}`.toUpperCase());
-          const factor = 1 + ((mVal % 3) - 1) * 0.04;
-          const valFat = Math.round(baseMonthly * factor);
-          const valLucro = Math.round(valFat * (margem || 0.18));
-          const valRoy = Math.round(valFat * (avgRoyaltiesRate / 100));
-          dataFatMes.push(valFat);
-          dataLucroMes.push(valLucro);
-          dataRoyMes.push(valRoy);
-        });
-      } else {
-        const targetMonth = dateSelection.months[0] || 9;
-        const yr = dateSelection.years[0] || 2026;
-        for (let i = 5; i >= 0; i--) {
-          const mIndex = ((targetMonth - 1 - i + 12) % 12) + 1;
-          const mObj = AVAILABLE_MONTHS.find((m) => m.value === mIndex);
-          monthsLabels.push(`${mObj?.short || mIndex}/${yr.toString().slice(-2)}`.toUpperCase());
-          const factor = 1 + (5 - i) * 0.02 + ((i % 3) - 1) * 0.03;
-          const valFat = Math.round(baseMonthly * factor);
-          const valLucro = Math.round(valFat * (margem || 0.18));
-          const valRoy = Math.round(valFat * (avgRoyaltiesRate / 100));
-          dataFatMes.push(valFat);
-          dataLucroMes.push(valLucro);
-          dataRoyMes.push(valRoy);
-        }
-      }
+      const monthlySeries = buildMonthlySeries();
+      const monthsLabels = monthlySeries.labels;
+      const dataFatMes = monthlySeries.fat;
+      const dataLucroMes = monthlySeries.lucro;
+      const dataRoyMes = monthlySeries.roy;
 
       config = {
         type: "line",

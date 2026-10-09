@@ -598,6 +598,13 @@ export const ConciliationScreen: React.FC<ConciliationScreenProps> = ({
     toast.success(`Baixa da recorrência "${log.billDesc}" desfeita. O título voltou para o status Em Aberto.`);
   };
 
+  // Quando a importação termina (aprovada, rejeitada ou removida por completo),
+  // o arquivo já foi processado e deixa de aparecer na área de upload.
+  const hasPreviewRows = items.some((item) => item.isImportPreview);
+  useEffect(() => {
+    if (!hasPreviewRows && !isImporting && !isReadingFile) setUploadedFileName(null);
+  }, [hasPreviewRows, isImporting, isReadingFile]);
+
   const isSameItem = (a: ConciliationItem, b: ConciliationItem) => {
     if (a.entryId && b.entryId) return a.entryId === b.entryId;
     return a.date === b.date && a.desc === b.desc && Math.abs(a.numericValue - b.numericValue) < 0.001;
@@ -682,7 +689,7 @@ export const ConciliationScreen: React.FC<ConciliationScreenProps> = ({
       return;
     }
     const selectedSet = new Set(selectedItems);
-    setItems((previous) => previous.map((item) => selectedSet.has(item) ? { ...item, status: "match", tone: "green", match: "Conciliação confirmada", label: "Conciliado" } : item));
+    setItems((previous) => previous.map((item) => selectedSet.has(item) ? { ...item, isImportPreview: false, status: "match", tone: "green", match: "Conciliação confirmada", label: "Conciliado" } : item));
     setHasPendingImport(items.some((item) => item.isImportPreview && !selectedSet.has(item)));
     toast.success(`${selectedItems.length} movimentação(ões) aprovadas e confirmadas.`);
     setSelectedIds([]);
@@ -1066,11 +1073,15 @@ export const ConciliationScreen: React.FC<ConciliationScreenProps> = ({
               accept=".xlsx,.xls,.csv,.ofx,.txt,.pdf,.docx,.doc"
               className="hidden"
               onChange={(e) => {
-                if (e.target.files?.[0]) handleFileUpload(e.target.files[0]);
+                const file = e.target.files?.[0];
+                // Limpa o campo para que o arquivo não fique "preso" e o mesmo
+                // arquivo possa ser selecionado de novo depois.
+                e.target.value = "";
+                if (file) handleFileUpload(file);
               }}
             />
           </label>
-          {uploadedFileName && (
+          {uploadedFileName && hasPreviewRows && (
             <span className="text-xs font-semibold text-[#152238] bg-white px-3 py-1.5 rounded-lg border border-[#e5eaf1]">
               Arquivo atual: <b>{uploadedFileName}</b>
             </span>

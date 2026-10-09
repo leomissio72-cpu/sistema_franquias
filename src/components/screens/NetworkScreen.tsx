@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { FranchiseUnit, Business, ScreenType, ManualEntry } from "../../types";
-import { formatBrl, formatPct, calculateDre, getUnitRealFinancials } from "../../utils/calculations";
+import { formatBrl, formatPct, calculateUnitDre, getUnitRealFinancials } from "../../utils/calculations";
 import {
   Building2,
   MapPin,
@@ -70,14 +70,16 @@ export const NetworkScreen: React.FC<NetworkScreenProps> = ({
     return unitFin.count > 0 ? unitFin.faturamento : f.faturamento;
   };
 
+  const getUnitEffectiveDre = (f: FranchiseUnit) => {
+    const unitFin = getUnitRealFinancials(f.id, manualEntries);
+    const rev = unitFin.count > 0 ? unitFin.faturamento : f.faturamento;
+    return calculateUnitDre(rev, dreParams[f.id] || dreParams["dono"], royalties[f.businessId], unitFin);
+  };
+
   const totalFat = visibleUnits.reduce((s, f) => s + getUnitEffectiveRev(f), 0);
   let totalLucro = 0;
   visibleUnits.forEach((f) => {
-    const rev = getUnitEffectiveRev(f);
-    const p = dreParams[f.id] || dreParams["dono"];
-    const roy = royalties[f.businessId];
-    const calc = calculateDre(rev, p, roy);
-    totalLucro += calc.lucroLiquido;
+    totalLucro += getUnitEffectiveDre(f).lucroLiquido;
   });
 
   const margemConsolidada = totalFat ? totalLucro / totalFat : 0;
@@ -130,7 +132,7 @@ export const NetworkScreen: React.FC<NetworkScreenProps> = ({
         const biz = businesses.find((b) => b.id === f.businessId);
         const pinColor = f.status === "green" ? "#118464" : "#a86a08";
         const unitRev = getUnitEffectiveRev(f);
-        const calc = calculateDre(unitRev, dreParams[f.id] || dreParams["dono"], royalties[f.businessId]);
+        const calc = getUnitEffectiveDre(f);
 
         const customIcon = L.divIcon({
           className: "",
@@ -374,7 +376,7 @@ export const NetworkScreen: React.FC<NetworkScreenProps> = ({
               const p = dreParams[f.id] || dreParams["dono"];
               const roy = royalties[f.businessId];
               const unitRev = getUnitEffectiveRev(f);
-              const calc = calculateDre(unitRev, p, roy);
+              const calc = getUnitEffectiveDre(f);
               const pctFat = (unitRev / maxFat) * 100;
               const pctLucro = (calc.lucroLiquido / maxFat) * 100;
 
@@ -475,7 +477,7 @@ export const NetworkScreen: React.FC<NetworkScreenProps> = ({
           {visibleUnits.map((f) => {
             const p = dreParams[f.id] || dreParams["dono"];
             const roy = royalties[f.businessId];
-            const calc = calculateDre(f.faturamento, p, roy);
+            const calc = getUnitEffectiveDre(f);
             const isCurrent = currentTenantId === f.id;
 
             return (

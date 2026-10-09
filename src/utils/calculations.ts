@@ -282,6 +282,46 @@ export function calculateDre(
   };
 }
 
+export type RealFinancials = { faturamento: number; despesas: number; count: number; lucroReal: number };
+
+/**
+ * Resultado da unidade para os painéis (Início, Analítico, Rede).
+ * Quando a unidade tem lançamentos reais no período, o lucro é o apurado:
+ * receitas reais menos despesas reais — a mesma regra da tela de DRE.
+ * Os percentuais parametrizados só valem como projeção para unidades
+ * que ainda não têm lançamentos.
+ */
+export function calculateUnitDre(
+  fatBruta: number,
+  params: DreParams,
+  customRoyalties: number | undefined,
+  real?: RealFinancials
+): DreCalculation {
+  const projected = calculateDre(fatBruta, params, customRoyalties);
+  if (!real || real.count === 0) return projected;
+
+  const fat = real.faturamento;
+  const totalDesp = real.despesas;
+  const lucroLiquido = fat - totalDesp;
+  return {
+    ...projected,
+    fatBruta: fat,
+    desconto: 0,
+    receitaAjustada: fat,
+    impostos: 0,
+    receitaLiquida: fat,
+    cmv: 0,
+    taxasNegocio: 0,
+    lucroBruto: fat,
+    despesas: [],
+    totalDesp,
+    lucroLiquido,
+    margemBruta: fat ? 1 : 0,
+    margemLiquida: fat ? lucroLiquido / fat : 0,
+    despRatio: fat ? totalDesp / fat : 0,
+  };
+}
+
 export function generateDailyRevenue(baseMonthly: number, days: number = 30, seedBase: number = 42) {
   const arr: Array<{ date: Date; label: string; value: number }> = [];
   let seed = seedBase;

@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { FranchiseUnit, Business, ScreenType, UserSession, ManualEntry } from "../../types";
-import { formatBrl, formatPct, calculateDre, getUnitRealFinancials } from "../../utils/calculations";
+import { formatBrl, formatPct, calculateUnitDre, getUnitRealFinancials } from "../../utils/calculations";
 import {
   TrendingUp,
   ArrowRight,
@@ -179,10 +179,11 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
   };
 
   const getUnitEffectiveDre = (f: FranchiseUnit) => {
-    const rev = getUnitEffectiveRev(f);
+    const realFin = getUnitRealFinancials(f.id, manualEntries, dateSelection);
+    const rev = realFin.count > 0 ? realFin.faturamento : f.faturamento * periodMultiplier;
     const params = dreParams[f.id] || dreParams["dono"];
     const roy = royalties[f.businessId];
-    return calculateDre(rev, params, roy);
+    return calculateUnitDre(rev, params, roy, realFin);
   };
 
   // Calculate totals for filtered scope
@@ -275,7 +276,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
       mapUnits.forEach((f) => {
         const biz = businesses.find((b) => b.id === f.businessId);
         const pinColor = f.status === "green" ? "#118464" : "#a86a08";
-        const calc = calculateDre(f.faturamento * periodMultiplier, dreParams[f.id] || dreParams["dono"], royalties[f.businessId]);
+        const calc = getUnitEffectiveDre(f);
 
         const customIcon = L.divIcon({
           className: "",
