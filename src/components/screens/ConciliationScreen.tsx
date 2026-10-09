@@ -973,16 +973,7 @@ export const ConciliationScreen: React.FC<ConciliationScreenProps> = ({
   return (
     <div className="space-y-3.5 animate-in fade-in duration-150">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-        <div>
-          <h3 className="text-base font-extrabold text-[#17211f] flex items-center gap-2">
-            <ArrowLeftRight className="h-4.5 w-4.5 text-[#0f4c5c]" />
-            Conciliação Bancária
-          </h3>
-          <p className="text-xs text-[#5e6b67]">
-            Aceita OFX, CSV, TXT, PDF, Excel e Word. A prévia fica protegida até sua confirmação.
-          </p>
-        </div>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-end gap-2">
 
         <div className="flex items-center gap-2 self-start sm:self-auto flex-wrap">
           <button

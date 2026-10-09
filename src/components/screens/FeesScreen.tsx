@@ -142,19 +142,7 @@ export const FeesScreen: React.FC<FeesScreenProps> = ({
   return (
     <div className="space-y-6 animate-in fade-in duration-150">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <div className="text-[10px] font-extrabold text-[#0f4c5c]">
-            Regras Financeiras & Adquirentes
-          </div>
-          <h2 className="text-2xl font-extrabold tracking-tight text-[#17211f] flex items-center gap-2 mt-1">
-            <Percent className="h-6 w-6 text-[#0f4c5c]" />
-            Taxas e Recebimentos
-          </h2>
-          <p className="text-xs text-[#5e6b67] mt-1">
-            Taxas por meio de pagamento, prazos de liquidação, horário de corte bancário e simulador de recebíveis.
-          </p>
-        </div>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-end gap-4">
 
         {isOwner ? (
           <button

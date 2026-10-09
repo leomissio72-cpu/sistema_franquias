@@ -756,16 +756,7 @@ export const VtScreen: React.FC<VtScreenProps> = ({
   return (
     <div className="space-y-3.5 animate-in fade-in duration-150">
       {/* Top Header & Page Title */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-        <div>
-          <h3 className="text-base font-extrabold text-[#17211f] flex items-center gap-2">
-            <FileSpreadsheet className="h-4.5 w-4.5 text-[#0f4c5c]" />
-            Vale Transporte & Mobilidade (CLT)
-          </h3>
-          <p className="text-xs text-[#5e6b67]">
-            Gestão de recargas, cálculo do desconto de 6% CLT e comprovantes de entrega de benefício.
-          </p>
-        </div>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-end gap-2">
 
         {/* Action Buttons */}
         <div className="flex flex-wrap items-center gap-2">
