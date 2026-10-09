@@ -1,10 +1,10 @@
 import React, { useEffect, useRef, useState } from "react";
 import { BillItem, ConciliationItem, IntercompanyRule, ManualEntry, ScreenType, UserSession } from "../../types";
-import { classifyIntercompanyItem } from "../../utils/intercompany";
+import { classifyIntercompanyItem, findIntercompanyRule } from "../../utils/intercompany";
 import { decodeBankText, repairMojibake } from "../../utils/textEncoding";
 import { detectApelido } from "../../utils/apelidos";
 import ExcelJS from "exceljs";
-import mammoth from "mammoth";
+import JSZip from "jszip";
 import * as pdfjsLib from "pdfjs-dist/legacy/build/pdf.mjs";
 // O worker precisa ser apontado para um arquivo servido pelo próprio bundle Vite.
 pdfjsLib.GlobalWorkerOptions.workerSrc = new URL("pdfjs-dist/legacy/build/pdf.worker.mjs", import.meta.url).toString();
@@ -174,8 +174,25 @@ async function readBankText(file: File): Promise<string> {
 }
 
 async function readWordText(file: File): Promise<string> {
-  const result = await mammoth.extractRawText({ arrayBuffer: await file.arrayBuffer() });
-  return repairMojibake(result.value || "");
+  const zip = await JSZip.loadAsync(await file.arrayBuffer());
+  const documentXml = zip.file("word/document.xml");
+  if (!documentXml) throw new Error("O arquivo Word não contém um documento legível.");
+  const xml = await documentXml.async("text");
+  const text = xml
+    .replace(/<w:tab[^>]*\/?>(?:<\/w:tab>)?/gi, "\t")
+    .replace(/<\/w:p>/gi, "\n")
+    .replace(/<\/w:tr>/gi, "\n")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/&amp;/gi, "&")
+    .replace(/&lt;/gi, "<")
+    .replace(/&gt;/gi, ">")
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;|&apos;/gi, "'")
+    .replace(/\u00a0/g, " ")
+    .replace(/[ \t]+\n/g, "\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+  return repairMojibake(text);
 }
 
 function decodeMarkup(text: string): string {
@@ -327,14 +344,18 @@ export const ConciliationScreen: React.FC<ConciliationScreenProps> = ({
   const scopedEntries = () => removeDuplicateItems(
     manualEntries
       .filter((entry) => entry.tenant === currentTenantId && entry.conciliationStatus !== "matched")
-      .map(entryToItem),
+      .map(entryToItem)
+      .map((item) => classifyIntercompanyItem(item, intercompanyRules, {
+        tenantId: currentTenantId,
+        businessId: currentBusinessId,
+      })),
     currentTenantId,
   );
   const canDeleteEntries = ["dono", "equipe", "admin", "franqueado"].includes(userSession.profile);
   const [items, setItems] = useState<ConciliationItem[]>(() => scopedEntries());
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [filter, setFilter] = useState<"all" | "match" | "review">("all");
-  const [uploadedFileName, setUploadedFileName] = useState<string | null>("Extrato_Setembro_2026.ofx");
+  const [uploadedFileName, setUploadedFileName] = useState<string | null>(null);
   const [isDragOver, setIsDragOver] = useState(false);
   const [isReadingFile, setIsReadingFile] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
@@ -699,7 +720,17 @@ export const ConciliationScreen: React.FC<ConciliationScreenProps> = ({
       setImportError("Informe descrição, data e valor válidos para editar a linha.");
       return;
     }
+    const counterpartyDocument = editDraft.counterparty.trim() || undefined;
+    const matchingRule = findIntercompanyRule({
+      desc,
+      counterpartyDocument,
+      sourceAccount: editingItem.sourceAccount,
+      destinationAccount: editingItem.destinationAccount,
+    }, intercompanyRules, { tenantId: currentTenantId, businessId: currentBusinessId });
     const isIntercompanyCategory = editDraft.category.includes("Intercompany") || editDraft.category.includes("Não Contabilizar");
+    const isIntercompany = isIntercompanyCategory || Boolean(matchingRule);
+    const category = isIntercompany ? "Transferência entre empresas" : editDraft.category;
+    const intercompanyReason = matchingRule ? `Regra "${matchingRule.name}"` : (editDraft.note.trim() || undefined);
     const numericValue = editDraft.type === "despesa" ? -Math.abs(value) : Math.abs(value);
     const updatedItem: ConciliationItem = {
       ...editingItem,
@@ -708,14 +739,15 @@ export const ConciliationScreen: React.FC<ConciliationScreenProps> = ({
       date: editDraft.date,
       numericValue,
       value: numericValue.toLocaleString("pt-BR", { style: "currency", currency: "BRL" }),
-      categoria: editDraft.category,
-      toDre: numericValue < 0 && !isIntercompanyCategory,
-      isIntercompany: isIntercompanyCategory,
-      counterpartyDocument: editDraft.counterparty.trim() || undefined,
-      intercompanyReason: editDraft.note.trim() || undefined,
-      match: `Classificado como ${editDraft.category}`,
+      categoria: category,
+      toDre: numericValue < 0 && !isIntercompany,
+      isIntercompany,
+      intercompanyRuleId: isIntercompany ? (matchingRule?.id || editingItem.intercompanyRuleId) : undefined,
+      counterpartyDocument,
+      intercompanyReason,
+      match: `Classificado como ${category}`,
       status: "match",
-      tone: isIntercompanyCategory ? "amber" : "green",
+      tone: isIntercompany ? "amber" : "green",
     };
     try {
       if (editingItem.entryId) {
@@ -725,10 +757,12 @@ export const ConciliationScreen: React.FC<ConciliationScreenProps> = ({
           date: editDraft.date,
           value: Math.abs(value),
           type: editDraft.type,
-          catName: editDraft.category,
-          isIntercompany: isIntercompanyCategory || undefined,
-          excludedFromDre: isIntercompanyCategory || undefined,
-          counterpartyDocument: editDraft.counterparty.trim() || undefined,
+          catName: category,
+          isIntercompany: isIntercompany || undefined,
+          excludedFromDre: isIntercompany || undefined,
+          intercompanyRuleId: isIntercompany ? (matchingRule?.id || editingItem.intercompanyRuleId) : undefined,
+          intercompanyReason,
+          counterpartyDocument,
         });
       }
       setItems((previous) => previous.map((item) => (isSameItem(item, editingItem) ? updatedItem : item)));

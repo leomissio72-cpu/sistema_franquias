@@ -23,6 +23,7 @@ import {
   RoyaltyHistoryEntry
 } from "./types";
 import {
+  fetchHealth,
   fetchServerState,
   subscribeToEvents,
   updateSingleConfig,
@@ -142,7 +143,7 @@ export const App: React.FC = () => {
   const [lastSyncTime, setLastSyncTime] = useState<string>("");
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isSavingConfig, setIsSavingConfig] = useState<boolean>(false);
-  const [isCloudConnected, setIsCloudConnected] = useState<boolean>(true);
+  const [isCloudConnected, setIsCloudConnected] = useState<boolean>(false);
   const [loadError, setLoadError] = useState<string>("");
 
   // Server State & Audit Logs
@@ -169,11 +170,11 @@ export const App: React.FC = () => {
   // Load state and audit logs from cloud backend
   const loadState = useCallback(async () => {
     try {
-      const state = await fetchServerState();
+      const [state, health] = await Promise.all([fetchServerState(), fetchHealth()]);
       setServerState(state);
       setLoadError("");
       setLastSyncTime(new Date(state.lastUpdated || Date.now()).toLocaleTimeString("pt-BR"));
-      setIsCloudConnected(true);
+      setIsCloudConnected(health?.storage === "durable");
 
       const logsRes = await fetchAuditLogs();
       if (logsRes.auditLogs) {
@@ -238,7 +239,7 @@ export const App: React.FC = () => {
       fetchAuditLogs().then((res) => {
         if (res.auditLogs) setAuditLogs(res.auditLogs);
       }).catch(console.error);
-    });
+    }, (durable) => setIsCloudConnected(durable));
 
     return () => {
       unsubscribe();
@@ -272,7 +273,14 @@ export const App: React.FC = () => {
 
   const handleSaveDreParams = async (tenantId: string, params: DreParams) => {
     const currentDreParams = serverState?.dreParams || {};
-    const updatedState = await saveDreParams(tenantId, params, userSession?.name || "Admin", userSession?.login, currentDreParams);
+    const updatedState = await saveDreParams(
+      tenantId,
+      params,
+      userSession?.name || "Admin",
+      userSession?.login,
+      currentDreParams,
+      userSession ? { profile: userSession.profile, tenant: userSession.tenant, login: userSession.login } : undefined,
+    );
     setServerState(updatedState);
   };
 

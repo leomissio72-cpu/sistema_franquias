@@ -1769,6 +1769,9 @@ export const ConfiguracaoScreen: React.FC<ConfiguracaoScreenProps> = ({
                 <p className="mt-1 text-xs leading-relaxed text-amber-900/80">
                   A regra não apaga o lançamento: ela mantém o extrato e a origem para auditoria, mas marca a movimentação como <b>fora do DRE e dos totais operacionais</b>. A classificação ocorre na prévia da conciliação e é revalidada no servidor.
                 </p>
+                <p className="mt-2 text-[11px] font-semibold text-amber-950">
+                  A regra global <b>LAVO</b> já está cadastrada para a rede. Você pode editar, pausar ou criar critérios adicionais abaixo.
+                </p>
               </div>
             </div>
           </div>

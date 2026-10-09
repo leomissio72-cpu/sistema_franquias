@@ -314,7 +314,7 @@ export const initialConfigs: ConfigItem[] = [
   {
     key: "two_factor_auth_required",
     name: "Exigir 2FA para Administradores",
-    value: "false",
+    value: "true",
     type: "boolean",
     category: "Segurança",
     description: "Obrigatoriedade de autenticação de dois fatores no painel administrativo",

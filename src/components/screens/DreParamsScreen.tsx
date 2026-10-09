@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import { FranchiseUnit, DreParams, ScreenType } from "../../types";
 import { formatBrl, formatPct, calculateDre } from "../../utils/calculations";
 import { dreExpenseDefs, defaultDreParams } from "../../data/initialData";
@@ -54,6 +54,7 @@ export const DreParamsScreen: React.FC<DreParamsScreenProps> = ({
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState("");
   const [isDirty, setIsDirty] = useState(false);
+  const skipHydrationRef = useRef(false);
 
   React.useEffect(() => {
     if (currentTenantId && currentTenantId !== activeTenant) {
@@ -65,6 +66,10 @@ export const DreParamsScreen: React.FC<DreParamsScreenProps> = ({
   React.useEffect(() => {
     // O polling global atualiza dreParams periodicamente. Enquanto o usuário
     // digita, a leitura intermediária não pode substituir o conteúdo local.
+    if (skipHydrationRef.current) {
+      skipHydrationRef.current = false;
+      return;
+    }
     if (isDirty) return;
     const p = dreParams[activeTenant] || dreParams["dono"] || defaultDreParams;
     setForm({
@@ -145,6 +150,19 @@ export const DreParamsScreen: React.FC<DreParamsScreenProps> = ({
       finalForm.despesas = finalDesp;
 
       await onSaveParams(activeTenant, finalForm);
+      setForm({ ...finalForm, despesas: { ...finalForm.despesas } });
+      setRawGeneral({
+        impostos: (finalForm.impostos * 100).toFixed(2),
+        cmv: (finalForm.cmv * 100).toFixed(2),
+        fees: (finalForm.fees * 100).toFixed(2),
+        discount: (finalForm.discount * 100).toFixed(2),
+      });
+      const savedExpenses: Record<string, string> = {};
+      dreExpenseDefs.forEach((expense) => {
+        savedExpenses[expense.id] = ((finalForm.despesas?.[expense.id] ?? expense.pct) * 100).toFixed(2);
+      });
+      setRawExpenses(savedExpenses);
+      skipHydrationRef.current = true;
       setIsDirty(false);
       setIsSaved(true);
       setTimeout(() => setIsSaved(false), 3000);

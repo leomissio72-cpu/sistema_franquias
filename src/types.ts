@@ -398,5 +398,6 @@ export interface CloudState {
   products?: HomologatedProduct[];
   suppliers?: RegisteredSupplier[];
   intercompanyRules?: IntercompanyRule[];
+  intercompanySeedVersion?: number;
   lastUpdated: string;
 }

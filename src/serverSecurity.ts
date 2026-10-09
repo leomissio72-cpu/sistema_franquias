@@ -13,6 +13,7 @@ export interface StoredCredential {
 
 const PASSWORD_MIN_LENGTH = 6;
 const SESSION_TTL_MS = 8 * 60 * 60 * 1000;
+const developmentSessionSecret = crypto.randomBytes(32).toString("hex");
 
 export function isScryptHash(value: unknown): value is string {
   return typeof value === "string" && /^scrypt\$[0-9a-f]{32}\$[0-9a-f]{128}$/i.test(value);
@@ -40,7 +41,10 @@ export function verifyPassword(password: string, storedHash: unknown): boolean {
 function sessionSecret(): string {
   const configured = process.env.FRANQUIAS_SESSION_SECRET;
   if (configured && configured.length >= 32) return configured;
-  return "gestao-franquias-session-secret-production-2026-secure-key-default";
+  if (process.env.VERCEL === "1" || process.env.NODE_ENV === "production") {
+    throw new Error("FRANQUIAS_SESSION_SECRET não configurado ou muito curto.");
+  }
+  return developmentSessionSecret;
 }
 
 function encode(value: AnyRecord): string {

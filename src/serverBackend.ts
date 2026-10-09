@@ -3,7 +3,7 @@ import path from "path";
 import fs from "fs";
 import { get, put } from "@vercel/blob";
 import { initialBills, initialBusinesses, initialFranchises } from "./data/initialData.ts";
-import { cookieOptions, createSignedSessionToken, getCredential, hashPassword, migrateLegacyCredentials, safeUser, setCredential, stripSensitiveFields, verifyPassword, verifySignedSessionToken } from "./serverSecurity.ts";
+import { cookieOptions, createMfaChallenge, createSignedSessionToken, createTotpSecret, decryptSecret, encryptSecret, getCredential, hashPassword, migrateLegacyCredentials, safeUser, setCredential, stripSensitiveFields, totpUri, verifyMfaChallenge, verifyPassword, verifySignedSessionToken, verifyTotp } from "./serverSecurity.ts";
 import { findIntercompanyRule } from "./utils/intercompany.ts";
 
 const app = express();
@@ -14,11 +14,21 @@ app.use(express.json({
 
 const SESSION_TTL_MS = 8 * 60 * 60 * 1000;
 const loginAttempts = new Map<string, { count: number; resetAt: number }>();
+const isProductionRuntime = process.env.VERCEL === "1" || process.env.NODE_ENV === "production";
 
 app.disable("x-powered-by");
 app.use((req, res, next) => {
   res.setHeader("X-Content-Type-Options", "nosniff");
+  res.setHeader("X-Frame-Options", "DENY");
   res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
+  res.setHeader("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
+  if (isProductionRuntime) {
+    res.setHeader("Strict-Transport-Security", "max-age=63072000; includeSubDomains; preload");
+    res.setHeader(
+      "Content-Security-Policy",
+      "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; worker-src 'self' blob:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://unpkg.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https:; connect-src 'self' https://*.googleapis.com https://*.firebaseio.com https://*.firebaseapp.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://nominatim.openstreetmap.org",
+    );
+  }
   res.setHeader("Cache-Control", req.path.startsWith("/api/") ? "no-store" : "public, max-age=0, must-revalidate");
   next();
 });
@@ -50,9 +60,6 @@ app.use(async (req, res, next) => {
 app.use((req, res, next) => {
   const openPath = [
     "/api/health", "/health",
-    "/api/state", "/state",
-    "/api/config", "/config",
-    "/api/config/audit", "/config/audit",
     "/api/auth/login", "/auth/login",
     "/api/auth/logout", "/auth/logout",
     "/api/auth/mfa", "/auth/mfa",
@@ -227,7 +234,7 @@ const defaultConfigs = [
   {
     key: "two_factor_auth_required",
     name: "Exigir 2FA para Administradores",
-    value: "false",
+    value: "true",
     type: "boolean",
     category: "Segurança",
     description: "Obrigatoriedade de autenticação de dois fatores no painel administrativo",
@@ -309,8 +316,17 @@ interface DatabaseState {
   durableInitialized?: boolean;
 }
 
-const PROVIDED_INTERCOMPANY_SEED_VERSION = 1;
+const PROVIDED_INTERCOMPANY_SEED_VERSION = 2;
 const PROVIDED_INTERCOMPANY_RULES = [
+  {
+    id: "intercompany_lavo_keyword",
+    name: "LAVO — movimentação entre empresas",
+    active: true,
+    scope: "rede",
+    terms: ["LAVO"],
+    counterpartyDocuments: [],
+    counterpartyAccounts: [],
+  },
   {
     id: "intercompany_lavo_vila_olimpia",
     name: "LAVO Vila Olímpia LTDA",
@@ -499,6 +515,7 @@ function getFullState(database: DatabaseState) {
     products: database.products || [],
     suppliers: database.suppliers || [],
     intercompanyRules: database.intercompanyRules || [],
+    intercompanySeedVersion: database.intercompanySeedVersion || 0,
     systemSettings: database.systemSettings || {
       appName: "Gestão de Franquias",
       companyName: "Gestão de Franquias S.A.",
@@ -512,7 +529,8 @@ let db = loadDatabase();
 const migratedCredentials = migrateLegacyCredentials(db);
 db = migratedCredentials.database as DatabaseState;
 
-// Garantir usuário master (admin / dono) com credencial ativa padrão
+// Garantir o usuário master sem criar ou redefinir uma senha fixa no código.
+// Em uma instalação nova, a primeira senha deve vir apenas do ambiente privado.
 if (!db.credentials) db.credentials = {};
 let masterUser = db.users.find((u: any) => u.perfil === "dono" || u.login === "admin" || u.login === "dono");
 if (!masterUser) {
@@ -530,13 +548,10 @@ if (!masterUser) {
   db.users.unshift(masterUser);
 }
 masterUser.status = "ativo";
-db.credentials[masterUser.id] = {
-  passwordHash: hashPassword("admin123456"),
-  version: 1,
-  createdAt: new Date().toISOString(),
-  updatedAt: new Date().toISOString(),
-  mustReset: false,
-};
+const bootstrapPassword = String(process.env.FRANQUIAS_BOOTSTRAP_PASSWORD || "").trim();
+if (!db.credentials[masterUser.id] && bootstrapPassword) {
+  Object.assign(db, setCredential(db, masterUser.id, bootstrapPassword));
+}
 
 type SSEClient = { id: string; res: ExpressResponse };
 let sseClients: SSEClient[] = [];
@@ -584,6 +599,24 @@ routeBoth("post", "/api/auth/login", async (req: Request, res: ExpressResponse) 
   if (!cleanUsername || !cleanPassword) {
     return res.status(400).json({ error: "Por favor, preencha o login e a senha." });
   }
+  if (cleanUsername.length > 160 || cleanPassword.length > 256) {
+    return res.status(400).json({ error: "Credenciais inválidas." });
+  }
+
+  const attemptKey = `${req.ip || "unknown"}:${cleanUsername}`;
+  const now = Date.now();
+  const attempt = loginAttempts.get(attemptKey);
+  if (attempt && attempt.resetAt > now && attempt.count >= 8) {
+    return res.status(429).json({ error: "Muitas tentativas. Aguarde alguns minutos e tente novamente." });
+  }
+  if (!attempt || attempt.resetAt <= now) {
+    loginAttempts.set(attemptKey, { count: 0, resetAt: now + 10 * 60 * 1000 });
+  }
+  const failLogin = () => {
+    const current = loginAttempts.get(attemptKey) || { count: 0, resetAt: now + 10 * 60 * 1000 };
+    loginAttempts.set(attemptKey, { count: current.count + 1, resetAt: current.resetAt });
+    return res.status(401).json({ error: "Credenciais inválidas. Verifique seu login e senha." });
+  };
 
   // Localiza usuário por login exato, e-mail ou alias (admin <-> dono)
   let user = db.users.find((u: any) => {
@@ -596,44 +629,32 @@ routeBoth("post", "/api/auth/login", async (req: Request, res: ExpressResponse) 
       (cleanUsername === "leomissio" && (u.perfil === "dono" || l === "admin" || l === "dono"));
   });
 
-  const isMasterPassword = (
-    cleanPassword === "1234" ||
-    cleanPassword === "admin123456" || 
-    cleanPassword === "Admin@2026!" || 
-    cleanPassword === "admin123" || 
-    cleanPassword === "dono123" ||
-    cleanPassword === "123456"
-  );
-
-  // Se for tentativa de login master e usuário ainda não foi localizado, vincula ao usuário dono
-  if (!user && (cleanUsername === "admin" || cleanUsername === "dono" || cleanUsername === "leomissio72@gmail.com" || cleanUsername === "leomissio") && isMasterPassword) {
-    user = db.users.find((u: any) => u.perfil === "dono") || {
-      id: "u1",
-      nome: "Administrador",
-      email: "leomissio72@gmail.com",
-      login: "admin",
-      perfil: "dono",
-      unidade: "dono",
-      status: "ativo",
-      last: "Agora",
-      employeeId: "e1"
-    };
-    if (!db.users.some((u: any) => u.id === user.id)) {
-      db.users.unshift(user);
-    }
-  }
-
   if (!user) {
-    return res.status(401).json({ error: "Credenciais inválidas. Verifique seu login e senha." });
+    return failLogin();
   }
 
   const credential = db.credentials?.[user.id];
-  const passwordMatches = 
-    (credential?.passwordHash && verifyPassword(cleanPassword, credential.passwordHash)) || 
-    (user.perfil === "dono" && isMasterPassword);
+  const passwordMatches = Boolean(credential?.passwordHash && verifyPassword(cleanPassword, credential.passwordHash));
 
   if (!passwordMatches) {
-    return res.status(401).json({ error: "Credenciais inválidas. Verifique seu login e senha." });
+    return failLogin();
+  }
+
+  loginAttempts.delete(attemptKey);
+  const encryptedMfaSecret = db.mfaSecrets?.[user.id];
+  const storedMfaSecret = encryptedMfaSecret ? decryptSecret(encryptedMfaSecret) : null;
+  const requireConfiguredMfa = db.configs.some((config: any) => config.key === "two_factor_auth_required" && String(config.value).toLowerCase() === "true");
+  const profile = String(user.perfil || "").toLowerCase();
+  const mfaRequired = Boolean(storedMfaSecret || (HAS_DURABLE_BLOB && (profile === "dono" || (requireConfiguredMfa && profile === "admin"))));
+  if (mfaRequired) {
+    const challengeToken = createMfaChallenge(user.id, storedMfaSecret ? "mfa-login" : "mfa-setup");
+    const response: any = { user: safeUser(user), challengeToken, mfaRequired: Boolean(storedMfaSecret), mfaSetupRequired: !storedMfaSecret };
+    if (!storedMfaSecret) {
+      const setupSecret = createTotpSecret();
+      response.secret = setupSecret;
+      response.otpauth = totpUri(setupSecret, user.login || user.email || user.id);
+    }
+    return res.json(response);
   }
 
   user.status = "ativo";
@@ -650,23 +671,43 @@ routeBoth("post", "/api/auth/login", async (req: Request, res: ExpressResponse) 
   });
 });
 
-routeBoth("post", "/api/auth/mfa", (req: Request, res: ExpressResponse) => {
-  const user = db.users.find((u: any) => u.perfil === "dono") || db.users[0];
-  const token = createSignedSessionToken(user.id, 1, true);
+routeBoth("post", "/api/auth/mfa", async (req: Request, res: ExpressResponse) => {
+  const body = req.body || {};
+  const code = String(body.code || "").replace(/\D/g, "");
+  if (!/^\d{6}$/.test(code)) return res.status(400).json({ error: "Código MFA inválido." });
+
+  const challenge = verifyMfaChallenge(String(body.challengeToken || body.setupToken || ""));
+  if (!challenge) return res.status(401).json({ error: "Desafio MFA expirado. Faça login novamente." });
+
+  const user = db.users.find((candidate: any) => candidate.id === challenge.sub);
+  const credential = user ? getCredential(db, user.id) : null;
+  if (!user || !credential || user.status === "inativo") return res.status(401).json({ error: "Sessão MFA inválida." });
+
+  if (challenge.purpose === "mfa-setup") {
+    const setupSecret = String(body.secret || "").trim().replace(/\s+/g, "").toUpperCase();
+    if (!/^[A-Z2-7]{16,64}$/.test(setupSecret) || !verifyTotp(setupSecret, code)) {
+      return res.status(401).json({ error: "Código MFA inválido. Confira o relógio do autenticador e tente novamente." });
+    }
+    db.mfaSecrets = { ...(db.mfaSecrets || {}), [user.id]: encryptSecret(setupSecret) };
+    await saveDatabase(db);
+  } else {
+    const storedSecret = db.mfaSecrets?.[user.id] ? decryptSecret(db.mfaSecrets[user.id]) : null;
+    if (!storedSecret || !verifyTotp(storedSecret, code)) return res.status(401).json({ error: "Código MFA inválido." });
+  }
+
+  user.status = "ativo";
+  user.last = new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+  await saveDatabase(db);
+  const token = createSignedSessionToken(user.id, credential.version, true);
   const expiresAt = Date.now() + SESSION_TTL_MS;
   res.setHeader("Set-Cookie", `gestao_session=${encodeURIComponent(token)}; ${cookieOptions()}`);
-  res.json({
-    user: safeUser(user),
-    expiresAt,
-    token,
-  });
+  res.json({ user: safeUser(user), expiresAt, token });
 });
 
 routeBoth("get", "/api/auth/bootstrap", (req: Request, res: ExpressResponse) => {
   res.json({
     status: "ok",
-    ready: true,
-    defaultLogin: "admin",
+    ready: Boolean(Object.values(db.credentials || {}).some((credential: any) => credential?.passwordHash && !credential?.revokedAt && !credential?.mustReset)),
   });
 });
 
@@ -676,7 +717,7 @@ routeBoth("post", "/api/auth/logout", (req: Request, res: ExpressResponse) => {
 });
 
 // 4. Configs
-routeBoth("get", "/api/config", (req: Request, res: ExpressResponse) => {
+routeBoth("get", "/api/config", requireSession, (req: Request, res: ExpressResponse) => {
   res.json({
     configs: db.configs,
     lastUpdated: db.lastUpdated,
@@ -790,7 +831,7 @@ routeBoth("post", "/api/config/bulk", requireSession, requireAdminRole, async (r
   res.json({ success: true, configs: db.configs, lastUpdated: db.lastUpdated });
 });
 
-routeBoth("get", "/api/config/audit", (req: Request, res: ExpressResponse) => {
+routeBoth("get", "/api/config/audit", requireSession, (req: Request, res: ExpressResponse) => {
   res.json({ auditLogs: db.auditLogs.slice(0, 50) });
 });
 
@@ -799,17 +840,24 @@ routeBoth("get", "/api/state", requireSession, (req: Request, res: ExpressRespon
   res.json(getFullState(db));
 });
 
+const SYNCABLE_SECTIONS = new Set([
+  "businesses", "franchises", "employees", "users", "manualEntries", "bills",
+  "dreParams", "paymentMethods", "businessRules", "royalties", "royaltyHistory",
+  "permissions", "vtConfigs", "systemSettings", "products", "suppliers", "intercompanyRules",
+]);
+
 routeBoth("post", "/api/state/sync", requireSession, async (req: Request, res: ExpressResponse) => {
   const { section, data: incomingData, batch, user, userProfile, userTenant, credential } = req.body || {};
   const authenticatedUser = (req as any).auth?.user;
   const effectiveProfile = authenticatedUser?.perfil || userProfile;
   const effectiveTenant = authenticatedUser?.unidade || userTenant;
-  const userName = user || "Sistema";
+  const userName = String(user || "Sistema").slice(0, 120);
   const canManageIntercompany = ["dono", "equipe", "admin"].includes(String(effectiveProfile || "").toLowerCase());
 
   if (batch && typeof batch === "object") {
     for (const [sec, secData] of Object.entries(batch)) {
       if (secData !== undefined) {
+        if (!SYNCABLE_SECTIONS.has(sec)) return res.status(400).json({ error: "Seção de sincronização inválida." });
         if (sec === "intercompanyRules" && !canManageIntercompany) {
           return res.status(403).json({ error: "Seu perfil não pode alterar as regras entre empresas." });
         }
@@ -837,6 +885,7 @@ routeBoth("post", "/api/state/sync", requireSession, async (req: Request, res: E
 
   let data = incomingData;
   if (section && data !== undefined) {
+    if (!SYNCABLE_SECTIONS.has(String(section))) return res.status(400).json({ error: "Seção de sincronização inválida." });
     if (section === "intercompanyRules" && !canManageIntercompany) {
       return res.status(403).json({ error: "Seu perfil não pode alterar as regras entre empresas." });
     }
@@ -1012,7 +1061,8 @@ function canUserDeleteEntry(user: any, entry: any): boolean {
 }
 
 function validateManualEntriesSync(incomingEntries: any[], user: any): { ok: true; entries: any[] } | { ok: false; error: string } {
-  const entries = incomingEntries.map((entry) => stripSensitiveFields(entry));
+  if (incomingEntries.length > 5000) return { ok: false, error: "A sincronização excede o limite de lançamentos por operação." };
+  const entries = incomingEntries.map((entry) => applyIntercompanyRule(stripSensitiveFields(entry)));
   const unauthorizedEntry = entries.find((entry: any) => !canUserAccessEntryTenant(user, String(entry?.tenant || "dono")));
   if (unauthorizedEntry) return { ok: false, error: "Você não pode alterar lançamentos de uma unidade não autorizada." };
 
@@ -1128,9 +1178,15 @@ routeBoth("delete", "/api/entries/:id", requireSession, async (req: Request, res
 // Resilient 404 handler for unmatched API routes
 app.use((req, res, next) => {
   if (req.path.startsWith("/api")) {
-    return res.status(404).json({ error: `API route not found: ${req.method} ${req.originalUrl || req.url}` });
+    return res.status(404).json({ error: "Endpoint não encontrado." });
   }
   next();
+});
+
+app.use((error: any, _req: Request, res: ExpressResponse, next: any) => {
+  if (res.headersSent) return next(error);
+  console.error("Erro interno não tratado", { name: error?.name, message: error?.message });
+  return res.status(500).json({ error: "Não foi possível concluir a operação." });
 });
 
 export { app, db, saveDatabase, loadDatabase };

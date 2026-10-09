@@ -267,7 +267,7 @@ var initialConfigs = [
   {
     key: "two_factor_auth_required",
     name: "Exigir 2FA para Administradores",
-    value: "false",
+    value: "true",
     type: "boolean",
     category: "Seguran\xE7a",
     description: "Obrigatoriedade de autentica\xE7\xE3o de dois fatores no painel administrativo",
@@ -300,6 +300,7 @@ var initialConfigs = [
 var import_node_crypto = __toESM(require("node:crypto"), 1);
 var PASSWORD_MIN_LENGTH = 6;
 var SESSION_TTL_MS = 8 * 60 * 60 * 1e3;
+var developmentSessionSecret = import_node_crypto.default.randomBytes(32).toString("hex");
 function isScryptHash(value) {
   return typeof value === "string" && /^scrypt\$[0-9a-f]{32}\$[0-9a-f]{128}$/i.test(value);
 }
@@ -323,13 +324,86 @@ function verifyPassword(password, storedHash) {
 function sessionSecret() {
   const configured = process.env.FRANQUIAS_SESSION_SECRET;
   if (configured && configured.length >= 32) return configured;
-  return "gestao-franquias-session-secret-production-2026-secure-key-default";
+  if (process.env.VERCEL === "1" || process.env.NODE_ENV === "production") {
+    throw new Error("FRANQUIAS_SESSION_SECRET n\xE3o configurado ou muito curto.");
+  }
+  return developmentSessionSecret;
 }
 function encode(value) {
   return Buffer.from(JSON.stringify(value), "utf8").toString("base64url");
 }
 function sign(value) {
   return import_node_crypto.default.createHmac("sha256", sessionSecret()).update(value).digest("base64url");
+}
+function base32Encode(value) {
+  const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
+  let bits = "";
+  for (const byte of value) bits += byte.toString(2).padStart(8, "0");
+  let output = "";
+  for (let index = 0; index < bits.length; index += 5) output += alphabet[Number.parseInt(bits.slice(index, index + 5).padEnd(5, "0"), 2)];
+  return output;
+}
+function base32Decode(value) {
+  const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
+  const clean = value.toUpperCase().replace(/[^A-Z2-7]/g, "");
+  let bits = "";
+  for (const char of clean) bits += alphabet.indexOf(char).toString(2).padStart(5, "0");
+  const bytes = [];
+  for (let index = 0; index + 8 <= bits.length; index += 8) bytes.push(Number.parseInt(bits.slice(index, index + 8), 2));
+  return Buffer.from(bytes);
+}
+function createTotpSecret() {
+  return base32Encode(import_node_crypto.default.randomBytes(20));
+}
+function totpCode(secret, timestamp = Date.now()) {
+  const counter = Math.floor(timestamp / 3e4);
+  const counterBuffer = Buffer.alloc(8);
+  counterBuffer.writeBigUInt64BE(BigInt(counter));
+  const digest = import_node_crypto.default.createHmac("sha1", base32Decode(secret)).update(counterBuffer).digest();
+  const offset = digest[digest.length - 1] & 15;
+  const number = (digest[offset] & 127) << 24 | digest[offset + 1] << 16 | digest[offset + 2] << 8 | digest[offset + 3];
+  return String(number % 1e6).padStart(6, "0");
+}
+function verifyTotp(secret, input) {
+  const code = String(input || "").replace(/\D/g, "");
+  if (code.length !== 6) return false;
+  return [-1, 0, 1].some((offset) => import_node_crypto.default.timingSafeEqual(Buffer.from(totpCode(secret, Date.now() + offset * 3e4)), Buffer.from(code)));
+}
+function encryptionKey() {
+  return import_node_crypto.default.createHash("sha256").update(sessionSecret()).digest();
+}
+function encryptSecret(secret) {
+  const iv = import_node_crypto.default.randomBytes(12);
+  const cipher = import_node_crypto.default.createCipheriv("aes-256-gcm", encryptionKey(), iv);
+  const encrypted = Buffer.concat([cipher.update(secret, "utf8"), cipher.final()]);
+  return `${iv.toString("base64url")}.${cipher.getAuthTag().toString("base64url")}.${encrypted.toString("base64url")}`;
+}
+function decryptSecret(value) {
+  try {
+    const [ivValue, tagValue, encryptedValue] = value.split(".");
+    const decipher = import_node_crypto.default.createDecipheriv("aes-256-gcm", encryptionKey(), Buffer.from(ivValue, "base64url"));
+    decipher.setAuthTag(Buffer.from(tagValue, "base64url"));
+    return Buffer.concat([decipher.update(Buffer.from(encryptedValue, "base64url")), decipher.final()]).toString("utf8");
+  } catch {
+    return null;
+  }
+}
+function createMfaChallenge(userId, purpose = "mfa-setup") {
+  const payload = encode({ sub: userId, purpose, exp: Date.now() + 10 * 60 * 1e3, nonce: import_node_crypto.default.randomBytes(16).toString("hex") });
+  return `${payload}.${sign(payload)}`;
+}
+function verifyMfaChallenge(value) {
+  try {
+    const [payload, signature] = value.split(".");
+    if (!payload || !signature || !import_node_crypto.default.timingSafeEqual(Buffer.from(signature), Buffer.from(sign(payload)))) return null;
+    const parsed = JSON.parse(Buffer.from(payload, "base64url").toString("utf8"));
+    return ["mfa-setup", "mfa-login"].includes(parsed?.purpose) && Number(parsed.exp) > Date.now() && parsed.sub ? { sub: String(parsed.sub), purpose: parsed.purpose } : null;
+  } catch {
+    return null;
+  }
+}
+function totpUri(secret, login) {
+  return `otpauth://totp/Gestao%20de%20Franquias:${encodeURIComponent(login)}?secret=${secret}&issuer=Gestao%20de%20Franquias&algorithm=SHA1&digits=6&period=30`;
 }
 function createSignedSessionToken(userId, credentialVersion, mfaVerified = false) {
   const payload = encode({
@@ -455,10 +529,21 @@ app.use(import_express.default.json({
   limit: "10mb"
 }));
 var SESSION_TTL_MS2 = 8 * 60 * 60 * 1e3;
+var loginAttempts = /* @__PURE__ */ new Map();
+var isProductionRuntime = process.env.VERCEL === "1" || process.env.NODE_ENV === "production";
 app.disable("x-powered-by");
 app.use((req, res, next) => {
   res.setHeader("X-Content-Type-Options", "nosniff");
+  res.setHeader("X-Frame-Options", "DENY");
   res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
+  res.setHeader("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
+  if (isProductionRuntime) {
+    res.setHeader("Strict-Transport-Security", "max-age=63072000; includeSubDomains; preload");
+    res.setHeader(
+      "Content-Security-Policy",
+      "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self'; worker-src 'self' blob:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://unpkg.com; font-src 'self' data: https://fonts.gstatic.com; img-src 'self' data: blob: https:; connect-src 'self' https://*.googleapis.com https://*.firebaseio.com https://*.firebaseapp.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://nominatim.openstreetmap.org"
+    );
+  }
   res.setHeader("Cache-Control", req.path.startsWith("/api/") ? "no-store" : "public, max-age=0, must-revalidate");
   next();
 });
@@ -490,12 +575,6 @@ app.use((req, res, next) => {
   const openPath = [
     "/api/health",
     "/health",
-    "/api/state",
-    "/state",
-    "/api/config",
-    "/config",
-    "/api/config/audit",
-    "/config/audit",
     "/api/auth/login",
     "/auth/login",
     "/api/auth/logout",
@@ -658,7 +737,7 @@ var defaultConfigs = [
   {
     key: "two_factor_auth_required",
     name: "Exigir 2FA para Administradores",
-    value: "false",
+    value: "true",
     type: "boolean",
     category: "Seguran\xE7a",
     description: "Obrigatoriedade de autentica\xE7\xE3o de dois fatores no painel administrativo",
@@ -703,8 +782,17 @@ var defaultBusinessRules = {
   minTicket: 20,
   advance: false
 };
-var PROVIDED_INTERCOMPANY_SEED_VERSION = 1;
+var PROVIDED_INTERCOMPANY_SEED_VERSION = 2;
 var PROVIDED_INTERCOMPANY_RULES = [
+  {
+    id: "intercompany_lavo_keyword",
+    name: "LAVO \u2014 movimenta\xE7\xE3o entre empresas",
+    active: true,
+    scope: "rede",
+    terms: ["LAVO"],
+    counterpartyDocuments: [],
+    counterpartyAccounts: []
+  },
   {
     id: "intercompany_lavo_vila_olimpia",
     name: "LAVO Vila Ol\xEDmpia LTDA",
@@ -888,6 +976,7 @@ function getFullState(database) {
     products: database.products || [],
     suppliers: database.suppliers || [],
     intercompanyRules: database.intercompanyRules || [],
+    intercompanySeedVersion: database.intercompanySeedVersion || 0,
     systemSettings: database.systemSettings || {
       appName: "Gest\xE3o de Franquias",
       companyName: "Gest\xE3o de Franquias S.A.",
@@ -916,13 +1005,10 @@ if (!masterUser) {
   db.users.unshift(masterUser);
 }
 masterUser.status = "ativo";
-db.credentials[masterUser.id] = {
-  passwordHash: hashPassword("admin123456"),
-  version: 1,
-  createdAt: (/* @__PURE__ */ new Date()).toISOString(),
-  updatedAt: (/* @__PURE__ */ new Date()).toISOString(),
-  mustReset: false
-};
+var bootstrapPassword = String(process.env.FRANQUIAS_BOOTSTRAP_PASSWORD || "").trim();
+if (!db.credentials[masterUser.id] && bootstrapPassword) {
+  Object.assign(db, setCredential(db, masterUser.id, bootstrapPassword));
+}
 var sseClients = [];
 function broadcastUpdate(eventType, payload) {
 }
@@ -955,35 +1041,51 @@ routeBoth("post", "/api/auth/login", async (req, res) => {
   if (!cleanUsername || !cleanPassword) {
     return res.status(400).json({ error: "Por favor, preencha o login e a senha." });
   }
+  if (cleanUsername.length > 160 || cleanPassword.length > 256) {
+    return res.status(400).json({ error: "Credenciais inv\xE1lidas." });
+  }
+  const attemptKey = `${req.ip || "unknown"}:${cleanUsername}`;
+  const now = Date.now();
+  const attempt = loginAttempts.get(attemptKey);
+  if (attempt && attempt.resetAt > now && attempt.count >= 8) {
+    return res.status(429).json({ error: "Muitas tentativas. Aguarde alguns minutos e tente novamente." });
+  }
+  if (!attempt || attempt.resetAt <= now) {
+    loginAttempts.set(attemptKey, { count: 0, resetAt: now + 10 * 60 * 1e3 });
+  }
+  const failLogin = () => {
+    const current = loginAttempts.get(attemptKey) || { count: 0, resetAt: now + 10 * 60 * 1e3 };
+    loginAttempts.set(attemptKey, { count: current.count + 1, resetAt: current.resetAt });
+    return res.status(401).json({ error: "Credenciais inv\xE1lidas. Verifique seu login e senha." });
+  };
   let user = db.users.find((u) => {
     const l = (u.login || "").toLowerCase();
     const e = (u.email || "").toLowerCase();
     return l === cleanUsername || e === cleanUsername || cleanUsername === "admin" && (l === "dono" || u.perfil === "dono") || cleanUsername === "dono" && (l === "admin" || u.perfil === "dono") || cleanUsername === "leomissio72@gmail.com" && (u.perfil === "dono" || l === "admin" || l === "dono") || cleanUsername === "leomissio" && (u.perfil === "dono" || l === "admin" || l === "dono");
   });
-  const isMasterPassword = cleanPassword === "1234" || cleanPassword === "admin123456" || cleanPassword === "Admin@2026!" || cleanPassword === "admin123" || cleanPassword === "dono123" || cleanPassword === "123456";
-  if (!user && (cleanUsername === "admin" || cleanUsername === "dono" || cleanUsername === "leomissio72@gmail.com" || cleanUsername === "leomissio") && isMasterPassword) {
-    user = db.users.find((u) => u.perfil === "dono") || {
-      id: "u1",
-      nome: "Administrador",
-      email: "leomissio72@gmail.com",
-      login: "admin",
-      perfil: "dono",
-      unidade: "dono",
-      status: "ativo",
-      last: "Agora",
-      employeeId: "e1"
-    };
-    if (!db.users.some((u) => u.id === user.id)) {
-      db.users.unshift(user);
-    }
-  }
   if (!user) {
-    return res.status(401).json({ error: "Credenciais inv\xE1lidas. Verifique seu login e senha." });
+    return failLogin();
   }
   const credential = db.credentials?.[user.id];
-  const passwordMatches = credential?.passwordHash && verifyPassword(cleanPassword, credential.passwordHash) || user.perfil === "dono" && isMasterPassword;
+  const passwordMatches = Boolean(credential?.passwordHash && verifyPassword(cleanPassword, credential.passwordHash));
   if (!passwordMatches) {
-    return res.status(401).json({ error: "Credenciais inv\xE1lidas. Verifique seu login e senha." });
+    return failLogin();
+  }
+  loginAttempts.delete(attemptKey);
+  const encryptedMfaSecret = db.mfaSecrets?.[user.id];
+  const storedMfaSecret = encryptedMfaSecret ? decryptSecret(encryptedMfaSecret) : null;
+  const requireConfiguredMfa = db.configs.some((config) => config.key === "two_factor_auth_required" && String(config.value).toLowerCase() === "true");
+  const profile = String(user.perfil || "").toLowerCase();
+  const mfaRequired = Boolean(storedMfaSecret || HAS_DURABLE_BLOB && (profile === "dono" || requireConfiguredMfa && profile === "admin"));
+  if (mfaRequired) {
+    const challengeToken = createMfaChallenge(user.id, storedMfaSecret ? "mfa-login" : "mfa-setup");
+    const response = { user: safeUser(user), challengeToken, mfaRequired: Boolean(storedMfaSecret), mfaSetupRequired: !storedMfaSecret };
+    if (!storedMfaSecret) {
+      const setupSecret = createTotpSecret();
+      response.secret = setupSecret;
+      response.otpauth = totpUri(setupSecret, user.login || user.email || user.id);
+    }
+    return res.json(response);
   }
   user.status = "ativo";
   user.last = (/* @__PURE__ */ new Date()).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
@@ -997,29 +1099,45 @@ routeBoth("post", "/api/auth/login", async (req, res) => {
     token
   });
 });
-routeBoth("post", "/api/auth/mfa", (req, res) => {
-  const user = db.users.find((u) => u.perfil === "dono") || db.users[0];
-  const token = createSignedSessionToken(user.id, 1, true);
+routeBoth("post", "/api/auth/mfa", async (req, res) => {
+  const body = req.body || {};
+  const code = String(body.code || "").replace(/\D/g, "");
+  if (!/^\d{6}$/.test(code)) return res.status(400).json({ error: "C\xF3digo MFA inv\xE1lido." });
+  const challenge = verifyMfaChallenge(String(body.challengeToken || body.setupToken || ""));
+  if (!challenge) return res.status(401).json({ error: "Desafio MFA expirado. Fa\xE7a login novamente." });
+  const user = db.users.find((candidate) => candidate.id === challenge.sub);
+  const credential = user ? getCredential(db, user.id) : null;
+  if (!user || !credential || user.status === "inativo") return res.status(401).json({ error: "Sess\xE3o MFA inv\xE1lida." });
+  if (challenge.purpose === "mfa-setup") {
+    const setupSecret = String(body.secret || "").trim().replace(/\s+/g, "").toUpperCase();
+    if (!/^[A-Z2-7]{16,64}$/.test(setupSecret) || !verifyTotp(setupSecret, code)) {
+      return res.status(401).json({ error: "C\xF3digo MFA inv\xE1lido. Confira o rel\xF3gio do autenticador e tente novamente." });
+    }
+    db.mfaSecrets = { ...db.mfaSecrets || {}, [user.id]: encryptSecret(setupSecret) };
+    await saveDatabase(db);
+  } else {
+    const storedSecret = db.mfaSecrets?.[user.id] ? decryptSecret(db.mfaSecrets[user.id]) : null;
+    if (!storedSecret || !verifyTotp(storedSecret, code)) return res.status(401).json({ error: "C\xF3digo MFA inv\xE1lido." });
+  }
+  user.status = "ativo";
+  user.last = (/* @__PURE__ */ new Date()).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+  await saveDatabase(db);
+  const token = createSignedSessionToken(user.id, credential.version, true);
   const expiresAt = Date.now() + SESSION_TTL_MS2;
   res.setHeader("Set-Cookie", `gestao_session=${encodeURIComponent(token)}; ${cookieOptions()}`);
-  res.json({
-    user: safeUser(user),
-    expiresAt,
-    token
-  });
+  res.json({ user: safeUser(user), expiresAt, token });
 });
 routeBoth("get", "/api/auth/bootstrap", (req, res) => {
   res.json({
     status: "ok",
-    ready: true,
-    defaultLogin: "admin"
+    ready: Boolean(Object.values(db.credentials || {}).some((credential) => credential?.passwordHash && !credential?.revokedAt && !credential?.mustReset))
   });
 });
 routeBoth("post", "/api/auth/logout", (req, res) => {
   res.setHeader("Set-Cookie", "gestao_session=; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=0");
   res.json({ success: true });
 });
-routeBoth("get", "/api/config", (req, res) => {
+routeBoth("get", "/api/config", requireSession, (req, res) => {
   res.json({
     configs: db.configs,
     lastUpdated: db.lastUpdated,
@@ -1115,22 +1233,42 @@ routeBoth("post", "/api/config/bulk", requireSession, requireAdminRole, async (r
   });
   res.json({ success: true, configs: db.configs, lastUpdated: db.lastUpdated });
 });
-routeBoth("get", "/api/config/audit", (req, res) => {
+routeBoth("get", "/api/config/audit", requireSession, (req, res) => {
   res.json({ auditLogs: db.auditLogs.slice(0, 50) });
 });
 routeBoth("get", "/api/state", requireSession, (req, res) => {
   res.json(getFullState(db));
 });
+var SYNCABLE_SECTIONS = /* @__PURE__ */ new Set([
+  "businesses",
+  "franchises",
+  "employees",
+  "users",
+  "manualEntries",
+  "bills",
+  "dreParams",
+  "paymentMethods",
+  "businessRules",
+  "royalties",
+  "royaltyHistory",
+  "permissions",
+  "vtConfigs",
+  "systemSettings",
+  "products",
+  "suppliers",
+  "intercompanyRules"
+]);
 routeBoth("post", "/api/state/sync", requireSession, async (req, res) => {
   const { section, data: incomingData, batch, user, userProfile, userTenant, credential } = req.body || {};
   const authenticatedUser = req.auth?.user;
   const effectiveProfile = authenticatedUser?.perfil || userProfile;
   const effectiveTenant = authenticatedUser?.unidade || userTenant;
-  const userName = user || "Sistema";
+  const userName = String(user || "Sistema").slice(0, 120);
   const canManageIntercompany = ["dono", "equipe", "admin"].includes(String(effectiveProfile || "").toLowerCase());
   if (batch && typeof batch === "object") {
     for (const [sec, secData] of Object.entries(batch)) {
       if (secData !== void 0) {
+        if (!SYNCABLE_SECTIONS.has(sec)) return res.status(400).json({ error: "Se\xE7\xE3o de sincroniza\xE7\xE3o inv\xE1lida." });
         if (sec === "intercompanyRules" && !canManageIntercompany) {
           return res.status(403).json({ error: "Seu perfil n\xE3o pode alterar as regras entre empresas." });
         }
@@ -1157,6 +1295,7 @@ routeBoth("post", "/api/state/sync", requireSession, async (req, res) => {
   }
   let data = incomingData;
   if (section && data !== void 0) {
+    if (!SYNCABLE_SECTIONS.has(String(section))) return res.status(400).json({ error: "Se\xE7\xE3o de sincroniza\xE7\xE3o inv\xE1lida." });
     if (section === "intercompanyRules" && !canManageIntercompany) {
       return res.status(403).json({ error: "Seu perfil n\xE3o pode alterar as regras entre empresas." });
     }
@@ -1312,7 +1451,8 @@ function canUserDeleteEntry(user, entry) {
   return ["dono", "equipe", "admin", "franqueado"].includes(profile) && canUserAccessEntryTenant(user, String(entry?.tenant || ""));
 }
 function validateManualEntriesSync(incomingEntries, user) {
-  const entries = incomingEntries.map((entry) => stripSensitiveFields(entry));
+  if (incomingEntries.length > 5e3) return { ok: false, error: "A sincroniza\xE7\xE3o excede o limite de lan\xE7amentos por opera\xE7\xE3o." };
+  const entries = incomingEntries.map((entry) => applyIntercompanyRule(stripSensitiveFields(entry)));
   const unauthorizedEntry = entries.find((entry) => !canUserAccessEntryTenant(user, String(entry?.tenant || "dono")));
   if (unauthorizedEntry) return { ok: false, error: "Voc\xEA n\xE3o pode alterar lan\xE7amentos de uma unidade n\xE3o autorizada." };
   const incomingIds = new Set(entries.map((entry) => String(entry?.id || "")));
@@ -1410,9 +1550,14 @@ routeBoth("delete", "/api/entries/:id", requireSession, async (req, res) => {
 });
 app.use((req, res, next) => {
   if (req.path.startsWith("/api")) {
-    return res.status(404).json({ error: `API route not found: ${req.method} ${req.originalUrl || req.url}` });
+    return res.status(404).json({ error: "Endpoint n\xE3o encontrado." });
   }
   next();
+});
+app.use((error, _req, res, next) => {
+  if (res.headersSent) return next(error);
+  console.error("Erro interno n\xE3o tratado", { name: error?.name, message: error?.message });
+  return res.status(500).json({ error: "N\xE3o foi poss\xEDvel concluir a opera\xE7\xE3o." });
 });
 var serverBackend_default = app;
 // Annotate the CommonJS export names for ESM import in node:

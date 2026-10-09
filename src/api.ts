@@ -244,6 +244,18 @@ function chooseAuthoritativeState(apiState: CloudState, mirror: CloudState | nul
   return mergeNonEmptyCollections(formatCloudState(apiState), mirror);
 }
 
+function mergeIntercompanyMigrations(apiState: CloudState, mirror: CloudState | null): CloudState | null {
+  if (!mirror) return null;
+  const apiVersion = Number(apiState.intercompanySeedVersion || 0);
+  const mirrorVersion = Number(mirror.intercompanySeedVersion || 0);
+  if (apiVersion <= mirrorVersion) return mirror;
+  return formatCloudState({
+    ...mirror,
+    intercompanyRules: apiState.intercompanyRules || mirror.intercompanyRules || [],
+    intercompanySeedVersion: apiVersion,
+  });
+}
+
 function getLocalFallbackState(): CloudState {
   try {
     const cached = localStorage.getItem("gestaofranquias_cloud_state") || localStorage.getItem("sofiacfo_cloud_state");
@@ -300,8 +312,9 @@ export async function fetchServerState(): Promise<CloudState> {
     // Em Vercel sem BLOB_READ_WRITE_TOKEN, a instância pode voltar ao estado
     // inicial após um cold start. O espelho Firebase é a cópia durável criada
     // após cada salvamento e deve prevalecer nesse modo, quando disponível.
-    let state = health?.storage === "ephemeral-fallback" && mirroredState
-      ? formatCloudState(mirroredState)
+    const migratedMirror = mergeIntercompanyMigrations(apiState, mirroredState);
+    let state = health?.storage === "ephemeral-fallback" && migratedMirror
+      ? formatCloudState(migratedMirror)
       : chooseAuthoritativeState(apiState, mirroredState);
 
     // Atualiza o espelho somente com o estado escolhido por timestamp. Isso
@@ -420,13 +433,13 @@ export async function syncStateSection(section: string, data: any, user?: string
   return queuedOperation;
 }
 
-export async function saveDreParams(tenantId: string, params: DreParams, userName: string, userId?: string, baseDreParams?: Record<string, DreParams>): Promise<CloudState> {
+export async function saveDreParams(tenantId: string, params: DreParams, userName: string, userId?: string, baseDreParams?: Record<string, DreParams>, actor?: { profile?: string; tenant?: string; login?: string }): Promise<CloudState> {
   const currentDreParams = baseDreParams || (await fetchServerState()).dreParams;
   const updatedDreParams = {
     ...currentDreParams,
     [tenantId]: params,
   };
-  return syncStateSection("dreParams", updatedDreParams, userName);
+  return syncStateSection("dreParams", updatedDreParams, userName, actor);
 }
 
 export async function savePaymentRules(methods: PaymentMethod[], rules: BusinessRule, userName: string, userId?: string): Promise<CloudState> {
@@ -700,7 +713,7 @@ export async function logoutAPI() {
 
 export const loginApi = loginAPI;
 
-export function subscribeToEvents(onUpdate: (state: CloudState) => void): () => void {
+export function subscribeToEvents(onUpdate: (state: CloudState) => void, onStorageStatus?: (durable: boolean) => void): () => void {
   let pollInterval: any = null;
   let pollInFlight = false;
 
@@ -709,8 +722,9 @@ export function subscribeToEvents(onUpdate: (state: CloudState) => void): () => 
     if (pollInFlight) return;
     pollInFlight = true;
     try {
-      const fresh = await fetchServerState();
+      const [fresh, health] = await Promise.all([fetchServerState(), fetchHealth()]);
       onUpdate(fresh);
+      onStorageStatus?.(health?.storage === "durable");
     } catch (e) {
       console.warn("Periodic sync poll failed:", e);
     } finally {

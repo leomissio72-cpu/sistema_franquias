@@ -94,6 +94,20 @@ test("AUDITORIA 2B: Estado central não fica disponível sem sessão", async () 
   assert.equal(res.status, 401);
 });
 
+test("AUDITORIA 2C: Rotas administrativas não aceitam leitura pública nem MFA sem desafio", async () => {
+  const config = await appRequest("GET", "/api/config");
+  assert.equal(config.status, 401);
+  const mfa = await appRequest("POST", "/api/auth/mfa", {}, { code: "000000" });
+  assert.equal(mfa.status, 401);
+  const dono = db.users.find((u: any) => u.perfil === "dono")!;
+  const credential = getCredential(db, dono.id)!;
+  const token = createSignedSessionToken(dono.id, credential.version, true);
+  const forbiddenSection = await appRequest("POST", "/api/state/sync", {
+    Cookie: `gestao_session=${encodeURIComponent(token)}`,
+  }, { section: "credentials", data: {} });
+  assert.equal(forbiddenSection.status, 400);
+});
+
 test("AUDITORIA 3: Sessão autenticada permite ler o estado central /api/state", async () => {
   // Criar token para dono autenticado com MFA
   const dono = db.users.find((u: any) => u.perfil === "dono");
@@ -340,9 +354,27 @@ test("AUDITORIA 10: Regra intercompany preserva a linha e exclui o lançamento d
   const credential = getCredential(db, dono.id)!;
   const token = createSignedSessionToken(dono.id, credential.version, true);
   const previousRules = db.intercompanyRules || [];
+  assert.ok(previousRules.some((rule: any) => rule.terms?.some((term: string) => term.toUpperCase() === "LAVO")));
   assert.ok(previousRules.some((rule: any) => rule.counterpartyDocuments?.includes("53.374.430/0001-30")));
   assert.ok(previousRules.some((rule: any) => rule.counterpartyAccounts?.includes("9363737-3")));
   assert.ok(previousRules.some((rule: any) => rule.counterpartyAccounts?.includes("67061627-5")));
+  const lavoResponse = await appRequest("POST", "/api/entries/bulk", {
+    Cookie: `gestao_session=${encodeURIComponent(token)}`,
+  }, {
+    entries: [{
+      tenant: "dono",
+      desc: "LAVO transferência entre empresas",
+      value: 123.45,
+      type: "despesa",
+      date: new Date().toISOString().slice(0, 10),
+    }],
+  });
+  assert.equal(lavoResponse.status, 200);
+  assert.equal(lavoResponse.body.entries[0].isIntercompany, true);
+  assert.equal(lavoResponse.body.entries[0].excludedFromDre, true);
+  const lavoEntryId = lavoResponse.body.entries[0].id;
+  db.manualEntries = db.manualEntries.filter((candidate: any) => candidate.id !== lavoEntryId);
+  await saveDatabase(db);
   const rule = {
     id: `rule_auditoria_${Date.now()}`,
     name: "Transferência para matriz - auditoria",

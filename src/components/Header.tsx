@@ -1,6 +1,6 @@
 import React from "react";
 import { UserSession, ScreenType } from "../types";
-import { Menu, LogOut, PanelLeftClose, PanelLeftOpen, Moon, Sun, BookOpen } from "lucide-react";
+import { Menu, LogOut, PanelLeftClose, PanelLeftOpen, Moon, Sun, BookOpen, Cloud } from "lucide-react";
 
 interface HeaderProps {
   userSession: UserSession | null;
@@ -56,6 +56,8 @@ export const Header: React.FC<HeaderProps> = ({
   isDarkMode = false,
   onToggleTheme,
   onNavigate,
+  isCloudConnected = false,
+  lastSyncTime = "",
 }) => {
   const getAvatarInitials = () => {
     if (!userSession?.name) return "SF";
@@ -108,6 +110,13 @@ export const Header: React.FC<HeaderProps> = ({
       </div>
 
       <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
+        <div
+          className={`hidden items-center gap-1.5 rounded-lg border px-2 py-1.5 text-[10px] font-bold sm:flex ${isCloudConnected ? "border-emerald-200 bg-emerald-50 text-emerald-700" : "border-amber-200 bg-amber-50 text-amber-800"}`}
+          title={isCloudConnected ? `Backend durável${lastSyncTime ? ` · última sincronização ${lastSyncTime}` : ""}` : "Backend em fallback efêmero. Configure BLOB_READ_WRITE_TOKEN no Vercel para persistência entre cold starts."}
+        >
+          <Cloud className="h-3.5 w-3.5" />
+          <span>{isCloudConnected ? "Nuvem durável" : "Fallback efêmero"}</span>
+        </div>
         {onNavigate && (
           <button
             id="btn-help-instructions"

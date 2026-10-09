@@ -15,10 +15,10 @@
 5. [Manual de cada página](#5-manual-de-cada-página)
 6. [Conciliação bancária](#6-conciliação-bancária)
 7. [Transferências entre empresas](#7-transferências-entre-empresas)
-9. [Persistência, sincronização e auditoria](#9-persistência-sincronização-e-auditoria)
-10. [Uso em celular](#10-uso-em-celular)
-11. [Problemas comuns](#11-problemas-comuns)
-12. [Checklist operacional](#12-checklist-operacional)
+8. [Persistência, sincronização e auditoria](#8-persistência-sincronização-e-auditoria)
+9. [Uso em celular](#9-uso-em-celular)
+10. [Problemas comuns](#10-problemas-comuns)
+11. [Checklist operacional](#11-checklist-operacional)
 
 ---
 
@@ -52,13 +52,16 @@ O sistema é um painel multiempresa e multiunidade. O usuário trabalha sempre d
 
 1. Abra o endereço oficial do projeto.
 2. Informe o login ou e-mail e a senha.
-3. Aguarde o carregamento do estado central antes de editar dados.
-4. O sistema cria uma sessão assinada com validade limitada. O token não deve ser copiado para planilhas, mensagens ou código.
-5. Para sair, use **Sair** no cabeçalho. Isso encerra a sessão no navegador e revoga o uso local do token.
+3. No primeiro acesso administrativo, escaneie a chave exibida no Google Authenticator, Microsoft Authenticator ou 1Password e informe o código de seis dígitos.
+4. Nos acessos seguintes, informe o código MFA quando solicitado.
+5. Aguarde o carregamento do estado central antes de editar dados.
+6. O sistema cria uma sessão assinada com validade limitada. O token não deve ser copiado para planilhas, mensagens ou código.
+7. Para sair, use **Sair** no cabeçalho. Isso encerra a sessão no navegador e revoga o uso local do token.
 
 ### Segurança operacional
 
 - Credenciais de usuários são armazenadas no backend em formato derivado; não use senha fixa em código, Firestore, `localStorage` ou Git.
+- Em produção, configure `FRANQUIAS_SESSION_SECRET` com pelo menos 32 caracteres aleatórios. Em uma instalação nova, configure também `FRANQUIAS_BOOTSTRAP_PASSWORD` apenas nas variáveis privadas do Vercel; nunca coloque esses valores no chat, frontend ou repositório.
 - Perfis de unidade não devem receber acesso ao escopo de outra unidade.
 - Ações administrativas devem ser feitas por **Dono**, **Equipe** ou **Admin** conforme a tabela de permissões.
 - O histórico e os logs servem para rastrear alterações; apagar uma regra intercompany não apaga lançamentos já importados.
@@ -188,7 +191,7 @@ O perfil é diferente da unidade selecionada. Mesmo com uma unidade selecionada 
 1. Selecione o tenant de destino.
 2. Altere impostos, CMV, taxas, descontos e despesas.
 3. Observe a prévia.
-4. Clique em **Salvar** e aguarde a confirmação.
+4. Clique em **Salvar** e aguarde a confirmação; o formulário mantém o valor confirmado e não o substitui pelo polling antigo.
 5. Valide o resultado no DRE e no Analítico.
 
 ### 5.8 Lançamentos Manuais
@@ -409,17 +412,17 @@ Forneça em tabela:
 
 A regra não exclui nem apaga linhas. Ela marca `Transferência entre empresas`, mantém o arquivo de origem e grava o motivo da regra. O DRE e os totais operacionais não consideram o lançamento marcado.
 
-As regras iniciais fornecidas para esta rede foram cadastradas para: **LAVO Vila Olímpia LTDA**, **LAVO Clodomiro Amazonas LTDA**, **LAVO Brooklin LTDA**, **LAVO Morumbi LTDA** e **Santo André / Stone**, usando os respectivos CNPJs, contas e termos informados. Elas valem para toda a rede e podem ser editadas ou pausadas em Configurações.
+As regras iniciais fornecidas para esta rede foram cadastradas para: **LAVO Vila Olímpia LTDA**, **LAVO Clodomiro Amazonas LTDA**, **LAVO Brooklin LTDA**, **LAVO Morumbi LTDA** e **Santo André / Stone**, usando os respectivos CNPJs, contas e termos informados. Também existe uma regra global pelo termo **LAVO**, para que uma descrição que contenha esse identificador não entre no DRE enquanto a regra estiver ativa. Todas podem ser editadas ou pausadas em Configurações.
 
 > Recomenda-se começar com modo de revisão: teste pelo menos duas linhas que devem ser marcadas e uma parecida que deve permanecer operacional antes de usar a regra em toda a rede.
 
 ---
 
-## 9. Persistência, sincronização e auditoria
+## 8. Persistência, sincronização e auditoria
 
 - A API autenticada é a fonte operacional principal.
-- O estado pode ser espelhado no Firestore quando o projeto Firebase está configurado.
-- O Blob privado é usado quando `BLOB_READ_WRITE_TOKEN` está disponível no ambiente do mesmo projeto.
+- O estado é espelhado no Firestore quando o projeto Firebase está configurado, preservando o estado entre navegadores quando as regras do banco permitem o acesso autenticado.
+- Para o backend Vercel ficar durável entre cold starts, o mesmo projeto deve ter um Blob privado e a variável `BLOB_READ_WRITE_TOKEN`. O health deve mostrar `storage: "durable"`; se mostrar `ephemeral-fallback`, a variável ainda não está configurada e não se deve considerar a nuvem do backend concluída.
 - Coleções vazias não devem sobrescrever uma base não vazia por acidente.
 - O botão de atualização força nova leitura do estado central.
 - A sincronização de seções registra o usuário e atualiza o estado retornado para a tela.
@@ -437,7 +440,7 @@ As regras iniciais fornecidas para esta rede foram cadastradas para: **LAVO Vila
 
 ---
 
-## 10. Uso em celular
+## 9. Uso em celular
 
 - Abra o menu pelo botão no cabeçalho.
 - Use a barra lateral recolhida quando precisar de mais espaço.
@@ -448,7 +451,7 @@ As regras iniciais fornecidas para esta rede foram cadastradas para: **LAVO Vila
 
 ---
 
-## 11. Problemas comuns
+## 10. Problemas comuns
 
 | Sintoma | Verificações |
 |---|---|
@@ -464,7 +467,7 @@ As regras iniciais fornecidas para esta rede foram cadastradas para: **LAVO Vila
 
 ---
 
-## 12. Checklist operacional
+## 11. Checklist operacional
 
 ### Cadastro
 
