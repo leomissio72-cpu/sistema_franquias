@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "lastUpdated": "2026-10-09T00:46:45.209Z",
+  "lastUpdated": "2026-10-09T00:57:34.783Z",
   "configs": [
     {
       "key": "app_name",
@@ -257,7 +257,7 @@
   "employees": [],
   "users": [
     {
-      "last": "Agora",
+      "last": "00:57",
       "nome": "Administrador",
       "employeeId": "e1",
       "perfil": "dono",
@@ -347,10 +347,10 @@
   },
   "credentials": {
     "u1": {
-      "passwordHash": "scrypt$4beffa694005b7261455b7a06d98ad4e$9723defffa7896eebf4c0342f6fa7fe3e755e71dc373c25ee4f7dbdcab57f31fa32ac675125345ef4fc5ccb6b4fe06388df0a563a6a31cc707264b22e6190e99",
-      "version": 2,
-      "createdAt": "2026-10-09T00:46:44.930Z",
-      "updatedAt": "2026-10-09T00:46:44.978Z",
+      "passwordHash": "scrypt$d516a996ab48e3e8786c0085e2e883a7$d08a3d643a82c00cb895937ad041074b455d45bd6d6b03bf7b983f4bfe99bb5d73a8219031558472d57537f9d4e24d967668aa11692a19160cf51243b4699f2a",
+      "version": 1,
+      "createdAt": "2026-10-09T00:47:05.367Z",
+      "updatedAt": "2026-10-09T00:47:05.367Z",
       "mustReset": false
     }
   },

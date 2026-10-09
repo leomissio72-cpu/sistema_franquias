@@ -93,32 +93,41 @@ function isFirebaseConfigured() {
 }
 
 /**
- * Reads the optional Firebase mirror. The API remains the authoritative,
+ * Reads the optional Firebase mirror with a strict timeout. The API remains the authoritative,
  * authenticated source; Firebase is only used when this mirror is available.
  */
-export async function readFirebaseMirror(): Promise<CloudState | null> {
+export async function readFirebaseMirror(timeoutMs = 2000): Promise<CloudState | null> {
   if (!isFirebaseConfigured()) return null;
-  try {
-    if (!(await ensureFirebaseSession())) return null;
-    const snapshot = await getDocs(collection(firebaseDb, STATE_COLLECTION));
-    if (snapshot.empty) return null;
-    const state: Record<string, any> = {};
-    snapshot.forEach((item) => {
-      const data = item.data();
-      if (data && Object.prototype.hasOwnProperty.call(data, "value")) {
-        state[item.id] = data.value;
+
+  const timeoutPromise = new Promise<null>((resolve) => {
+    setTimeout(() => resolve(null), timeoutMs);
+  });
+
+  const readPromise = (async (): Promise<CloudState | null> => {
+    try {
+      if (!(await ensureFirebaseSession())) return null;
+      const snapshot = await getDocs(collection(firebaseDb, STATE_COLLECTION));
+      if (snapshot.empty) return null;
+      const state: Record<string, any> = {};
+      snapshot.forEach((item) => {
+        const data = item.data();
+        if (data && Object.prototype.hasOwnProperty.call(data, "value")) {
+          state[item.id] = data.value;
+        }
+      });
+      return state as CloudState;
+    } catch (error: any) {
+      if (isQuotaExhaustedError(error)) {
+        setWriteQuotaExhausted();
+        console.info("Firebase Firestore limite de cota atingido; operando com API central.");
+        return null;
       }
-    });
-    return state as CloudState;
-  } catch (error: any) {
-    if (isQuotaExhaustedError(error)) {
-      setWriteQuotaExhausted();
-      console.info("Firebase Firestore limite de cota de leitura/escrita atingido; operando com armazenamento autenticado local e servidor.");
+      console.warn("Firebase mirror read unavailable; using authenticated API:", error?.message || error);
       return null;
     }
-    console.warn("Firebase mirror read unavailable; using authenticated API:", error?.message || error);
-    return null;
-  }
+  })();
+
+  return Promise.race([readPromise, timeoutPromise]);
 }
 
 /**

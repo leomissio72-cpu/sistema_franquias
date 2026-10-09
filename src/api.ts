@@ -142,7 +142,7 @@ export function sanitizeLegacyClientStorage() {
       localStorage.setItem("gestaofranquias_cloud_state", JSON.stringify(sanitizeClientValue(JSON.parse(cached))));
       localStorage.removeItem("sofiacfo_cloud_state");
     }
-    ["sofiacfo_user_session", "gestao_user_session"].forEach((key) => localStorage.removeItem(key));
+    localStorage.removeItem("sofiacfo_user_session");
   } catch {
     // A ausência de storage não impede o login por cookie HttpOnly.
   }
