@@ -218,8 +218,30 @@ function stateTimestamp(state: CloudState | null | undefined): number {
  */
 function chooseAuthoritativeState(apiState: CloudState, mirror: CloudState | null): CloudState {
   if (!mirror) return formatCloudState(apiState);
-  if (stateTimestamp(mirror) > stateTimestamp(apiState)) return formatCloudState(mirror);
-  return formatCloudState(apiState);
+
+  const apiHasSetup = (apiState.businesses?.length || 0) > 0 || (apiState.franchises?.length || 0) > 0;
+  const mirrorHasSetup = (mirror.businesses?.length || 0) > 0 || (mirror.franchises?.length || 0) > 0;
+
+  // Se a API estiver sem dados cadastrais após um deploy/republicação, mas o espelho tiver dados,
+  // preserva os dados do espelho para que o usuário nunca perca suas franquias e marcas.
+  if (!apiHasSetup && mirrorHasSetup) {
+    const recovered = {
+      ...apiState,
+      businesses: mirror.businesses || [],
+      franchises: mirror.franchises || [],
+      manualEntries: (apiState.manualEntries?.length || 0) > 0 ? apiState.manualEntries : (mirror.manualEntries || []),
+      bills: (apiState.bills?.length || 0) > 0 ? apiState.bills : (mirror.bills || []),
+      employees: (apiState.employees?.length || 0) > 0 ? apiState.employees : (mirror.employees || []),
+      products: (apiState.products?.length || 0) > 0 ? apiState.products : (mirror.products || []),
+      suppliers: (apiState.suppliers?.length || 0) > 0 ? apiState.suppliers : (mirror.suppliers || []),
+    };
+    return formatCloudState(recovered);
+  }
+
+  if (stateTimestamp(mirror) > stateTimestamp(apiState)) {
+    return mergeNonEmptyCollections(formatCloudState(mirror), apiState);
+  }
+  return mergeNonEmptyCollections(formatCloudState(apiState), mirror);
 }
 
 function getLocalFallbackState(): CloudState {

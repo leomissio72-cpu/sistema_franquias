@@ -40,9 +40,18 @@ const STATE_KEYS: Array<keyof CloudState> = [
 ];
 
 let mirrorWriteChain: Promise<void> = Promise.resolve();
-// O projeto com cota gratuita diária esgotada no Firestore entra diretamente em modo de proteção
-// para evitar chamadas de escrita que geram loops de backoff e erros de quota no SDK.
-let quotaExhausted = true;
+// Disjuntor para cotas de escrita gratuita esgotadas no Firestore
+let writeQuotaExhausted = false;
+try {
+  if (typeof window !== "undefined") {
+    const isExhausted = window.localStorage?.getItem("fs_write_quota_exhausted") === "1";
+    const markedAt = Number(window.localStorage?.getItem("fs_write_quota_marked_at") || 0);
+    // Permite retentar após 8 horas ou se foi redefinido manualmente
+    if (isExhausted && Date.now() - markedAt < 8 * 60 * 60 * 1000) {
+      writeQuotaExhausted = true;
+    }
+  }
+} catch {}
 
 function isQuotaExhaustedError(error: any): boolean {
   if (!error) return false;
@@ -59,18 +68,12 @@ function isQuotaExhaustedError(error: any): boolean {
   );
 }
 
-function checkQuotaState(): boolean {
-  if (typeof window !== "undefined" && window.localStorage?.getItem("fs_enable_writes") === "1") {
-    return false;
-  }
-  return quotaExhausted;
-}
-
-function setQuotaExhausted() {
-  quotaExhausted = true;
+function setWriteQuotaExhausted() {
+  writeQuotaExhausted = true;
   try {
     if (typeof window !== "undefined") {
-      window.localStorage?.setItem("fs_quota_exhausted", "1");
+      window.localStorage?.setItem("fs_write_quota_exhausted", "1");
+      window.localStorage?.setItem("fs_write_quota_marked_at", String(Date.now()));
     }
   } catch {}
 }
@@ -94,7 +97,7 @@ function isFirebaseConfigured() {
  * authenticated source; Firebase is only used when this mirror is available.
  */
 export async function readFirebaseMirror(): Promise<CloudState | null> {
-  if (checkQuotaState() || !isFirebaseConfigured()) return null;
+  if (!isFirebaseConfigured()) return null;
   try {
     if (!(await ensureFirebaseSession())) return null;
     const snapshot = await getDocs(collection(firebaseDb, STATE_COLLECTION));
@@ -109,8 +112,8 @@ export async function readFirebaseMirror(): Promise<CloudState | null> {
     return state as CloudState;
   } catch (error: any) {
     if (isQuotaExhaustedError(error)) {
-      setQuotaExhausted();
-      console.info("Firebase Firestore limite de cota diária atingido; operando com armazenamento autenticado.");
+      setWriteQuotaExhausted();
+      console.info("Firebase Firestore limite de cota de leitura/escrita atingido; operando com armazenamento autenticado local e servidor.");
       return null;
     }
     console.warn("Firebase mirror read unavailable; using authenticated API:", error?.message || error);
@@ -123,10 +126,10 @@ export async function readFirebaseMirror(): Promise<CloudState | null> {
  * are deliberately removed before any value reaches Firestore.
  */
 export async function writeFirebaseMirror(state: CloudState, options: { allowEmptyReset?: boolean } = {}): Promise<boolean> {
-  if (checkQuotaState() || !isFirebaseConfigured() || !state) return false;
+  if (writeQuotaExhausted || !isFirebaseConfigured() || !state) return false;
 
   const writeOperation = async () => {
-    if (checkQuotaState()) return false;
+    if (writeQuotaExhausted) return false;
     try {
       if (!(await ensureFirebaseSession())) return false;
       const operationalKeys: Array<keyof CloudState> = [
@@ -151,8 +154,8 @@ export async function writeFirebaseMirror(state: CloudState, options: { allowEmp
       return true;
     } catch (error: any) {
       if (isQuotaExhaustedError(error)) {
-        setQuotaExhausted();
-        console.info("Firebase Firestore cota diária atingida; operando com armazenamento persistente seguro.");
+        setWriteQuotaExhausted();
+        console.info("Firebase Firestore cota de escrita atingida; pausando sincronização no espelho para evitar erros.");
         return false;
       }
       console.warn("Firebase mirror write unavailable; authenticated API remains active:", error?.message || error);

@@ -1,439 +1,379 @@
 {
   "version": 1,
-  "lastUpdated": "2026-10-07T19:27:45.859Z",
+  "lastUpdated": "2026-10-09T00:46:45.209Z",
   "configs": [
     {
       "key": "app_name",
+      "lastModified": "2026-10-08T19:39:04.535Z",
+      "type": "string",
       "name": "Nome da Plataforma",
       "value": "Gestão de Franquias — SaaS Financeiro para Franquias",
-      "type": "string",
-      "category": "Geral",
       "description": "Nome exibido no cabeçalho e relatórios",
-      "lastModified": "2026-10-03T23:20:09.229Z",
+      "category": "Geral",
       "modifiedBy": "Sistema"
     },
     {
-      "key": "tax_default",
-      "name": "Alíquota Padrão de Impostos (%)",
       "value": "8.00",
-      "type": "number",
-      "category": "Financeiro",
       "description": "Imposto sobre vendas padrão aplicado às novas franquias",
-      "lastModified": "2026-10-03T23:20:09.229Z",
-      "modifiedBy": "Sistema"
+      "category": "Financeiro",
+      "modifiedBy": "Sistema",
+      "key": "tax_default",
+      "type": "number",
+      "lastModified": "2026-10-08T19:39:04.535Z",
+      "name": "Alíquota Padrão de Impostos (%)"
     },
     {
+      "modifiedBy": "Sistema",
+      "lastModified": "2026-10-08T19:39:04.535Z",
+      "description": "Custo de Mercadoria Vendida padrão estimado",
       "key": "cmv_default",
+      "type": "number",
       "name": "CMV Padrão (%)",
       "value": "30.00",
-      "type": "number",
-      "category": "Financeiro",
-      "description": "Custo de Mercadoria Vendida padrão estimado",
-      "lastModified": "2026-10-03T23:20:09.229Z",
-      "modifiedBy": "Sistema"
+      "category": "Financeiro"
     },
     {
-      "key": "royalty_default",
-      "name": "Royalty Médio de Franquia (%)",
       "value": "6.00",
-      "type": "number",
-      "category": "Financeiro",
+      "modifiedBy": "Sistema",
+      "key": "royalty_default",
       "description": "Percentual sobre receita bruta pago à matriz",
-      "lastModified": "2026-10-03T23:20:09.229Z",
-      "modifiedBy": "Sistema"
-    },
-    {
-      "key": "max_discount_limit",
-      "name": "Limite Máximo de Desconto (%)",
-      "value": "15.00",
+      "lastModified": "2026-10-08T19:39:04.535Z",
+      "category": "Financeiro",
       "type": "number",
-      "category": "Regras de Negócio",
-      "description": "Desconto máximo permitido sem autorização da diretoria",
-      "lastModified": "2026-10-03T23:20:09.229Z",
-      "modifiedBy": "Sistema"
+      "name": "Royalty Médio de Franquia (%)"
     },
     {
-      "key": "bank_cutoff_hour",
-      "name": "Horário de Corte Bancário Padrão",
+      "type": "number",
+      "name": "Limite Máximo de Desconto (%)",
+      "lastModified": "2026-10-08T19:39:04.535Z",
+      "modifiedBy": "Sistema",
+      "key": "max_discount_limit",
+      "value": "15.00",
+      "category": "Regras de Negócio",
+      "description": "Desconto máximo permitido sem autorização da diretoria"
+    },
+    {
+      "modifiedBy": "Sistema",
+      "lastModified": "2026-10-08T19:39:04.535Z",
+      "category": "Regras de Negócio",
       "value": "18:00",
       "type": "string",
-      "category": "Regras de Negócio",
-      "description": "Vendas após este horário são liquidadas no ciclo seguinte",
-      "lastModified": "2026-10-03T23:20:09.229Z",
-      "modifiedBy": "Sistema"
+      "name": "Horário de Corte Bancário Padrão",
+      "key": "bank_cutoff_hour",
+      "description": "Vendas após este horário são liquidadas no ciclo seguinte"
     },
     {
-      "key": "realtime_sync_enabled",
-      "name": "Sincronização em Tempo Real na Nuvem",
-      "value": "true",
-      "type": "boolean",
       "category": "Sincronização",
+      "value": "true",
+      "lastModified": "2026-10-08T19:39:04.535Z",
+      "modifiedBy": "Sistema",
+      "key": "realtime_sync_enabled",
       "description": "Propagação instantânea de alterações para todos os aparelhos conectados",
-      "lastModified": "2026-10-03T23:20:09.229Z",
-      "modifiedBy": "Sistema"
+      "name": "Sincronização em Tempo Real",
+      "type": "boolean"
     },
     {
-      "key": "audit_log_retention_days",
-      "name": "Retenção de Logs de Auditoria (dias)",
+      "lastModified": "2026-10-08T19:39:04.535Z",
+      "description": "Tempo de armazenamento do histórico de alterações administrativas",
+      "modifiedBy": "Sistema",
+      "category": "Segurança",
       "value": "90",
       "type": "number",
-      "category": "Segurança",
-      "description": "Tempo de armazenamento do histórico de alterações administrativas",
-      "lastModified": "2026-10-03T23:20:09.229Z",
-      "modifiedBy": "Sistema"
+      "name": "Retenção de Logs de Auditoria (dias)",
+      "key": "audit_log_retention_days"
     },
     {
       "key": "two_factor_auth_required",
-      "name": "Exigir 2FA para Administradores",
-      "value": "true",
-      "type": "boolean",
+      "lastModified": "2026-10-08T19:39:04.535Z",
       "category": "Segurança",
-      "description": "Obrigatoriedade de autenticação de dois fatores no painel administrativo",
-      "lastModified": "2026-10-07T19:27:45.859Z",
-      "modifiedBy": "Administrador"
-    },
-    {
-      "key": "auto_conciliation_threshold",
-      "name": "Tolerância de Conciliação Automática (R$)",
-      "value": "0.05",
-      "type": "number",
-      "category": "Operação",
-      "description": "Diferença máxima aceita para correspondência automática de extrato",
-      "lastModified": "2026-10-03T23:20:09.229Z",
-      "modifiedBy": "Sistema"
-    },
-    {
-      "key": "system_maintenance_mode",
-      "name": "Modo de Manutenção",
+      "modifiedBy": "Sistema",
+      "type": "boolean",
       "value": "false",
-      "type": "boolean",
-      "category": "Geral",
+      "name": "Exigir 2FA para Administradores",
+      "description": "Obrigatoriedade de autenticação de dois fatores no painel administrativo"
+    },
+    {
+      "description": "Diferença máxima aceita para correspondência automática de extrato",
+      "value": "0.05",
+      "name": "Tolerância de Conciliação Automática (R$)",
+      "type": "number",
+      "key": "auto_conciliation_threshold",
+      "modifiedBy": "Sistema",
+      "category": "Operação",
+      "lastModified": "2026-10-08T19:39:04.535Z"
+    },
+    {
+      "value": "false",
       "description": "Bloqueia edições por franqueados mantendo apenas leitura",
-      "lastModified": "2026-10-03T23:20:09.229Z",
-      "modifiedBy": "Sistema"
+      "modifiedBy": "Sistema",
+      "lastModified": "2026-10-08T19:39:04.535Z",
+      "key": "system_maintenance_mode",
+      "category": "Geral",
+      "name": "Modo de Manutenção",
+      "type": "boolean"
     }
   ],
-  "auditLogs": [
+  "auditLogs": [],
+  "businesses": [
     {
-      "id": "audit_1791401265859",
-      "timestamp": "2026-10-07T19:27:45.859Z",
-      "action": "UPDATE_CONFIG",
-      "key": "two_factor_auth_required",
-      "oldValue": "false",
-      "newValue": "true",
-      "user": "Administrador"
+      "id": "lavo",
+      "royaltyType": "pct",
+      "name": "LAVO",
+      "royalty": 0,
+      "color": "#3c63da",
+      "brand": "LAVO"
     },
     {
-      "id": "audit_1791388676014",
-      "timestamp": "2026-10-07T15:57:56.014Z",
-      "action": "SYNC_WHATSAPPCONFIG",
-      "key": "whatsappConfig",
-      "oldValue": null,
-      "newValue": "Updated whatsappConfig",
-      "user": "WhatsApp"
-    },
-    {
-      "id": "audit_1791387627859",
-      "timestamp": "2026-10-07T15:40:27.859Z",
-      "action": "SYNC_VTCONFIGS",
-      "key": "vtConfigs",
-      "oldValue": null,
-      "newValue": "Updated vtConfigs",
-      "user": "Administrador"
-    },
-    {
-      "id": "audit_1791387626716",
-      "timestamp": "2026-10-07T15:40:26.716Z",
-      "action": "SYNC_VTCONFIGS",
-      "key": "vtConfigs",
-      "oldValue": null,
-      "newValue": "Updated vtConfigs",
-      "user": "Administrador"
-    },
-    {
-      "id": "audit_1791387624672",
-      "timestamp": "2026-10-07T15:40:24.672Z",
-      "action": "SYNC_VTCONFIGS",
-      "key": "vtConfigs",
-      "oldValue": null,
-      "newValue": "Updated vtConfigs",
-      "user": "Administrador"
-    },
-    {
-      "id": "audit_1791387589172",
-      "timestamp": "2026-10-07T15:39:49.172Z",
-      "action": "SYNC_VTCONFIGS",
-      "key": "vtConfigs",
-      "oldValue": null,
-      "newValue": "Updated vtConfigs",
-      "user": "Administrador"
-    },
-    {
-      "id": "audit_1791387583259",
-      "timestamp": "2026-10-07T15:39:43.259Z",
-      "action": "SYNC_VTCONFIGS",
-      "key": "vtConfigs",
-      "oldValue": null,
-      "newValue": "Updated vtConfigs",
-      "user": "Administrador"
-    },
-    {
-      "id": "audit_1791387534988",
-      "timestamp": "2026-10-07T15:38:54.988Z",
-      "action": "SYNC_VTCONFIGS",
-      "key": "vtConfigs",
-      "oldValue": null,
-      "newValue": "Updated vtConfigs",
-      "user": "Administrador"
-    },
-    {
-      "id": "audit_1791387531692",
-      "timestamp": "2026-10-07T15:38:51.692Z",
-      "action": "SYNC_VTCONFIGS",
-      "key": "vtConfigs",
-      "oldValue": null,
-      "newValue": "Updated vtConfigs",
-      "user": "Administrador"
-    },
-    {
-      "id": "audit_1791387529818",
-      "timestamp": "2026-10-07T15:38:49.818Z",
-      "action": "SYNC_VTCONFIGS",
-      "key": "vtConfigs",
-      "oldValue": null,
-      "newValue": "Updated vtConfigs",
-      "user": "Administrador"
-    },
-    {
-      "id": "audit_1791384031087",
-      "timestamp": "2026-10-07T14:40:31.087Z",
-      "action": "SYNC_WHATSAPPCONFIG",
-      "key": "whatsappConfig",
-      "oldValue": null,
-      "newValue": "Updated whatsappConfig",
-      "user": "WhatsApp"
-    },
-    {
-      "id": "audit_1791383492376",
-      "timestamp": "2026-10-07T14:31:32.376Z",
-      "action": "SYNC_BILLS",
-      "key": "bills",
-      "oldValue": null,
-      "newValue": "Updated bills",
-      "user": "Administrador"
-    },
-    {
-      "id": "audit_1791383465930",
-      "timestamp": "2026-10-07T14:31:05.930Z",
-      "action": "SYNC_PRODUCTS",
-      "key": "products",
-      "oldValue": null,
-      "newValue": "Updated products",
-      "user": "Administrador"
-    },
-    {
-      "id": "audit_1791075556146",
-      "timestamp": "2026-10-04T00:59:16.146Z",
-      "action": "SYNC_FRANCHISES",
-      "key": "franchises",
-      "oldValue": null,
-      "newValue": "Updated franchises",
-      "user": "Administrador"
-    },
-    {
-      "id": "audit_1791075556141",
-      "timestamp": "2026-10-04T00:59:16.141Z",
-      "action": "SYNC_BUSINESSES",
-      "key": "businesses",
-      "oldValue": null,
-      "newValue": "Updated businesses",
-      "user": "Administrador"
-    },
-    {
-      "id": "audit_1791075132242",
-      "timestamp": "2026-10-04T00:52:12.242Z",
-      "action": "SYNC_FRANCHISES",
-      "key": "franchises",
-      "oldValue": null,
-      "newValue": "Updated franchises",
-      "user": "Administrador"
-    },
-    {
-      "id": "audit_1791075132233",
-      "timestamp": "2026-10-04T00:52:12.233Z",
-      "action": "SYNC_BUSINESSES",
-      "key": "businesses",
-      "oldValue": null,
-      "newValue": "Updated businesses",
-      "user": "Administrador"
-    },
-    {
-      "id": "audit_1791074956878",
-      "timestamp": "2026-10-04T00:49:16.878Z",
-      "action": "SYNC_BUSINESSES",
-      "key": "businesses",
-      "oldValue": null,
-      "newValue": "Updated businesses",
-      "user": "Administrador"
+      "brand": "MEXICANISSIMO",
+      "color": "#3c63da",
+      "name": "MEXICANISSIMO",
+      "royaltyType": "pct",
+      "id": "mexicano",
+      "royalty": 0
     }
   ],
-  "businesses": [],
-  "franchises": [],
+  "franchises": [
+    {
+      "lng": -46.6757729,
+      "active": true,
+      "rpDone": 5,
+      "address": "Rua Alvorada, 550",
+      "faturamento": 0,
+      "lat": -23.7761745,
+      "status": "green",
+      "resp": "Rodrigo",
+      "region": "Sudeste",
+      "email": "",
+      "coordinatesVerified": true,
+      "id": "f_1791493345753",
+      "name": "Vila Olímpia",
+      "city": "São Paulo",
+      "code": "LV-01",
+      "pendencias": 0,
+      "businessId": "lavo",
+      "phone": ""
+    },
+    {
+      "coordinatesVerified": true,
+      "rpDone": 5,
+      "name": "Clodomiro",
+      "active": true,
+      "region": "Sudeste",
+      "pendencias": 0,
+      "city": "SÃO PAULO",
+      "businessId": "lavo",
+      "code": "LV-02",
+      "status": "green",
+      "lat": -23.5928422,
+      "phone": "",
+      "faturamento": 0,
+      "id": "f_1791493393092",
+      "lng": -46.6773993,
+      "resp": "RODRIGO",
+      "email": "",
+      "address": "Rua Clodomiro Amazonas 980"
+    },
+    {
+      "status": "green",
+      "name": "Brooklin",
+      "region": "Sudeste",
+      "businessId": "lavo",
+      "code": "LV-03",
+      "active": true,
+      "city": "SÃO PAULO",
+      "id": "f_1791493433153",
+      "rpDone": 5,
+      "pendencias": 0,
+      "address": "Av santo Amaro 3252",
+      "email": "",
+      "coordinatesVerified": true,
+      "lng": -46.6782742,
+      "phone": "",
+      "resp": "RODRIGO",
+      "faturamento": 0,
+      "lat": -23.6127394
+    },
+    {
+      "faturamento": 0,
+      "pendencias": 0,
+      "email": "",
+      "active": true,
+      "rpDone": 5,
+      "address": "Av Giovanni Gronchi 3577",
+      "name": "Morumbi",
+      "businessId": "lavo",
+      "code": "LV-04",
+      "status": "green",
+      "city": "SÃO PAULO",
+      "phone": "",
+      "region": "Sudeste",
+      "lng": -46.7369104,
+      "id": "f_1791493489437",
+      "coordinatesVerified": true,
+      "resp": "RODRIGO",
+      "lat": -23.6376932
+    },
+    {
+      "name": "Santo André",
+      "coordinatesVerified": true,
+      "phone": "",
+      "lat": -23.6263972,
+      "email": "",
+      "id": "f_1791493539509",
+      "lng": -46.540195,
+      "city": "SÃO PAULO",
+      "code": "LV-05",
+      "rpDone": 5,
+      "pendencias": 0,
+      "businessId": "lavo",
+      "address": "Av dos estados, 1586",
+      "active": true,
+      "region": "Sudeste",
+      "resp": "RODRIGO",
+      "faturamento": 0,
+      "status": "green"
+    },
+    {
+      "pendencias": 0,
+      "active": true,
+      "email": "",
+      "rpDone": 5,
+      "lng": -46.5410612,
+      "businessId": "mexicano",
+      "status": "green",
+      "lat": -23.6470113,
+      "phone": "",
+      "resp": "RODRIGO",
+      "region": "Sudeste",
+      "faturamento": 0,
+      "name": "MEXICANO",
+      "address": "Rua das Figueiras, 780, Santo André - SP, 09080-300",
+      "city": "Santo André",
+      "code": "M-01",
+      "coordinatesVerified": true,
+      "id": "f_1791493654697"
+    }
+  ],
   "employees": [],
   "users": [
     {
-      "id": "u1",
+      "last": "Agora",
       "nome": "Administrador",
-      "email": "leomissio72@gmail.com",
-      "login": "admin",
+      "employeeId": "e1",
       "perfil": "dono",
-      "unidade": "dono",
+      "id": "u1",
+      "login": "admin",
       "status": "ativo",
-      "last": "19:15",
-      "employeeId": "e1"
+      "unidade": "dono",
+      "email": "leomissio72@gmail.com"
     }
   ],
   "manualEntries": [],
   "dreParams": {},
   "paymentMethods": [
     {
-      "id": "dinheiro",
-      "name": "Dinheiro",
-      "icon": "💵",
-      "fee": 0,
-      "prazoDias": 0,
-      "cutoffHour": 23,
-      "parcelas": false,
-      "bandeira": null
+      "prazo": "D+0",
+      "active": true,
+      "icon": "Banknote",
+      "taxa": 0,
+      "name": "Dinheiro em Espécie",
+      "id": "dinheiro"
     },
     {
+      "prazo": "D+0",
+      "icon": "QrCode",
       "id": "pix",
-      "name": "PIX",
-      "icon": "⚡",
-      "fee": 0.005,
-      "prazoDias": 0,
-      "cutoffHour": 23,
-      "parcelas": false,
-      "bandeira": null
+      "taxa": 0.99,
+      "active": true,
+      "name": "PIX Estático / Dinâmico"
     },
     {
+      "icon": "CreditCard",
       "id": "debito",
+      "prazo": "D+1",
       "name": "Cartão de Débito",
-      "icon": "💳",
-      "fee": 0.012,
-      "prazoDias": 1,
-      "cutoffHour": 18,
-      "parcelas": false,
-      "bandeira": "Visa/Master"
+      "active": true,
+      "taxa": 1.45
     },
     {
-      "id": "credito",
-      "name": "Cartão de Crédito",
-      "icon": "💳",
-      "fee": 0.03,
-      "prazoDias": 30,
-      "cutoffHour": 18,
-      "parcelas": true,
-      "bandeira": "Visa/Master"
+      "taxa": 2.89,
+      "name": "Cartão de Crédito (À Vista)",
+      "prazo": "D+30",
+      "active": true,
+      "icon": "CreditCard",
+      "id": "credito_vista"
     },
     {
-      "id": "credito2",
-      "name": "Crédito 2-6x",
-      "icon": "🪙",
-      "fee": 0.038,
-      "prazoDias": 30,
-      "cutoffHour": 18,
-      "parcelas": true,
-      "bandeira": "Visa/Master"
+      "id": "credito_parc",
+      "taxa": 3.49,
+      "name": "Cartão de Crédito (Parcelado)",
+      "prazo": "D+30",
+      "active": true,
+      "icon": "CreditCard"
     },
     {
-      "id": "credito12",
-      "name": "Crédito 7-12x",
-      "icon": "🪙",
-      "fee": 0.045,
-      "prazoDias": 30,
-      "cutoffHour": 18,
-      "parcelas": true,
-      "bandeira": "Visa/Master"
-    },
-    {
-      "id": "boleto",
-      "name": "Boleto Bancário",
-      "icon": "📄",
-      "fee": 0.015,
-      "prazoDias": 2,
-      "cutoffHour": 14,
-      "parcelas": false,
-      "bandeira": null
-    },
-    {
+      "active": true,
       "id": "voucher",
-      "name": "Vale / Voucher",
-      "icon": "🎟️",
-      "fee": 0.035,
-      "prazoDias": 15,
-      "cutoffHour": 18,
-      "parcelas": false,
-      "bandeira": "Alelo/VR"
+      "prazo": "D+30",
+      "icon": "Wallet",
+      "taxa": 5.2,
+      "name": "Vale Refeição / Alimentação"
+    },
+    {
+      "id": "transferencia",
+      "taxa": 0,
+      "name": "Transferência / TED / DOC",
+      "active": true,
+      "prazo": "D+0",
+      "icon": "ArrowLeftRight"
     }
   ],
   "businessRules": {
-    "maxDiscount": 10,
-    "minTicket": 20,
-    "advance": false
+    "advance": false,
+    "maxDiscount": 15,
+    "minTicket": 20
   },
-  "royalties": {},
+  "royalties": {
+    "lavo": 0,
+    "mexicano": 0,
+    "biz_auditoria_1791506805061": 0.065
+  },
   "permissions": {},
-  "vtConfigs": {
-    "dono": {
-      "rate": 10,
-      "title": "Planilha VT Mensal - Benefício e Recarga",
-      "descontoCltPct": 0.06,
-      "tenant": "dono",
-      "notes": true,
-      "format": "both",
-      "prefix": "VT_Folha",
-      "periodoTipo": "mensal",
-      "period": "Mês Vigente",
-      "diasUteisCalculados": 22,
-      "employees": [],
-      "pix": true,
-      "days": 22
-    }
-  },
+  "vtConfigs": {},
   "systemSettings": {
     "appName": "Gestão de Franquias",
-    "companyName": "Gestão de Franquias S.A.",
-    "cnpjMatriz": "12.345.678/0001-90"
+    "cnpjMatriz": "12.345.678/0001-90",
+    "companyName": "Gestão de Franquias S.A."
   },
   "credentials": {
     "u1": {
-      "passwordHash": "scrypt$1f876c643d2a46ba2767d0d599d69a42$dbe1f47b8bf46ffdf1b871c67e3062d5ec0d92af5326b1b6493b80c59d252e18ac232f8fd35874e671c6fc1bebac829de5531ea03d03857e538a639a2ed90b98",
-      "version": 1,
-      "createdAt": "2026-10-07T19:26:03.283Z",
-      "updatedAt": "2026-10-07T19:26:03.283Z",
+      "passwordHash": "scrypt$4beffa694005b7261455b7a06d98ad4e$9723defffa7896eebf4c0342f6fa7fe3e755e71dc373c25ee4f7dbdcab57f31fa32ac675125345ef4fc5ccb6b4fe06388df0a563a6a31cc707264b22e6190e99",
+      "version": 2,
+      "createdAt": "2026-10-09T00:46:44.930Z",
+      "updatedAt": "2026-10-09T00:46:44.978Z",
       "mustReset": false
     }
   },
   "mfaSecrets": {},
   "whatsappConfig": {
+    "senderPhone": "+55 (11) 98888-0000",
     "minInterval": 3,
+    "providerReady": false,
+    "providerMessage": "WhatsApp ainda não está configurado no ambiente de produção.",
+    "connectionStatus": "desconectado",
+    "webhookReady": false,
     "maxInterval": 8,
-    "connectionStatus": "conectado",
-    "senderPhone": "+55 (11) 998888-0000"
+    "webhookMessage": "Webhook ainda não está configurado: faltam WHATSAPP_WEBHOOK_VERIFY_TOKEN e/ou WHATSAPP_APP_SECRET.",
+    "provider": "meta_cloud_api"
   },
   "whatsappHistory": [],
   "durableInitialized": true,
   "emptySections": [
     "employees",
-    "whatsappHistory",
-    "bills",
     "manualEntries",
-    "businesses",
-    "franchises",
+    "bills",
     "products",
-    "suppliers",
-    "vtConfigs"
+    "suppliers"
   ],
   "products": [],
   "suppliers": [],
@@ -441,38 +381,36 @@
   "intercompanyRules": [
     {
       "id": "intercompany_lavo_vila_olimpia",
-      "name": "LAVO Vila Olímpia LTDA",
       "active": true,
-      "scope": "rede",
-      "terms": [
-        "LAVO VILA OLIMPIA LTDA"
-      ],
+      "name": "LAVO Vila Olímpia LTDA",
       "counterpartyDocuments": [
         "53.374.430/0001-30"
       ],
+      "terms": [
+        "LAVO VILA OLIMPIA LTDA"
+      ],
+      "scope": "rede",
       "counterpartyAccounts": [
         "34237956-9"
       ]
     },
     {
-      "id": "intercompany_lavo_clodomiro_amazonas",
+      "counterpartyDocuments": [
+        "40.099.645/0001-48"
+      ],
       "name": "LAVO Clodomiro Amazonas LTDA",
+      "id": "intercompany_lavo_clodomiro_amazonas",
+      "counterpartyAccounts": [
+        "9363737-3"
+      ],
       "active": true,
       "scope": "rede",
       "terms": [
         "LAVO CLODOMIRO AMAZONAS LTDA"
-      ],
-      "counterpartyDocuments": [
-        "40.099.645/0001-48"
-      ],
-      "counterpartyAccounts": [
-        "9363737-3"
       ]
     },
     {
-      "id": "intercompany_lavo_brooklin",
       "name": "LAVO Brooklin LTDA",
-      "active": true,
       "scope": "rede",
       "terms": [
         "LAVO BROOKLIN LTDA"
@@ -480,38 +418,40 @@
       "counterpartyDocuments": [
         "45.809.375/0001-35"
       ],
+      "active": true,
+      "id": "intercompany_lavo_brooklin",
       "counterpartyAccounts": [
         "20082441-4"
       ]
     },
     {
-      "id": "intercompany_lavo_morumbi",
-      "name": "LAVO Morumbi LTDA",
-      "active": true,
-      "scope": "rede",
+      "counterpartyAccounts": [
+        "31362293-0"
+      ],
       "terms": [
         "LAVO MORUMBI LTDA"
       ],
+      "scope": "rede",
+      "name": "LAVO Morumbi LTDA",
       "counterpartyDocuments": [
         "45.606.295/0001-82"
       ],
-      "counterpartyAccounts": [
-        "31362293-0"
-      ]
+      "active": true,
+      "id": "intercompany_lavo_morumbi"
     },
     {
-      "id": "intercompany_santo_andre_stone",
-      "name": "Santo André / Stone",
-      "active": true,
       "scope": "rede",
       "terms": [
         "STONE SANTO ANDRE",
         "STONE SANTO. ANDRE",
         "SANTO ANDRE STONE"
       ],
+      "name": "Santo André / Stone",
+      "id": "intercompany_santo_andre_stone",
       "counterpartyDocuments": [
         "62.248.516/0001-07"
       ],
+      "active": true,
       "counterpartyAccounts": [
         "67061627-5"
       ]

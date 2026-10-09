@@ -2,7 +2,7 @@ import express, { Request, Response as ExpressResponse } from "express";
 import path from "path";
 import fs from "fs";
 import { get, put } from "@vercel/blob";
-import { initialBills } from "./data/initialData.ts";
+import { initialBills, initialBusinesses, initialFranchises } from "./data/initialData.ts";
 import { cookieOptions, createSignedSessionToken, getCredential, hashPassword, migrateLegacyCredentials, safeUser, setCredential, stripSensitiveFields, verifyPassword, verifySignedSessionToken } from "./serverSecurity.ts";
 import { findIntercompanyRule } from "./utils/intercompany.ts";
 
@@ -256,8 +256,8 @@ const defaultConfigs = [
   }
 ];
 
-const defaultBusinesses: any[] = [];
-const defaultFranchises: any[] = [];
+const defaultBusinesses: any[] = initialBusinesses;
+const defaultFranchises: any[] = initialFranchises;
 const defaultEmployees: any[] = [];
 const defaultUsers = [
   { id: "u1", nome: "Administrador", email: "leomissio72@gmail.com", login: "admin", perfil: "dono", unidade: "dono", status: "ativo", last: "Agora", employeeId: "e1" }
@@ -421,8 +421,8 @@ function loadDatabase(): DatabaseState {
     lastUpdated: new Date().toISOString(),
     configs: defaultConfigs,
     auditLogs: [],
-    businesses: [],
-    franchises: [],
+    businesses: initialBusinesses,
+    franchises: initialFranchises,
     employees: [],
     users: defaultUsers,
     manualEntries: [],

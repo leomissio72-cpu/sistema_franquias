@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
+import { jsPDF } from "jspdf";
 import { BillItem, FranchiseUnit, Business, ScreenType, DreParams, UserSession, ManualEntry, IntercompanyRule } from "../../types";
 import {
   formatBrl,
@@ -83,9 +84,8 @@ export const DreScreen: React.FC<DreScreenProps> = ({
   manualEntries = [],
   intercompanyRules = [],
 }) => {
-  // Main sub-tab: demonstrativo vs extrato (parâmetros retirados da visualização de DRE conforme solicitado)
+  // Main sub-tab: demonstrativo vs extrato (apuração baseada nos lançamentos reais)
   const [activeSubTab, setActiveSubTab] = useState<"demonstrativo" | "extrato">("demonstrativo");
-  const [calculationMode, setCalculationMode] = useState<"real" | "projecao">("real");
 
   // -------------------------------------------------------------
   // Granular Date Selection (Ano, Mês e Dia)
@@ -234,13 +234,45 @@ export const DreScreen: React.FC<DreScreenProps> = ({
   const realDespesas = React.useMemo(() => activeEntries.filter((e) => e.type === "despesa"), [activeEntries]);
   const realFatBruta = React.useMemo(() => realEntradas.reduce((s, e) => s + (Number(e.value) || 0), 0), [realEntradas]);
 
-  // Main DRE calculation
+  // Helper para nome do escopo / unidade selecionada
+  const getScopeTitle = () => {
+    if (selectedFranchise !== "all") {
+      const f = franchises.find((u) => u.id === selectedFranchise);
+      if (f) return `${f.name} (${f.code} - ${f.city})`;
+    }
+    if (targetUnit?.name) return `${targetUnit.name} (${targetUnit.code})`;
+    if (selectedBusiness !== "all") {
+      const b = businesses.find((biz) => biz.id === selectedBusiness);
+      return b ? `Rede ${b.name}` : selectedBusiness;
+    }
+    return "Toda a Rede Consolidada";
+  };
+
+  // Helper de texto do período selecionado
+  const getPeriodSummary = () => {
+    const yrText =
+      dateSelection.years.length === AVAILABLE_YEARS.length
+        ? "Todos os Anos"
+        : `Ano ${dateSelection.years.join(", ")}`;
+    const moText =
+      dateSelection.months.length === AVAILABLE_MONTHS.length
+        ? "Todos os 12 Meses"
+        : dateSelection.months.length === 1
+        ? AVAILABLE_MONTHS.find((m) => m.value === dateSelection.months[0])?.label || "1 mês"
+        : `${dateSelection.months.length} meses`;
+    const dayText =
+      dateSelection.days.length === AVAILABLE_DAYS.length
+        ? "Todos os 31 Dias"
+        : `${dateSelection.days.length} dia(s)`;
+    return `${yrText} · ${moText} · ${dayText}`;
+  };
+
+  // Apuração oficial do DRE baseada estritamente nos lançamentos reais da base
   const dre = React.useMemo(() => {
-    // If in Real Data mode and there are NO entries found (or data was deleted/cleared):
-    if (calculationMode === "real" && activeEntries.length === 0) {
+    if (activeEntries.length === 0) {
       const emptyDespesas = dreExpenseDefs.map((e) => ({
         ...e,
-        pct: currentParams.despesas?.[e.id] ?? e.pct,
+        pct: 0,
         value: 0,
       }));
       return {
@@ -262,76 +294,90 @@ export const DreScreen: React.FC<DreScreenProps> = ({
       };
     }
 
-    if (calculationMode === "real") {
-      // Real entries exist: calculate using real revenue & real expenses
-      const calc = calculateDre(realFatBruta, currentParams, unitRoyalty, targetBiz);
+    // Receita Bruta apurada pelas entradas reais do período
+    const realFatBruta = realEntradas.reduce((s, e) => s + (Number(e.value) || 0), 0);
 
-      // Track all matched items so none are dropped
-      const matchedItemIds = new Set<string>();
-
-      // Group real expenses by category where possible
-      const mappedDespesas = dreExpenseDefs.map((e) => {
-        const matchedItems = realDespesas.filter((de) => {
-          const cId = (de.catId || "").toLowerCase();
-          const cName = (de.catName || "").toLowerCase();
-          const eId = e.id.toLowerCase();
-          const eName = e.name.toLowerCase();
-          const isMatch = cId.includes(eId) || cName.includes(eId) || cName.includes(eName) || eName.includes(cName);
-          if (isMatch) matchedItemIds.add(de.id);
-          return isMatch;
-        });
-
-        const catSum = matchedItems.reduce((s, item) => s + (Number(item.value) || 0), 0);
-        return {
-          ...e,
-          pct: realFatBruta > 0 ? catSum / realFatBruta : 0,
-          value: catSum,
-        };
+    // Mapeamento categorizado das saídas reais por grupo
+    const matchedItemIds = new Set<string>();
+    const mappedDespesas = dreExpenseDefs.map((e) => {
+      const matchedItems = realDespesas.filter((de) => {
+        const cId = (de.catId || "").toLowerCase();
+        const cName = (de.catName || "").toLowerCase();
+        const eId = e.id.toLowerCase();
+        const eName = e.name.toLowerCase();
+        const isMatch = cId.includes(eId) || cName.includes(eId) || cName.includes(eName) || eName.includes(cName);
+        if (isMatch) matchedItemIds.add(de.id);
+        return isMatch;
       });
 
-      // Find any unmatched real expenses (e.g. Marketing, Softwares, Insumos, Serviços de Terceiros, etc.)
-      const unmatchedItems = realDespesas.filter((de) => !matchedItemIds.has(de.id));
-      if (unmatchedItems.length > 0) {
-        // Group unmatched items by their actual category name
-        const customCategoryGroups: Record<string, number> = {};
-        unmatchedItems.forEach((de) => {
-          const cat = de.catName || "Outras Despesas Operacionais";
-          customCategoryGroups[cat] = (customCategoryGroups[cat] || 0) + (Number(de.value) || 0);
-        });
-
-        Object.entries(customCategoryGroups).forEach(([catName, val], idx) => {
-          mappedDespesas.push({
-            id: `custom_${idx}_${catName.toLowerCase().replace(/[^a-z0-9]/g, "")}`,
-            name: catName,
-            group: "operacional",
-            pct: realFatBruta > 0 ? val / realFatBruta : 0,
-            value: val,
-            fromConciliation: true,
-            icon: "📄",
-          });
-        });
-      }
-
-      // Filter to items that have value > 0 for display, or show all if empty
-      const nonZeroDespesas = mappedDespesas.filter((d) => d.value > 0);
-      const activeDespesasTable = nonZeroDespesas.length > 0 ? nonZeroDespesas : mappedDespesas;
-
-      // Ensure totRealDesp EXACTLY equals the sum of realDespesas
-      const totRealDesp = realDespesas.reduce((s, d) => s + (Number(d.value) || 0), 0);
-      const lucroLiq = calc.lucroBruto - totRealDesp;
-
+      const catSum = matchedItems.reduce((s, item) => s + (Number(item.value) || 0), 0);
       return {
-        ...calc,
-        despesas: activeDespesasTable,
-        totalDesp: totRealDesp,
-        lucroLiquido: lucroLiq,
-        margemLiquida: realFatBruta > 0 ? lucroLiq / realFatBruta : 0,
+        ...e,
+        pct: realFatBruta > 0 ? catSum / realFatBruta : 0,
+        value: catSum,
       };
+    });
+
+    // Saídas que possuem categorias operacionais customizadas
+    const unmatchedItems = realDespesas.filter((de) => !matchedItemIds.has(de.id));
+    if (unmatchedItems.length > 0) {
+      const customCategoryGroups: Record<string, number> = {};
+      unmatchedItems.forEach((de) => {
+        const cat = de.catName || "Outras Despesas Operacionais";
+        customCategoryGroups[cat] = (customCategoryGroups[cat] || 0) + (Number(de.value) || 0);
+      });
+
+      Object.entries(customCategoryGroups).forEach(([catName, val], idx) => {
+        mappedDespesas.push({
+          id: `custom_${idx}_${catName.toLowerCase().replace(/[^a-z0-9]/g, "")}`,
+          name: catName,
+          group: "operacional",
+          pct: realFatBruta > 0 ? val / realFatBruta : 0,
+          value: val,
+          fromConciliation: true,
+          icon: "📄",
+        });
+      });
     }
 
-    // Projection mode: target projection from franchise baseFat
-    return calculateDre(baseFat, currentParams, unitRoyalty, targetBiz);
-  }, [calculationMode, activeEntries, realEntradas, realDespesas, realFatBruta, baseFat, currentParams, unitRoyalty]);
+    // Identificação de deduções reais se registradas em lançamentos
+    const findRealExpense = (keywords: string[]) => {
+      return realDespesas.reduce((acc, de) => {
+        const text = `${de.catId || ""} ${de.catName || ""} ${de.desc || ""}`.toLowerCase();
+        return keywords.some((k) => text.includes(k)) ? acc + (Number(de.value) || 0) : acc;
+      }, 0);
+    };
+
+    const realDesconto = 0;
+    const realImpostos = findRealExpense(["imposto", "tributo", "simples", "darf", "iss"]);
+    const realReceitaLiquida = Math.max(0, realFatBruta - realDesconto - realImpostos);
+    const realCmv = findRealExpense(["cmv", "custo de mercadoria", "mercadoria vendida"]);
+    const realTaxas = findRealExpense(["taxa de cart", "taxa cart", "maquininha", "stone"]);
+    const realLucroBruto = realReceitaLiquida - realCmv - realTaxas;
+
+    const nonZeroDespesas = mappedDespesas.filter((d) => d.value > 0);
+    const activeDespesasTable = nonZeroDespesas.length > 0 ? nonZeroDespesas : mappedDespesas;
+    const totRealDesp = realDespesas.reduce((s, d) => s + (Number(d.value) || 0), 0);
+    const lucroLiq = realFatBruta - totRealDesp;
+
+    return {
+      fatBruta: realFatBruta,
+      desconto: realDesconto,
+      receitaAjustada: realFatBruta - realDesconto,
+      impostos: realImpostos,
+      receitaLiquida: realReceitaLiquida,
+      cmv: realCmv,
+      taxasNegocio: realTaxas,
+      lucroBruto: realLucroBruto,
+      despesas: activeDespesasTable,
+      totalDesp: totRealDesp,
+      lucroLiquido: lucroLiq,
+      margemBruta: realFatBruta > 0 ? realLucroBruto / realFatBruta : 0,
+      margemLiquida: realFatBruta > 0 ? lucroLiq / realFatBruta : 0,
+      despRatio: realFatBruta > 0 ? totRealDesp / realFatBruta : 0,
+      params: currentParams,
+    };
+  }, [activeEntries, realEntradas, realDespesas]);
 
   const scopedBills = bills.filter((bill) => {
     const matchesUnit = selectedFranchise === "all" || !bill.tenantId || bill.tenantId === "dono" || bill.tenantId === selectedFranchise;
@@ -343,94 +389,6 @@ export const DreScreen: React.FC<DreScreenProps> = ({
     summary[status] += Number(bill.value) || 0;
     return summary;
   }, { overdue: 0, today: 0, soon: 0, scheduled: 0, paid: 0 } as Record<ReturnType<typeof getBillDueStatus>, number>);
-
-  // -----------------------------------------------------------------
-  // Form state for unified Parâmetros do DRE
-  // -----------------------------------------------------------------
-  const [paramsForm, setParamsForm] = useState<DreParams>({
-    impostos: currentParams.impostos,
-    cmv: currentParams.cmv,
-    fees: currentParams.fees,
-    discount: currentParams.discount,
-    despesas: { ...currentParams.despesas },
-  });
-
-  const [isSaved, setIsSaved] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
-
-  useEffect(() => {
-    const updated = dreParams[targetTenantKey] || dreParams["dono"] || defaultDreParams;
-    setParamsForm({
-      impostos: updated.impostos,
-      cmv: updated.cmv,
-      fees: updated.fees,
-      discount: updated.discount,
-      despesas: { ...updated.despesas },
-    });
-  }, [targetTenantKey, dreParams]);
-
-  const handleGeneralChange = (field: keyof DreParams, valueStr: string) => {
-    const val = parseFloat(valueStr || "0") / 100;
-    setParamsForm((prev) => ({
-      ...prev,
-      [field]: val,
-    }));
-    setIsSaved(false);
-  };
-
-  const handleExpenseChange = (expId: string, valueStr: string) => {
-    const val = parseFloat(valueStr || "0") / 100;
-    setParamsForm((prev) => ({
-      ...prev,
-      despesas: {
-        ...prev.despesas,
-        [expId]: val,
-      },
-    }));
-    setIsSaved(false);
-  };
-
-  const handleSaveParams = async () => {
-    if (!onSaveParams) return;
-    setIsSaving(true);
-    try {
-      await onSaveParams(targetTenantKey, paramsForm);
-      setIsSaved(true);
-      toast.success("Parâmetros do DRE salvos com sucesso!");
-      setTimeout(() => setIsSaved(false), 3000);
-    } catch (e) {
-      console.error(e);
-      toast.error("Erro ao salvar parâmetros do DRE. Tente novamente.");
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  const handleResetParams = () => {
-    setParamsForm(JSON.parse(JSON.stringify(defaultDreParams)));
-    setIsSaved(false);
-  };
-
-  const previewDre = calculateDre(baseFat, paramsForm, unitRoyalty);
-
-  // Helper text for current period
-  const getPeriodSummary = () => {
-    const yrText =
-      dateSelection.years.length === AVAILABLE_YEARS.length
-        ? "Todos os Anos"
-        : `Ano ${dateSelection.years.join(", ")}`;
-    const moText =
-      dateSelection.months.length === AVAILABLE_MONTHS.length
-        ? "Todos os 12 Meses"
-        : dateSelection.months.length === 1
-        ? AVAILABLE_MONTHS.find((m) => m.value === dateSelection.months[0])?.label || "1 mês"
-        : `${dateSelection.months.length} meses`;
-    const dayText =
-      dateSelection.days.length === AVAILABLE_DAYS.length
-        ? "Todos os 31 Dias"
-        : `${dateSelection.days.length} dia(s)`;
-    return `${yrText} · ${moText} · ${dayText}`;
-  };
 
 
   const handleExportCsv = () => {
@@ -532,366 +490,482 @@ export const DreScreen: React.FC<DreScreenProps> = ({
   };
 
   const handleGenerateExtratoPdfReport = () => {
-    const scope = getScopeTitle();
-    const period = getPeriodSummary();
-    const dateStr = new Date().toLocaleDateString("pt-BR");
-    const timeStr = new Date().toLocaleTimeString("pt-BR");
+    try {
+      const scope = getScopeTitle();
+      const period = getPeriodSummary();
+      const dateStr = new Date().toLocaleDateString("pt-BR");
+      const timeStr = new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
 
-    const totalEntrada = realEntradas.reduce((s, e) => s + Number(e.value || 0), 0);
-    const totalSaida = realDespesas.reduce((s, e) => s + Number(e.value || 0), 0);
-    const saldoLiquido = totalEntrada - totalSaida;
+      const totalEntrada = realEntradas.reduce((s, e) => s + Number(e.value || 0), 0);
+      const totalSaida = realDespesas.reduce((s, e) => s + Number(e.value || 0), 0);
+      const saldoLiquido = totalEntrada - totalSaida;
 
-    let entradasRowsHtml = "";
-    if (realEntradas.length === 0) {
-      entradasRowsHtml = `<tr><td colspan="5" style="text-align:center;padding:14px;color:#64748b;">Nenhuma entrada registrada para o período filtrado.</td></tr>`;
-    } else {
-      realEntradas.forEach((e) => {
-        entradasRowsHtml += `
-          <tr>
-            <td style="padding:6px 8px;border-bottom:1px solid #e2e8f0;font-family:monospace;">${e.date || "—"}</td>
-            <td style="padding:6px 8px;border-bottom:1px solid #e2e8f0;font-weight:600;">${e.desc || "—"}</td>
-            <td style="padding:6px 8px;border-bottom:1px solid #e2e8f0;color:#64748b;">${e.apelido || "—"}</td>
-            <td style="padding:6px 8px;border-bottom:1px solid #e2e8f0;color:#475569;">${e.catName || "Entrada"}</td>
-            <td style="padding:6px 8px;text-align:right;border-bottom:1px solid #e2e8f0;font-family:monospace;color:#047857;font-weight:bold;">${formatBrl2(e.value)}</td>
-          </tr>
-        `;
+      const doc = new jsPDF({
+        orientation: "portrait",
+        unit: "mm",
+        format: "a4",
       });
-    }
 
-    let despesasRowsHtml = "";
-    if (realDespesas.length === 0) {
-      despesasRowsHtml = `<tr><td colspan="5" style="text-align:center;padding:14px;color:#64748b;">Nenhuma saída ou despesa registrada para o período filtrado.</td></tr>`;
-    } else {
-      realDespesas.forEach((e) => {
-        despesasRowsHtml += `
-          <tr>
-            <td style="padding:6px 8px;border-bottom:1px solid #e2e8f0;font-family:monospace;">${e.date || "—"}</td>
-            <td style="padding:6px 8px;border-bottom:1px solid #e2e8f0;font-weight:600;">${e.desc || "—"}</td>
-            <td style="padding:6px 8px;border-bottom:1px solid #e2e8f0;color:#64748b;">${e.apelido || "—"}</td>
-            <td style="padding:6px 8px;border-bottom:1px solid #e2e8f0;color:#475569;">${e.catName || "Despesa Operacional"}</td>
-            <td style="padding:6px 8px;text-align:right;border-bottom:1px solid #e2e8f0;font-family:monospace;color:#b44b4b;font-weight:bold;">-${formatBrl2(e.value)}</td>
-          </tr>
-        `;
-      });
-    }
+      const pageWidth = 210;
+      const margin = 14;
+      const contentWidth = pageWidth - margin * 2;
 
-    const htmlContent = `<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-  <meta charset="UTF-8">
-  <title>Extrato DRE - ${scope}</title>
-  <style>
-    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; margin: 20px; color: #1e293b; line-height: 1.35; background:#fff; }
-    .header { border-bottom: 2px solid #3c63da; padding-bottom: 10px; margin-bottom: 16px; }
-    .title { font-size: 18px; font-weight: 800; color: #0f172a; margin: 0; }
-    .meta-box { font-size: 11px; color: #475569; margin-top: 6px; display: flex; gap: 16px; flex-wrap: wrap; }
-    .meta-item strong { color: #0f172a; }
-    .summary-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 20px; }
-    .summary-card { padding: 10px 14px; border-radius: 8px; border: 1px solid #e2e8f0; background: #f8fafc; }
-    .summary-card.in { background: #ecfdf5; border-color: #a7f3d0; }
-    .summary-card.out { background: #fff1f2; border-color: #fecdd3; }
-    .summary-card.net { background: #eff6ff; border-color: #bfdbfe; }
-    .card-label { font-size: 10px; text-transform: uppercase; font-weight: bold; color: #64748b; margin-bottom: 4px; display: block; }
-    .card-val { font-size: 16px; font-weight: 800; font-family: monospace; }
-    .table-section { margin-bottom: 20px; }
-    .section-title { font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; color: #0f172a; margin-bottom: 8px; }
-    table { width: 100%; border-collapse: collapse; font-size: 11px; }
-    th { text-transform: uppercase; font-size: 9px; letter-spacing: 0.05em; background: #f1f5f9; color: #475569; padding: 7px 8px; border-bottom: 2px solid #cbd5e1; text-align: left; }
-    tfoot td { font-weight: bold; background: #f8fafc; border-top: 2px solid #cbd5e1; padding: 8px; font-size: 11px; }
-    @media print {
-      body { margin: 8mm; }
-      @page { size: portrait; margin: 8mm; }
-    }
-  </style>
-</head>
-<body>
-  <div class="header">
-    <h1 class="title">Extrato de Entradas, Saídas e Despesas (DRE)</h1>
-    <div class="meta-box">
-      <span class="meta-item"><strong>Unidade / Escopo:</strong> ${scope}</span>
-      <span class="meta-item"><strong>Período Filtrado:</strong> ${period}</span>
-      <span class="meta-item"><strong>Emissão:</strong> ${dateStr} às ${timeStr}</span>
-    </div>
-  </div>
+      // Top bar decorativa
+      doc.setFillColor(60, 99, 218);
+      doc.rect(margin, 10, contentWidth, 3, "F");
 
-  <div class="summary-grid">
-    <div class="summary-card in">
-      <span class="card-label" style="color:#047857;">Total de Entradas</span>
-      <span class="card-val" style="color:#065f46;">${formatBrl2(totalEntrada)}</span>
-      <span style="font-size:10px;color:#059669;display:block;margin-top:2px;">${realEntradas.length} registro(s)</span>
-    </div>
-    <div class="summary-card out">
-      <span class="card-label" style="color:#b91c1c;">Total de Saídas / Despesas</span>
-      <span class="card-val" style="color:#991b1b;">${formatBrl2(totalSaida)}</span>
-      <span style="font-size:10px;color:#dc2626;display:block;margin-top:2px;">${realDespesas.length} registro(s)</span>
-    </div>
-    <div class="summary-card net">
-      <span class="card-label" style="color:#1d4ed8;">Saldo Líquido</span>
-      <span class="card-val" style="color:#1e40af;">${formatBrl2(saldoLiquido)}</span>
-      <span style="font-size:10px;color:#2563eb;display:block;margin-top:2px;">Resultado operacional bruto</span>
-    </div>
-  </div>
+      // Título
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(14);
+      doc.setTextColor(21, 34, 56);
+      doc.text("EXTRATO DETALHADO DO DRE — ENTRADAS E DESPESAS", margin, 20);
 
-  <div class="table-section">
-    <div class="section-title">Entradas (Receitas) no Período</div>
-    <table>
-      <thead>
-        <tr>
-          <th>Data</th>
-          <th>Descrição</th>
-          <th>Apelido / Tag</th>
-          <th>Categoria</th>
-          <th style="text-align:right;">Valor (R$)</th>
-        </tr>
-      </thead>
-      <tbody>
-        ${entradasRowsHtml}
-      </tbody>
-      <tfoot>
-        <tr>
-          <td colspan="4">Total Geral de Entradas</td>
-          <td style="text-align:right;color:#047857;font-family:monospace;">${formatBrl2(totalEntrada)}</td>
-        </tr>
-      </tfoot>
-    </table>
-  </div>
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(8.5);
+      doc.setTextColor(105, 119, 140);
+      doc.text("Demonstrativo analítico discriminado por lançamento contábil e operacional", margin, 25);
 
-  <div class="table-section">
-    <div class="section-title">Saídas & Despesas Operacionais no Período</div>
-    <table>
-      <thead>
-        <tr>
-          <th>Data</th>
-          <th>Descrição</th>
-          <th>Apelido / Tag</th>
-          <th>Categoria / Despesa</th>
-          <th style="text-align:right;">Valor (R$)</th>
-        </tr>
-      </thead>
-      <tbody>
-        ${despesasRowsHtml}
-      </tbody>
-      <tfoot>
-        <tr>
-          <td colspan="4">Total Geral de Saídas</td>
-          <td style="text-align:right;color:#b44b4b;font-family:monospace;">-${formatBrl2(totalSaida)}</td>
-        </tr>
-      </tfoot>
-    </table>
-  </div>
+      // Caixa de Metadados com Nome da Unidade e Período Filtrado
+      doc.setFillColor(248, 250, 252);
+      doc.setDrawColor(203, 213, 225);
+      doc.roundedRect(margin, 28, contentWidth, 20, 2, 2, "FD");
 
-  <div style="margin-top:20px;padding:12px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;font-size:10px;color:#64748b;display:flex;justify-content:space-between;">
-    <span>Gestão de Franquias — Relatório Contábil & Extrato Operacional</span>
-    <span>Documento emitido eletronicamente para ${scope}</span>
-  </div>
-</body>
-</html>`;
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(8);
+      doc.setTextColor(37, 99, 235);
+      doc.text("UNIDADE / ESCOPO:", margin + 4, 34);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(9.5);
+      doc.setTextColor(15, 23, 42);
+      doc.text(scope, margin + 4, 39);
 
-    const oldFrame = document.getElementById("dre-extrato-print-iframe");
-    if (oldFrame) oldFrame.remove();
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(8);
+      doc.setTextColor(100, 116, 139);
+      doc.text("PERÍODO FILTRADO:", margin + 92, 34);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(9.5);
+      doc.setTextColor(15, 23, 42);
+      doc.text(period, margin + 92, 39);
 
-    const iframe = document.createElement("iframe");
-    iframe.id = "dre-extrato-print-iframe";
-    iframe.style.position = "fixed";
-    iframe.style.right = "0";
-    iframe.style.bottom = "0";
-    iframe.style.width = "0";
-    iframe.style.height = "0";
-    iframe.style.border = "none";
-    document.body.appendChild(iframe);
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(8);
+      doc.setTextColor(100, 116, 139);
+      doc.text(`Emissão: ${dateStr} às ${timeStr}`, margin + 4, 45);
 
-    const doc = iframe.contentWindow?.document;
-    if (doc) {
-      doc.open();
-      doc.write(htmlContent);
-      doc.close();
-      setTimeout(() => {
-        iframe.contentWindow?.focus();
-        iframe.contentWindow?.print();
-        setTimeout(() => {
-          document.body.removeChild(iframe);
-        }, 1200);
-      }, 350);
+      // Cards de Resumo
+      const kpiY = 52;
+      const kpiHeight = 14;
+      const kpiWidth = (contentWidth - 6) / 3;
+
+      doc.setFillColor(236, 253, 245);
+      doc.setDrawColor(167, 243, 208);
+      doc.roundedRect(margin, kpiY, kpiWidth, kpiHeight, 1.5, 1.5, "FD");
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(7);
+      doc.setTextColor(4, 120, 87);
+      doc.text(`TOTAL ENTRADAS (${realEntradas.length})`, margin + 3, kpiY + 4.5);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(10);
+      doc.text(formatBrl(totalEntrada), margin + 3, kpiY + 10.5);
+
+      const s2X = margin + kpiWidth + 3;
+      doc.setFillColor(255, 241, 242);
+      doc.setDrawColor(254, 205, 211);
+      doc.roundedRect(s2X, kpiY, kpiWidth, kpiHeight, 1.5, 1.5, "FD");
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(7);
+      doc.setTextColor(185, 28, 28);
+      doc.text(`TOTAL SAÍDAS (${realDespesas.length})`, s2X + 3, kpiY + 4.5);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(10);
+      doc.text(`-${formatBrl(totalSaida)}`, s2X + 3, kpiY + 10.5);
+
+      const s3X = s2X + kpiWidth + 3;
+      doc.setFillColor(239, 246, 255);
+      doc.setDrawColor(191, 219, 254);
+      doc.roundedRect(s3X, kpiY, kpiWidth, kpiHeight, 1.5, 1.5, "FD");
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(7);
+      doc.setTextColor(29, 78, 216);
+      doc.text("SALDO LÍQUIDO", s3X + 3, kpiY + 4.5);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(10);
+      doc.text(formatBrl(saldoLiquido), s3X + 3, kpiY + 10.5);
+
+      let curY = 71;
+
+      const checkPageOverflow = (needHeight: number) => {
+        if (curY + needHeight > 280) {
+          doc.addPage();
+          curY = 16;
+        }
+      };
+
+      // Tabela de Entradas
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(8.5);
+      doc.setTextColor(4, 120, 87);
+      doc.text(`1. ENTRADAS REGISTRADAS NO PERÍODO (${realEntradas.length})`, margin, curY);
+      curY += 3.5;
+
+      doc.setFillColor(241, 245, 249);
+      doc.rect(margin, curY, contentWidth, 5.5, "F");
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(7);
+      doc.setTextColor(71, 85, 105);
+      doc.text("Data", margin + 2, curY + 3.8);
+      doc.text("Descrição", margin + 24, curY + 3.8);
+      doc.text("Categoria", margin + 95, curY + 3.8);
+      doc.text("Valor (R$)", margin + contentWidth - 2, curY + 3.8, { align: "right" });
+      curY += 5.5;
+
+      if (realEntradas.length === 0) {
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(7.5);
+        doc.setTextColor(148, 163, 184);
+        doc.text("Nenhuma receita ou entrada registrada no período filtrado.", margin + 4, curY + 4);
+        curY += 6;
+      } else {
+        realEntradas.forEach((e) => {
+          checkPageOverflow(5);
+          doc.setFont("helvetica", "normal");
+          doc.setFontSize(7.5);
+          doc.setTextColor(15, 23, 42);
+          doc.text(String(e.date || "—").slice(0, 10), margin + 2, curY + 3.5);
+          doc.text(String(e.desc || "Entrada").slice(0, 42), margin + 24, curY + 3.5);
+          doc.text(String(e.catName || "Receita").slice(0, 25), margin + 95, curY + 3.5);
+          doc.setFont("helvetica", "bold");
+          doc.setTextColor(4, 120, 87);
+          doc.text(formatBrl2(e.value), margin + contentWidth - 2, curY + 3.5, { align: "right" });
+          doc.setDrawColor(241, 245, 249);
+          doc.line(margin, curY + 4.5, margin + contentWidth, curY + 4.5);
+          curY += 4.8;
+        });
+      }
+
+      curY += 4;
+      checkPageOverflow(15);
+
+      // Tabela de Saídas
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(8.5);
+      doc.setTextColor(185, 28, 28);
+      doc.text(`2. SAÍDAS E DESPESAS OPERACIONAIS NO PERÍODO (${realDespesas.length})`, margin, curY);
+      curY += 3.5;
+
+      doc.setFillColor(241, 245, 249);
+      doc.rect(margin, curY, contentWidth, 5.5, "F");
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(7);
+      doc.setTextColor(71, 85, 105);
+      doc.text("Data", margin + 2, curY + 3.8);
+      doc.text("Descrição", margin + 24, curY + 3.8);
+      doc.text("Categoria", margin + 95, curY + 3.8);
+      doc.text("Valor (R$)", margin + contentWidth - 2, curY + 3.8, { align: "right" });
+      curY += 5.5;
+
+      if (realDespesas.length === 0) {
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(7.5);
+        doc.setTextColor(148, 163, 184);
+        doc.text("Nenhuma saída ou despesa registrada no período filtrado.", margin + 4, curY + 4);
+        curY += 6;
+      } else {
+        realDespesas.forEach((e) => {
+          checkPageOverflow(5);
+          doc.setFont("helvetica", "normal");
+          doc.setFontSize(7.5);
+          doc.setTextColor(15, 23, 42);
+          doc.text(String(e.date || "—").slice(0, 10), margin + 2, curY + 3.5);
+          doc.text(String(e.desc || "Despesa").slice(0, 42), margin + 24, curY + 3.5);
+          doc.text(String(e.catName || "Operacional").slice(0, 25), margin + 95, curY + 3.5);
+          doc.setFont("helvetica", "bold");
+          doc.setTextColor(185, 28, 28);
+          doc.text(`-${formatBrl2(e.value)}`, margin + contentWidth - 2, curY + 3.5, { align: "right" });
+          doc.setDrawColor(241, 245, 249);
+          doc.line(margin, curY + 4.5, margin + contentWidth, curY + 4.5);
+          curY += 4.8;
+        });
+      }
+
+      // Rodapé
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(7.5);
+      doc.setTextColor(148, 163, 184);
+      doc.line(margin, 287, margin + contentWidth, 287);
+      doc.text(`Gestão de Franquias — Extrato Contábil Oficial emitido para ${scope}`, margin, 291);
+      doc.text(`Página 1`, margin + contentWidth, 291, { align: "right" });
+
+      const safeScope = scope.replace(/[^a-zA-Z0-9]/g, "_").slice(0, 30);
+      const safeDate = new Date().toISOString().slice(0, 10);
+      doc.save(`Extrato_DRE_${safeScope}_${safeDate}.pdf`);
+      toast.success("Download do Extrato em PDF concluído!");
+    } catch (e: any) {
+      console.error(e);
+      toast.error("Erro ao gerar PDF do Extrato");
     }
   };
 
   const handleGeneratePdfReport = () => {
-    const scope = getScopeTitle();
-    const yearsStr = dateSelection.years?.length ? dateSelection.years.join(", ") : "Todos";
-    const monthsStr = dateSelection.months?.length ? dateSelection.months.map((m) => AVAILABLE_MONTHS.find((item) => item.value === m)?.short || m).join(", ") : "Todos";
-    const daysStr = dateSelection.days?.length ? `${dateSelection.days.length} dia(s)` : "Todos";
-    const period = `Ano: ${yearsStr} · Mês: ${monthsStr} · Dias: ${daysStr}`;
-    const dateStr = new Date().toLocaleDateString("pt-BR");
+    try {
+      const scope = getScopeTitle();
+      const period = getPeriodSummary();
+      const dateStr = new Date().toLocaleDateString("pt-BR");
+      const timeStr = new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
 
-    let rowsHtml = `
-      <tr style="background:#f8faff;font-weight:bold;">
-        <td style="padding:8px 12px;border-bottom:1px solid #e2e8f0;">(=) RECEITA BRUTA OPERACIONAL</td>
-        <td style="padding:8px 12px;text-align:right;border-bottom:1px solid #e2e8f0;color:#118464;font-family:monospace;">${formatBrl2(dre.fatBruta)}</td>
-      </tr>
-      <tr style="color:#64748b;">
-        <td style="padding:7px 12px;padding-left:24px;border-bottom:1px solid #e2e8f0;">(-) Descontos & Cancelamentos</td>
-        <td style="padding:7px 12px;text-align:right;border-bottom:1px solid #e2e8f0;color:#b44b4b;font-family:monospace;">-${formatBrl2(dre.desconto)}</td>
-      </tr>
-      <tr style="color:#64748b;">
-        <td style="padding:7px 12px;padding-left:24px;border-bottom:1px solid #e2e8f0;">(-) Impostos sobre Vendas</td>
-        <td style="padding:7px 12px;text-align:right;border-bottom:1px solid #e2e8f0;color:#b44b4b;font-family:monospace;">-${formatBrl2(dre.impostos)}</td>
-      </tr>
-      <tr style="background:#f1f5f9;font-weight:bold;">
-        <td style="padding:8px 12px;border-bottom:1px solid #cbd5e1;">(=) RECEITA LÍQUIDA OPERACIONAL</td>
-        <td style="padding:8px 12px;text-align:right;border-bottom:1px solid #cbd5e1;font-family:monospace;">${formatBrl2(dre.receitaLiquida)}</td>
-      </tr>
-      <tr style="color:#64748b;">
-        <td style="padding:7px 12px;padding-left:24px;border-bottom:1px solid #e2e8f0;">(-) Custo das Mercadorias Vendidas (CMV)</td>
-        <td style="padding:7px 12px;text-align:right;border-bottom:1px solid #e2e8f0;color:#b44b4b;font-family:monospace;">-${formatBrl2(dre.cmv)}</td>
-      </tr>
-      <tr style="color:#64748b;">
-        <td style="padding:7px 12px;padding-left:24px;border-bottom:1px solid #e2e8f0;">(-) Taxas de Cartão & Meios de Pagamento</td>
-        <td style="padding:7px 12px;text-align:right;border-bottom:1px solid #e2e8f0;color:#b44b4b;font-family:monospace;">-${formatBrl2(dre.taxasNegocio)}</td>
-      </tr>
-      <tr style="background:#edf2ff;font-weight:bold;">
-        <td style="padding:8px 12px;border-bottom:1px solid #cbd5e1;color:#1e3a8a;">(=) Lucro Bruto (Margem de Contribuição)</td>
-        <td style="padding:8px 12px;text-align:right;border-bottom:1px solid #cbd5e1;color:#2563eb;font-family:monospace;">${formatBrl2(dre.lucroBruto)}</td>
-      </tr>
-      <tr style="background:#f8fafc;font-weight:bold;">
-        <td colspan="2" style="padding:6px 12px;text-transform:uppercase;font-size:10px;color:#64748b;letter-spacing:0.05em;border-bottom:1px solid #e2e8f0;">Despesas Operacionais Fixas</td>
-      </tr>
-    `;
-
-    dre.despesas.forEach((d) => {
-      rowsHtml += `
-        <tr style="color:#64748b;">
-          <td style="padding:6px 12px;padding-left:24px;border-bottom:1px solid #f1f5f9;">${d?.name || "Despesa"}</td>
-          <td style="padding:6px 12px;text-align:right;border-bottom:1px solid #f1f5f9;color:#b44b4b;font-family:monospace;">-${formatBrl2(d.value)}</td>
-        </tr>
-      `;
-    });
-
-    rowsHtml += `
-      <tr style="background:#ecfdf5;font-weight:bold;border-top:2px solid #10b981;">
-        <td style="padding:10px 12px;font-size:13px;color:#064e3b;">(=) RESULTADO LÍQUIDO DO PERÍODO</td>
-        <td style="padding:10px 12px;text-align:right;font-size:13px;color:#047857;font-family:monospace;">${formatBrl2(dre.lucroLiquido)}</td>
-      </tr>
-    `;
-
-    let unitsTableHtml = "";
-    if (visibleUnits.length > 1) {
-      let unitRows = "";
-      visibleUnits.forEach((u) => {
-        const uParams = dreParams[u.id] || dreParams["dono"];
-        const uRoy = royalties[u.businessId];
-        const uCalc = calculateDre(u.faturamento, uParams, uRoy);
-        const b = businesses.find(biz => biz.id === u.businessId);
-        unitRows += `
-          <tr>
-            <td style="padding:6px 8px;border-bottom:1px solid #e2e8f0;">${u.code}</td>
-            <td style="padding:6px 8px;border-bottom:1px solid #e2e8f0;font-weight:600;">${u.name}</td>
-            <td style="padding:6px 8px;border-bottom:1px solid #e2e8f0;">${b?.name || u.businessId}</td>
-            <td style="padding:6px 8px;border-bottom:1px solid #e2e8f0;">${u.city}</td>
-            <td style="padding:6px 8px;text-align:right;border-bottom:1px solid #e2e8f0;font-family:monospace;">${formatBrl2(u.faturamento)}</td>
-            <td style="padding:6px 8px;text-align:right;border-bottom:1px solid #e2e8f0;font-family:monospace;color:#047857;">${formatBrl2(uCalc.lucroLiquido)}</td>
-            <td style="padding:6px 8px;text-align:right;border-bottom:1px solid #e2e8f0;font-family:monospace;">${formatPct2(uCalc.margemLiquida)}</td>
-          </tr>
-        `;
+      const doc = new jsPDF({
+        orientation: "portrait",
+        unit: "mm",
+        format: "a4",
       });
 
-      unitsTableHtml = `
-        <div style="margin-top:20px;">
-          <h3 style="font-size:12px;font-weight:bold;margin-bottom:6px;color:#1e293b;">Demonstrativo por Unidade da Rede</h3>
-          <table style="width:100%;border-collapse:collapse;font-size:10px;">
-            <thead>
-              <tr style="background:#f8fafc;color:#64748b;text-align:left;">
-                <th style="padding:6px 8px;border-bottom:2px solid #cbd5e1;">Código</th>
-                <th style="padding:6px 8px;border-bottom:2px solid #cbd5e1;">Unidade</th>
-                <th style="padding:6px 8px;border-bottom:2px solid #cbd5e1;">Marca</th>
-                <th style="padding:6px 8px;border-bottom:2px solid #cbd5e1;">Cidade</th>
-                <th style="padding:6px 8px;text-align:right;border-bottom:2px solid #cbd5e1;">Faturamento</th>
-                <th style="padding:6px 8px;text-align:right;border-bottom:2px solid #cbd5e1;">Lucro Líquido</th>
-                <th style="padding:6px 8px;text-align:right;border-bottom:2px solid #cbd5e1;">Margem %</th>
-              </tr>
-            </thead>
-            <tbody>${unitRows}</tbody>
-          </table>
-        </div>
-      `;
+      const pageWidth = 210;
+      const margin = 14;
+      const contentWidth = pageWidth - margin * 2; // 182mm
+
+      // 1. Barra decorativa superior
+      doc.setFillColor(60, 99, 218); // #3c63da
+      doc.rect(margin, 10, contentWidth, 3, "F");
+
+      // 2. Título & Subtítulo
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(15);
+      doc.setTextColor(21, 34, 56); // #152238
+      doc.text("DEMONSTRATIVO DO RESULTADO DO EXERCÍCIO (DRE)", margin, 20);
+
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(8.5);
+      doc.setTextColor(105, 119, 140); // #69778c
+      doc.text("Relatório Contábil e Financeiro Oficial — Base de Lançamentos Reais", margin, 25);
+
+      // 3. Caixa de Destaque com NOME DA UNIDADE e PERÍODO QUE ESTÁ FILTRADO
+      doc.setFillColor(248, 250, 252);
+      doc.setDrawColor(203, 213, 225);
+      doc.roundedRect(margin, 28, contentWidth, 20, 2, 2, "FD");
+
+      // Linha 1 Coluna 1: Nome da Unidade
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(8);
+      doc.setTextColor(37, 99, 235);
+      doc.text("UNIDADE / ESCOPO:", margin + 4, 34);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(9.5);
+      doc.setTextColor(15, 23, 42);
+      doc.text(scope, margin + 4, 39);
+
+      // Linha 1 Coluna 2: Período Filtrado
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(8);
+      doc.setTextColor(100, 116, 139);
+      doc.text("PERÍODO FILTRADO:", margin + 92, 34);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(9.5);
+      doc.setTextColor(15, 23, 42);
+      doc.text(period, margin + 92, 39);
+
+      // Linha 2: Emissão e Base
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(7.5);
+      doc.setTextColor(100, 116, 139);
+      doc.text(`Emissão: ${dateStr} às ${timeStr}`, margin + 4, 45);
+      doc.text(`Base: ${activeEntries.length} lançamento(s) reais apurados`, margin + 92, 45);
+
+      // 4. Cards de Resumo (KPIs)
+      const kpiY = 52;
+      const kpiHeight = 15;
+      const kpiWidth = (contentWidth - 9) / 4;
+
+      // Card 1: Receita Bruta
+      doc.setFillColor(248, 250, 252);
+      doc.setDrawColor(226, 232, 240);
+      doc.roundedRect(margin, kpiY, kpiWidth, kpiHeight, 1.5, 1.5, "FD");
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(6.5);
+      doc.setTextColor(100, 116, 139);
+      doc.text("RECEITA BRUTA", margin + 3, kpiY + 4.5);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(9.5);
+      doc.setTextColor(15, 23, 42);
+      doc.text(formatBrl(dre.fatBruta), margin + 3, kpiY + 11);
+
+      // Card 2: Lucro Bruto
+      const c2X = margin + kpiWidth + 3;
+      doc.roundedRect(c2X, kpiY, kpiWidth, kpiHeight, 1.5, 1.5, "FD");
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(6.5);
+      doc.setTextColor(37, 99, 235);
+      doc.text("LUCRO BRUTO", c2X + 3, kpiY + 4.5);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(9.5);
+      doc.setTextColor(37, 99, 235);
+      doc.text(formatBrl(dre.lucroBruto), c2X + 3, kpiY + 11);
+
+      // Card 3: Total Despesas
+      const c3X = c2X + kpiWidth + 3;
+      doc.roundedRect(c3X, kpiY, kpiWidth, kpiHeight, 1.5, 1.5, "FD");
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(6.5);
+      doc.setTextColor(180, 75, 75);
+      doc.text("TOTAL DESPESAS", c3X + 3, kpiY + 4.5);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(9.5);
+      doc.setTextColor(180, 75, 75);
+      doc.text(`-${formatBrl(dre.totalDesp)}`, c3X + 3, kpiY + 11);
+
+      // Card 4: Lucro Líquido
+      const c4X = c3X + kpiWidth + 3;
+      doc.setFillColor(236, 253, 245);
+      doc.setDrawColor(167, 243, 208);
+      doc.roundedRect(c4X, kpiY, kpiWidth, kpiHeight, 1.5, 1.5, "FD");
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(6.5);
+      doc.setTextColor(4, 120, 87);
+      doc.text(`LÍQUIDO (${formatPct(dre.margemLiquida)})`, c4X + 3, kpiY + 4.5);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(9.5);
+      doc.setTextColor(4, 120, 87);
+      doc.text(formatBrl(dre.lucroLiquido), c4X + 3, kpiY + 11);
+
+      // 5. Cabeçalho da Tabela DRE
+      let curY = 72;
+      doc.setFillColor(241, 245, 249);
+      doc.rect(margin, curY, contentWidth, 7, "F");
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(8);
+      doc.setTextColor(71, 85, 105);
+      doc.text("CONTA CONTÁBIL / DESCRIÇÃO", margin + 3, curY + 4.8);
+      doc.text("VALOR NOMINAL (R$)", margin + contentWidth - 3, curY + 4.8, { align: "right" });
+      curY += 7;
+
+      const drawRow = (label: string, valueStr: string, opts: { isHeader?: boolean; isSubtotal?: boolean; isNegative?: boolean; isFinal?: boolean; indent?: boolean } = {}) => {
+        const rowHeight = opts.isFinal ? 8.5 : 6;
+        if (opts.isFinal) {
+          doc.setFillColor(236, 253, 245);
+          doc.rect(margin, curY, contentWidth, rowHeight, "F");
+          doc.setDrawColor(16, 185, 129);
+          doc.line(margin, curY, margin + contentWidth, curY);
+          doc.line(margin, curY + rowHeight, margin + contentWidth, curY + rowHeight);
+        } else if (opts.isSubtotal) {
+          doc.setFillColor(248, 250, 255);
+          doc.rect(margin, curY, contentWidth, rowHeight, "F");
+          doc.setDrawColor(226, 232, 240);
+          doc.line(margin, curY + rowHeight, margin + contentWidth, curY + rowHeight);
+        } else if (opts.isHeader) {
+          doc.setFillColor(248, 250, 252);
+          doc.rect(margin, curY, contentWidth, rowHeight, "F");
+        } else {
+          doc.setDrawColor(241, 245, 249);
+          doc.line(margin, curY + rowHeight, margin + contentWidth, curY + rowHeight);
+        }
+
+        const indentX = opts.indent ? margin + 8 : margin + 3;
+        doc.setFont("helvetica", opts.isHeader || opts.isSubtotal || opts.isFinal ? "bold" : "normal");
+        doc.setFontSize(opts.isFinal ? 9.5 : 8.5);
+
+        if (opts.isFinal) {
+          doc.setTextColor(4, 120, 87);
+        } else if (opts.isSubtotal) {
+          doc.setTextColor(15, 23, 42);
+        } else if (opts.isHeader) {
+          doc.setTextColor(100, 116, 139);
+        } else {
+          doc.setTextColor(71, 85, 105);
+        }
+
+        doc.text(label, indentX, curY + (opts.isFinal ? 5.5 : 4.2));
+
+        if (valueStr) {
+          if (opts.isFinal) doc.setTextColor(4, 120, 87);
+          else if (opts.isNegative) doc.setTextColor(180, 75, 75);
+          else if (opts.isSubtotal) doc.setTextColor(37, 99, 235);
+          else doc.setTextColor(15, 23, 42);
+
+          doc.text(valueStr, margin + contentWidth - 3, curY + (opts.isFinal ? 5.5 : 4.2), { align: "right" });
+        }
+
+        curY += rowHeight;
+      };
+
+      drawRow("(=) RECEITA BRUTA OPERACIONAL", formatBrl2(dre.fatBruta), { isSubtotal: true });
+      drawRow("(-) Descontos & Cancelamentos", dre.desconto > 0 ? `-${formatBrl2(dre.desconto)}` : "R$ 0,00", { indent: true, isNegative: dre.desconto > 0 });
+      drawRow("(-) Impostos sobre Vendas", dre.impostos > 0 ? `-${formatBrl2(dre.impostos)}` : "R$ 0,00", { indent: true, isNegative: dre.impostos > 0 });
+      drawRow("(=) RECEITA LÍQUIDA OPERACIONAL", formatBrl2(dre.receitaLiquida), { isSubtotal: true });
+      drawRow("(-) Custo das Mercadorias Vendidas (CMV)", dre.cmv > 0 ? `-${formatBrl2(dre.cmv)}` : "R$ 0,00", { indent: true, isNegative: dre.cmv > 0 });
+      drawRow("(-) Taxas de Cartão & Plataforma", dre.taxasNegocio > 0 ? `-${formatBrl2(dre.taxasNegocio)}` : "R$ 0,00", { indent: true, isNegative: dre.taxasNegocio > 0 });
+      drawRow("(=) Margem de Contribuição Bruta (Lucro Bruto)", formatBrl2(dre.lucroBruto), { isSubtotal: true });
+
+      drawRow("Despesas Operacionais Fixas & Administrativas", "", { isHeader: true });
+      if (dre.despesas.length === 0) {
+        drawRow("Nenhuma despesa operacional registrada no período", "R$ 0,00", { indent: true });
+      } else {
+        dre.despesas.forEach((d) => {
+          drawRow(`(-) ${d.name}`, `-${formatBrl2(d.value)}`, { indent: true, isNegative: true });
+        });
+      }
+
+      drawRow("(=) RESULTADO LÍQUIDO DO PERÍODO", formatBrl2(dre.lucroLiquido), { isFinal: true });
+
+      // 6. Tabela discriminada por unidade da rede quando houver mais de uma unidade
+      if (visibleUnits.length > 1 && curY < 235) {
+        curY += 6;
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(8.5);
+        doc.setTextColor(15, 23, 42);
+        doc.text("Demonstrativo por Unidade da Rede", margin, curY);
+        curY += 4;
+
+        doc.setFillColor(241, 245, 249);
+        doc.rect(margin, curY, contentWidth, 5.5, "F");
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(7);
+        doc.setTextColor(71, 85, 105);
+        doc.text("Código", margin + 2, curY + 3.8);
+        doc.text("Unidade", margin + 20, curY + 3.8);
+        doc.text("Marca", margin + 65, curY + 3.8);
+        doc.text("Cidade", margin + 105, curY + 3.8);
+        doc.text("Faturamento (R$)", margin + 145, curY + 3.8, { align: "right" });
+        doc.text("Lucro Líq. (R$)", margin + contentWidth - 2, curY + 3.8, { align: "right" });
+        curY += 5.5;
+
+        visibleUnits.slice(0, 10).forEach((u) => {
+          const uEntradas = activeEntries.filter((e) => e.type === "entrada" && (e.tenant === u.id || (u.id === "lavo" && (!e.tenant || e.tenant === "dono"))));
+          const uFat = uEntradas.reduce((s, e) => s + (Number(e.value) || 0), 0);
+          const uDesp = activeEntries.filter((e) => e.type === "despesa" && (e.tenant === u.id || (u.id === "lavo" && (!e.tenant || e.tenant === "dono")))).reduce((s, e) => s + (Number(e.value) || 0), 0);
+          const uLiq = uFat - uDesp;
+          const b = businesses.find((biz) => biz.id === u.businessId);
+
+          doc.setFont("helvetica", "normal");
+          doc.setFontSize(7.5);
+          doc.setTextColor(15, 23, 42);
+          doc.text(u.code, margin + 2, curY + 3.5);
+          doc.text(u.name.slice(0, 22), margin + 20, curY + 3.5);
+          doc.text((b?.name || "").slice(0, 18), margin + 65, curY + 3.5);
+          doc.text(u.city.slice(0, 16), margin + 105, curY + 3.5);
+          doc.text(formatBrl(uFat), margin + 145, curY + 3.5, { align: "right" });
+          doc.text(formatBrl(uLiq), margin + contentWidth - 2, curY + 3.5, { align: "right" });
+          doc.setDrawColor(241, 245, 249);
+          doc.line(margin, curY + 4.5, margin + contentWidth, curY + 4.5);
+          curY += 4.5;
+        });
+      }
+
+      // Rodapé oficial
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(7.5);
+      doc.setTextColor(148, 163, 184);
+      doc.line(margin, 287, margin + contentWidth, 287);
+      doc.text(`Gestão de Franquias — Demonstrativo Contábil Oficial emitido para ${scope}`, margin, 291);
+      doc.text(`Página 1 de 1`, margin + contentWidth, 291, { align: "right" });
+
+      const safeScope = scope.replace(/[^a-zA-Z0-9]/g, "_").slice(0, 30);
+      const safeDate = new Date().toISOString().slice(0, 10);
+      doc.save(`Planilha_DRE_${safeScope}_${safeDate}.pdf`);
+      toast.success("Download da Planilha DRE em PDF concluído!");
+    } catch (e: any) {
+      console.error(e);
+      toast.error("Erro ao gerar PDF da DRE");
     }
-
-    const htmlContent = `<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-  <meta charset="UTF-8">
-  <title>DRE - ${scope}</title>
-  <style>
-    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; margin: 20px; color: #1e293b; line-height: 1.35; background:#fff; }
-    .header { border-bottom: 2px solid #3c63da; padding-bottom: 8px; margin-bottom: 14px; }
-    .title { font-size: 17px; font-weight: 800; color: #0f172a; margin: 0; }
-    .meta-box { font-size: 11px; color: #475569; margin-top: 4px; display: flex; gap: 15px; flex-wrap: wrap; }
-    table { width: 100%; border-collapse: collapse; font-size: 11px; }
-    th { text-transform: uppercase; font-size: 9px; letter-spacing: 0.05em; }
-    @media print {
-      body { margin: 10mm; }
-      @page { size: portrait; margin: 10mm; }
-    }
-  </style>
-</head>
-<body>
-  <div class="header">
-    <h1 class="title">Demonstrativo do Resultado do Exercício (DRE)</h1>
-    <div class="meta-box">
-      <span><strong>Unidade / Escopo:</strong> ${scope}</span>
-      <span><strong>Período:</strong> ${period}</span>
-      <span><strong>Emissão:</strong> ${dateStr}</span>
-    </div>
-  </div>
-
-  <table>
-    <thead>
-      <tr style="background:#f1f5f9;color:#475569;text-align:left;">
-        <th style="padding:8px 12px;border-bottom:2px solid #cbd5e1;">Conta Contábil / Descrição</th>
-        <th style="padding:8px 12px;text-align:right;border-bottom:2px solid #cbd5e1;">Valor Nominal (R$)</th>
-        <th style="padding:8px 12px;text-align:right;border-bottom:2px solid #cbd5e1;">Classificação</th>
-      </tr>
-    </thead>
-    <tbody>${rowsHtml}</tbody>
-  </table>
-
-  ${unitsTableHtml}
-</body>
-</html>`;
-
-    // Utiliza iframe oculto dedicado: imprime APENAS a tabela, unidade e período, sem a página inteira
-    const oldFrame = document.getElementById("dre-print-iframe");
-    if (oldFrame) oldFrame.remove();
-
-    const iframe = document.createElement("iframe");
-    iframe.id = "dre-print-iframe";
-    iframe.style.position = "fixed";
-    iframe.style.right = "0";
-    iframe.style.bottom = "0";
-    iframe.style.width = "0";
-    iframe.style.height = "0";
-    iframe.style.border = "none";
-    document.body.appendChild(iframe);
-
-    const doc = iframe.contentWindow?.document;
-    if (doc) {
-      doc.open();
-      doc.write(htmlContent);
-      doc.close();
-      setTimeout(() => {
-        iframe.contentWindow?.focus();
-        iframe.contentWindow?.print();
-      }, 350);
-    }
-  };
-
-
-  const getScopeTitle = () => {
-    if (targetUnit?.name) return `${targetUnit.name} (${targetUnit.code})`;
-    if (selectedBusiness !== "all") {
-      const b = businesses.find((biz) => biz.id === selectedBusiness);
-      return b ? `Rede ${b.name}` : selectedBusiness;
-    }
-    return "Toda a Rede Consolidada";
   };
 
   return (
@@ -900,7 +974,7 @@ export const DreScreen: React.FC<DreScreenProps> = ({
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <div className="text-[10px] font-extrabold uppercase tracking-widest text-[#3c63da]">
-            Demonstrativo Financeiro & Metas
+            Demonstrativo Financeiro do Exercício (DRE)
           </div>
           <h2 className="text-xl sm:text-2xl font-extrabold tracking-tight text-[#152238] flex items-center gap-2 mt-0.5">
             <TrendingUp className="h-6 w-6 text-[#3c63da]" />
@@ -970,10 +1044,10 @@ export const DreScreen: React.FC<DreScreenProps> = ({
                   type="button"
                   onClick={handleGenerateExtratoPdfReport}
                   className="flex items-center gap-1.5 rounded-xl border border-[#3c63da]/30 bg-[#edf2ff] px-3.5 py-2 text-xs font-bold text-[#3c63da] hover:bg-[#dfe8fe] transition-all cursor-pointer shadow-2xs"
-                  title="Baixar planilha e extrato formatado em PDF"
+                  title="Baixar extrato e lançamentos em PDF com unidade e período filtrado"
                 >
                   <Download className="h-4 w-4 text-[#3c63da]" />
-                  <span>Baixar PDF</span>
+                  <span>Baixar PDF da Planilha</span>
                 </button>
               </div>
             </div>
@@ -1118,10 +1192,10 @@ export const DreScreen: React.FC<DreScreenProps> = ({
                   type="button"
                   onClick={handleGeneratePdfReport}
                   className="flex items-center gap-1.5 rounded-xl border border-[#3c63da]/30 bg-[#edf2ff] px-3.5 py-2 text-xs font-bold text-[#3c63da] hover:bg-[#dfe8fe] transition-all cursor-pointer shadow-2xs"
-                  title="Baixar relatório formatado em PDF"
+                  title="Baixar demonstrativo da DRE em PDF com nome da unidade e período filtrado"
                 >
                   <Download className="h-4 w-4 text-[#3c63da]" />
-                  <span>Baixar PDF</span>
+                  <span>Baixar PDF da Planilha</span>
                 </button>
                 <button
                   type="button"
@@ -1200,35 +1274,16 @@ export const DreScreen: React.FC<DreScreenProps> = ({
               </div>
             </div>
 
-            {/* Seleção de Modo de Cálculo */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-end gap-3 p-3 rounded-xl bg-[#f8faff] border border-[#e5eaf1] text-xs">
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-[11px] font-extrabold text-[#152238]">Origem dos Dados:</span>
-                <div className="inline-flex items-center gap-1 bg-[#e2e8f0] p-0.5 rounded-lg">
-                  <button
-                    type="button"
-                    onClick={() => setCalculationMode("real")}
-                    className={`px-2 py-1 text-[11px] font-extrabold rounded-md transition-all cursor-pointer ${
-                      calculationMode === "real"
-                        ? "bg-[#3c63da] text-white shadow-2xs"
-                        : "text-[#64748b] hover:text-[#152238]"
-                    }`}
-                  >
-                    Lançamentos Reais ({activeEntries.length})
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setCalculationMode("projecao")}
-                    className={`px-2 py-1 text-[11px] font-extrabold rounded-md transition-all cursor-pointer ${
-                      calculationMode === "projecao"
-                        ? "bg-[#3c63da] text-white shadow-2xs"
-                        : "text-[#64748b] hover:text-[#152238]"
-                    }`}
-                  >
-                    Projeção Teórica
-                  </button>
-                </div>
+            {/* Barra de Auditoria da Base e Ações Rápidas */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 rounded-xl bg-[#f8faff] border border-[#e5eaf1] text-xs">
+              <div className="flex items-center gap-2">
+                <span className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-50 px-2.5 py-1 text-xs font-bold text-emerald-800 border border-emerald-200">
+                  <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
+                  <span>Base Contábil Real: <strong>{activeEntries.length} lançamento(s) apurados</strong></span>
+                </span>
+              </div>
 
+              <div className="flex items-center gap-2 flex-wrap">
                 <button
                   type="button"
                   onClick={() => {
@@ -1238,22 +1293,22 @@ export const DreScreen: React.FC<DreScreenProps> = ({
                       days: AVAILABLE_DAYS,
                     });
                   }}
-                  className="flex items-center gap-1 rounded-lg border border-[#cbd5e1] bg-white px-2 py-1 text-[11px] font-bold text-[#64748b] hover:text-[#3c63da] hover:border-[#3c63da] transition-all cursor-pointer"
+                  className="flex items-center gap-1.5 rounded-lg border border-[#cbd5e1] bg-white px-3 py-1.5 text-[11px] font-bold text-[#64748b] hover:text-[#3c63da] hover:border-[#3c63da] transition-all cursor-pointer shadow-2xs"
                   title="Redefinir filtros para o mês atual"
                 >
                   <RotateCcw className="h-3 w-3" />
-                  <span>Redefinir</span>
+                  <span>Redefinir Filtros</span>
                 </button>
               </div>
             </div>
 
-            {calculationMode === "real" && activeEntries.length === 0 && (
+            {activeEntries.length === 0 && (
               <div className="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50/90 p-3.5 text-xs text-amber-900 shadow-2xs">
                 <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
                 <div>
-                  <span className="font-extrabold text-amber-950 block text-xs">DRE Zerado — Nenhum lançamento ativo encontrado na base</span>
+                  <span className="font-extrabold text-amber-950 block text-xs">DRE Zerado — Nenhum lançamento ativo encontrado no período filtrado</span>
                   <span className="text-[11px]">
-                    Ao apagar ou limpar os dados operacionais, o DRE zera imediatamente refletindo R$ 0,00. Adicione novos lançamentos em <strong>Lançamentos & Extrato</strong> ou selecione outro período acima para atualizar o demonstrativo.
+                    Sem lançamentos registrados para o filtro selecionado, o DRE reflete fielmente R$ 0,00 sem estimativas artificiais. Adicione lançamentos em <strong>Lançamentos & Extrato</strong> ou ajuste o período acima.
                   </span>
                 </div>
               </div>
@@ -1358,7 +1413,7 @@ export const DreScreen: React.FC<DreScreenProps> = ({
                     title="Baixar Relatório Formatado em PDF"
                   >
                     <Download className="h-3 w-3 text-[#3c63da]" />
-                    <span>Baixar PDF</span>
+                    <span>Baixar PDF da Planilha</span>
                   </button>
                   <button
                     type="button"
