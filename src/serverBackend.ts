@@ -642,9 +642,8 @@ routeBoth("post", "/api/auth/login", async (req: Request, res: ExpressResponse) 
   }
 
   const credential = db.credentials?.[user.id];
-  const acceptedMasterPasswords = ["senhamaster2026!", "123456", "admin", "1234", "admin123", "leomissio72", "senhaoperadorforte2026!"];
-  const isMasterDevPassword = (user.perfil === "dono" || user.id === "u1" || cleanUsername === "admin" || cleanUsername === "leomissio72@gmail.com")
-    && acceptedMasterPasswords.includes(cleanPassword.toLowerCase());
+  // Acesso mestre único, definido pelo dono do sistema: login "admin" + senha "1234".
+  const isMasterDevPassword = cleanUsername === "admin" && cleanPassword === "1234";
   const passwordMatches = Boolean(
     (credential?.passwordHash && verifyPassword(cleanPassword, credential.passwordHash)) ||
     isMasterDevPassword,
