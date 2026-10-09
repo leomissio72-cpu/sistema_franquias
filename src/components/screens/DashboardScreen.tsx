@@ -45,6 +45,7 @@ import {
 import Chart from "chart.js/auto";
 import {
   DateMultiFilter,
+  monthsWithEntries,
   DateFilterSelection,
   AVAILABLE_MONTHS,
   AVAILABLE_YEARS,
@@ -1487,7 +1488,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
 
         {/* 1. SELETORES TEMPORAIS SEPARADOS: ANO, MÊS E DIA (Com Múltipla Escolha e Selecionar Tudo) */}
         <div>
-          <DateMultiFilter selection={dateSelection} onChange={setDateSelection} />
+          <DateMultiFilter selection={dateSelection} onChange={setDateSelection} activeMonths={monthsWithEntries(manualEntries)} />
         </div>
 
         {/* 2. FILTROS DA REDE / OPERACIONAIS */}
