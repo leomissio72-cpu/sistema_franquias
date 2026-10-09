@@ -86,8 +86,17 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
   // Check if unit is owned by user
   const isUnitOwnedByUser = (unitTenantId: string): boolean => {
     if (!userSession) return true;
-    if (userSession.profile === "dono" || userSession.profile === "equipe") return true;
-    if (userSession.tenant === unitTenantId) return true;
+    const profile = userSession.profile;
+    if (profile === "dono" || profile === "equipe") return true;
+    if (profile === "admin") {
+      if (userSession.tenant?.startsWith("biz")) {
+        const unit = franchises.find((f) => f.id.toLowerCase() === unitTenantId.toLowerCase());
+        return unit?.businessId === userSession.tenant;
+      }
+      return true;
+    }
+    const allowedTenants = (userSession.tenant || "").split(",").map((t) => t.trim().toLowerCase());
+    if (allowedTenants.includes(unitTenantId.toLowerCase())) return true;
     if (userSession.login === "franqueado_sp" && (unitTenantId === "f1" || unitTenantId === "f2")) return true;
     if (userSession.login === "franqueado_sul" && (unitTenantId === "f4" || unitTenantId === "f6")) return true;
     return false;
@@ -105,17 +114,48 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
 
   const availableStates = Array.from(new Set(allowedUnits.map(getUnitState))).sort();
 
+  // Filters
+  const [dateSelection, setDateSelection] = useState<DateFilterSelection>({
+    years: [CURRENT_YEAR],
+    months: [CURRENT_MONTH],
+    days: AVAILABLE_DAYS, // Todos os 31 dias por padrão
+  });
+  const [selectedBusiness, setSelectedBusiness] = useState<string>(() => {
+    if (currentBusinessId && currentBusinessId !== "all") return currentBusinessId;
+    if (currentTenantId && currentTenantId.startsWith("biz")) return currentTenantId;
+    const match = franchises.find((f) => f.id.toLowerCase() === currentTenantId?.toLowerCase());
+    return match?.businessId || "all";
+  });
+  const [selectedFranchise, setSelectedFranchise] = useState<string>(() => {
+    if (isFranchisee) {
+      return allowedUnits[0]?.id || "f1";
+    }
+    const match = franchises.find((f) => f.id.toLowerCase() === currentTenantId?.toLowerCase());
+    if (match) {
+      return match.id;
+    }
+    return "all";
+  });
+
   const scopedBills = useMemo(() => bills.filter((bill) => {
-    const isConsolidated = currentTenantId === "dono" || currentTenantId === "equipe";
-    const matchesUnit = isConsolidated
-      || (currentTenantId.startsWith("biz")
-        ? bill.businessId === currentTenantId
-        : bill.tenantId === currentTenantId);
-    const matchesBusiness = currentBusinessId === "all"
-      || bill.businessId === currentBusinessId
-      || (isConsolidated && !bill.businessId);
-    return matchesUnit && matchesBusiness;
-  }), [bills, currentBusinessId, currentTenantId]);
+    const targetUnit = selectedFranchise !== "all"
+      ? selectedFranchise
+      : (currentTenantId !== "dono" && currentTenantId !== "equipe" && !currentTenantId.startsWith("biz") ? currentTenantId : null);
+    if (targetUnit) {
+      return (
+        bill.tenantId === targetUnit ||
+        bill.tenantId?.toLowerCase() === targetUnit.toLowerCase()
+      );
+    }
+    const targetBiz = selectedBusiness !== "all"
+      ? selectedBusiness
+      : (currentBusinessId !== "all" ? currentBusinessId : null);
+    if (targetBiz) {
+      const unitsOfBiz = new Set(franchises.filter((f) => f.businessId === targetBiz).map((f) => f.id.toLowerCase()));
+      return bill.businessId === targetBiz || (bill.tenantId && unitsOfBiz.has(bill.tenantId.toLowerCase()));
+    }
+    return true;
+  }), [bills, currentBusinessId, currentTenantId, selectedBusiness, selectedFranchise, franchises]);
 
   const billSummary = useMemo(() => scopedBills.reduce((summary, bill) => {
     const status = getBillDueStatus(bill);
@@ -132,27 +172,10 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
 
   // View mode: consolidated network or individual unit KPIs
   const [viewMode, setViewMode] = useState<"consolidated" | "unit" | string>(() => {
-    if (isFranchisee || franchises.some((franchise) => franchise.id === currentTenantId)) {
+    if (isFranchisee || franchises.some((franchise) => franchise.id.toLowerCase() === currentTenantId?.toLowerCase())) {
       return "unit";
     }
     return "consolidated";
-  });
-
-  // Filters
-  const [dateSelection, setDateSelection] = useState<DateFilterSelection>({
-    years: [CURRENT_YEAR],
-    months: [CURRENT_MONTH],
-    days: AVAILABLE_DAYS, // Todos os 31 dias por padrão
-  });
-  const [selectedBusiness, setSelectedBusiness] = useState<string>("all");
-  const [selectedFranchise, setSelectedFranchise] = useState<string>(() => {
-    if (isFranchisee) {
-      return allowedUnits[0]?.id || "f1";
-    }
-    if (franchises.some((franchise) => franchise.id === currentTenantId)) {
-      return currentTenantId;
-    }
-    return "all";
   });
   const [statusFilter, setStatusFilter] = useState<"all" | "green" | "amber">("all");
   const [selectedState, setSelectedState] = useState<string>("all");
@@ -225,11 +248,17 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
 
   // Sincroniza o escopo global escolhido na barra lateral com os filtros do Analítico.
   useEffect(() => {
-    setSelectedBusiness(currentBusinessId || "all");
-    if (franchises.some((franchise) => franchise.id === currentTenantId) && isUnitOwnedByUser(currentTenantId)) {
-      setSelectedFranchise(currentTenantId);
+    const matchingUnit = franchises.find((f) => f.id.toLowerCase() === currentTenantId?.toLowerCase());
+    if (matchingUnit && isUnitOwnedByUser(matchingUnit.id)) {
+      setSelectedFranchise(matchingUnit.id);
+      setSelectedBusiness(matchingUnit.businessId);
       setViewMode("unit");
+    } else if (currentTenantId && currentTenantId.startsWith("biz")) {
+      setSelectedBusiness(currentTenantId);
+      setSelectedFranchise("all");
+      setViewMode("consolidated");
     } else {
+      setSelectedBusiness(currentBusinessId || "all");
       setSelectedFranchise("all");
       setViewMode("consolidated");
     }
@@ -324,9 +353,9 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
   const activeUnitId =
     selectedFranchise !== "all" && isUnitOwnedByUser(selectedFranchise)
       ? selectedFranchise
-      : franchises.some((franchise) => franchise.id === currentTenantId) && isUnitOwnedByUser(currentTenantId)
+      : franchises.some((franchise) => franchise.id.toLowerCase() === currentTenantId?.toLowerCase()) && isUnitOwnedByUser(currentTenantId)
       ? currentTenantId
-      : allowedUnits[0]?.id || franchises[0]?.id;
+      : allowedUnits.find((f) => selectedBusiness === "all" || f.businessId === selectedBusiness)?.id || allowedUnits[0]?.id || franchises[0]?.id;
 
   // O banco pode estar legitimamente vazio após o reset. O Dashboard precisa
   // continuar navegável e mostrar estado vazio, em vez de acessar
@@ -1489,8 +1518,11 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
               id="filter-analytics-business"
               value={selectedBusiness}
               onChange={(e) => {
-                setSelectedBusiness(e.target.value);
+                const val = e.target.value;
+                setSelectedBusiness(val);
                 setSelectedFranchise("all");
+                setViewMode("consolidated");
+                onSelectTenant(val === "all" ? "dono" : val);
               }}
               className="w-full rounded-xl border border-[#cbd5e1] bg-white px-3.5 py-2.5 text-xs sm:text-sm font-semibold text-[#152238] shadow-2xs hover:border-[#94a3b8] focus:border-[#3c63da] focus:ring-2 focus:ring-[#3c63da]/15 focus:outline-none cursor-pointer transition-all"
             >
@@ -1516,14 +1548,23 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
               id="filter-analytics-franchise"
               value={selectedFranchise}
               onChange={(e) => {
-                setSelectedFranchise(e.target.value);
-                if (e.target.value !== "all") {
+                const val = e.target.value;
+                setSelectedFranchise(val);
+                if (val !== "all") {
                   setViewMode("unit");
+                  onSelectTenant(val);
+                } else {
+                  setViewMode("consolidated");
+                  onSelectTenant(selectedBusiness === "all" ? "dono" : selectedBusiness);
                 }
               }}
               className="w-full rounded-xl border border-[#cbd5e1] bg-white px-3.5 py-2.5 text-xs sm:text-sm font-semibold text-[#152238] shadow-2xs hover:border-[#94a3b8] focus:border-[#3c63da] focus:ring-2 focus:ring-[#3c63da]/15 focus:outline-none cursor-pointer transition-all"
             >
-              {!isFranchisee && <option value="all">Todas as Unidades ({allowedUnits.length})</option>}
+              {!isFranchisee && (
+                <option value="all">
+                  Todas as Unidades ({allowedUnits.filter((f) => selectedBusiness === "all" || f.businessId === selectedBusiness).length})
+                </option>
+              )}
               {allowedUnits
                 .filter((f) => selectedBusiness === "all" || f.businessId === selectedBusiness)
                 .map((f) => (
@@ -1653,6 +1694,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                   onClick={() => {
                     setViewMode("consolidated");
                     setSelectedFranchise("all");
+                    onSelectTenant(selectedBusiness === "all" ? "dono" : selectedBusiness);
                   }}
                   className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                     viewMode === "consolidated"
@@ -1667,7 +1709,16 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
               <button
                 type="button"
                 id="btn-view-unit"
-                onClick={() => setViewMode("unit")}
+                onClick={() => {
+                  setViewMode("unit");
+                  if (selectedFranchise === "all") {
+                    const target = allowedUnits.find((f) => selectedBusiness === "all" || f.businessId === selectedBusiness)?.id || allowedUnits[0]?.id;
+                    if (target) {
+                      setSelectedFranchise(target);
+                      onSelectTenant(target);
+                    }
+                  }
+                }}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                   viewMode === "unit"
                     ? "bg-[#3c63da] text-white shadow-xs"
@@ -1745,7 +1796,9 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                         id="quick-unit-selector"
                         value={activeUnit.id}
                         onChange={(e) => {
-                          setSelectedFranchise(e.target.value);
+                          const val = e.target.value;
+                          setSelectedFranchise(val);
+                          onSelectTenant(val);
                         }}
                         className="rounded-lg border border-[#e5eaf1] bg-white py-1 px-2 text-xs font-bold text-[#152238] focus:border-[#3c63da] focus:outline-none shadow-2xs cursor-pointer"
                       >
@@ -2185,7 +2238,11 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
                   onClick={() => {
                     setViewMode("unit");
                     if (selectedFranchise === "all") {
-                      setSelectedFranchise(allowedUnits[0]?.id || "f1");
+                      const target = allowedUnits.find((f) => selectedBusiness === "all" || f.businessId === selectedBusiness)?.id || allowedUnits[0]?.id;
+                      if (target) {
+                        setSelectedFranchise(target);
+                        onSelectTenant(target);
+                      }
                     }
                   }}
                   className="px-3 py-1.5 rounded-lg bg-[#3c63da] text-white font-extrabold text-xs shadow-xs hover:bg-[#294285] transition-all cursor-pointer flex items-center gap-1"

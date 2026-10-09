@@ -72,7 +72,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const canAccessScreen = (screen: ScreenType): boolean => {
     // Unidades franqueadas têm acesso estritamente a Início, Analítico, Lançamentos e Taxas (consulta)
     if (isFranchisee) {
-      return ["home", "dashboard", "fees", "pagamentos_despesas", "lancamentos", "import_base", "produtos", "employees", "users"].includes(screen);
+      return ["home", "dashboard", "fees", "pagamentos_despesas", "lancamentos", "import_base", "network", "produtos", "employees", "users"].includes(screen);
     }
     if (screen === "home") return true;
     if (userProfile === "dono" || userProfile === "equipe") return true;
@@ -128,35 +128,28 @@ export const Sidebar: React.FC<SidebarProps> = ({
   ];
 
   // 2. Financeiro & Pagamentos / Lançamentos
-  // Taxas e Recebimentos visível para unidades (modo consulta) e donos (edição)
-  const financialNav: NavItem[] = isFranchisee
-      ? [
-        { id: "pagamentos_despesas", label: "Pagamentos e Despesas", icon: <CreditCard className="h-4 w-4 text-emerald-400" /> },
-        { id: "fees", label: "Taxas e Recebimentos", icon: <Percent className="h-4 w-4 text-sky-400" /> },
-      ]
-    : [
-        { id: "dre", label: "DRE e Resultados", icon: <TrendingUp className="h-4 w-4" /> },
-        { id: "pagamentos_despesas", label: "Pagamentos e Despesas", icon: <CreditCard className="h-4 w-4 text-emerald-400" /> },
-        { id: "fees", label: "Taxas e Recebimentos", icon: <Percent className="h-4 w-4" /> },
-      ];
+  // DRE agora fica consolidado dentro de Pagamentos e Despesas
+  const financialNav: NavItem[] = [
+    { id: "pagamentos_despesas", label: "Pagamentos e Despesas", icon: <CreditCard className="h-4 w-4 text-emerald-400" /> },
+    { id: "fees", label: "Taxas e Recebimentos", icon: <Percent className="h-4 w-4 text-sky-400" /> },
+  ];
 
   // 3. Configurações & Gestão
   const managementNav: NavItem[] = isFranchisee
       ? [
-        { id: "produtos", label: "Fornecedores e Produtos", icon: <PackageCheck className="h-4 w-4" /> },
         { id: "employees", label: "Funcionários", icon: <Users className="h-4 w-4" /> },
         { id: "users", label: "Acessos e Logins", icon: <KeyRound className="h-4 w-4" /> },
       ]
     : [
         { id: "configuracao", label: "Configurações", icon: <Settings className="h-4 w-4" /> },
-        { id: "produtos", label: "Fornecedores e Produtos", icon: <PackageCheck className="h-4 w-4" /> },
         { id: "employees", label: "Funcionários", icon: <Users className="h-4 w-4" /> },
         { id: "users", label: "Acessos e Logins", icon: <KeyRound className="h-4 w-4" /> },
       ];
 
-  // Todas as áreas continuam visíveis para o dono/equipe mesmo quando o banco está vazio.
+  // Rede & Unidades + Fornecedores e Produtos
   const networkNav: NavItem[] = [
     { id: "network", label: "Rede e Unidades", icon: <Building2 className="h-4 w-4" /> },
+    { id: "produtos", label: "Fornecedores e Produtos", icon: <PackageCheck className="h-4 w-4" /> },
   ];
 
   const handleNavClick = (screen: ScreenType) => {
@@ -182,7 +175,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             const isActive =
               currentScreen === item.id ||
               (item.id === "pagamentos_despesas" &&
-                ["pagamentos_despesas", "lancamentos", "conciliation", "vt", "rp"].includes(currentScreen));
+                ["pagamentos_despesas", "lancamentos", "conciliation", "vt", "rp", "dre"].includes(currentScreen));
             const isSpecialConfig = item.id === "configuracao";
             return (
               <button

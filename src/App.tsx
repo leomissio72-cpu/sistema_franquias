@@ -763,25 +763,6 @@ export const App: React.FC = () => {
             />
           )}
 
-          {currentScreen === "dre" && (
-            <DreScreen
-              franchises={franchises}
-              businesses={businesses}
-              currentTenantId={currentTenantId}
-              dreParams={dreParams}
-              royalties={royalties}
-              onNavigate={setCurrentScreen}
-              onSelectTenant={handleSelectTenant}
-              onSaveParams={handleSaveDreParams}
-              userSession={userSession}
-              currentBusinessId={currentBusinessId}
-              onSelectBusiness={handleSelectBusiness}
-              bills={bills}
-              manualEntries={manualEntries || []}
-              intercompanyRules={intercompanyRules || []}
-            />
-          )}
-
           {currentScreen === "dreparams" && (
             <DreParamsScreen
               currentTenantId={currentTenantId}
@@ -816,7 +797,7 @@ export const App: React.FC = () => {
             />
           )}
 
-          {["pagamentos_despesas", "lancamentos", "conciliation", "import_base", "vt", "rp"].includes(currentScreen) && (
+          {["pagamentos_despesas", "lancamentos", "conciliation", "import_base", "vt", "rp", "dre"].includes(currentScreen) && (
             <PagamentosDespesasScreen
               currentTenantId={currentTenantId}
               currentBusinessId={currentBusinessId}
@@ -826,6 +807,11 @@ export const App: React.FC = () => {
               manualEntries={manualEntries}
               intercompanyRules={intercompanyRules}
               bills={bills}
+              dreParams={dreParams}
+              royalties={royalties}
+              onSaveDreParams={handleSaveDreParams}
+              onSelectTenant={handleSelectTenant}
+              onSelectBusiness={handleSelectBusiness}
               onCreateEntry={handleCreateManualEntry}
               onCreateEntriesBulk={async (entries) => {
                 const updatedState = await createManualEntriesBulk(entries);
@@ -846,6 +832,8 @@ export const App: React.FC = () => {
                   ? "vt"
                   : currentScreen === "rp"
                   ? "rp"
+                  : currentScreen === "dre"
+                  ? "dre"
                   : "rp"
               }
             />

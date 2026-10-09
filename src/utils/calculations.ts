@@ -27,9 +27,38 @@ function dateOnly(date: Date): Date {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate());
 }
 
+export function parseVencimentoDate(vencimentoStr: string): Date {
+  if (!vencimentoStr) return new Date();
+  const clean = String(vencimentoStr).trim();
+  if (clean.includes("/")) {
+    const parts = clean.split("/").map(Number);
+    if (parts.length >= 3) {
+      if (parts[0] > 1000) {
+        // YYYY/MM/DD
+        return new Date(parts[0], (parts[1] || 1) - 1, parts[2] || 1);
+      } else {
+        // DD/MM/YYYY
+        return new Date(parts[2], (parts[1] || 1) - 1, parts[0] || 1);
+      }
+    }
+  } else if (clean.includes("-")) {
+    const parts = clean.split("-").map(Number);
+    if (parts.length >= 3) {
+      if (parts[0] > 1000) {
+        // YYYY-MM-DD
+        return new Date(parts[0], (parts[1] || 1) - 1, parts[2] || 1);
+      } else {
+        // DD-MM-YYYY
+        return new Date(parts[2], (parts[1] || 1) - 1, parts[0] || 1);
+      }
+    }
+  }
+  const parsed = new Date(clean);
+  return isNaN(parsed.getTime()) ? new Date() : parsed;
+}
+
 export function getBillDaysUntilDue(bill: Pick<BillItem, "vencimento">, referenceDate = new Date()): number {
-  const [year, month, day] = bill.vencimento.split("-").map(Number);
-  const dueDate = new Date(year, (month || 1) - 1, day || 1);
+  const dueDate = parseVencimentoDate(bill.vencimento);
   return Math.round((dateOnly(dueDate).getTime() - dateOnly(referenceDate).getTime()) / 86400000);
 }
 

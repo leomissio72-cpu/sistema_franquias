@@ -13,6 +13,7 @@ import { RpScreen } from "./RpScreen";
 import { ConciliationScreen } from "./ConciliationScreen";
 import { LancamentosScreen } from "./LancamentosScreen";
 import { VtScreen } from "./VtScreen";
+import { DreScreen } from "./DreScreen";
 import {
   CreditCard,
   Cog,
@@ -22,10 +23,11 @@ import {
   CalendarDays,
   Layers,
   ChevronRight,
-  Building2
+  Building2,
+  TrendingUp,
 } from "lucide-react";
 
-export type PagamentoSubTab = "rp" | "conciliation" | "lancamentos" | "vt";
+export type PagamentoSubTab = "rp" | "conciliation" | "lancamentos" | "vt" | "dre";
 
 interface PagamentosDespesasScreenProps {
   currentTenantId: string;
@@ -45,6 +47,11 @@ interface PagamentosDespesasScreenProps {
   onSaveVtConfig: (tenantId: string, config: VTConfig) => Promise<void>;
   onNavigate: (screen: ScreenType) => void;
   initialTab?: PagamentoSubTab;
+  dreParams?: Record<string, any>;
+  royalties?: Record<string, number>;
+  onSaveDreParams?: (tenantId: string, params: any) => Promise<void>;
+  onSelectTenant?: (tenantId: string) => void;
+  onSelectBusiness?: (bizId: string) => void;
 }
 
 export const PagamentosDespesasScreen: React.FC<PagamentosDespesasScreenProps> = ({
@@ -65,6 +72,11 @@ export const PagamentosDespesasScreen: React.FC<PagamentosDespesasScreenProps> =
   onSaveVtConfig,
   onNavigate,
   initialTab = "rp",
+  dreParams = {},
+  royalties = {},
+  onSaveDreParams,
+  onSelectTenant,
+  onSelectBusiness,
 }) => {
   const [activeTab, setActiveTab] = useState<PagamentoSubTab>(initialTab);
 
@@ -103,6 +115,12 @@ export const PagamentosDespesasScreen: React.FC<PagamentosDespesasScreenProps> =
       label: "VT",
       subtitle: "Vale Transporte & CLT 6%",
       icon: <FileSpreadsheet className="h-4 w-4" />,
+    },
+    {
+      id: "dre",
+      label: "DRE",
+      subtitle: "Demonstrativo de Resultado do Exercício",
+      icon: <TrendingUp className="h-4 w-4" />,
     },
   ];
 
@@ -206,6 +224,25 @@ export const PagamentosDespesasScreen: React.FC<PagamentosDespesasScreenProps> =
             userSession={userSession}
             manualEntries={manualEntries}
             onCreateEntry={onCreateEntry}
+          />
+        )}
+
+        {activeTab === "dre" && (
+          <DreScreen
+            currentTenantId={currentTenantId}
+            franchises={franchises}
+            businesses={businesses}
+            dreParams={dreParams}
+            royalties={royalties}
+            onNavigate={onNavigate}
+            onSelectTenant={onSelectTenant || (() => {})}
+            onSaveParams={onSaveDreParams || (async () => {})}
+            userSession={userSession}
+            currentBusinessId={currentBusinessId || "all"}
+            onSelectBusiness={onSelectBusiness || (() => {})}
+            bills={bills}
+            manualEntries={manualEntries || []}
+            intercompanyRules={intercompanyRules || []}
           />
         )}
       </div>
