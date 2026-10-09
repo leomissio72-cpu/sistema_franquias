@@ -5,7 +5,7 @@ import {
   formatBrl2,
   formatPct,
   formatPct2,
-  calculateDre,
+  calculateUnitDre,
   getUnitRealFinancials,
 } from "../../utils/calculations";
 import { getBillDueStatus } from "../../utils/calculations";
@@ -323,7 +323,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
     const fat = unitFin.count > 0 ? unitFin.faturamento : f.faturamento * periodMultiplier;
     const p = dreParams[f.id] || dreParams["dono"];
     const royPct = royalties[f.businessId] ?? (f.businessId === "biz1" ? 0.06 : f.businessId === "biz2" ? 0.05 : 0.07);
-    const d = calculateDre(fat, p, royPct);
+    const d = calculateUnitDre(fat, p, royPct, unitFin);
     const royValue = fat * royPct;
     const fppValue = fat * 0.02;
 
@@ -362,22 +362,26 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
     const lucro: number[] = [];
     const roy: number[] = [];
     const unitIds = new Set(filteredUnits.map((u) => u.id));
-    const monthRevenue = (mVal: number, yrVal: number) => {
+    const monthTotals = (mVal: number, yrVal: number) => {
       const prefix = `${yrVal}-${String(mVal).padStart(2, "0")}`;
-      let sum = 0;
+      let receitas = 0;
+      let despesas = 0;
       for (const e of manualEntries || []) {
-        if (e.type !== "entrada" || e.excludedFromDre || e.isIntercompany) continue;
-        if (!unitIds.has(e.tenant) && e.tenant !== currentTenantId && currentTenantId !== "dono") continue;
-        if ((e.date || "").startsWith(prefix)) sum += Number(e.value) || 0;
+        if (e.excludedFromDre || e.isIntercompany || e.catId === "intercompany") continue;
+        if (!unitIds.has(e.tenant)) continue;
+        if (!(e.date || "").startsWith(prefix)) continue;
+        if (e.type === "entrada") receitas += Number(e.value) || 0;
+        else if (e.type === "despesa") despesas += Number(e.value) || 0;
       }
-      return sum;
+      return { receitas, despesas };
     };
     const push = (mVal: number, yrVal: number) => {
       const mObj = AVAILABLE_MONTHS.find((m) => m.value === mVal);
       labels.push(`${mObj?.short || mVal}/${yrVal.toString().slice(-2)}`.toUpperCase());
-      const valFat = Math.round(monthRevenue(mVal, yrVal));
+      const totals = monthTotals(mVal, yrVal);
+      const valFat = Math.round(totals.receitas);
       fat.push(valFat);
-      lucro.push(Math.round(valFat * margem));
+      lucro.push(Math.round(totals.receitas - totals.despesas));
       roy.push(Math.round(valFat * (avgRoyaltiesRate / 100)));
     };
     const yr = dateSelection.years[0] || new Date().getFullYear();
@@ -428,7 +432,7 @@ export const DashboardScreen: React.FC<DashboardScreenProps> = ({
   const unitFat = activeUnitFin.count > 0 ? activeUnitFin.faturamento : activeUnit.faturamento * periodMultiplier;
   const unitDreParams = dreParams[activeUnit.id] || dreParams["dono"];
   const unitRoyPct = royalties[activeUnit.businessId] ?? (activeUnit.businessId === "biz1" ? 0.06 : activeUnit.businessId === "biz2" ? 0.05 : 0.07);
-  const unitDre = calculateDre(unitFat, unitDreParams, unitRoyPct);
+  const unitDre = calculateUnitDre(unitFat, unitDreParams, unitRoyPct, activeUnitFin);
   const unitRoyValue = unitFat * unitRoyPct;
   const unitFppValue = unitFat * 0.02;
   const unitDevidoMatriz = unitRoyValue + unitFppValue;
