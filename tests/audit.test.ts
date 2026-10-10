@@ -524,3 +524,42 @@ after(() => {
   db.users = (db.users || []).filter((u: any) => u.id !== "u_op_test");
   saveDatabase(db);
 });
+
+test("AUDITORIA 14: Acessos criados sobrevivem a um reinício do servidor pelo cofre cifrado", async () => {
+  const userId = `u_vault_${Date.now()}`;
+  const password = `Vault-${crypto.randomBytes(6).toString("hex")}`;
+  const dono = db.users.find((u: any) => u.perfil === "dono");
+  Object.assign(db, setCredential(db, dono.id, "SenhaMaster2026!"));
+  const token = createSignedSessionToken(dono.id, getCredential(db, dono.id)!.version, true);
+  const cookie = { Cookie: `gestao_session=${encodeURIComponent(token)}` };
+  const seedUsers = JSON.parse(JSON.stringify(db.users));
+  const seedCredentials = JSON.parse(JSON.stringify(db.credentials || {}));
+
+  const users = [...seedUsers, { id: userId, nome: "Segunda Pessoa", login: "segunda", email: "segunda@teste.com", perfil: "equipe", unidade: "dono", status: "ativo" }];
+  const sync = await appRequest("POST", "/api/state/sync", cookie, { section: "users", data: users, credential: { userId, password } });
+  assert.equal(sync.status, 200);
+  const vault = sync.body.state.accessVault;
+  assert.equal(typeof vault, "string");
+  assert.ok(!vault.includes("scrypt") && !vault.includes(password) && !vault.includes("segunda"));
+
+  // Simula o reinício: o servidor volta ao cadastro original.
+  db.users = seedUsers;
+  db.credentials = seedCredentials;
+  delete (db as any).accessUpdatedAt;
+  const before = await appRequest("POST", "/api/auth/login", {}, { username: "segunda", password });
+  assert.equal(before.status, 401);
+
+  const tampered = vault.slice(0, -4) + (vault.endsWith("AAAA") ? "BBBB" : "AAAA");
+  const junk = await appRequest("POST", "/api/auth/restore", {}, { vault: "v1.x.y.z" });
+  assert.equal(junk.body.restored, false);
+  assert.equal((await appRequest("POST", "/api/auth/restore", {}, { vault: "v1.x.y.z" })).body.restored, false);
+
+  assert.equal((await appRequest("POST", "/api/auth/restore", {}, { vault })).body.restored, true);
+  const afterRestore = await appRequest("POST", "/api/auth/login", {}, { username: "segunda", password });
+  assert.equal(afterRestore.status, 200);
+  // Um cofre igual ou mais antigo não substitui o atual.
+  assert.equal((await appRequest("POST", "/api/auth/restore", {}, { vault })).body.restored, false);
+
+  db.users = seedUsers;
+  db.credentials = seedCredentials;
+});

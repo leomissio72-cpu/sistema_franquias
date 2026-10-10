@@ -391,6 +391,31 @@ function decryptSecret(value) {
     return null;
   }
 }
+function vaultKey(keyMaterial) {
+  const configured = process.env.FRANQUIAS_SESSION_SECRET;
+  const base = configured && configured.length >= 32 ? configured : keyMaterial;
+  return import_node_crypto.default.createHash("sha256").update("gestao-franquias-access-vault:v1\0").update(base).digest();
+}
+function sealAccessVault(payload, keyMaterial) {
+  const iv = import_node_crypto.default.randomBytes(12);
+  const cipher = import_node_crypto.default.createCipheriv("aes-256-gcm", vaultKey(keyMaterial), iv);
+  const encrypted = Buffer.concat([cipher.update(JSON.stringify(payload), "utf8"), cipher.final()]);
+  return `v1.${iv.toString("base64url")}.${cipher.getAuthTag().toString("base64url")}.${encrypted.toString("base64url")}`;
+}
+function openAccessVault(value, keyMaterial) {
+  try {
+    if (typeof value !== "string" || value.length > 4e5) return null;
+    const [version, ivValue, tagValue, encryptedValue] = value.split(".");
+    if (version !== "v1" || !ivValue || !tagValue || !encryptedValue) return null;
+    const decipher = import_node_crypto.default.createDecipheriv("aes-256-gcm", vaultKey(keyMaterial), Buffer.from(ivValue, "base64url"));
+    decipher.setAuthTag(Buffer.from(tagValue, "base64url"));
+    const text = Buffer.concat([decipher.update(Buffer.from(encryptedValue, "base64url")), decipher.final()]).toString("utf8");
+    const parsed = JSON.parse(text);
+    return parsed && typeof parsed === "object" ? parsed : null;
+  } catch {
+    return null;
+  }
+}
 function createMfaChallenge(userId, purpose = "mfa-setup") {
   const payload = encode({ sub: userId, purpose, exp: Date.now() + 10 * 60 * 1e3, nonce: import_node_crypto.default.randomBytes(16).toString("hex") });
   return `${payload}.${sign(payload)}`;
@@ -641,8 +666,10 @@ app.use((req, res, next) => {
     "/auth/login",
     "/api/auth/logout",
     "/auth/logout",
-    "/api/auth/mfa",
-    "/auth/mfa",
+    "/api/auth/bootstrap",
+    "/auth/bootstrap",
+    "/api/auth/restore",
+    "/auth/restore",
     "/api/auth/bootstrap",
     "/auth/bootstrap",
     "/api/events",
@@ -995,8 +1022,18 @@ function loadDatabase() {
   }
   return initialDB;
 }
+function accessFingerprint(data) {
+  const users = (data.users || []).map((u) => [u?.id, u?.login, u?.email, u?.nome, u?.perfil, u?.unidade, u?.status]);
+  return JSON.stringify([users, data.credentials || {}, data.mfaSecrets || {}]);
+}
+var lastAccessFingerprint = "";
 async function saveDatabase(data) {
   data.lastUpdated = (/* @__PURE__ */ new Date()).toISOString();
+  const fingerprint = accessFingerprint(data);
+  if (lastAccessFingerprint && fingerprint !== lastAccessFingerprint) {
+    data.accessUpdatedAt = Date.now();
+  }
+  lastAccessFingerprint = fingerprint;
   data.durableInitialized = true;
   const sections = ["businesses", "franchises", "employees", "users", "manualEntries", "bills", "products", "suppliers", "intercompanyRules"];
   data.emptySections = sections.filter((section) => Array.isArray(data[section]) && data[section].length === 0);
@@ -1044,7 +1081,17 @@ function getFullState(database) {
       companyName: "Gest\xE3o de Franquias S.A.",
       cnpjMatriz: "12.345.678/0001-90"
     },
-    lastUpdated: database.lastUpdated
+    lastUpdated: database.lastUpdated,
+    // Só é emitido depois que os acessos mudaram (ou foram restaurados) nesta
+    // instância, para um servidor recém-iniciado não sobrescrever a cópia durável.
+    ...database.accessUpdatedAt ? {
+      accessVault: sealAccessVault({
+        updatedAt: database.accessUpdatedAt,
+        users: database.users || [],
+        credentials: database.credentials || {},
+        mfaSecrets: database.mfaSecrets || {}
+      }, MASTER_PASSWORD_HASH)
+    } : {}
   };
 }
 var db = loadDatabase();
@@ -1076,6 +1123,7 @@ if (!db.credentials[masterUser.id] && bootstrapPassword) {
   Object.assign(db, setCredential(db, masterUser.id, bootstrapPassword));
   refreshSessionSecretFallback();
 }
+lastAccessFingerprint = accessFingerprint(db);
 var sseClients = [];
 function broadcastUpdate(eventType, payload) {
 }
@@ -1168,6 +1216,23 @@ routeBoth("post", "/api/auth/login", async (req, res) => {
     expiresAt,
     token
   });
+});
+routeBoth("post", "/api/auth/restore", (req, res) => {
+  const vault = openAccessVault(req.body?.vault, MASTER_PASSWORD_HASH);
+  const updatedAt = Number(vault?.updatedAt || 0);
+  if (!vault || !Number.isFinite(updatedAt) || updatedAt <= 0 || updatedAt > Date.now() + 5 * 60 * 1e3 || !Array.isArray(vault.users) || !vault.credentials || typeof vault.credentials !== "object") {
+    return res.json({ restored: false });
+  }
+  if (updatedAt <= Number(db.accessUpdatedAt || 0)) return res.json({ restored: false });
+  const users = vault.users.filter((u) => u && typeof u === "object" && u.id);
+  const hasMaster = users.some((u) => u.perfil === "dono" || u.login === "admin" || u.login === "dono");
+  db.users = hasMaster ? users : [masterUser, ...users.filter((u) => u.id !== masterUser.id)];
+  db.credentials = { ...vault.credentials };
+  db.mfaSecrets = vault.mfaSecrets && typeof vault.mfaSecrets === "object" ? { ...vault.mfaSecrets } : {};
+  db.accessUpdatedAt = updatedAt;
+  lastAccessFingerprint = accessFingerprint(db);
+  refreshSessionSecretFallback();
+  res.json({ restored: true });
 });
 routeBoth("post", "/api/auth/mfa", async (req, res) => {
   const body = req.body || {};
