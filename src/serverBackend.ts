@@ -3,7 +3,7 @@ import path from "path";
 import fs from "fs";
 import { get, put } from "@vercel/blob";
 import { initialBills, initialBusinesses, initialFranchises } from "./data/initialData.ts";
-import { configureSessionSecretFallback, cookieOptions, createMfaChallenge, createSignedSessionToken, createTotpSecret, decryptSecret, encryptSecret, getCredential, hashPassword, migrateLegacyCredentials, safeUser, setCredential, stripSensitiveFields, totpUri, verifyMfaChallenge, verifyPassword, verifySignedSessionToken, verifyTotp } from "./serverSecurity.ts";
+import { configureSessionSecretFallback, cookieOptions, createMfaChallenge, createSignedSessionToken, createTotpSecret, decryptSecret, encryptSecret, getCredential, hashPassword, migrateLegacyCredentials, openAccessVault, safeUser, sealAccessVault, setCredential, stripSensitiveFields, totpUri, verifyMfaChallenge, verifyPassword, verifySignedSessionToken, verifyTotp } from "./serverSecurity.ts";
 import { apiGuard } from "./serverGuard.ts";
 import { findIntercompanyRule } from "./utils/intercompany.ts";
 
@@ -71,7 +71,8 @@ app.use((req, res, next) => {
     "/api/health", "/health",
     "/api/auth/login", "/auth/login",
     "/api/auth/logout", "/auth/logout",
-    "/api/auth/mfa", "/auth/mfa",
+    "/api/auth/bootstrap", "/auth/bootstrap",
+    "/api/auth/restore", "/auth/restore",
     "/api/auth/bootstrap", "/auth/bootstrap",
     "/api/events", "/events",
   ].includes(req.path);
@@ -317,6 +318,7 @@ interface DatabaseState {
   systemSettings?: any;
   credentials?: Record<string, any>;
   mfaSecrets?: Record<string, string>;
+  accessUpdatedAt?: number;
   products?: any[];
   suppliers?: any[];
   intercompanyRules?: any[];
@@ -480,8 +482,20 @@ function loadDatabase(): DatabaseState {
   return initialDB;
 }
 
+function accessFingerprint(data: DatabaseState): string {
+  // Ignora campos voláteis (ex.: último acesso) para que um simples login não conte como mudança.
+  const users = (data.users || []).map((u: any) => [u?.id, u?.login, u?.email, u?.nome, u?.perfil, u?.unidade, u?.status]);
+  return JSON.stringify([users, data.credentials || {}, data.mfaSecrets || {}]);
+}
+let lastAccessFingerprint = "";
+
 async function saveDatabase(data: DatabaseState) {
   data.lastUpdated = new Date().toISOString();
+  const fingerprint = accessFingerprint(data);
+  if (lastAccessFingerprint && fingerprint !== lastAccessFingerprint) {
+    data.accessUpdatedAt = Date.now();
+  }
+  lastAccessFingerprint = fingerprint;
   data.durableInitialized = true;
   const sections = ["businesses", "franchises", "employees", "users", "manualEntries", "bills", "products", "suppliers", "intercompanyRules"];
   data.emptySections = sections.filter((section) => Array.isArray((data as any)[section]) && (data as any)[section].length === 0);
@@ -531,6 +545,16 @@ function getFullState(database: DatabaseState) {
       cnpjMatriz: "12.345.678/0001-90",
     },
     lastUpdated: database.lastUpdated,
+    // Só é emitido depois que os acessos mudaram (ou foram restaurados) nesta
+    // instância, para um servidor recém-iniciado não sobrescrever a cópia durável.
+    ...(database.accessUpdatedAt ? {
+      accessVault: sealAccessVault({
+        updatedAt: database.accessUpdatedAt,
+        users: database.users || [],
+        credentials: database.credentials || {},
+        mfaSecrets: database.mfaSecrets || {},
+      }, MASTER_PASSWORD_HASH),
+    } : {}),
   };
 }
 
@@ -566,6 +590,8 @@ if (!db.credentials[masterUser.id] && bootstrapPassword) {
   Object.assign(db, setCredential(db, masterUser.id, bootstrapPassword));
   refreshSessionSecretFallback();
 }
+
+lastAccessFingerprint = accessFingerprint(db);
 
 type SSEClient = { id: string; res: ExpressResponse };
 let sseClients: SSEClient[] = [];
@@ -688,6 +714,27 @@ routeBoth("post", "/api/auth/login", async (req: Request, res: ExpressResponse) 
     expiresAt,
     token,
   });
+});
+
+// Restaura cadastros de acesso a partir do cofre cifrado guardado na cópia
+// durável. Só aceita blocos autênticos (AES-GCM) e mais novos que os atuais.
+routeBoth("post", "/api/auth/restore", (req: Request, res: ExpressResponse) => {
+  const vault = openAccessVault(req.body?.vault, MASTER_PASSWORD_HASH);
+  const updatedAt = Number(vault?.updatedAt || 0);
+  if (!vault || !Number.isFinite(updatedAt) || updatedAt <= 0 || updatedAt > Date.now() + 5 * 60 * 1000
+    || !Array.isArray(vault.users) || !vault.credentials || typeof vault.credentials !== "object") {
+    return res.json({ restored: false });
+  }
+  if (updatedAt <= Number(db.accessUpdatedAt || 0)) return res.json({ restored: false });
+  const users = vault.users.filter((u: any) => u && typeof u === "object" && u.id);
+  const hasMaster = users.some((u: any) => u.perfil === "dono" || u.login === "admin" || u.login === "dono");
+  db.users = hasMaster ? users : [masterUser, ...users.filter((u: any) => u.id !== masterUser.id)];
+  db.credentials = { ...vault.credentials };
+  db.mfaSecrets = vault.mfaSecrets && typeof vault.mfaSecrets === "object" ? { ...vault.mfaSecrets } : {};
+  db.accessUpdatedAt = updatedAt;
+  lastAccessFingerprint = accessFingerprint(db);
+  refreshSessionSecretFallback();
+  res.json({ restored: true });
 });
 
 routeBoth("post", "/api/auth/mfa", async (req: Request, res: ExpressResponse) => {

@@ -38,6 +38,7 @@ const STATE_KEYS: Array<keyof CloudState> = [
   "suppliers",
   "intercompanyRules",
   "intercompanySeedVersion",
+  "accessVault",
 ];
 
 let mirrorWriteChain: Promise<void> = Promise.resolve();

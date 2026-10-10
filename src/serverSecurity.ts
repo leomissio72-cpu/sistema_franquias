@@ -135,6 +135,39 @@ export function decryptSecret(value: string): string | null {
   }
 }
 
+/**
+ * Cofre de acessos: empacota cadastros de login e os resumos (hash) das senhas
+ * em um bloco AES-256-GCM. A chave é estável entre reinícios do servidor para
+ * que o bloco gravado na cópia durável possa ser reaberto depois.
+ */
+function vaultKey(keyMaterial: string): Buffer {
+  const configured = process.env.FRANQUIAS_SESSION_SECRET;
+  const base = configured && configured.length >= 32 ? configured : keyMaterial;
+  return crypto.createHash("sha256").update("gestao-franquias-access-vault:v1\0").update(base).digest();
+}
+
+export function sealAccessVault(payload: AnyRecord, keyMaterial: string): string {
+  const iv = crypto.randomBytes(12);
+  const cipher = crypto.createCipheriv("aes-256-gcm", vaultKey(keyMaterial), iv);
+  const encrypted = Buffer.concat([cipher.update(JSON.stringify(payload), "utf8"), cipher.final()]);
+  return `v1.${iv.toString("base64url")}.${cipher.getAuthTag().toString("base64url")}.${encrypted.toString("base64url")}`;
+}
+
+export function openAccessVault(value: unknown, keyMaterial: string): AnyRecord | null {
+  try {
+    if (typeof value !== "string" || value.length > 400000) return null;
+    const [version, ivValue, tagValue, encryptedValue] = value.split(".");
+    if (version !== "v1" || !ivValue || !tagValue || !encryptedValue) return null;
+    const decipher = crypto.createDecipheriv("aes-256-gcm", vaultKey(keyMaterial), Buffer.from(ivValue, "base64url"));
+    decipher.setAuthTag(Buffer.from(tagValue, "base64url"));
+    const text = Buffer.concat([decipher.update(Buffer.from(encryptedValue, "base64url")), decipher.final()]).toString("utf8");
+    const parsed = JSON.parse(text);
+    return parsed && typeof parsed === "object" ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+
 export function createMfaChallenge(userId: string, purpose: "mfa-setup" | "mfa-login" = "mfa-setup"): string {
   const payload = encode({ sub: userId, purpose, exp: Date.now() + 10 * 60 * 1000, nonce: crypto.randomBytes(16).toString("hex") });
   return `${payload}.${sign(payload)}`;

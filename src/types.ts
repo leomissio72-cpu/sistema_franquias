@@ -399,5 +399,6 @@ export interface CloudState {
   suppliers?: RegisteredSupplier[];
   intercompanyRules?: IntercompanyRule[];
   intercompanySeedVersion?: number;
+  accessVault?: string;
   lastUpdated: string;
 }

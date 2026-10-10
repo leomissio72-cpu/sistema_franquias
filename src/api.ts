@@ -335,6 +335,10 @@ export async function fetchServerState(): Promise<CloudState> {
     const state = health?.storage === "ephemeral-fallback" && migratedMirror && mirrorHasRecoverableData(migratedMirror)
       ? formatCloudState(migratedMirror)
       : chooseAuthoritativeState(apiState, mirroredState);
+    // O cofre de acessos vem sempre do servidor quando ele tem um; senão,
+    // mantém o que já está guardado na cópia durável.
+    const accessVault = apiState.accessVault || mirroredState?.accessVault;
+    if (accessVault) state.accessVault = accessVault; else delete state.accessVault;
 
     // Atualiza o espelho de forma assíncrona (não bloqueante) para evitar travamento da tela
     if (!mirroredState || stateTimestamp(state) >= stateTimestamp(mirroredState)) {
@@ -728,7 +732,21 @@ export async function deleteManualEntry(id: string, userName?: string, userId?: 
   return updatedState;
 }
 
+/** Devolve ao servidor os acessos guardados na cópia durável (após reinícios). */
+export async function restoreAccessVault(): Promise<void> {
+  try {
+    const mirror = await readFirebaseMirror(4000);
+    if (!mirror?.accessVault) return;
+    await fetchWithTimeout("/api/auth/restore", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ vault: mirror.accessVault }),
+    }, 8000);
+  } catch {}
+}
+
 export async function loginAPI(username: string, password: string) {
+  await restoreAccessVault();
   const res = await fetch("/api/auth/login", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
