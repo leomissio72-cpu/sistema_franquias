@@ -563,3 +563,18 @@ test("AUDITORIA 14: Acessos criados sobrevivem a um reinício do servidor pelo c
   db.users = seedUsers;
   db.credentials = seedCredentials;
 });
+
+test("AUDITORIA 15: Transferência entre empresas é só registro e não entra em receita nem despesa", async () => {
+  const { getUnitRealFinancials } = await import("../src/utils/calculations");
+  const franchises: any[] = [{ id: "uX", name: "Unidade X", businessId: "b1" }];
+  const base = { tenant: "uX", date: "2026-10-05" };
+  const entries: any[] = [
+    { ...base, id: "a", type: "entrada", value: 1000 },
+    { ...base, id: "b", type: "despesa", value: 300 },
+    { ...base, id: "c", type: "entrada", value: 5000, isIntercompany: true, excludedFromDre: true },
+    { ...base, id: "d", type: "despesa", value: 7000, catId: "intercompany" },
+  ];
+  const result: any = getUnitRealFinancials("uX", entries);
+  assert.equal(result.faturamento, 1000);
+  assert.equal(result.despesas, 300);
+});

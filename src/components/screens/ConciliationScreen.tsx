@@ -369,7 +369,7 @@ export const ConciliationScreen: React.FC<ConciliationScreenProps> = ({
   const [items, setItems] = useState<ConciliationItem[]>(() => scopedEntries());
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
   // Por padrão a lista mostra só o que ainda falta conciliar.
-  const [filter, setFilter] = useState<"all" | "match" | "review">("review");
+  const [filter, setFilter] = useState<"all" | "match" | "review" | "inter">("review");
   const [uploadedFileName, setUploadedFileName] = useState<string | null>(null);
   const [isDragOver, setIsDragOver] = useState(false);
   const [isReadingFile, setIsReadingFile] = useState(false);
@@ -633,13 +633,51 @@ export const ConciliationScreen: React.FC<ConciliationScreenProps> = ({
   // Conciliado = já salvo e confirmado. Linhas de um arquivo recém-lido continuam
   // pendentes até a confirmação, mesmo quando o sistema já encontrou a correspondência.
   const isConciliated = (item: ConciliationItem) => item.status === "match" && !item.isImportPreview;
+  // Transferências entre empresas ficam em uma aba própria: são apenas registradas
+  // e não aparecem como pendência, receita ou despesa.
+  const intercompanyItems = items.filter((item) => item.isIntercompany);
+  const regularItems = items.filter((item) => !item.isIntercompany);
   const filteredItems = items.filter((item) => {
     if (filter === "all") return true;
+    if (filter === "inter") return Boolean(item.isIntercompany);
+    if (item.isIntercompany) return false;
     return filter === "match" ? isConciliated(item) : !isConciliated(item);
   });
-  const conciliatedCount = items.filter(isConciliated).length;
-  const pendingCount = items.length - conciliatedCount;
-  const changeFilter = (next: "all" | "match" | "review") => {
+  const conciliatedCount = regularItems.filter(isConciliated).length;
+  const pendingCount = regularItems.length - conciliatedCount;
+  const intercompanyIn = intercompanyItems.filter((item) => item.numericValue >= 0).reduce((sum, item) => sum + item.numericValue, 0);
+  const intercompanyOut = intercompanyItems.filter((item) => item.numericValue < 0).reduce((sum, item) => sum + Math.abs(item.numericValue), 0);
+  const formatBRL = (value: number) => value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+
+  // Marca (ou desmarca) as linhas selecionadas como transferência entre empresas.
+  const setSelectedIntercompany = async (mark: boolean) => {
+    const selectedItems = filteredItems.filter((_, index) => selectedIds.includes(index));
+    if (!selectedItems.length) return;
+    try {
+      for (const item of selectedItems) {
+        if (!item.entryId) continue;
+        await onUpdateEntry(item.entryId, mark
+          ? { isIntercompany: true, excludedFromDre: true, catId: "intercompany", catName: "Transferência entre empresas", conciliationStatus: "matched" }
+                    : { isIntercompany: false, excludedFromDre: false, conciliationStatus: "review", catId: "importado", catName: "Importado", intercompanyRuleId: undefined, intercompanyReason: undefined });
+      }
+    } catch (error: any) {
+      setImportError(error?.message || "Não foi possível salvar a alteração.");
+      return;
+    }
+    const selectedSet = new Set(selectedItems);
+    setItems((previous) => previous.map((item) => {
+      if (!selectedSet.has(item)) return item;
+      return mark
+        ? { ...item, isIntercompany: true, toDre: false, categoria: "Transferência entre empresas", match: "Marcada para não entrar no DRE", label: "Intercompany", tone: "amber" as const, status: item.isImportPreview ? item.status : "match" as const }
+        : { ...item, isIntercompany: false, intercompanyRuleId: undefined, intercompanyReason: undefined, toDre: item.numericValue < 0, categoria: "Importado", match: "Aguardando conciliação", label: "Importado", tone: "amber" as const, status: "review" as const };
+    }));
+    toast.success(mark
+      ? `${selectedItems.length} movimentação(ões) registradas como transferência entre empresas.`
+      : `${selectedItems.length} movimentação(ões) devolvidas para a conciliação.`);
+    setSelectedIds([]);
+  };
+
+  const changeFilter = (next: "all" | "match" | "review" | "inter") => {
     setFilter(next);
     setSelectedIds([]);
   };
@@ -1249,7 +1287,7 @@ export const ConciliationScreen: React.FC<ConciliationScreenProps> = ({
             <p className="text-[11px] text-[#69778c]">Extrato e lançamentos sincronizados no sistema. Transferências entre empresas continuam registradas para auditoria, mas não entram no DRE.</p>
           </div>
 
-          <div className="flex items-center gap-1 bg-[#f8faff] p-1 rounded-lg border border-[#e5eaf1]">
+          <div className="flex flex-wrap items-center gap-1 bg-[#f8faff] p-1 rounded-lg border border-[#e5eaf1]">
             <button
               onClick={() => changeFilter("review")}
               className={`rounded px-2.5 py-1 text-xs font-bold transition-all cursor-pointer ${
@@ -1267,6 +1305,14 @@ export const ConciliationScreen: React.FC<ConciliationScreenProps> = ({
               Conciliados ({conciliatedCount})
             </button>
             <button
+              onClick={() => changeFilter("inter")}
+              className={`rounded px-2.5 py-1 text-xs font-bold transition-all cursor-pointer ${
+                filter === "inter" ? "bg-violet-600 text-white" : "text-[#69778c] hover:text-[#152238]"
+              }`}
+            >
+              Entre empresas ({intercompanyItems.length})
+            </button>
+            <button
               onClick={() => changeFilter("all")}
               className={`rounded px-2.5 py-1 text-xs font-bold transition-all cursor-pointer ${
                 filter === "all" ? "bg-[#3c63da] text-white" : "text-[#69778c] hover:text-[#152238]"
@@ -1277,8 +1323,51 @@ export const ConciliationScreen: React.FC<ConciliationScreenProps> = ({
           </div>
         </div>
 
+        {filter === "inter" ? (
+          <div className="rounded-xl border border-violet-200 bg-violet-50/70 p-3 space-y-3">
+            <div>
+              <p className="text-xs font-extrabold text-violet-950">Transferências entre empresas — apenas registro</p>
+              <p className="text-[11px] text-violet-900">Estas movimentações ficam guardadas para conferência, mas não entram como receita, despesa nem lucro em nenhuma tela (Início, Dashboard, Rede, Lançamentos e DRE).</p>
+            </div>
+            <div className="grid grid-cols-3 gap-2 keep-cols">
+              <div className="rounded-lg bg-white border border-violet-200 p-2.5">
+                <p className="text-[10px] font-bold uppercase text-[#69778c]">Registros</p>
+                <p className="text-sm font-extrabold text-[#152238]">{intercompanyItems.length}</p>
+              </div>
+              <div className="rounded-lg bg-white border border-violet-200 p-2.5">
+                <p className="text-[10px] font-bold uppercase text-[#69778c]">Recebido de empresas</p>
+                <p className="text-sm font-extrabold text-[#152238]">{formatBRL(intercompanyIn)}</p>
+              </div>
+              <div className="rounded-lg bg-white border border-violet-200 p-2.5">
+                <p className="text-[10px] font-bold uppercase text-[#69778c]">Enviado a empresas</p>
+                <p className="text-sm font-extrabold text-[#152238]">{formatBRL(intercompanyOut)}</p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => void setSelectedIntercompany(false)}
+              disabled={selectedIds.length === 0}
+              className="rounded-lg border border-violet-300 bg-white px-3 py-1.5 text-xs font-bold text-violet-900 hover:bg-violet-100 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+            >
+              Não é entre empresas — devolver para a conciliação ({selectedIds.length})
+            </button>
+          </div>
+        ) : (
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 rounded-xl border border-violet-200 bg-violet-50/50 px-3 py-2">
+            <p className="text-[11px] text-violet-950">Foi dinheiro passando de uma empresa sua para outra? Selecione as linhas e registre na aba <strong>Entre empresas</strong>: não conta como receita nem despesa.</p>
+            <button
+              type="button"
+              onClick={() => void setSelectedIntercompany(true)}
+              disabled={selectedIds.length === 0}
+              className="shrink-0 rounded-lg bg-violet-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-violet-700 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+            >
+              Registrar como entre empresas ({selectedIds.length})
+            </button>
+          </div>
+        )}
+
         {/* Banner informativo de persistência segura */}
-        {items.length > 0 && (
+        {items.length > 0 && filter !== "inter" && (
           <div className="rounded-xl border border-emerald-200 bg-emerald-50/70 p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div className="flex items-center gap-2.5">
               <CheckCheck className="h-5 w-5 text-emerald-600 shrink-0" />
@@ -1330,7 +1419,7 @@ export const ConciliationScreen: React.FC<ConciliationScreenProps> = ({
                 <tr>
                   <td colSpan={9} className="px-4 py-10 text-center">
                     <p className="text-sm font-bold text-[#152238]">
-                      {filter === "review" ? "Nada pendente de conciliação." : "Nenhuma movimentação nesta visão."}
+                      {filter === "review" ? "Nada pendente de conciliação." : filter === "inter" ? "Nenhuma transferência entre empresas registrada." : "Nenhuma movimentação nesta visão."}
                     </p>
                     {filter === "review" && conciliatedCount > 0 && (
                       <p className="mt-1 text-xs text-[#69778c]">

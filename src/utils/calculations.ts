@@ -1,3 +1,4 @@
+import { isIntercompanyEntry } from "./intercompany";
 import { BillItem, DreCalculation, DreParams, PaymentMethod, DreExpenseItem, Business, ManualEntry, FranchiseUnit } from "../types";
 import { dreExpenseDefs } from "../data/initialData";
 
@@ -48,6 +49,8 @@ export function getUnitRealFinancials(
       }
     }
 
+    // Transferência entre empresas é só registro: não é receita nem despesa.
+    if (isIntercompanyEntry(entry)) continue;
     const val = Number(entry.value) || 0;
     if (entry.type === "entrada") {
       faturamento += val;
@@ -91,6 +94,8 @@ export function getScopeRealFinancials(
       }
     }
 
+    // Transferência entre empresas é só registro: não é receita nem despesa.
+    if (isIntercompanyEntry(entry)) continue;
     const val = Number(entry.value) || 0;
     if (entry.type === "entrada") {
       faturamento += val;
